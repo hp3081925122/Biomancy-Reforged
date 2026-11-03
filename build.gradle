@@ -1,0 +1,220 @@
+// 构建配置：NeoForge 开发环境、依赖、运行配置与资源处理。
+plugins {
+    id 'java-library'
+    id 'eclipse'
+    id 'idea'
+    id 'maven-publish'
+    id 'net.neoforged.gradle.userdev' version '7.1.37'
+}
+
+version = project.mod_version
+group = project.mod_group_id
+
+// 依赖仓库：沿用原项目使用的来源。
+repositories {
+    mavenLocal()
+    maven { url = 'https://maven.neoforged.net/releases' }
+    maven {
+        url = 'https://www.cursemaven.com'
+        content {
+            includeGroup 'curse.maven'
+        }
+    }
+    maven {
+        name = 'Modrinth Maven'
+        url = 'https://api.modrinth.com/maven'
+        content {
+            includeGroup 'maven.modrinth'
+        }
+    }
+    maven {
+        name = 'Geckolib'
+        url = 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/'
+        content {
+            includeGroupByRegex 'software\\.bernie.*'
+            includeGroup 'com.eliotlash.mclib'
+        }
+    }
+    maven {
+        name = 'KubeJS'
+        url = 'https://maven.latvian.dev/releases'
+        content {
+            includeGroup 'dev.latvian.mods'
+            includeGroup 'dev.latvian.apps'
+        }
+    }
+    mavenCentral()
+}
+
+base {
+    archivesName = "${project.mod_id}-${project.minecraft_version}-neoforge"
+}
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+
+// 源码集：datagen 独立于主代码，与原项目一致。
+sourceSets {
+    main {
+        resources {
+            srcDir 'src/generated/resources'
+            exclude '.cache/'
+            exclude '.wiki_data/'
+            exclude '.wiki_content/'
+        }
+    }
+    datagen {
+        compileClasspath += main.output
+        runtimeClasspath += main.output
+    }
+}
+
+// 开发映射与访问转换器。
+subsystems {
+    parchment {
+        minecraftVersion = project.parchment_minecraft_version
+        mappingsVersion = project.parchment_mappings_version
+    }
+}
+
+minecraft {
+    accessTransformers {
+        file('src/main/resources/META-INF/accesstransformer.cfg')
+    }
+}
+
+jarJar.enable()
+
+// 运行配置：保留原项目的 Mixin 调试与开发开关。
+runs {
+    configureEach {
+        systemProperty 'forge.logging.markers', 'REGISTRIES'
+        systemProperty 'forge.logging.console.level', 'debug'
+        systemProperty 'geckolib.disable_examples', 'true'
+        systemProperty 'biomancy.dev_mode', 'true'
+        modSource project.sourceSets.main
+    }
+
+    client {
+        systemProperty 'forge.enabledGameTestNamespaces', project.mod_id
+        systemProperty 'mixin.debug.export', 'true'
+        systemProperty 'mixin.debug.verbose', 'true'
+    }
+
+    server {
+        systemProperty 'forge.enabledGameTestNamespaces', project.mod_id
+        systemProperty 'mixin.debug.export', 'true'
+        systemProperty 'mixin.debug.verbose', 'true'
+        programArgument '--nogui'
+    }
+
+    gameTestServer {
+        systemProperty 'forge.enabledGameTestNamespaces', project.mod_id
+    }
+
+    data {
+        modSource project.sourceSets.datagen
+        programArguments.addAll '--mod', project.mod_id, '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
+    }
+}
+
+configurations {
+    datagenImplementation.extendsFrom implementation
+    datagenCompileOnly.extendsFrom compileOnly
+    datagenRuntimeOnly.extendsFrom runtimeOnly
+}
+
+dependencies {
+    // 加载器与模板自带的开发辅助依赖。
+    implementation "net.neoforged:neoforge:${project.neo_version}"
+    implementation "curse.maven:jei-238222:8792638"
+    implementation "curse.maven:just-enough-characters-250702:8117474"
+    implementation "curse.maven:jade-324717:8591319"
+
+    // 注解。
+    api "org.jspecify:jspecify:${project.jspecify_version}"
+    api "org.jetbrains:annotations:${project.jetbrains_annotations_version}"
+
+    // H2 MVStore：空间数据库，打包进 jar。
+    jarJar(implementation("com.h2database:h2")) {
+        version {
+            strictly project.h2_version_range
+            prefer project.h2_version
+        }
+    }
+
+    // 必需前置 GeckoLib。
+    implementation "software.bernie.geckolib:geckolib-neoforge-${project.minecraft_version}:${project.geckolib_version}"
+
+    // 联动模组。
+    implementation "maven.modrinth:pehkui:${project.pehkui_version}"
+    compileOnly("dev.latvian.mods:kubejs-neoforge:${project.kubejs_version}") { transitive = false }
+    compileOnly("dev.latvian.mods:rhino:${project.rhino_version}") { transitive = false }
+    implementation "maven.modrinth:farmers-delight:${project.farmers_delight_version}"
+    implementation "maven.modrinth:overweight-farming:${project.overweight_farming_version}"
+    implementation "maven.modrinth:sons-of-sins:${project.sons_of_sins_version}"
+
+    // 仅开发环境运行时使用。
+    runtimeOnly "maven.modrinth:appleskin:${project.appleskin_version}"
+}
+
+// 资源占位符替换。
+tasks.withType(ProcessResources).configureEach {
+    def replaceProperties = [
+            minecraft_version: project.minecraft_version,
+            minecraft_version_range: project.minecraft_version_range,
+            neo_version: project.neo_version,
+            neo_version_range: project.neo_version_range,
+            loader_version_range: project.loader_version_range,
+            mod_id: project.mod_id,
+            mod_name: project.mod_name,
+            mod_license: project.mod_license,
+            mod_version: project.mod_version,
+            mod_authors: project.mod_authors,
+            mod_credits: project.mod_credits,
+            mod_description: project.mod_description,
+            mod_url: project.mod_url,
+            geckolib_version: project.geckolib_version
+    ]
+    inputs.properties replaceProperties
+
+    filesMatching(['META-INF/neoforge.mods.toml', 'pack.mcmeta']) {
+        expand replaceProperties
+    }
+}
+
+// jar 清单与随包许可文件。
+jar {
+    manifest.attributes([
+            'Specification-Title'     : project.mod_name,
+            'Specification-Vendor'    : project.mod_vendor,
+            'Specification-Version'   : project.mod_version,
+            'Implementation-Title'    : project.name,
+            'Implementation-Version'  : project.mod_version,
+            'Implementation-Vendor'   : project.mod_vendor
+    ])
+    from(['CREDITS.md', 'LICENSE.txt', '3RD_PARTY_LICENSE.txt'])
+}
+
+publishing {
+    publications {
+        register('mavenJava', MavenPublication) {
+            from components.java
+        }
+    }
+    repositories {
+        maven {
+            url "file://${project.projectDir}/repo"
+        }
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+idea {
+    module {
+        downloadSources = true
+        downloadJavadoc = true
+    }
+}
