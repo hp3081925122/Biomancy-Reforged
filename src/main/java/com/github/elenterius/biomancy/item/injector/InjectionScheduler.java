@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.item.injector;
 
+import com.github.elenterius.biomancy.util.EnchantmentUtil;
 import com.github.elenterius.biomancy.api.serum.Serum;
 import com.github.elenterius.biomancy.component.InjectionSchedule;
 import com.github.elenterius.biomancy.init.ModDataComponents;
@@ -65,7 +66,7 @@ final class InjectionScheduler {
 				}
 			}
 
-			if (stack.getEnchantmentLevel(ModEnchantments.ANESTHETIC.get()) <= 0) {
+			if (EnchantmentUtil.getLevel(level.registryAccess(), ModEnchantments.ANESTHETIC, stack) <= 0) {
 				float damage = 0.5f * damagePct;
 				if (damage > 0) {
 					target.hurt(level.damageSources().sting(player), damage);

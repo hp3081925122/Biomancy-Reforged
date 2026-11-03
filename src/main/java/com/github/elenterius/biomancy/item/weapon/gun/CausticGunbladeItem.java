@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.item.weapon.gun;
 
+import net.minecraft.core.Holder;
 import com.github.elenterius.biomancy.component.AcidRefluxState;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.api.livingtool.SimpleLivingTool;
@@ -54,8 +55,8 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
-import net.minecraftforge.common.ToolAction;
-import net.minecraftforge.common.ToolActions;
+import net.neoforged.neoforge.common.ItemAbility;
+import net.neoforged.neoforge.common.ItemAbilities;
 import org.joml.Vector3f;
 import org.jspecify.annotations.Nullable;
 import software.bernie.geckolib.animatable.GeoItem;
@@ -211,9 +212,9 @@ public class CausticGunbladeItem extends LivingGunItem<AcidSprayProjectile> impl
 	}
 
 	@Override
-	public boolean canPerformAction(ItemStack stack, ToolAction toolAction) {
+	public boolean canPerformAction(ItemStack stack, ItemAbility ItemAbility) {
 		if (!hasNutrients(stack)) return false;
-		return toolAction != ToolActions.SWORD_SWEEP && ToolActions.DEFAULT_SWORD_ACTIONS.contains(toolAction);
+		return ItemAbility != ItemAbilities.SWORD_SWEEP && ItemAbilities.DEFAULT_SWORD_ACTIONS.contains(ItemAbility);
 	}
 
 	@Override
@@ -228,8 +229,8 @@ public class CausticGunbladeItem extends LivingGunItem<AcidSprayProjectile> impl
 			boolean isFullAttackStrength = !(attacker instanceof Player player) || player.getAttackStrengthScale(0.5f) >= 0.9f;
 			if (isFullAttackStrength) {
 				playSwipeFX(attacker);
-				target.addEffect(new MobEffectInstance(ModMobEffects.CORROSIVE.get(), 20 + 20 / 2, 0));
-				target.addEffect(new MobEffectInstance(ModMobEffects.ARMOR_SHRED.get(), 4 * 20, 0));
+				target.addEffect(new MobEffectInstance(ModMobEffects.CORROSIVE, 20 + 20 / 2, 0));
+				target.addEffect(new MobEffectInstance(ModMobEffects.ARMOR_SHRED, 4 * 20, 0));
 			}
 			Abilities.ACID_REFLUX.use(attacker.level(), stack, attacker);
 		}
@@ -251,8 +252,8 @@ public class CausticGunbladeItem extends LivingGunItem<AcidSprayProjectile> impl
 		if (attacker.level().isClientSide) return;
 
 		if (Abilities.ACID_REFLUX.isActive(stack)) {
-			target.addEffect(new MobEffectInstance(ModMobEffects.CORROSIVE.get(), 4 * 20, 0));
-			target.addEffect(new MobEffectInstance(ModMobEffects.ARMOR_SHRED.get(), 6 * 20, 0));
+			target.addEffect(new MobEffectInstance(ModMobEffects.CORROSIVE, 4 * 20, 0));
+			target.addEffect(new MobEffectInstance(ModMobEffects.ARMOR_SHRED, 6 * 20, 0));
 			Abilities.ACID_REFLUX.use(attacker.level(), stack, attacker);
 		}
 	}
@@ -283,7 +284,7 @@ public class CausticGunbladeItem extends LivingGunItem<AcidSprayProjectile> impl
 	}
 
 	@Override
-	public boolean isValidEnchantment(ItemStack livingTool, Enchantment enchantment) {
+	public boolean isValidEnchantment(ItemStack livingTool, Holder<Enchantment> enchantment) {
 		return super.isValidEnchantment(livingTool, enchantment);
 	}
 

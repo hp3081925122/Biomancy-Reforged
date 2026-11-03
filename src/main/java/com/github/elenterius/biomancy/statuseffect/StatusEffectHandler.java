@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.statuseffect;
 
+import net.minecraft.core.registries.BuiltInRegistries;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.init.ModMobEffects;
 import com.github.elenterius.biomancy.init.tags.ModItemTags;
@@ -8,6 +9,7 @@ import com.github.elenterius.biomancy.item.armor.AcolyteArmorItem;
 import com.github.elenterius.biomancy.item.armor.LivingArmorItem;
 import com.github.elenterius.biomancy.serum.FrenzySerum;
 import com.github.elenterius.biomancy.util.OneShotTaskWorker;
+import net.minecraft.core.Holder;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -16,15 +18,15 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
-import net.minecraftforge.event.entity.living.MobEffectEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent;
+import net.neoforged.neoforge.event.entity.living.MobEffectEvent;
 import org.jspecify.annotations.Nullable;
 
 import java.util.function.BiConsumer;
 
-@Mod.EventBusSubscriber(modid = BiomancyMod.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = BiomancyMod.MOD_ID)
 public final class StatusEffectHandler {
 
 	private StatusEffectHandler() {}
@@ -33,13 +35,13 @@ public final class StatusEffectHandler {
 	public static void onEffectAdded(final MobEffectEvent.Added event) {
 		if (event.getEntity().level().isClientSide) return;
 
-		if (event.getEffectInstance().getEffect() == ModMobEffects.FRENZY.get()) {
+		if (event.getEffectInstance().getEffect().is(ModMobEffects.FRENZY)) {
 			if (event.getEntity() instanceof Mob mob) {
 				FrenzySerum.injectAIBehavior(mob);
 			}
 
-			if (event.getEntity().hasEffect(ModMobEffects.WITHDRAWAL.get())) {
-				OneShotTaskWorker.onNextTick(event.getEntity(), livingEntity -> livingEntity.removeEffect(ModMobEffects.WITHDRAWAL.get()));
+			if (event.getEntity().hasEffect(ModMobEffects.WITHDRAWAL)) {
+				OneShotTaskWorker.onNextTick(event.getEntity(), livingEntity -> livingEntity.removeEffect(ModMobEffects.WITHDRAWAL));
 			}
 		}
 	}
@@ -48,20 +50,17 @@ public final class StatusEffectHandler {
 	public static void onEffectRemoval(final MobEffectEvent.Remove event) {
 		if (event.getEntity().level().isClientSide) return;
 
-		if (event.getEffect() == ModMobEffects.ESSENCE_ANEMIA.get() && ModMobEffectTags.isNotRemovableWithCleansingSerum(ModMobEffects.ESSENCE_ANEMIA.get())) {
+		if (event.getEffect().is(ModMobEffects.ESSENCE_ANEMIA) && ModMobEffectTags.isNotRemovableWithCleansingSerum(ModMobEffects.ESSENCE_ANEMIA)) {
 			event.setCanceled(true);
 		}
 	}
 
-	/**
-	 * We can't call this method from within a MobEffectEvent due to ConcurrentModification Exceptions
-	 */
 	public static void addWithdrawalAfterFrenzy(LivingEntity livingEntity, @Nullable MobEffectInstance removedEffectInstance) {
 		if (removedEffectInstance == null) return;
-		if (removedEffectInstance.getEffect() != ModMobEffects.FRENZY.get()) return;
+		if (!removedEffectInstance.getEffect().is(ModMobEffects.FRENZY)) return;
 
 		int amplifier = removedEffectInstance.getAmplifier();
-		livingEntity.addEffect(new MobEffectInstance(ModMobEffects.WITHDRAWAL.get(), FrenzySerum.DEFAULT_DURATION_TICKS / 2 + amplifier * 30 * 20, amplifier));
+		livingEntity.addEffect(new MobEffectInstance(ModMobEffects.WITHDRAWAL, FrenzySerum.DEFAULT_DURATION_TICKS / 2 + amplifier * 30 * 20, amplifier));
 	}
 
 	@SubscribeEvent
@@ -69,16 +68,16 @@ public final class StatusEffectHandler {
 		if (event.getEntity().level().isClientSide) return;
 
 		ItemStack stack = event.getItem();
-		if (stack.isEdible() && stack.is(ModItemTags.SUGARS)) {
-			FoodProperties food = stack.getFoodProperties(event.getEntity());
-			reduceWithdrawal(food != null ? food.getNutrition() : 0, event.getEntity());
+		FoodProperties food = stack.getFoodProperties(event.getEntity());
+		if (food != null && stack.is(ModItemTags.SUGARS)) {
+			reduceWithdrawal(food.nutrition(), event.getEntity());
 		}
 	}
 
 	public static void reduceWithdrawal(int nutrition, LivingEntity livingEntity) {
-		MobEffectInstance withdrawalEffect = livingEntity.getEffect(ModMobEffects.WITHDRAWAL.get());
+		MobEffectInstance withdrawalEffect = livingEntity.getEffect(ModMobEffects.WITHDRAWAL);
 		if (withdrawalEffect != null && !withdrawalEffect.isInfiniteDuration()) {
-			int duration = withdrawalEffect.getDuration() - ((nutrition * nutrition + 5) * 3 * 20); //decrease effect duration by at least 4 sec
+			int duration = withdrawalEffect.getDuration() - ((nutrition * nutrition + 5) * 3 * 20);
 			int amplifier = withdrawalEffect.getAmplifier();
 			boolean ambient = withdrawalEffect.isAmbient();
 			boolean visible = withdrawalEffect.isVisible();
@@ -88,14 +87,12 @@ public final class StatusEffectHandler {
 				livingEntity.removeEffect(withdrawalEffect.getEffect());
 			}
 			else {
-				overrideMobEffect(livingEntity, new MobEffectInstance(ModMobEffects.WITHDRAWAL.get(), duration, amplifier, ambient, visible, showIcon));
+				overrideMobEffect(livingEntity, new MobEffectInstance(ModMobEffects.WITHDRAWAL, duration, amplifier, ambient, visible, showIcon));
 			}
 		}
 	}
 
 	public static void overrideMobEffect(LivingEntity livingEntity, MobEffectInstance newEffectInstance) {
-		// we have to remove the old effect because the new effect has less duration and LivingEntity.addEffect() doesn't downgrade active effects
-		// LivingEntity.addEffect() & EffectInstance.update() can only upgrade (duration/amplifier) effects
 		livingEntity.removeEffect(newEffectInstance.getEffect());
 		livingEntity.addEffect(newEffectInstance);
 	}
@@ -103,18 +100,22 @@ public final class StatusEffectHandler {
 	public static final BiConsumer<LivingArmorItem, ItemStack> CONSUME_ONE_NUTRIENT_PER_ARMOR_PIECE = (armor, itemStack) -> armor.decreaseNutrients(itemStack, 1);
 
 	public static boolean canApplySplashEffectIfAllowed(MobEffect effect, LivingEntity target, BiConsumer<LivingArmorItem, ItemStack> nutrientsConsumer) {
+		return canApplySplashEffectIfAllowed(BuiltInRegistries.MOB_EFFECT.wrapAsHolder(effect), target, nutrientsConsumer);
+	}
+
+	public static boolean canApplySplashEffectIfAllowed(Holder<MobEffect> effect, LivingEntity target, BiConsumer<LivingArmorItem, ItemStack> nutrientsConsumer) {
 
 		if (ModMobEffectTags.isAcid(effect)) {
 			return canApplyAcidEffect(target, nutrientsConsumer);
 		}
 
-		MobEffectCategory category = effect.getCategory();
+		MobEffectCategory category = effect.value().getCategory();
 
 		if (target.isInvertedHealAndHarm()) {
-			if (effect == MobEffects.HEAL) {
+			if (effect.is(MobEffects.HEAL)) {
 				category = MobEffectCategory.HARMFUL;
 			}
-			else if (effect == MobEffects.HARM) {
+			else if (effect.is(MobEffects.HARM)) {
 				category = MobEffectCategory.BENEFICIAL;
 			}
 		}
@@ -151,22 +152,22 @@ public final class StatusEffectHandler {
 	}
 
 	public static boolean hasAcidEffect(LivingEntity livingEntity) {
-		for (MobEffect effect : livingEntity.getActiveEffectsMap().keySet()) {
+		for (Holder<MobEffect> effect : livingEntity.getActiveEffectsMap().keySet()) {
 			if (ModMobEffectTags.isAcid(effect)) return true;
 		}
 		return false;
 	}
 
 	public static void applyCorrosiveEffect(LivingEntity livingEntity, int seconds) {
-		if (livingEntity.hasEffect(ModMobEffects.CORROSIVE.get())) return;
+		if (livingEntity.hasEffect(ModMobEffects.CORROSIVE)) return;
 		if (!canApplyAcidEffect(livingEntity, CONSUME_ONE_NUTRIENT_PER_ARMOR_PIECE)) return;
 
-		MobEffectInstance acidEffect = new MobEffectInstance(ModMobEffects.CORROSIVE.get(), seconds * 20, 0);
+		MobEffectInstance acidEffect = new MobEffectInstance(ModMobEffects.CORROSIVE, seconds * 20, 0);
 
 		if (!livingEntity.canBeAffected(acidEffect)) return;
 
 		livingEntity.addEffect(acidEffect);
-		livingEntity.addEffect(new MobEffectInstance(ModMobEffects.ARMOR_SHRED.get(), (seconds + 3) * 20, 0));
+		livingEntity.addEffect(new MobEffectInstance(ModMobEffects.ARMOR_SHRED, (seconds + 3) * 20, 0));
 	}
 
 }

@@ -6,6 +6,7 @@ import com.github.elenterius.biomancy.api.nutrients.NutrientsContainerItem;
 import com.github.elenterius.biomancy.init.ModEnchantments;
 import com.github.elenterius.biomancy.init.ModItems;
 import com.github.elenterius.biomancy.util.EnchantmentUtil;
+import net.minecraft.core.Holder;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodData;
@@ -14,21 +15,22 @@ import net.minecraft.world.item.enchantment.Enchantment;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
-public class ParasiticMetabolismEnchantment extends Enchantment {
+public final class ParasiticMetabolism {
 
-	public ParasiticMetabolismEnchantment(Rarity rarity, EquipmentSlot... applicableSlots) {
-		super(rarity, ModEnchantments.LIVING_CATEGORY, applicableSlots);
-	}
+	private ParasiticMetabolism() {}
 
-	public void repairLivingItems(Player player) {
+	public static void repairLivingItems(Player player) {
 		if (player.getHealth() <= 10f) return;
 
 		FoodData foodData = player.getFoodData();
 		if (foodData.getFoodLevel() <= 2 && foodData.getSaturationLevel() < 1f) return;
 
-		List<Map.Entry<EquipmentSlot, ItemStack>> enchantedItems = EnchantmentUtil.getItemsWithEnchantment(this, player, LivingTool.NEED_NUTRIENTS_PREDICATE);
+		Optional<? extends Holder<Enchantment>> enchantment = EnchantmentUtil.getHolder(player.registryAccess(), ModEnchantments.PARASITIC_METABOLISM);
+		if (enchantment.isEmpty()) return;
 
+		List<Map.Entry<EquipmentSlot, ItemStack>> enchantedItems = EnchantmentUtil.getItemsWithEnchantment(enchantment.get(), player, LivingTool.NEED_NUTRIENTS_PREDICATE);
 		if (!enchantedItems.isEmpty()) {
 			Map.Entry<EquipmentSlot, ItemStack> slotItem = enchantedItems.get(player.getRandom().nextInt(enchantedItems.size()));
 			ItemStack stack = slotItem.getValue();

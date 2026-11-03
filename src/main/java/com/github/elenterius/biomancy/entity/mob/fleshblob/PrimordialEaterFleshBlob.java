@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.entity.mob.fleshblob;
 
+import net.minecraft.core.Holder;
 import com.github.elenterius.biomancy.entity.mob.PrimordialCradleUser;
 import com.github.elenterius.biomancy.entity.mob.PrimordialFleshkin;
 import com.github.elenterius.biomancy.entity.mob.ai.goal.*;
@@ -117,8 +118,8 @@ public class PrimordialEaterFleshBlob extends EaterFleshBlob implements Primordi
 
 	@Override
 	public boolean canBeAffected(MobEffectInstance effectInstance) {
-		MobEffect effect = effectInstance.getEffect();
-		if (effect == ModMobEffects.PRIMORDIAL_INFESTATION.get()) return false;
+		Holder<MobEffect> effect = effectInstance.getEffect();
+		if (effect.is(ModMobEffects.PRIMORDIAL_INFESTATION)) return false;
 		if (ModMobEffectTags.isAcid(effect)) return false;
 		return super.canBeAffected(effectInstance);
 	}

@@ -23,7 +23,7 @@ public abstract class ServerGamePacketListenerImplMixin {
 
 	@Inject(method = "handleRenameItem(Lnet/minecraft/network/protocol/game/ServerboundRenameItemPacket;)V", at = @At(value = "INVOKE", target = "net/minecraft/world/inventory/AnvilMenu.setItemName(Ljava/lang/String;)Z", shift = At.Shift.AFTER))
 	private void onHandleRenameItem(ServerboundRenameItemPacket packet, CallbackInfo ci) {
-		if (player.hasEffect(ModMobEffects.PRIMORDIAL_INFESTATION.get())) {
+		if (player.hasEffect(ModMobEffects.PRIMORDIAL_INFESTATION)) {
 			if (player.containerMenu instanceof AnvilMenu menu) {
 				Slot slot = menu.getSlot(2);
 				if (!slot.hasItem()) return;

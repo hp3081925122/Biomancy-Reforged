@@ -5,13 +5,15 @@ import com.github.elenterius.biomancy.api.nutrients.NutrientsContainerItem;
 import com.github.elenterius.biomancy.styles.TextComponentUtil;
 import com.github.elenterius.biomancy.styles.TextStyles;
 import com.github.elenterius.biomancy.util.ComponentUtil;
+import com.github.elenterius.biomancy.util.EnchantmentUtil;
+import net.minecraft.core.Holder;
+import net.minecraft.resources.ResourceKey;
 import com.github.elenterius.biomancy.util.FormatUtil;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantment;
-import net.minecraft.world.item.enchantment.EnchantmentCategory;
 import net.minecraft.world.item.enchantment.Enchantments;
-import net.minecraftforge.common.ToolAction;
+import net.neoforged.neoforge.common.ItemAbility;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.text.DecimalFormat;
@@ -21,10 +23,11 @@ import java.util.Set;
 @ApiStatus.Experimental
 public interface LivingTool extends NutrientsContainerItem {
 
-	Set<Enchantment> INVALID_ENCHANTMENTS = Set.of(Enchantments.FLAMING_ARROWS, Enchantments.FIRE_ASPECT, Enchantments.FIRE_PROTECTION, Enchantments.UNBREAKING);
+	Set<ResourceKey<Enchantment>> INVALID_ENCHANTMENTS = Set.of(Enchantments.FLAME, Enchantments.FIRE_ASPECT, Enchantments.FIRE_PROTECTION, Enchantments.UNBREAKING);
 
-	default boolean isValidEnchantment(ItemStack livingTool, Enchantment enchantment) {
-		return enchantment.category != EnchantmentCategory.BREAKABLE && !INVALID_ENCHANTMENTS.contains(enchantment);
+	default boolean isValidEnchantment(ItemStack livingTool, Holder<Enchantment> enchantment) {
+		if (EnchantmentUtil.isDurabilityEnchantment(enchantment)) return false;
+		return INVALID_ENCHANTMENTS.stream().noneMatch(enchantment::is);
 	}
 
 	@Override
@@ -37,7 +40,7 @@ public interface LivingTool extends NutrientsContainerItem {
 		return Nutrients.getRepairValue(resource);
 	}
 
-	int getLivingToolActionCost(ItemStack livingTool, ToolAction toolAction);
+	int getLivingToolActionCost(ItemStack livingTool, ItemAbility ItemAbility);
 
 	default void appendLivingToolTooltip(ItemStack stack, List<Component> tooltip) {
 		DecimalFormat df = FormatUtil.getIntegerFormatter();

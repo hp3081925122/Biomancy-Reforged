@@ -1,5 +1,7 @@
 package com.github.elenterius.biomancy.event;
 
+import com.github.elenterius.biomancy.enchantment.SelfFeeding;
+import com.github.elenterius.biomancy.enchantment.ParasiticMetabolism;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.block.JumpPadBlock;
 import com.github.elenterius.biomancy.entity.misc.LivingEntityData;
@@ -39,7 +41,7 @@ public final class LivingEventHandler {
 	@SubscribeEvent
 	public static void onLivingJoinLevel(final EntityJoinLevelEvent event) {
 		if (event.getLevel().isClientSide()) return;
-		if (event.getEntity() instanceof Mob mob && mob.hasEffect(ModMobEffects.FRENZY.get())) {
+		if (event.getEntity() instanceof Mob mob && mob.hasEffect(ModMobEffects.FRENZY)) {
 			FrenzySerum.injectAIBehavior(mob);
 		}
 	}
@@ -67,15 +69,15 @@ public final class LivingEventHandler {
 		if (event.side == LogicalSide.CLIENT) return;
 
 		if (event.player.tickCount % 30 == 0) {
-			ModEnchantments.SELF_FEEDING.get().repairLivingItems(event.player);
-			ModEnchantments.PARASITIC_METABOLISM.get().repairLivingItems(event.player);
+			SelfFeeding.repairLivingItems(event.player);
+			ParasiticMetabolism.repairLivingItems(event.player);
 		}
 	}
 
 	@SubscribeEvent(priority = EventPriority.LOWEST)
 	public static void onLivingDeath(final LivingDeathEvent event) {
 		LivingEntity livingEntity = event.getEntity();
-		if (livingEntity.level() instanceof ServerLevel serverLevel && livingEntity.hasEffect(ModMobEffects.PRIMORDIAL_INFESTATION.get())) {
+		if (livingEntity.level() instanceof ServerLevel serverLevel && livingEntity.hasEffect(ModMobEffects.PRIMORDIAL_INFESTATION)) {
 			if (livingEntity.isFreezing() || livingEntity.isOnFire()) return;
 			PrimordialEcosystem.placeMalignantBlocksOnLivingDeath(serverLevel, livingEntity);
 		}

@@ -23,8 +23,8 @@ import net.minecraft.world.item.Vanishable;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.common.ToolAction;
-import net.minecraftforge.common.ToolActions;
+import net.neoforged.neoforge.common.ItemAbility;
+import net.neoforged.neoforge.common.ItemAbilities;
 
 public abstract class GunbladeItem<T extends BaseProjectile> extends GunItem<T> implements Vanishable {
 
@@ -119,8 +119,8 @@ public abstract class GunbladeItem<T extends BaseProjectile> extends GunItem<T> 
 	}
 
 	@Override
-	public boolean canPerformAction(ItemStack stack, ToolAction toolAction) {
-		return GunbladeMode.from(stack).isBlade() && toolAction != ToolActions.SWORD_SWEEP && ToolActions.DEFAULT_SWORD_ACTIONS.contains(toolAction);
+	public boolean canPerformAction(ItemStack stack, ItemAbility ItemAbility) {
+		return GunbladeMode.from(stack).isBlade() && ItemAbility != ItemAbilities.SWORD_SWEEP && ItemAbilities.DEFAULT_SWORD_ACTIONS.contains(ItemAbility);
 	}
 
 	@Override

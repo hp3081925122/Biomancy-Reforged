@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.serum;
 
+import net.minecraft.core.Holder;
 import com.github.elenterius.biomancy.init.tags.ModMobEffectTags;
 import com.github.elenterius.biomancy.integration.ModsCompatHandler;
 import com.github.elenterius.biomancy.mixin.accessor.ZombieVillagerMixinAccessor;
@@ -15,7 +16,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.monster.WitherSkeleton;
 import net.minecraft.world.entity.monster.ZombieVillager;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.event.ForgeEventFactory;
+import net.neoforged.neoforge.event.EventHooks;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
@@ -33,7 +34,7 @@ public class CleansingSerum extends BasicSerum {
 		resetPehkuiSize(target);
 
 		if (target instanceof ZombieVillager) {
-			if (ForgeEventFactory.canLivingConvert(target, EntityType.VILLAGER, timer -> {})) {
+			if (EventHooks.canLivingConvert(target, EntityType.VILLAGER, timer -> {})) {
 				((ZombieVillagerMixinAccessor) target).biomancy$cureZombie((ServerLevel) target.level());
 			}
 		}
@@ -64,14 +65,14 @@ public class CleansingSerum extends BasicSerum {
 	}
 
 	private void clearPotionEffects(LivingEntity target) {
-		removeAllEffects(target); //this is a replacement for LivingEntity.removeAllEffects()
+		removeAllEffects(target);
 	}
 
 	private void removeAllEffects(LivingEntity target) {
 		List<MobEffectInstance> activeEffects = List.copyOf(target.getActiveEffects());
 
 		for (MobEffectInstance activeEffect : activeEffects) {
-			MobEffect effect = activeEffect.getEffect();
+			Holder<MobEffect> effect = activeEffect.getEffect();
 			if (!ModMobEffectTags.isNotRemovableWithCleansingSerum(effect)) {
 				target.removeEffect(effect);
 			}

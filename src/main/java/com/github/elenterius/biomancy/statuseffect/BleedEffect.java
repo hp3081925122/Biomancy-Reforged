@@ -1,13 +1,14 @@
 package com.github.elenterius.biomancy.statuseffect;
 
 import com.github.elenterius.biomancy.init.ModDamageSources;
-import com.github.elenterius.biomancy.init.ModParticleTypes;
+import com.github.elenterius.biomancy.init.ModMobEffects;
 import com.github.elenterius.biomancy.mixin.accessor.MobEffectInstanceAccessor;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
+import com.github.elenterius.biomancy.init.ModParticleTypes;
 
 public class BleedEffect extends StatusEffect implements StackingStatusEffect {
 
@@ -19,22 +20,22 @@ public class BleedEffect extends StatusEffect implements StackingStatusEffect {
 	}
 
 	@Override
-	public boolean isDurationEffectTick(int duration, int amplifier) {
+	public boolean shouldApplyEffectTickThisTick(int duration, int amplifier) {
 		return (duration + 1) % 40 == 0;
 	}
 
 	@Override
-	public void applyEffectTick(LivingEntity livingEntity, int amplifier) {
+	public boolean applyEffectTick(LivingEntity livingEntity, int amplifier) {
 		if (livingEntity.hasEffect(MobEffects.REGENERATION) || livingEntity.hasEffect(MobEffects.HEAL)) {
-			livingEntity.removeEffect(this);
-			return;
+			return false;
 		}
 
+		boolean keepEffect = true;
 		if (livingEntity.isSprinting()) {
 			increaseEffectDurationBy(livingEntity, 200);
 		}
 		else if (livingEntity.isCrouching()) {
-			reduceEffectDurationBy(livingEntity, 200);
+			keepEffect = reduceEffectDurationBy(livingEntity, 200);
 		}
 
 		int effectLevel = amplifier + 1;
@@ -45,29 +46,29 @@ public class BleedEffect extends StatusEffect implements StackingStatusEffect {
 			float y = livingEntity.getBbHeight() * 0.25f;
 			serverLevel.sendParticles(ModParticleTypes.FALLING_BLOOD.get(), livingEntity.getX(), livingEntity.getY(0.5f), livingEntity.getZ(), 4, xz, y, xz, 0);
 		}
+
+		return keepEffect;
 	}
 
-	private void reduceEffectDurationBy(LivingEntity livingEntity, int ticks) {
-		MobEffectInstance effectInstance = livingEntity.getEffect(this);
-		if (effectInstance == null) return;
+	private boolean reduceEffectDurationBy(LivingEntity livingEntity, int ticks) {
+		MobEffectInstance effectInstance = livingEntity.getEffect(ModMobEffects.BLEED);
+		if (effectInstance == null) return true;
 
 		int reducedDuration = effectInstance.getDuration() - ticks;
 		if (reducedDuration > 0) {
 			((MobEffectInstanceAccessor) effectInstance).biomancy$setDuration(reducedDuration);
-			((MobEffectInstanceAccessor) effectInstance).biomancy$getFactorData().ifPresent(factorData -> factorData.tick(effectInstance));
+			return true;
 		}
-		else {
-			livingEntity.removeEffect(this);
-		}
+
+		return false;
 	}
 
 	private void increaseEffectDurationBy(LivingEntity livingEntity, int ticks) {
-		MobEffectInstance effectInstance = livingEntity.getEffect(this);
+		MobEffectInstance effectInstance = livingEntity.getEffect(ModMobEffects.BLEED);
 		if (effectInstance == null) return;
 
 		int increasedDuration = effectInstance.getDuration() + ticks;
 		((MobEffectInstanceAccessor) effectInstance).biomancy$setDuration(increasedDuration);
-		((MobEffectInstanceAccessor) effectInstance).biomancy$getFactorData().ifPresent(factorData -> factorData.tick(effectInstance));
 	}
 
 	@Override

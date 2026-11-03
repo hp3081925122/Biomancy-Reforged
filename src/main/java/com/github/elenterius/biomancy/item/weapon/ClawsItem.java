@@ -18,8 +18,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Tier;
 import net.minecraft.world.item.TieredItem;
 import net.minecraft.world.item.Vanishable;
-import net.minecraft.world.item.enchantment.Enchantment;
-import net.minecraft.world.item.enchantment.EnchantmentCategory;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.Level;
@@ -27,8 +25,8 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.ForgeMod;
 import net.minecraftforge.common.IForgeShearable;
-import net.minecraftforge.common.ToolAction;
-import net.minecraftforge.common.ToolActions;
+import net.neoforged.neoforge.common.ItemAbility;
+import net.neoforged.neoforge.common.ItemAbilities;
 import net.minecraftforge.common.util.Lazy;
 
 import java.util.List;
@@ -59,13 +57,8 @@ public class ClawsItem extends TieredItem implements Vanishable {
 	}
 
 	@Override
-	public boolean canPerformAction(ItemStack stack, ToolAction toolAction) {
-		return ToolActions.DEFAULT_SWORD_ACTIONS.contains(toolAction); //use sword actions
-	}
-
-	@Override
-	public boolean canApplyAtEnchantingTable(ItemStack stack, Enchantment enchantment) {
-		return enchantment.category.canEnchant(stack.getItem()) || enchantment.category == EnchantmentCategory.WEAPON; //use sword enchantments
+	public boolean canPerformAction(ItemStack stack, ItemAbility ItemAbility) {
+		return ItemAbilities.DEFAULT_SWORD_ACTIONS.contains(ItemAbility); //use sword actions
 	}
 
 	@Override

@@ -18,7 +18,7 @@ public abstract class HoneyBottleItemMixin {
 			at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/LivingEntity;removeEffect(Lnet/minecraft/world/effect/MobEffect;)Z")
 	)
 	private void onFinishUsingItemRemoveEffect(ItemStack stack, Level level, LivingEntity livingEntity, CallbackInfoReturnable<ItemStack> cir) {
-		livingEntity.removeEffect(ModMobEffects.TOXIN.get());
+		livingEntity.removeEffect(ModMobEffects.TOXIN);
 	}
 
 }

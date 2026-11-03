@@ -2,13 +2,16 @@ package com.github.elenterius.biomancy.loot;
 
 import com.github.elenterius.biomancy.init.ModEnchantments;
 import com.github.elenterius.biomancy.init.ModMobEffects;
-import com.google.common.base.Suppliers;
-import com.mojang.serialization.Codec;
+import com.github.elenterius.biomancy.util.EnchantmentUtil;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.advancements.critereon.EntityFlagsPredicate;
 import net.minecraft.advancements.critereon.EntityPredicate;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -17,6 +20,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.level.storage.loot.LootContext;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.LootTable;
@@ -25,27 +29,25 @@ import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.level.storage.loot.predicates.LootItemCondition;
 import net.minecraft.world.level.storage.loot.predicates.LootItemEntityPropertyCondition;
 import net.minecraft.world.level.storage.loot.predicates.LootItemKilledByPlayerCondition;
-import net.minecraftforge.common.Tags;
-import net.minecraftforge.common.loot.IGlobalLootModifier;
-import net.minecraftforge.common.loot.LootModifier;
+import net.neoforged.neoforge.common.Tags;
+import net.neoforged.neoforge.common.loot.IGlobalLootModifier;
+import net.neoforged.neoforge.common.loot.LootModifier;
 
+import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 public class DespoilLootModifier extends LootModifier {
 
-	public static final Supplier<Codec<DespoilLootModifier>> CODEC = Suppliers.memoize(() -> RecordCodecBuilder.create(inst ->
+	public static final MapCodec<DespoilLootModifier> CODEC = RecordCodecBuilder.mapCodec(inst ->
 			codecStart(inst).apply(inst, DespoilLootModifier::new)
-	));
+	);
 
 	public static final String LOOT_PREFIX = "biomancy/despoil/";
 
 	public DespoilLootModifier() {
 		this(
-				//Can't use MatchTool, because the tool is missing for Entity Kills (1.18.2, 1.19.2)
-				//only apply the loot modifier to adult mobs killed by a player
 				new LootItemCondition[]{
-						LootItemEntityPropertyCondition.hasProperties(LootContext.EntityTarget.THIS, EntityPredicate.Builder.entity().flags(EntityFlagsPredicate.Builder.flags().setIsBaby(false).build())).build(),
+						LootItemEntityPropertyCondition.hasProperties(LootContext.EntityTarget.THIS, EntityPredicate.Builder.entity().flags(EntityFlagsPredicate.Builder.flags().setIsBaby(false))).build(),
 						LootItemKilledByPlayerCondition.killedByPlayer().build()
 				});
 	}
@@ -64,14 +66,15 @@ public class DespoilLootModifier extends LootModifier {
 	}
 
 	protected static int getDespoilLevel(LootContext lootContext) {
-		Entity killer = lootContext.getParamOrNull(LootContextParams.KILLER_ENTITY);
+		Entity killer = lootContext.getParamOrNull(LootContextParams.ATTACKING_ENTITY);
 		if (killer instanceof LivingEntity livingEntity) {
-			int itemDespoilLevel = ModEnchantments.DESPOIL.get().getSlotItems(livingEntity).values().stream()
-					.mapToInt(DespoilLootModifier::getDespoilLevel)
+			Optional<Holder.Reference<Enchantment>> despoil = EnchantmentUtil.getHolder(livingEntity.registryAccess(), ModEnchantments.DESPOIL);
+			int itemDespoilLevel = despoil.map(enchantment -> enchantment.value().getSlotItems(livingEntity).values().stream()
+					.mapToInt(stack -> stack.getEnchantmentLevel(enchantment))
 					.max()
-					.orElse(0);
+					.orElse(0)).orElse(0);
 
-			MobEffectInstance effectInstance = livingEntity.getEffect(ModMobEffects.DESPOIL.get());
+			MobEffectInstance effectInstance = livingEntity.getEffect(ModMobEffects.DESPOIL);
 			int effectDespoilLevel = effectInstance != null ? effectInstance.getAmplifier() + 1 : 0;
 
 			return Math.max(itemDespoilLevel, effectDespoilLevel);
@@ -80,12 +83,8 @@ public class DespoilLootModifier extends LootModifier {
 		return 0;
 	}
 
-	protected static int getDespoilLevel(ItemStack stack) {
-		return stack.getEnchantmentLevel(ModEnchantments.DESPOIL.get());
-	}
-
 	protected static boolean isUsingTool(LootContext lootContext) {
-		Entity killer = lootContext.getParamOrNull(LootContextParams.KILLER_ENTITY);
+		Entity killer = lootContext.getParamOrNull(LootContextParams.ATTACKING_ENTITY);
 
 		if (killer instanceof LivingEntity livingEntity) {
 			ItemStack stack = livingEntity.getMainHandItem();
@@ -96,8 +95,8 @@ public class DespoilLootModifier extends LootModifier {
 	}
 
 	@Override
-	public Codec<? extends IGlobalLootModifier> codec() {
-		return CODEC.get();
+	public MapCodec<? extends IGlobalLootModifier> codec() {
+		return CODEC;
 	}
 
 	public LootItemCondition[] getConditions() {
@@ -131,13 +130,12 @@ public class DespoilLootModifier extends LootModifier {
 	}
 
 	private static void getRandomItems(LootTable lootTable, LootParams lootParams, Consumer<ItemStack> output) {
-		//noinspection deprecation
-		lootTable.getRandomItemsRaw(lootParams, output); //we use the 'Raw' method to prevent a stackoverflow caused by calling of ForgeHooks#modifyLoot inside GlobalLootModifiers
+		lootTable.getRandomItemsRaw(lootParams, output);
 	}
 
 	protected LootTable getLootTable(ServerLevel level, Entity entity) {
-		ResourceLocation lootTableId = getLootTableId(entity.getType());
-		return level.getServer().getLootData().getLootTable(lootTableId);
+		ResourceKey<LootTable> lootTableKey = ResourceKey.create(Registries.LOOT_TABLE, getLootTableId(entity.getType()));
+		return level.getServer().reloadableRegistries().getLootTable(lootTableKey);
 	}
 
 	protected LootParams createLootParams(LootContext context) {
@@ -145,8 +143,8 @@ public class DespoilLootModifier extends LootModifier {
 				.withParameter(LootContextParams.THIS_ENTITY, context.getParam(LootContextParams.THIS_ENTITY))
 				.withParameter(LootContextParams.ORIGIN, context.getParam(LootContextParams.ORIGIN))
 				.withParameter(LootContextParams.DAMAGE_SOURCE, context.getParam(LootContextParams.DAMAGE_SOURCE))
-				.withOptionalParameter(LootContextParams.KILLER_ENTITY, context.getParamOrNull(LootContextParams.KILLER_ENTITY))
-				.withOptionalParameter(LootContextParams.DIRECT_KILLER_ENTITY, context.getParamOrNull(LootContextParams.DIRECT_KILLER_ENTITY));
+				.withOptionalParameter(LootContextParams.ATTACKING_ENTITY, context.getParamOrNull(LootContextParams.ATTACKING_ENTITY))
+				.withOptionalParameter(LootContextParams.DIRECT_ATTACKING_ENTITY, context.getParamOrNull(LootContextParams.DIRECT_ATTACKING_ENTITY));
 
 		if (context.hasParam(LootContextParams.LAST_DAMAGE_PLAYER)) {
 			Player player = context.getParam(LootContextParams.LAST_DAMAGE_PLAYER);

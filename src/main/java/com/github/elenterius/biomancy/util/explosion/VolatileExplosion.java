@@ -71,7 +71,7 @@ public class VolatileExplosion extends GenericExplosion {
 		super.hurtEntity(entity, amount * ATTACK_DAMAGE_MULTIPLIER);
 
 		if (amount > 0f && entity.isAlive() && entity instanceof LivingEntity living) {
-			living.addEffect(new MobEffectInstance(ModMobEffects.VOLATILE.get(), 60 * 20));
+			living.addEffect(new MobEffectInstance(ModMobEffects.VOLATILE, 60 * 20));
 		}
 	}
 

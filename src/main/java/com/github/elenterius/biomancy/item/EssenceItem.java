@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.item;
 
+import com.github.elenterius.biomancy.util.EnchantmentUtil;
 import com.github.elenterius.biomancy.block.modularlarynx.MobSoundType;
 import com.github.elenterius.biomancy.client.util.ClientTextUtil;
 import com.github.elenterius.biomancy.component.EssenceData;
@@ -39,7 +40,7 @@ public class EssenceItem extends Item implements ItemTooltipStyleProvider {
 	public static ItemStack fromEntity(LivingEntity livingEntity, int surgicalPrecisionLevel, int lootingLevel) {
 		int count = 1 + livingEntity.getRandom().nextInt(0, 1 + lootingLevel);
 
-		float precisionFactor = (float) surgicalPrecisionLevel / ModEnchantments.SURGICAL_PRECISION.get().getMaxLevel();
+		float precisionFactor = (float) surgicalPrecisionLevel / EnchantmentUtil.getMaxLevel(livingEntity.registryAccess(), ModEnchantments.SURGICAL_PRECISION);
 		int bonus = livingEntity.getRandom().nextFloat() < Mth.lerp(precisionFactor, 0.5f, 0.125f) ? 1 : 0;
 		int tier = Mth.clamp(surgicalPrecisionLevel + bonus, 1, 3);
 

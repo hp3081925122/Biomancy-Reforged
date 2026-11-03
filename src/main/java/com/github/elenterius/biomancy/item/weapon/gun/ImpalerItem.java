@@ -1,5 +1,7 @@
 package com.github.elenterius.biomancy.item.weapon.gun;
 
+import com.github.elenterius.biomancy.util.EnchantmentUtil;
+import net.minecraft.core.Holder;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.client.render.item.impaler.ImpalerRenderer;
 import com.github.elenterius.biomancy.client.util.ClientTextUtil;
@@ -122,12 +124,12 @@ public class ImpalerItem extends LivingGunItem<ImpalerProjectile> implements Ite
 
 	@Override
 	public float getProjectileVelocity(ItemStack stack) {
-		return gunProperties.velocity() + 0.12f * stack.getEnchantmentLevel(Enchantments.POWER_ARROWS);
+		return gunProperties.velocity() + 0.12f * EnchantmentUtil.getLevel(stack, Enchantments.POWER);
 	}
 
 	@Override
 	public float getProjectileDamage(ItemStack stack) {
-		return gunProperties.damage() + stack.getEnchantmentLevel(Enchantments.POWER_ARROWS);
+		return gunProperties.damage() + EnchantmentUtil.getLevel(stack, Enchantments.POWER);
 	}
 
 	@Override
@@ -147,7 +149,7 @@ public class ImpalerItem extends LivingGunItem<ImpalerProjectile> implements Ite
 				gunProperties.localOffset(),
 				gunProperties.projectileType().get(),
 				getProjectileCount(projectileWeapon),
-				projectile -> projectile.setPierceLevel(projectileWeapon.getEnchantmentLevel(Enchantments.PIERCING)));
+				projectile -> projectile.setPierceLevel(EnchantmentUtil.getLevel(projectileWeapon, Enchantments.PIERCING)));
 
 		if (!success) return;
 
@@ -179,10 +181,10 @@ public class ImpalerItem extends LivingGunItem<ImpalerProjectile> implements Ite
 	}
 
 	@Override
-	public boolean canApplyAtEnchantingTable(ItemStack stack, Enchantment enchantment) {
-		if (enchantment == Enchantments.PIERCING) return true;
-		if (enchantment == Enchantments.PUNCH_ARROWS) return false;
-		return super.canApplyAtEnchantingTable(stack, enchantment);
+	public boolean supportsEnchantment(ItemStack stack, Holder<Enchantment> enchantment) {
+		if (enchantment.is(Enchantments.PIERCING)) return true;
+		if (enchantment.is(Enchantments.PUNCH)) return false;
+		return super.supportsEnchantment(stack, enchantment);
 	}
 
 	@Override

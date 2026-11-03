@@ -40,9 +40,9 @@ public final class AttackHandler {
 	public static void onHurt(final LivingHurtEvent event) {
 		LivingEntity livingEntity = event.getEntity();
 
-		if (!livingEntity.level().isClientSide && event.getAmount() >= 6f && livingEntity.hasEffect(ModMobEffects.VOLATILE.get())) {
+		if (!livingEntity.level().isClientSide && event.getAmount() >= 6f && livingEntity.hasEffect(ModMobEffects.VOLATILE)) {
 			OneShotTaskWorker.onNextTick(livingEntity, living -> {
-				living.removeEffect(ModMobEffects.VOLATILE.get());
+				living.removeEffect(ModMobEffects.VOLATILE);
 				float radius = 3f - living.getArmorCoverPercentage() * 1.5f;
 				ExplosionUtil.explodeVolatile(living.level(), living, radius, Level.ExplosionInteraction.MOB);
 			});

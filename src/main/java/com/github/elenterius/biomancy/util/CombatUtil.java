@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.util;
 
+import com.github.elenterius.biomancy.util.EnchantmentUtil;
 import com.github.elenterius.biomancy.init.ModDamageSources;
 import com.github.elenterius.biomancy.init.ModMobEffects;
 import com.github.elenterius.biomancy.item.armor.AcolyteArmorItem;
@@ -40,7 +41,7 @@ public final class CombatUtil {
 			}
 		}
 
-		int pierceLevel = weapon.getEnchantmentLevel(Enchantments.PIERCING);
+		int pierceLevel = EnchantmentUtil.getLevel(weapon, Enchantments.PIERCING);
 		float pct = CombatRules.getDamageAfterAbsorb(20f, target.getArmorValue(), (float) target.getAttributeValue(Attributes.ARMOR_TOUGHNESS)) / 20f;
 		return target.getRandom().nextFloat() < pct + 0.075f * pierceLevel + pierceProbability;
 	}
@@ -82,11 +83,11 @@ public final class CombatUtil {
 	}
 
 	public static void applyBleedEffect(LivingEntity livingEntity, int seconds) {
-		livingEntity.addEffect(new MobEffectInstance(ModMobEffects.BLEED.get(), seconds * 20, 0, false, false, true));
+		livingEntity.addEffect(new MobEffectInstance(ModMobEffects.BLEED, seconds * 20, 0, false, false, true));
 	}
 
 	public static int getBleedEffectLevel(LivingEntity target) {
-		MobEffectInstance effectInstance = target.getEffect(ModMobEffects.BLEED.get());
+		MobEffectInstance effectInstance = target.getEffect(ModMobEffects.BLEED);
 		if (effectInstance == null) {
 			return 0;
 		}

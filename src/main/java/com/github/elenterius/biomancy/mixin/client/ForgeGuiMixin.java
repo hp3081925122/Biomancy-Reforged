@@ -19,7 +19,7 @@ public abstract class ForgeGuiMixin extends Gui {
 	@ModifyExpressionValue(method = "renderFood", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/player/LocalPlayer;hasEffect(Lnet/minecraft/world/effect/MobEffect;)Z"))
 	private boolean canRenderFoodHunger(boolean hasHungerEffect) {
 		//noinspection DataFlowIssue
-		if (!hasHungerEffect && minecraft.player.hasEffect(ModMobEffects.WITHDRAWAL.get())) {
+		if (!hasHungerEffect && minecraft.player.hasEffect(ModMobEffects.WITHDRAWAL)) {
 			return true;
 		}
 		return hasHungerEffect;

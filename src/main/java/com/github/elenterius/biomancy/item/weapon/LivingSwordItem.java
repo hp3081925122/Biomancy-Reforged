@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.item.weapon;
 
+import net.minecraft.core.Holder;
 import com.github.elenterius.biomancy.api.livingtool.LivingToolState;
 import com.github.elenterius.biomancy.api.livingtool.SpecialLivingTool;
 import com.github.elenterius.biomancy.client.util.ClientTextUtil;
@@ -27,8 +28,8 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.common.ToolAction;
-import net.minecraftforge.common.ToolActions;
+import net.neoforged.neoforge.common.ItemAbility;
+import net.neoforged.neoforge.common.ItemAbilities;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
@@ -61,7 +62,7 @@ public class LivingSwordItem extends SwordItem implements ItemTooltipStyleProvid
 	@Override
 	public boolean hurtEnemy(ItemStack stack, LivingEntity target, LivingEntity attacker) {
 		if (!MobUtil.isCreativePlayer(attacker)) {
-			consumeNutrients(stack, getLivingToolActionCost(stack, ToolActions.SWORD_SWEEP));
+			consumeNutrients(stack, getLivingToolActionCost(stack, ItemAbilities.SWORD_SWEEP));
 		}
 		return true;
 	}
@@ -69,7 +70,7 @@ public class LivingSwordItem extends SwordItem implements ItemTooltipStyleProvid
 	@Override
 	public boolean mineBlock(ItemStack stack, Level level, BlockState state, BlockPos pos, LivingEntity entity) {
 		if (!level.isClientSide() && state.getDestroySpeed(level, pos) != 0f && !MobUtil.isCreativePlayer(entity)) {
-			consumeNutrients(stack, getLivingToolActionCost(stack, ToolActions.SWORD_DIG));
+			consumeNutrients(stack, getLivingToolActionCost(stack, ItemAbilities.SWORD_DIG));
 		}
 		return true;
 	}
@@ -108,10 +109,10 @@ public class LivingSwordItem extends SwordItem implements ItemTooltipStyleProvid
 	}
 
 	@Override
-	public int getLivingToolActionCost(ItemStack stack, LivingToolState state, ToolAction toolAction) {
+	public int getLivingToolActionCost(ItemStack stack, LivingToolState state, ItemAbility ItemAbility) {
 		int baseCost = 0;
-		if (toolAction == ToolActions.SWORD_DIG) baseCost = 2;
-		if (toolAction == ToolActions.SWORD_SWEEP) baseCost = 1;
+		if (ItemAbility == ItemAbilities.SWORD_DIG) baseCost = 2;
+		if (ItemAbility == ItemAbilities.SWORD_SWEEP) baseCost = 1;
 
 		return switch (state) {
 			case AWAKENED -> baseCost + 4;
@@ -121,8 +122,8 @@ public class LivingSwordItem extends SwordItem implements ItemTooltipStyleProvid
 	}
 
 	@Override
-	public boolean canApplyAtEnchantingTable(ItemStack stack, Enchantment enchantment) {
-		return isValidEnchantment(stack, enchantment) && super.canApplyAtEnchantingTable(stack, enchantment);
+	public boolean supportsEnchantment(ItemStack stack, Holder<Enchantment> enchantment) {
+		return isValidEnchantment(stack, enchantment) && super.supportsEnchantment(stack, enchantment);
 	}
 
 	@Override

@@ -1,5 +1,9 @@
 package com.github.elenterius.biomancy.serum;
 
+import net.minecraft.world.item.component.ItemAttributeModifiers;
+import java.util.ArrayList;
+import com.mojang.datafixers.util.Pair;
+import net.minecraft.core.Holder;
 import com.github.elenterius.biomancy.entity.mob.ai.goal.FrenzyAttackableTargetGoal;
 import com.github.elenterius.biomancy.entity.mob.ai.goal.FrenzyMeleeAttackGoal;
 import com.github.elenterius.biomancy.init.ModMobEffects;
@@ -30,7 +34,6 @@ import net.minecraft.world.level.Level;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
-import java.util.Map;
 
 public class FrenzySerum extends BasicSerum {
 
@@ -58,39 +61,42 @@ public class FrenzySerum extends BasicSerum {
 	}
 
 	private void addStatusEffect(LivingEntity target) {
-		target.addEffect(new MobEffectInstance(ModMobEffects.FRENZY.get(), DEFAULT_DURATION_TICKS, 0));
+		target.addEffect(new MobEffectInstance(ModMobEffects.FRENZY, DEFAULT_DURATION_TICKS, 0));
 	}
 
 	@Override
 	public void appendTooltip(CompoundTag tag, @Nullable Level level, List<Component> tooltip, TooltipFlag flagIn) {
 		tooltip.add(ComponentUtil.translatable(getDescriptionTranslationKey()).withStyle(TextStyles.LORE));
 		tooltip.add(ComponentUtil.EMPTY_LINE);
-		addEffectToClientTooltip(tooltip, ModMobEffects.FRENZY.get(), 0, DEFAULT_DURATION_TICKS);
+		float tickRate = level != null ? level.tickRateManager().tickrate() : 20f;
+		addEffectToClientTooltip(tooltip, ModMobEffects.FRENZY, 0, DEFAULT_DURATION_TICKS, tickRate);
 	}
 
-	public void addEffectToClientTooltip(List<Component> tooltip, MobEffect effect, int amplifier, int duration) {
+	public void addEffectToClientTooltip(List<Component> tooltip, Holder<MobEffect> effectHolder, int amplifier, int duration, float tickRate) {
+		MobEffect effect = effectHolder.value();
 		MutableComponent effectText = ComponentUtil.translatable(effect.getDescriptionId());
 		if (amplifier > 0) effectText = ComponentUtil.translatable("potion.withAmplifier", effectText, ComponentUtil.translatable("potion.potency." + amplifier));
-		if (duration > 20) effectText = ComponentUtil.translatable("potion.withDuration", effectText, StringUtil.formatTickDuration(duration));
+		if (duration > 20) effectText = ComponentUtil.translatable("potion.withDuration", effectText, StringUtil.formatTickDuration(duration, tickRate));
 		tooltip.add(effectText.withStyle(effect.getCategory().getTooltipFormatting()));
 
-		Map<Attribute, AttributeModifier> effectModifiers = effect.getAttributeModifiers();
+		List<Pair<Holder<Attribute>, AttributeModifier>> effectModifiers = new ArrayList<>();
+		effect.createModifiers(amplifier, (attribute, modifier) -> effectModifiers.add(Pair.of(attribute, modifier)));
 		if (!effectModifiers.isEmpty()) {
 			tooltip.add(ComponentUtil.EMPTY_LINE);
 
-			for (Map.Entry<Attribute, AttributeModifier> entry : effectModifiers.entrySet()) {
-				AttributeModifier modifier = entry.getValue();
-				AttributeModifier.Operation operation = modifier.getOperation();
-				double value = effect.getAttributeModifierValue(amplifier, modifier);
-				double amount = operation != AttributeModifier.Operation.MULTIPLY_BASE && operation != AttributeModifier.Operation.MULTIPLY_TOTAL ? value : value * 100d;
+			for (Pair<Holder<Attribute>, AttributeModifier> entry : effectModifiers) {
+				AttributeModifier modifier = entry.getSecond();
+				AttributeModifier.Operation operation = modifier.operation();
+				double value = modifier.amount();
+				double amount = operation != AttributeModifier.Operation.ADD_MULTIPLIED_BASE && operation != AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL ? value : value * 100d;
 
-				MutableComponent attributeText = ComponentUtil.translatable(entry.getKey().getDescriptionId());
+				MutableComponent attributeText = ComponentUtil.translatable(entry.getFirst().value().getDescriptionId());
 				if (value > 0) {
-					tooltip.add((ComponentUtil.translatable("attribute.modifier.plus." + operation.toValue(), ItemStack.ATTRIBUTE_MODIFIER_FORMAT.format(amount), attributeText)).withStyle(ChatFormatting.BLUE));
+					tooltip.add((ComponentUtil.translatable("attribute.modifier.plus." + operation.id(), ItemAttributeModifiers.ATTRIBUTE_MODIFIER_FORMAT.format(amount), attributeText)).withStyle(ChatFormatting.BLUE));
 				}
 				else if (value < 0) {
 					amount = amount * -1d;
-					tooltip.add((ComponentUtil.translatable("attribute.modifier.take." + operation.toValue(), ItemStack.ATTRIBUTE_MODIFIER_FORMAT.format(amount), attributeText)).withStyle(ChatFormatting.RED));
+					tooltip.add((ComponentUtil.translatable("attribute.modifier.take." + operation.id(), ItemAttributeModifiers.ATTRIBUTE_MODIFIER_FORMAT.format(amount), attributeText)).withStyle(ChatFormatting.RED));
 				}
 			}
 		}

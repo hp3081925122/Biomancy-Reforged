@@ -17,8 +17,8 @@ public class BloomberryItem extends SimpleItem {
 
 	private static void applyPotion(LivingEntity livingEntity, Potion potion) {
 		for (MobEffectInstance effectInstance : potion.getEffects()) {
-			if (effectInstance.getEffect().isInstantenous()) {
-				effectInstance.getEffect().applyInstantenousEffect(livingEntity, livingEntity, livingEntity, effectInstance.getAmplifier(), 1);
+			if (effectInstance.getEffect().value().isInstantenous()) {
+				effectInstance.getEffect().value().applyInstantenousEffect(livingEntity, livingEntity, livingEntity, effectInstance.getAmplifier(), 1);
 			}
 			else {
 				livingEntity.addEffect(new MobEffectInstance(effectInstance));

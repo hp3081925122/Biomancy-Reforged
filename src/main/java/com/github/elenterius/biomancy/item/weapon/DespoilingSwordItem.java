@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.item.weapon;
 
+import net.minecraft.core.Holder;
 import com.github.elenterius.biomancy.init.ModEnchantments;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
@@ -13,7 +14,7 @@ import net.minecraft.world.item.Tier;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.common.ToolAction;
+import net.neoforged.neoforge.common.ItemAbility;
 
 public class DespoilingSwordItem extends SimpleSwordItem {
 
@@ -35,12 +36,12 @@ public class DespoilingSwordItem extends SimpleSwordItem {
 	}
 
 	@Override
-	public int getEnchantmentLevel(ItemStack stack, Enchantment enchantment) {
+	public int getEnchantmentLevel(ItemStack stack, Holder<Enchantment> enchantment) {
 		if (isBroken(stack)) return 0;
 
 		int level = super.getEnchantmentLevel(stack, enchantment);
 
-		if (enchantment == ModEnchantments.DESPOIL.get()) {
+		if (enchantment.is(ModEnchantments.DESPOIL)) {
 			return level + 1;
 		}
 
@@ -76,9 +77,9 @@ public class DespoilingSwordItem extends SimpleSwordItem {
 	}
 
 	@Override
-	public boolean canPerformAction(ItemStack stack, ToolAction toolAction) {
+	public boolean canPerformAction(ItemStack stack, ItemAbility ItemAbility) {
 		if (isBroken(stack)) return false;
-		return super.canPerformAction(stack, toolAction);
+		return super.canPerformAction(stack, ItemAbility);
 	}
 
 	@Override

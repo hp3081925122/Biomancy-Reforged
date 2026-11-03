@@ -88,14 +88,14 @@ public abstract class LivingEntityMixin extends Entity implements LivingEntityDa
 
 	@Inject(method = "getAttributeValue(Lnet/minecraft/world/entity/ai/attributes/Attribute;)D", at = @At("HEAD"), cancellable = true)
 	protected void onGetAttributeValue(Attribute attribute, CallbackInfoReturnable<Double> cir) {
-		if (attribute == Attributes.ATTACK_DAMAGE && !getAttributes().hasAttribute(Attributes.ATTACK_DAMAGE) && hasEffect(ModMobEffects.FRENZY.get())) {
+		if (attribute == Attributes.ATTACK_DAMAGE && !getAttributes().hasAttribute(Attributes.ATTACK_DAMAGE) && hasEffect(ModMobEffects.FRENZY)) {
 			cir.setReturnValue(FrenzySerum.ATTACK_DAMAGE_FALLBACK);
 		}
 	}
 
 	@Inject(method = "isSensitiveToWater", at = @At(value = "HEAD"), cancellable = true)
 	private void onIsSensitiveToWater(CallbackInfoReturnable<Boolean> cir) {
-		if (hasEffect(ModMobEffects.CORROSIVE.get())) {
+		if (hasEffect(ModMobEffects.CORROSIVE)) {
 			cir.setReturnValue(true);
 		}
 	}
@@ -120,7 +120,7 @@ public abstract class LivingEntityMixin extends Entity implements LivingEntityDa
 	@Inject(method = "addEatEffect", at = @At(value = "TAIL"))
 	private void onAddEatEffect(ItemStack food, Level level, LivingEntity livingEntity, CallbackInfo ci) {
 		if (!level.isClientSide && biomancy$getRawMeatNutrition(food) > 2 && livingEntity.getRandom().nextFloat() < 0.2f) {
-			livingEntity.addEffect(new MobEffectInstance(ModMobEffects.PRIMORDIAL_INFESTATION.get(), 20 * 8, 0));
+			livingEntity.addEffect(new MobEffectInstance(ModMobEffects.PRIMORDIAL_INFESTATION, 20 * 8, 0));
 		}
 	}
 
@@ -130,7 +130,7 @@ public abstract class LivingEntityMixin extends Entity implements LivingEntityDa
 			remap = false
 	)
 	private MobEffectInstance onCurePotionEffects(MobEffectInstance effectInstance, @Share("removedFrenzy") LocalRef<MobEffectInstance> removedFrenzyRef) {
-		if (effectInstance.getEffect() == ModMobEffects.FRENZY.get()) {
+		if (effectInstance.getEffect().is(ModMobEffects.FRENZY)) {
 			removedFrenzyRef.set(effectInstance);
 		}
 		return effectInstance;
@@ -151,7 +151,7 @@ public abstract class LivingEntityMixin extends Entity implements LivingEntityDa
 			at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/LivingEntity;onEffectRemoved(Lnet/minecraft/world/effect/MobEffectInstance;)V")
 	)
 	private MobEffectInstance onTickEffects(MobEffectInstance effectInstance, @Share("expiredFrenzy") LocalRef<MobEffectInstance> expiredFrenzyRef) {
-		if (effectInstance.getEffect() == ModMobEffects.FRENZY.get()) {
+		if (effectInstance.getEffect().is(ModMobEffects.FRENZY)) {
 			expiredFrenzyRef.set(effectInstance);
 		}
 		return effectInstance;

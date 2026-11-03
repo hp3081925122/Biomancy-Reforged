@@ -41,8 +41,8 @@ import net.minecraft.world.item.Tier;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
-import net.minecraftforge.common.ToolAction;
-import net.minecraftforge.common.ToolActions;
+import net.neoforged.neoforge.common.ItemAbility;
+import net.neoforged.neoforge.common.ItemAbilities;
 import net.minecraftforge.common.util.Lazy;
 import org.jspecify.annotations.Nullable;
 import software.bernie.geckolib.animatable.GeoItem;
@@ -206,9 +206,9 @@ public class RavenousClawsItem extends LivingClawsItem implements GeoItem, ItemC
 	}
 
 	@Override
-	public boolean canPerformAction(ItemStack stack, ToolAction toolAction) {
-		if (toolAction == ToolActions.SWORD_SWEEP) return false;
-		return super.canPerformAction(stack, toolAction);
+	public boolean canPerformAction(ItemStack stack, ItemAbility ItemAbility) {
+		if (ItemAbility == ItemAbilities.SWORD_SWEEP) return false;
+		return super.canPerformAction(stack, ItemAbility);
 	}
 
 	@Override
@@ -350,7 +350,7 @@ public class RavenousClawsItem extends LivingClawsItem implements GeoItem, ItemC
 	}
 
 	@Override
-	public int getLivingToolActionCost(ItemStack livingTool, LivingToolState state, ToolAction toolAction) {
+	public int getLivingToolActionCost(ItemStack livingTool, LivingToolState state, ItemAbility ItemAbility) {
 		return switch (state) {
 			case AWAKENED, DORMANT -> 1;
 			case BROKEN -> 0;

@@ -118,7 +118,7 @@ public class ThickFurSheep extends Sheep {
 	@Nullable
 	@Override
 	public Sheep getBreedOffspring(ServerLevel level, AgeableMob otherParent) {
-		float p = (hasEffect(ModMobEffects.LIBIDO.get()) ? 0.1f : 0f) + (otherParent.hasEffect(ModMobEffects.LIBIDO.get()) ? 0.1f : 0f);
+		float p = (hasEffect(ModMobEffects.LIBIDO) ? 0.1f : 0f) + (otherParent.hasEffect(ModMobEffects.LIBIDO) ? 0.1f : 0f);
 		if (p > 0 && random.nextFloat() < p) {
 			return ModEntityTypes.FLESH_SHEEP.get().create(level);
 		}

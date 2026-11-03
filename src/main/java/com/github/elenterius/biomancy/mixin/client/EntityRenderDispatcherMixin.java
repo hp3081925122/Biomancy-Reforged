@@ -38,7 +38,7 @@ public abstract class EntityRenderDispatcherMixin {
 
 		//		if (entity == crosshairPickEntity && camera.getEntity() instanceof Player player) {
 		//			ItemStack itemStack = player.getMainHandItem();
-		//			if (itemStack.canPerformAction(ToolActions.SWORD_SWEEP)) {
+		//			if (itemStack.canPerformAction(ItemAbilities.SWORD_SWEEP)) {
 		//				AABB aabb = itemStack.getSweepHitBox(player, crosshairPickEntity).move(-entity.getX(), -entity.getY(), -entity.getZ());
 		//				LevelRenderer.renderLineBox(poseStack, multiBuffer.getBuffer(RenderType.lines()), aabb, 1f, 0f, 0f, 1f);
 		//			}

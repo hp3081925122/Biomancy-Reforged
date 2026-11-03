@@ -81,7 +81,7 @@ public final class ScreenOverlays {
 		Minecraft minecraft = Minecraft.getInstance();
 
 		if (minecraft.player == null || minecraft.level == null) return;
-		if (!minecraft.player.hasEffect(ModMobEffects.FRENZY.get())) return;
+		if (!minecraft.player.hasEffect(ModMobEffects.FRENZY)) return;
 		if (minecraft.options.hideGui) return;
 
 		guiGraphics.pose().pushPose();
@@ -90,7 +90,7 @@ public final class ScreenOverlays {
 		RenderSystem.depthMask(false);
 		RenderSystem.enableBlend();
 
-		float intensityPct = Mth.clamp(minecraft.player.getEffect(ModMobEffects.FRENZY.get()).getAmplifier() / 2f, 0f, 1f);
+		float intensityPct = Mth.clamp(minecraft.player.getEffect(ModMobEffects.FRENZY).getAmplifier() / 2f, 0f, 1f);
 		float colorOffset = Mth.lerp(intensityPct, 0.3f, 0f);
 
 		float scale = Mth.lerp(intensityPct, 1.6f, 1f);

@@ -9,7 +9,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.common.ToolAction;
+import net.neoforged.neoforge.common.ItemAbility;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.List;
@@ -63,12 +63,12 @@ public interface SpecialLivingTool extends LivingTool {
 		if (state != prevState) setLivingToolState(livingTool, state);
 	}
 
-	default int getLivingToolActionCost(ItemStack livingTool, ToolAction toolAction) {
+	default int getLivingToolActionCost(ItemStack livingTool, ItemAbility ItemAbility) {
 		LivingToolState state = getLivingToolState(livingTool);
-		return getLivingToolActionCost(livingTool, state, toolAction);
+		return getLivingToolActionCost(livingTool, state, ItemAbility);
 	}
 
-	default int getLivingToolActionCost(ItemStack livingTool, LivingToolState state, ToolAction toolAction) {
+	default int getLivingToolActionCost(ItemStack livingTool, LivingToolState state, ItemAbility ItemAbility) {
 		return switch (state) {
 			case BROKEN -> 0;
 			case DORMANT -> 1;
@@ -77,9 +77,9 @@ public interface SpecialLivingTool extends LivingTool {
 	}
 
 	default int getLivingToolMaxActionCost(ItemStack livingTool, LivingToolState state) {
-		return ToolAction.getActions().stream()
+		return ItemAbility.getActions().stream()
 				.filter(livingTool::canPerformAction)
-				.map(toolAction -> getLivingToolActionCost(livingTool, state, toolAction))
+				.map(ItemAbility -> getLivingToolActionCost(livingTool, state, ItemAbility))
 				.max(Integer::compareTo)
 				.orElse(0);
 	}

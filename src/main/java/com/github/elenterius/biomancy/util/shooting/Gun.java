@@ -1,5 +1,7 @@
 package com.github.elenterius.biomancy.util.shooting;
 
+import com.github.elenterius.biomancy.util.EnchantmentUtil;
+import net.minecraft.resources.ResourceKey;
 import com.github.elenterius.biomancy.init.ModDataComponents;
 import com.github.elenterius.biomancy.entity.projectile.BaseProjectile;
 import com.github.elenterius.biomancy.item.CrosshairProvider;
@@ -28,7 +30,7 @@ import java.util.Set;
 @SuppressWarnings("unused")
 public interface Gun<T extends BaseProjectile> extends CrosshairProvider {
 
-	Set<Enchantment> VALID_ENCHANTMENTS = Set.of(Enchantments.PUNCH_ARROWS, Enchantments.POWER_ARROWS, Enchantments.QUICK_CHARGE, Enchantments.MULTISHOT);
+	Set<ResourceKey<Enchantment>> VALID_ENCHANTMENTS = Set.of(Enchantments.PUNCH, Enchantments.POWER, Enchantments.QUICK_CHARGE, Enchantments.MULTISHOT);
 
 	GunProperties<T> getGunProperties();
 
@@ -154,11 +156,11 @@ public interface Gun<T extends BaseProjectile> extends CrosshairProvider {
 	}
 
 	default float getProjectileDamage(ItemStack stack) {
-		return getGunProperties().damage() + 0.6f * stack.getEnchantmentLevel(Enchantments.POWER_ARROWS);
+		return getGunProperties().damage() + 0.6f * EnchantmentUtil.getLevel(stack, Enchantments.POWER);
 	}
 
 	default int getProjectileKnockBack(ItemStack stack) {
-		return getGunProperties().knockback() + stack.getEnchantmentLevel(Enchantments.PUNCH_ARROWS);
+		return getGunProperties().knockback() + EnchantmentUtil.getLevel(stack, Enchantments.PUNCH);
 	}
 
 	default float getAccuracy(ItemStack stack) {
@@ -166,7 +168,7 @@ public interface Gun<T extends BaseProjectile> extends CrosshairProvider {
 	}
 
 	default int getProjectileCount(ItemStack stack) {
-		return getGunProperties().projectileCount() + stack.getEnchantmentLevel(Enchantments.MULTISHOT);
+		return getGunProperties().projectileCount() + EnchantmentUtil.getLevel(stack, Enchantments.MULTISHOT);
 	}
 
 	default int getDelayBetweenShots(ItemStack stack) {
@@ -178,7 +180,7 @@ public interface Gun<T extends BaseProjectile> extends CrosshairProvider {
 	}
 
 	default int getReloadDurationTicks(ItemStack stack) {
-		return getGunProperties().reloadDurationTicks() - 5 * stack.getEnchantmentLevel(Enchantments.QUICK_CHARGE);
+		return getGunProperties().reloadDurationTicks() - 5 * EnchantmentUtil.getLevel(stack, Enchantments.QUICK_CHARGE);
 	}
 
 	default ShootBehavior getShootBehavior() {

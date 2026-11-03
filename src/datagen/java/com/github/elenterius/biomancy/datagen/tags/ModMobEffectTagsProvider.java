@@ -37,17 +37,17 @@ public class ModMobEffectTagsProvider extends IntrinsicHolderTagsProvider<MobEff
 	protected void addTags(HolderLookup.Provider pProvider) {
 		addBiomancyTags();
 
-		tag(forgeTag("is_poison")).add(ModMobEffects.TOXIN.get());
+		tag(forgeTag("is_poison")).add(ModMobEffects.TOXIN);
 
 		tag(ModMobEffectTags.C_IS_ACID).add(
-				ModMobEffects.CORROSIVE.get()
+				ModMobEffects.CORROSIVE
 		);
 	}
 
 	private void addBiomancyTags() {
 		tag(ModMobEffectTags.NOT_REMOVABLE_WITH_CLEANSING_SERUM).add(
-				ModMobEffects.ESSENCE_ANEMIA.get(),
-				ModMobEffects.WITHDRAWAL.get()
+				ModMobEffects.ESSENCE_ANEMIA,
+				ModMobEffects.WITHDRAWAL
 		);
 
 		tag(ModMobEffectTags.CRADLE_LIFE_ENERGY_SOURCE).add(
@@ -61,13 +61,13 @@ public class ModMobEffectTagsProvider extends IntrinsicHolderTagsProvider<MobEff
 				MobEffects.WEAKNESS,
 				MobEffects.WITHER,
 				MobEffects.POISON,
-				ModMobEffects.BLEED.get()
+				ModMobEffects.BLEED
 		);
 
 		tag(ModMobEffectTags.CRADLE_SUCCESS_SOURCE).add(
 				MobEffects.LUCK,
 				MobEffects.SATURATION,
-				ModMobEffects.LIBIDO.get()
+				ModMobEffects.LIBIDO
 		);
 
 		tag(ModMobEffectTags.CRADLE_HOSTILITY_SOURCE).add(
@@ -77,14 +77,14 @@ public class ModMobEffectTagsProvider extends IntrinsicHolderTagsProvider<MobEff
 				MobEffects.HARM,
 				MobEffects.WITHER,
 				MobEffects.POISON,
-				ModMobEffects.BLEED.get()
+				ModMobEffects.BLEED
 		);
 
 		tag(ModMobEffectTags.CRADLE_ANOMALY_SOURCE).add(
 				MobEffects.BAD_OMEN,
 				MobEffects.DARKNESS,
-				ModMobEffects.CORROSIVE.get(),
-				ModMobEffects.PRIMORDIAL_INFESTATION.get()
+				ModMobEffects.CORROSIVE,
+				ModMobEffects.PRIMORDIAL_INFESTATION
 		);
 	}
 

@@ -250,8 +250,8 @@ public class GasCloud extends Entity implements TraceableEntity, DebugInfo.Entit
 				reapplyCooldowns.put(livingEntity, tickCount + effectReapplyCooldown);
 
 				for (MobEffectInstance effectInstance : effects) {
-					if (effectInstance.getEffect().isInstantenous()) {
-						effectInstance.getEffect().applyInstantenousEffect(this, getOwner(), livingEntity, effectInstance.getAmplifier(), 0.5d);
+					if (effectInstance.getEffect().value().isInstantenous()) {
+						effectInstance.getEffect().value().applyInstantenousEffect(this, getOwner(), livingEntity, effectInstance.getAmplifier(), 0.5d);
 					}
 					else {
 						livingEntity.addEffect(new MobEffectInstance(effectInstance), this);

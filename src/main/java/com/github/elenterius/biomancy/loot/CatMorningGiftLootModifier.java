@@ -1,8 +1,7 @@
 package com.github.elenterius.biomancy.loot;
 
 import com.github.elenterius.biomancy.init.ModItems;
-import com.google.common.base.Suppliers;
-import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -17,22 +16,20 @@ import net.minecraft.world.level.storage.loot.LootContext;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.level.storage.loot.predicates.LootItemCondition;
 import net.minecraft.world.level.storage.loot.predicates.LootItemEntityPropertyCondition;
-import net.minecraftforge.common.loot.IGlobalLootModifier;
-import net.minecraftforge.common.loot.LootModifier;
-import net.minecraftforge.common.loot.LootTableIdCondition;
-
-import java.util.function.Supplier;
+import net.neoforged.neoforge.common.loot.IGlobalLootModifier;
+import net.neoforged.neoforge.common.loot.LootModifier;
+import net.neoforged.neoforge.common.loot.LootTableIdCondition;
 
 public class CatMorningGiftLootModifier extends LootModifier {
 
-	public static final Supplier<Codec<CatMorningGiftLootModifier>> CODEC = Suppliers.memoize(() -> RecordCodecBuilder.create(inst ->
-			codecStart(inst).apply(inst, CatMorningGiftLootModifier::new)));
+	public static final MapCodec<CatMorningGiftLootModifier> CODEC = RecordCodecBuilder.mapCodec(inst ->
+			codecStart(inst).apply(inst, CatMorningGiftLootModifier::new));
 
 	public CatMorningGiftLootModifier() {
 		this(
 				new LootItemCondition[]{
 						LootItemEntityPropertyCondition.entityPresent(LootContext.EntityTarget.THIS).build(),
-						LootTableIdCondition.builder(BuiltInLootTables.CAT_MORNING_GIFT).build()
+						LootTableIdCondition.builder(BuiltInLootTables.CAT_MORNING_GIFT.location()).build()
 				}
 		);
 	}
@@ -42,8 +39,8 @@ public class CatMorningGiftLootModifier extends LootModifier {
 	}
 
 	@Override
-	public Codec<? extends IGlobalLootModifier> codec() {
-		return CODEC.get();
+	public MapCodec<? extends IGlobalLootModifier> codec() {
+		return CODEC;
 	}
 
 	@Override
@@ -52,7 +49,7 @@ public class CatMorningGiftLootModifier extends LootModifier {
 
 		RandomSource random = context.getRandom();
 
-		boolean isBlackCat = BuiltInRegistries.CAT_VARIANT.getResourceKey(cat.getVariant())
+		boolean isBlackCat = cat.getVariant().unwrapKey()
 				.filter(variant -> variant.equals(CatVariant.ALL_BLACK) || variant.equals(CatVariant.BLACK))
 				.isPresent();
 
