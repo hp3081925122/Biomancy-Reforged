@@ -2,12 +2,14 @@ package com.github.elenterius.biomancy.item.armor;
 
 import com.github.elenterius.biomancy.styles.TextStyles;
 import com.github.elenterius.biomancy.util.ComponentUtil;
+import com.github.elenterius.biomancy.init.ModDataComponents;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.netty.buffer.ByteBuf;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageType;
@@ -25,17 +27,15 @@ public final class AdaptiveDamageResistanceHandler {
 	private static final float ADDITIONAL_RESISTANCE = 0.4f;
 	private static final float[] DAMAGE_GATE_PERCENTAGES = {0.25f, 0.2f, 0.2f, 0.15f};
 
-	private static final Set<String> VALID_NAMESPACES = Set.of("minecraft", "forge", "c");
+	private static final Set<String> VALID_NAMESPACES = Set.of("minecraft", "neoforge", "c");
 	private static final String TAG_PREFIX = "is_";
 
 	public static DamageTypeResistanceTracker getResistanceTracker(ItemStack stack) {
-		CompoundTag tag = stack.getOrCreateTag().getCompound("damage_resistance_tracker");
-		return DamageTypeResistanceTracker.fromNBT(tag);
+		return stack.getOrDefault(ModDataComponents.DAMAGE_RESISTANCE_TRACKER, DamageTypeResistanceTracker.EMPTY).mutableCopy();
 	}
 
 	public static void saveResistanceTracker(DamageTypeResistanceTracker resistanceTracker, ItemStack stack) {
-		CompoundTag compoundTag = stack.getOrCreateTag();
-		compoundTag.put("damage_resistance_tracker", resistanceTracker.toNBT());
+		stack.set(ModDataComponents.DAMAGE_RESISTANCE_TRACKER, resistanceTracker.immutableCopy());
 	}
 
 	public static float absorbDamage(LivingEntity livingEntity, DamageSource damageSource, float damage, ArmorItem armor, ItemStack stack) {
@@ -51,7 +51,7 @@ public final class AdaptiveDamageResistanceHandler {
 			resistanceTracker.count(damageType);
 		}
 
-		float healthPct = 1f - armor.getDamage(stack) / (float) armor.getMaxDamage(stack); //item durability
+		float healthPct = 1f - armor.getDamage(stack) / (float) armor.getMaxDamage(stack);
 
 		for (double healthGate : HEALTH_GATES) {
 			if (healthPct <= healthGate) {
@@ -114,56 +114,50 @@ public final class AdaptiveDamageResistanceHandler {
 	}
 
 	public record DamageTypeResistanceTracker(Map<TagKey<DamageType>, Integer> counter, Map<TagKey<DamageType>, Float> resistances) {
-		static DamageTypeResistanceTracker fromNBT(CompoundTag compoundTag) {
-			Map<TagKey<DamageType>, Integer> counter = new HashMap<>();
-			Map<TagKey<DamageType>, Float> resistances = new HashMap<>();
 
-			ListTag list = compoundTag.getList("list", Tag.TAG_COMPOUND);
-			for (int i = 0; i < list.size(); i++) {
-				CompoundTag tag = list.getCompound(i);
+		public static final DamageTypeResistanceTracker EMPTY = new DamageTypeResistanceTracker(Map.of(), Map.of());
 
-				ResourceLocation key = new ResourceLocation(tag.getString("damage_type_tag"));
-				TagKey<DamageType> damageType = TagKey.create(Registries.DAMAGE_TYPE, key);
+		public static final Codec<DamageTypeResistanceTracker> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+				Codec.unboundedMap(TagKey.codec(Registries.DAMAGE_TYPE), Codec.INT).optionalFieldOf("counter", Map.of()).forGetter(DamageTypeResistanceTracker::counter),
+				Codec.unboundedMap(TagKey.codec(Registries.DAMAGE_TYPE), Codec.FLOAT).optionalFieldOf("resistances", Map.of()).forGetter(DamageTypeResistanceTracker::resistances)
+		).apply(instance, DamageTypeResistanceTracker::new));
 
-				if (tag.contains("count")) {
-					counter.put(damageType, tag.getInt("count"));
-				}
+		public static final StreamCodec<ByteBuf, DamageTypeResistanceTracker> STREAM_CODEC = ByteBufCodecs.fromCodec(CODEC);
 
-				if (tag.contains("resistance")) {
-					resistances.put(damageType, tag.getFloat("resistance"));
-				}
-			}
-
-			return new DamageTypeResistanceTracker(counter, resistances);
+		public DamageTypeResistanceTracker mutableCopy() {
+			return new DamageTypeResistanceTracker(new HashMap<>(counter), new HashMap<>(resistances));
 		}
 
-		static void appendTooltipText(CompoundTag compoundTag, List<Component> tooltip) {
+		public DamageTypeResistanceTracker immutableCopy() {
+			return new DamageTypeResistanceTracker(Map.copyOf(counter), Map.copyOf(resistances));
+		}
 
-			if (!compoundTag.contains("list")) return;
+		static void appendTooltipText(DamageTypeResistanceTracker tracker, List<Component> tooltip) {
+			Set<TagKey<DamageType>> damageTypes = new HashSet<>();
+			damageTypes.addAll(tracker.counter.keySet());
+			damageTypes.addAll(tracker.resistances.keySet());
+
+			if (damageTypes.isEmpty()) return;
 
 			tooltip.add(ComponentUtil.EMPTY_LINE);
 			tooltip.add(ComponentUtil.mutable().withStyle(TextStyles.GRAY)
 					.append(ComponentUtil.literal("Adaptations:"))
 			);
 
-			ListTag list = compoundTag.getList("list", Tag.TAG_COMPOUND);
-
-			for (int i = 0; i < list.size(); i++) {
-				CompoundTag tag = list.getCompound(i);
-
+			for (TagKey<DamageType> damageType : damageTypes) {
 				tooltip.add(ComponentUtil.mutable().withStyle(TextStyles.GRAY)
-						.append(ComponentUtil.literal(tag.getString("damage_type_tag")))
+						.append(ComponentUtil.literal(damageType.location().toString()))
 				);
 
-				if (tag.contains("count")) {
+				if (tracker.counter.containsKey(damageType)) {
 					tooltip.add(ComponentUtil.mutable().withStyle(TextStyles.GRAY).append(ComponentUtil.SPACE)
-							.append(ComponentUtil.literal("Count: " + tag.getInt("count")))
+							.append(ComponentUtil.literal("Count: " + tracker.counter.get(damageType)))
 					);
 				}
 
-				if (tag.contains("resistance")) {
+				if (tracker.resistances.containsKey(damageType)) {
 					tooltip.add(ComponentUtil.mutable().withStyle(TextStyles.GRAY).append(ComponentUtil.SPACE)
-							.append(ComponentUtil.literal("Resistance: " + tag.getFloat("resistance")))
+							.append(ComponentUtil.literal("Resistance: " + tracker.resistances.get(damageType)))
 					);
 				}
 			}
@@ -178,34 +172,6 @@ public final class AdaptiveDamageResistanceHandler {
 					.max(Map.Entry.comparingByValue())
 					.map(Map.Entry::getKey).filter(resistances::containsKey)
 					.isPresent();
-		}
-
-		public CompoundTag toNBT() {
-			Set<TagKey<DamageType>> damageTypes = new HashSet<>();
-			damageTypes.addAll(counter.keySet());
-			damageTypes.addAll(resistances.keySet());
-
-			ListTag list = new ListTag();
-
-			for (TagKey<DamageType> damageType : damageTypes) {
-				CompoundTag tag = new CompoundTag();
-				tag.putString("damage_type_tag", damageType.location().toString());
-
-				if (counter.containsKey(damageType)) {
-					tag.putInt("count", counter.get(damageType));
-				}
-
-				if (resistances.containsKey(damageType)) {
-					tag.putFloat("resistance", resistances.get(damageType));
-				}
-
-				list.add(tag);
-			}
-
-			CompoundTag compoundTag = new CompoundTag();
-			compoundTag.put("list", list);
-
-			return compoundTag;
 		}
 	}
 

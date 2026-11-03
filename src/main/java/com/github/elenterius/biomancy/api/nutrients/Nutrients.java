@@ -5,6 +5,7 @@ import com.github.elenterius.biomancy.init.tags.ModItemTags;
 import it.unimi.dsi.fastutil.objects.Object2IntArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import net.minecraft.util.Mth;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -47,7 +48,7 @@ public final class Nutrients {
 			FoodProperties foodProperties = resource.getFoodProperties(null);
 			if (foodProperties == null) return false;
 
-			return foodProperties.isMeat() && resource.is(ModItemTags.FRESH_RAW_MEATS) && foodProperties.getNutrition() > 0;
+			return resource.is(ItemTags.MEAT) && resource.is(ModItemTags.FRESH_RAW_MEATS) && foodProperties.getNutrition() > 0;
 		}
 
 		return false;
@@ -73,7 +74,7 @@ public final class Nutrients {
 			FoodProperties foodProperties = resource.getFoodProperties(null);
 			if (foodProperties == null) return 0;
 
-			if (foodProperties.isMeat() && resource.is(ModItemTags.FRESH_RAW_MEATS)) {
+			if (resource.is(ItemTags.MEAT) && resource.is(ModItemTags.FRESH_RAW_MEATS)) {
 				return RAW_MEAT_NUTRITION_MODIFIER.applyAsInt(foodProperties.getNutrition()) * 2; //TODO: don't give bonus for rotten meats
 			}
 		}
@@ -114,7 +115,7 @@ public final class Nutrients {
 			if (foodProperties == null) return 0;
 
 			int nutrition = foodProperties.getNutrition();
-			if (foodProperties.isMeat() && resource.is(ModItemTags.FRESH_RAW_MEATS)) {
+			if (resource.is(ItemTags.MEAT) && resource.is(ModItemTags.FRESH_RAW_MEATS)) {
 				return RAW_MEAT_NUTRITION_MODIFIER.applyAsInt(nutrition);
 			}
 			return nutrition;

@@ -4,17 +4,17 @@ import com.github.elenterius.biomancy.crafting.IngredientStack;
 import com.github.elenterius.biomancy.crafting.VariableOutput;
 import com.github.elenterius.biomancy.menu.BioForgeTab;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.mojang.serialization.DynamicOps;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraftforge.common.crafting.CraftingHelper;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.jspecify.annotations.Nullable;
 
@@ -33,11 +33,9 @@ public final class RecipeUtil {
 		public static final String NUTRIENTS_COST = "nutrientsCost";
 		public static final String BIO_FORGE_TAB = BioForgeTab.JSON_KEY;
 
-		// misc recipe stuff
 		public static final String GROUP = "group";
 		public static final String CONDITIONS = "conditions";
 
-		// item related keys
 		public static final String COUNT = "count";
 		public static final String TAG = "tag";
 		public static final String ID = "id";
@@ -45,45 +43,14 @@ public final class RecipeUtil {
 		private JsonKeys() {}
 	}
 
-	public static final class TagKeys {
-		public static final String FORGE_CAPS = "ForgeCaps";
-
-		private TagKeys() {}
-	}
-
 	private RecipeUtil() {}
 
-	@SuppressWarnings("DataFlowIssue")
-	public static JsonObject writeItemStack(ItemStack stack) {
-		JsonObject json = new JsonObject();
-		json.addProperty(JsonKeys.ID, ForgeRegistries.ITEMS.getKey(stack.getItem()).toString());
-		if (stack.getCount() > 1) json.addProperty(JsonKeys.COUNT, stack.getCount());
-		if (stack.hasTag()) json.addProperty(JsonKeys.TAG, stack.getTag().toString());
-		return json;
+	public static JsonObject writeItemStack(DynamicOps<JsonElement> ops, ItemStack stack) {
+		return ItemStack.CODEC.encodeStart(ops, stack).getOrThrow().getAsJsonObject();
 	}
 
-	@SuppressWarnings("DataFlowIssue")
-	public static ItemStack readItemStack(JsonObject json) {
-		String itemName = GsonHelper.getAsString(json, JsonKeys.ID);
-		Item item = CraftingHelper.getItem(itemName, false);
-		if (json.has(JsonKeys.TAG)) {
-			CompoundTag tag = CraftingHelper.getNBT(json.get(JsonKeys.TAG));
-			CompoundTag tmp = new CompoundTag();
-
-			if (tag.contains(TagKeys.FORGE_CAPS)) {
-				tmp.put(TagKeys.FORGE_CAPS, tag.get(TagKeys.FORGE_CAPS));
-				tag.remove(TagKeys.FORGE_CAPS);
-			}
-
-			tmp.put(JsonKeys.TAG, tag);
-			tmp.putString(JsonKeys.ID, itemName);
-
-			//TODO: verify in mc 1.21.1 if the ItemStack still expects count with a capital C
-			tmp.putInt("Count", GsonHelper.getAsInt(json, JsonKeys.COUNT, 1));
-
-			return ItemStack.of(tmp);
-		}
-		return new ItemStack(item, GsonHelper.getAsInt(json, JsonKeys.COUNT, 1));
+	public static ItemStack readItemStack(DynamicOps<JsonElement> ops, JsonObject json) {
+		return ItemStack.CODEC.parse(ops, json).getOrThrow();
 	}
 
 	@SuppressWarnings("deprecation")
@@ -141,7 +108,7 @@ public final class RecipeUtil {
 		for (IngredientStack ingredientStack : ingredients) {
 			Ingredient ingredient = ingredientStack.ingredient();
 			for (int i = 0; i < ingredientStack.count(); i++) {
-				flatIngredients.add(ingredient); //insert the same ingredient instances
+				flatIngredients.add(ingredient);
 			}
 		}
 		return flatIngredients;

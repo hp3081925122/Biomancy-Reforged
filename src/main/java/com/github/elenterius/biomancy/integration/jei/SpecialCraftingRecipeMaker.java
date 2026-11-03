@@ -3,19 +3,22 @@ package com.github.elenterius.biomancy.integration.jei;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.block.cradle.PrimordialCradleBlockEntity;
 import com.github.elenterius.biomancy.block.membrane.BiometricMembraneBlock;
+import com.github.elenterius.biomancy.component.EssenceData;
 import com.github.elenterius.biomancy.init.ModBlockEntities;
+import com.github.elenterius.biomancy.init.ModDataComponents;
 import com.github.elenterius.biomancy.init.ModItems;
 import com.github.elenterius.biomancy.item.EssenceItem;
 import com.github.elenterius.biomancy.item.armor.AcolyteArmorUpgrades;
 import com.github.elenterius.biomancy.item.armor.LivingArmorItem;
 import com.github.elenterius.biomancy.world.mound.MoundShape;
-import com.mojang.authlib.GameProfile;
+import com.mojang.authlib.properties.PropertyMap;
 import net.minecraft.core.NonNullList;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.NbtUtils;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.*;
+import net.minecraft.world.item.component.ResolvableProfile;
 import net.minecraft.world.item.crafting.CraftingBookCategory;
 import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.world.item.crafting.Ingredient;
@@ -24,7 +27,9 @@ import net.minecraftforge.registries.RegistryObject;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -79,31 +84,20 @@ public final class SpecialCraftingRecipeMaker {
 	}
 
 	private static ItemStack createPlayerHead(String name) {
-		GameProfile gameProfile = new GameProfile(null, name);
-
 		ItemStack stack = Items.PLAYER_HEAD.getDefaultInstance();
-		CompoundTag tag = stack.getOrCreateTag();
-		tag.put(PlayerHeadItem.TAG_SKULL_OWNER, NbtUtils.writeGameProfile(new CompoundTag(), gameProfile));
+		stack.set(DataComponents.PROFILE, new ResolvableProfile(Optional.of(name), Optional.empty(), new PropertyMap()));
 
 		return stack;
 	}
 
 	private static ItemStack createUniquePlayerEssence(UUID entityUUID, String playerName) {
 		ItemStack stack = ModItems.ESSENCE.get().getDefaultInstance();
-		CompoundTag tag = stack.getOrCreateTag();
 
 		EntityType<?> entityType = EntityType.PLAYER;
 		int[] colors = EssenceItem.getEssenceColors(entityUUID);
 
-		CompoundTag essenceTag = new CompoundTag();
-		essenceTag.putString(EssenceItem.ENTITY_TYPE_KEY, EntityType.getKey(entityType).toString());
-		essenceTag.putString(EssenceItem.ENTITY_NAME_KEY, entityType.getDescriptionId());
-		essenceTag.putUUID(EssenceItem.ENTITY_UUID_KEY, entityUUID);
-
-		tag.put(EssenceItem.ESSENCE_DATA_KEY, essenceTag);
-		tag.putInt(EssenceItem.ESSENCE_TIER_KEY, 3);
-		tag.putIntArray(EssenceItem.COLORS_KEY, colors);
-		tag.putString(EssenceItem.PLAYER_NAME_KEY, playerName);
+		List<Integer> colorList = Arrays.stream(colors).boxed().toList();
+		stack.set(ModDataComponents.ESSENCE, new EssenceData(EntityType.getKey(entityType), entityType.getDescriptionId(), Optional.of(entityUUID), colorList, 3, Optional.empty(), Optional.of(playerName)));
 
 		return stack;
 	}

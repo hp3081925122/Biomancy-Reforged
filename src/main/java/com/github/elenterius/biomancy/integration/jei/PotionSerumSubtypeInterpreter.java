@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.integration.jei;
 
+import com.github.elenterius.biomancy.init.ModDataComponents;
 import com.github.elenterius.biomancy.item.PotionSerumItem;
 import com.github.elenterius.biomancy.serum.PotionSerum;
 import mezz.jei.api.ingredients.subtypes.IIngredientSubtypeInterpreter;
@@ -18,7 +19,7 @@ public class PotionSerumSubtypeInterpreter implements IIngredientSubtypeInterpre
 
 	@Override
 	public String apply(ItemStack stack, UidContext context) {
-		if (!stack.hasTag()) return IIngredientSubtypeInterpreter.NONE;
+		if (!stack.has(ModDataComponents.SERUM_DATA)) return IIngredientSubtypeInterpreter.NONE;
 
 		if (stack.getItem() instanceof PotionSerumItem container) {
 			CompoundTag tag = container.getSerumData(stack);

@@ -1,8 +1,9 @@
 package com.github.elenterius.biomancy.util;
 
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.common.util.INBTSerializable;
+import net.neoforged.neoforge.common.util.INBTSerializable;
 
 import java.util.AbstractList;
 import java.util.ArrayList;
@@ -58,18 +59,18 @@ public class ItemStackFilterList extends AbstractList<ItemStackFilter> implement
 	}
 
 	@Override
-	public void deserializeNBT(ListTag listTag) {
+	public void deserializeNBT(HolderLookup.Provider provider, ListTag listTag) {
 		filters.clear();
 		for (int i = 0; i < listTag.size(); i++) {
-			filters.add(ItemStackFilter.of(listTag.getCompound(i)));
+			filters.add(ItemStackFilter.of(provider, listTag.getCompound(i)));
 		}
 	}
 
 	@Override
-	public ListTag serializeNBT() {
+	public ListTag serializeNBT(HolderLookup.Provider provider) {
 		ListTag listTag = new ListTag();
 		for (ItemStackFilter filter : filters) {
-			listTag.add(filter.serializeNBT());
+			listTag.add(filter.serializeNBT(provider));
 		}
 
 		return listTag;

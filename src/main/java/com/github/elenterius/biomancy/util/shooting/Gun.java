@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.util.shooting;
 
+import com.github.elenterius.biomancy.init.ModDataComponents;
 import com.github.elenterius.biomancy.entity.projectile.BaseProjectile;
 import com.github.elenterius.biomancy.item.CrosshairProvider;
 import com.github.elenterius.biomancy.styles.TextComponentUtil;
@@ -8,7 +9,6 @@ import com.github.elenterius.biomancy.util.ComponentUtil;
 import com.github.elenterius.biomancy.util.FormatUtil;
 import net.minecraft.ChatFormatting;
 import net.minecraft.SharedConstants;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
@@ -30,15 +30,10 @@ public interface Gun<T extends BaseProjectile> extends CrosshairProvider {
 
 	Set<Enchantment> VALID_ENCHANTMENTS = Set.of(Enchantments.PUNCH_ARROWS, Enchantments.POWER_ARROWS, Enchantments.QUICK_CHARGE, Enchantments.MULTISHOT);
 
-	String AMMO_KEY = "ammo";
-	String RELOAD_TIMESTAMP_KEY = "reload_timestamp";
-	String WEAPON_STATE_KEY = "projectile_weapon_state";
-	String SHOOT_TIMESTAMP_KEY = "shoot_timestamp";
-
 	GunProperties<T> getGunProperties();
 
 	default long getShootTimestamp(ItemStack stack) {
-		return stack.getOrCreateTag().getLong(SHOOT_TIMESTAMP_KEY);
+		return stack.getOrDefault(ModDataComponents.GUN_SHOOT_TIMESTAMP, 0L);
 	}
 
 	default int getDurabilityCost(ItemStack stack) {
@@ -49,7 +44,6 @@ public interface Gun<T extends BaseProjectile> extends CrosshairProvider {
 		return 1;
 	}
 
-	/// Value shouldn't be larger than max ItemStack size of 64
 	default int getReloadCost(ItemStack stack) {
 		return 1;
 	}
@@ -69,21 +63,21 @@ public interface Gun<T extends BaseProjectile> extends CrosshairProvider {
 	}
 
 	default GunState getGunState(ItemStack stack) {
-		return GunState.fromId(stack.getOrCreateTag().getByte(WEAPON_STATE_KEY));
+		return stack.getOrDefault(ModDataComponents.GUN_STATE, GunState.NONE);
 	}
 
 	default void setGunState(ItemStack stack, GunState state) {
-		stack.getOrCreateTag().putByte(WEAPON_STATE_KEY, state.getId());
+		stack.set(ModDataComponents.GUN_STATE, state);
 	}
 
 	default long getReloadStartTime(ItemStack stack) {
-		return stack.getOrCreateTag().getLong(RELOAD_TIMESTAMP_KEY);
+		return stack.getOrDefault(ModDataComponents.GUN_RELOAD_TIMESTAMP, 0L);
 	}
 
 	default void startReload(ItemStack stack, ServerLevel level, LivingEntity shooter) {
 		if (canReload(stack, shooter)) {
 			setGunState(stack, GunState.RELOADING);
-			stack.getOrCreateTag().putLong(RELOAD_TIMESTAMP_KEY, level.getGameTime());
+			stack.set(ModDataComponents.GUN_RELOAD_TIMESTAMP, level.getGameTime());
 			onReloadStarted(stack, level, shooter);
 		}
 		else {
@@ -176,7 +170,6 @@ public interface Gun<T extends BaseProjectile> extends CrosshairProvider {
 	}
 
 	default int getDelayBetweenShots(ItemStack stack) {
-		//return getGunProperties().delayBetweenShots() - 2 * stack.getEnchantmentLevel(ModEnchantments.QUICK_SHOT.get());
 		return getGunProperties().delayBetweenShots();
 	}
 
@@ -193,7 +186,6 @@ public interface Gun<T extends BaseProjectile> extends CrosshairProvider {
 	}
 
 	default int getMaxAmmo(ItemStack stack) {
-		//return Mth.floor(getGunProperties().maxAmmo() + getGunProperties().maxAmmo() * 0.5f * stack.getEnchantmentLevel(ModEnchantments.MAX_AMMO.get()));
 		return getGunProperties().maxAmmo();
 	}
 
@@ -204,18 +196,16 @@ public interface Gun<T extends BaseProjectile> extends CrosshairProvider {
 	}
 
 	default int getAmmo(ItemStack stack) {
-		return stack.getOrCreateTag().getInt(AMMO_KEY);
+		return stack.getOrDefault(ModDataComponents.GUN_AMMO, 0);
 	}
 
 	default void setAmmo(ItemStack stack, int amount) {
-		CompoundTag nbt = stack.getOrCreateTag();
-		nbt.putInt(AMMO_KEY, Mth.clamp(amount, 0, getMaxAmmo(stack)));
+		stack.set(ModDataComponents.GUN_AMMO, Mth.clamp(amount, 0, getMaxAmmo(stack)));
 	}
 
 	default void addAmmo(ItemStack stack, int amount) {
 		if (amount == 0) return;
-		CompoundTag nbt = stack.getOrCreateTag();
-		nbt.putInt(AMMO_KEY, Math.max(0, nbt.getInt(AMMO_KEY) + amount));
+		stack.set(ModDataComponents.GUN_AMMO, Math.max(0, stack.getOrDefault(ModDataComponents.GUN_AMMO, 0) + amount));
 	}
 
 	default void consumeAmmo(ItemStack stack, int amount) {

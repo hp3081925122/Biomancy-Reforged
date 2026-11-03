@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.item.weapon;
 
+import com.github.elenterius.biomancy.init.ModDataComponents;
 import com.github.elenterius.biomancy.client.util.ClientTextUtil;
 import com.github.elenterius.biomancy.entity.mob.ControllableMob;
 import com.github.elenterius.biomancy.entity.mob.FleshkinHumanoid;
@@ -76,11 +77,11 @@ public class ControlStaffItem extends Item implements KeyPressListener, ItemTool
 	}
 
 	public ControllableMob.Command getCommand(ItemStack stack) {
-		return ControllableMob.Command.deserialize(stack.getOrCreateTag().getByte("Command"));
+		return stack.getOrDefault(ModDataComponents.CONTROL_STAFF_COMMAND, ControllableMob.Command.deserialize((byte) 0));
 	}
 
 	public void setCommand(ItemStack stack, ControllableMob.Command command) {
-		stack.getOrCreateTag().putByte("Command", command.serialize());
+		stack.set(ModDataComponents.CONTROL_STAFF_COMMAND, command);
 	}
 
 	@Override
@@ -90,10 +91,5 @@ public class ControlStaffItem extends Item implements KeyPressListener, ItemTool
 		tooltip.add(TextComponentUtil.getTooltipText("command").append(": ").withStyle().withStyle(ChatFormatting.GRAY).append(ComponentUtil.literal(getCommand(stack).toString()).withStyle(ChatFormatting.AQUA)));
 		tooltip.add(ClientTextUtil.pressButtonTo(ClientTextUtil.getDefaultKey(), TextComponentUtil.getActionText("cycle")).withStyle(ChatFormatting.DARK_GRAY));
 	}
-
-//	@Override
-	//	public Component getHighlightTip(ItemStack stack, Component displayName) {
-	//		return ComponentFacade.builder().append(displayName).append(" (").append(ComponentFacade.literal(getCommand(stack).toString()).withStyle(ChatFormatting.AQUA)).append(")");
-	//	}
 
 }

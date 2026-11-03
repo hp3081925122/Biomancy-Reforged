@@ -1,13 +1,13 @@
 package com.github.elenterius.biomancy.item.weapon.gun;
 
 import com.github.elenterius.biomancy.entity.projectile.BaseProjectile;
+import com.github.elenterius.biomancy.init.ModDataComponents;
 import com.github.elenterius.biomancy.item.weapon.BladeProperties;
 import com.github.elenterius.biomancy.util.shooting.GunProperties;
 import com.github.elenterius.biomancy.util.shooting.GunState;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.InteractionHand;
@@ -162,18 +162,20 @@ public abstract class GunbladeItem<T extends BaseProjectile> extends GunItem<T> 
 	public enum GunbladeMode {
 		MELEE, RANGED;
 
-		static final String KEY = "biomancy:gunblade_mode";
+		public static GunbladeMode fromOrdinal(byte ordinal) {
+			return GunbladeMode.values()[ordinal];
+		}
+
+		public byte toOrdinal() {
+			return (byte) ordinal();
+		}
 
 		public static GunbladeMode from(ItemStack stack) {
-			CompoundTag tag = stack.getTagElement(KEY);
-			if (tag == null) return MELEE;
-
-			return GunbladeMode.values()[tag.getByte("ordinal")];
+			return stack.getOrDefault(ModDataComponents.GUNBLADE_MODE, MELEE);
 		}
 
 		public static void set(ItemStack stack, GunbladeMode mode) {
-			CompoundTag tag = stack.getOrCreateTagElement(KEY);
-			tag.putByte("ordinal", (byte) mode.ordinal());
+			stack.set(ModDataComponents.GUNBLADE_MODE, mode);
 		}
 
 		public boolean isBlade() {

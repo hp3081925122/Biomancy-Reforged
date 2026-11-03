@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.item.weapon.gun;
 
+import com.github.elenterius.biomancy.component.AcidRefluxState;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.api.livingtool.SimpleLivingTool;
 import com.github.elenterius.biomancy.client.gui.ScreenOverlays;
@@ -27,7 +28,6 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -242,7 +242,7 @@ public class CausticGunbladeItem extends LivingGunItem<AcidSprayProjectile> impl
 		if (!Abilities.ACID_REFLUX.isActive(stack)) return null;
 
 		DamageSource damageSource = ModDamageSources.acid(attacker.level(), attacker);
-		if (target.isInvulnerableTo(damageSource)) return null; //use default melee damagesource as fallback
+		if (target.isInvulnerableTo(damageSource)) return null;
 		return damageSource;
 	}
 
@@ -300,9 +300,6 @@ public class CausticGunbladeItem extends LivingGunItem<AcidSprayProjectile> impl
 			tooltip.add(ComponentUtil.EMPTY_LINE);
 			appendGunStats(stack, tooltip);
 		}
-
-		//		tooltip.add(ComponentUtil.EMPTY_LINE);
-		//		Abilities.ACID_REFLUX.appendAbilityDescription(stack, tooltip);
 
 		tooltip.add(ComponentUtil.EMPTY_LINE);
 		appendLivingToolTooltip(stack, tooltip);
@@ -384,11 +381,6 @@ public class CausticGunbladeItem extends LivingGunItem<AcidSprayProjectile> impl
 
 		public static final ItemAbility ACID_REFLUX = new ItemAbility() {
 			static final String NAME = "acid_reflux";
-			static final String KEY = BiomancyMod.rlStr(NAME);
-			static final String ACID_LEVEL = "acid_level";
-			static final String HAS_REFLUX = "has_reflux";
-			static final String DELAY_START_TIME = "delay_start_time";
-
 			static final byte MAX_ACID_LEVEL = 120;
 			static final int MAX_DELAY = SharedConstants.TICKS_PER_SECOND * 10;
 			static final int MIN_DELAY = SharedConstants.TICKS_PER_SECOND / 2;
@@ -400,71 +392,75 @@ public class CausticGunbladeItem extends LivingGunItem<AcidSprayProjectile> impl
 
 			@Override
 			public void render(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight, ItemStack stack) {
-				int acidLevel = stack.getOrCreateTagElement(KEY).getByte(ACID_LEVEL);
+				int acidLevel = getState(stack).acidLevel();
 				float acidLevelPct = acidLevel / (float) MAX_ACID_LEVEL;
 				ScreenOverlays.renderBloodChargeMeter(guiGraphics, gui.getFont(), screenWidth, screenHeight, -90, acidLevel, acidLevelPct);
 			}
 
 			@Override
 			public boolean isActive(ItemStack stack) {
-				return stack.getOrCreateTagElement(KEY).getBoolean(HAS_REFLUX);
+				return getState(stack).hasReflux();
 			}
 
 			@Override
 			public void setActive(ServerLevel level, ItemStack stack, LivingEntity itemOwner) {
-				CompoundTag tag = stack.getOrCreateTagElement(KEY);
+				AcidRefluxState state = getState(stack);
 
-				byte currAcidLevel = tag.getByte(ACID_LEVEL);
+				byte currAcidLevel = state.acidLevel();
 				if (currAcidLevel >= MAX_ACID_LEVEL) return;
 
 				int fx = Math.round((currAcidLevel * 0.0165f) * (currAcidLevel * 0.0165f) + 1f);
 				byte acidLevel = (byte) Math.min(currAcidLevel + fx, MAX_ACID_LEVEL);
-				tag.putByte(ACID_LEVEL, acidLevel);
-
-				tag.putLong(DELAY_START_TIME, level.getGameTime());
+				state = state.withAcidLevel(acidLevel).withDelayStartTime(level.getGameTime());
 
 				if (acidLevel >= MAX_ACID_LEVEL) {
-					tag.putBoolean(HAS_REFLUX, true);
+					state = state.withReflux(true);
 				}
+
+				stack.set(ModDataComponents.ACID_REFLUX, state);
 			}
 
 			@Override
 			public void tick(Level level, ItemStack stack, LivingEntity itemOwner) {
-				CompoundTag tag = stack.getOrCreateTagElement(KEY);
-				byte currAcidLevel = tag.getByte(ACID_LEVEL);
+				AcidRefluxState state = getState(stack);
+				byte currAcidLevel = state.acidLevel();
 
-				long elapsedTime = level.getGameTime() - tag.getLong(DELAY_START_TIME);
+				long elapsedTime = level.getGameTime() - state.delayStartTime();
 				int delay = Mth.lerpInt((float) currAcidLevel / MAX_ACID_LEVEL, MIN_DELAY, MAX_DELAY);
 				if (elapsedTime < delay) return;
 
 				int acidLevel = Math.max(0, currAcidLevel - 2);
-				tag.putByte(ACID_LEVEL, (byte) acidLevel);
-
-				if (acidLevel == 0 && tag.getBoolean(HAS_REFLUX)) {
-					tag.putBoolean(HAS_REFLUX, false);
-					GunSounds.play(level, itemOwner, ModSoundEvents.FLESHKIN_BECOME_AWAKENED.get());
-				}
+				reduceAcidLevel(level, stack, itemOwner, state, acidLevel);
 			}
 
 			@Override
 			public void use(Level level, ItemStack stack, LivingEntity itemOwner) {
-				CompoundTag tag = stack.getOrCreateTagElement(KEY);
+				AcidRefluxState state = getState(stack);
 
-				int acidLevel = Math.max(0, tag.getByte(ACID_LEVEL) - 10);
-				tag.putByte(ACID_LEVEL, (byte) acidLevel);
-
-				if (acidLevel == 0 && tag.getBoolean(HAS_REFLUX)) {
-					tag.putBoolean(HAS_REFLUX, false);
-					GunSounds.play(level, itemOwner, ModSoundEvents.FLESHKIN_BECOME_AWAKENED.get());
-				}
+				int acidLevel = Math.max(0, state.acidLevel() - 10);
+				reduceAcidLevel(level, stack, itemOwner, state, acidLevel);
 			}
 
 			@Override
 			public void cancel(ServerLevel level, ItemStack stack, LivingEntity itemOwner) {
-				CompoundTag tag = stack.getOrCreateTagElement(KEY);
-				tag.putBoolean(HAS_REFLUX, false);
-				tag.putByte(DELAY_START_TIME, (byte) 0);
-				tag.putByte(ACID_LEVEL, (byte) 0);
+				stack.set(ModDataComponents.ACID_REFLUX, AcidRefluxState.EMPTY);
+			}
+
+			private static AcidRefluxState getState(ItemStack stack) {
+				return stack.getOrDefault(ModDataComponents.ACID_REFLUX, AcidRefluxState.EMPTY);
+			}
+
+			private static void reduceAcidLevel(Level level, ItemStack stack, LivingEntity itemOwner, AcidRefluxState state, int acidLevel) {
+				state = state.withAcidLevel((byte) acidLevel);
+
+				if (acidLevel == 0 && state.hasReflux()) {
+					state = state.withReflux(false);
+					stack.set(ModDataComponents.ACID_REFLUX, state);
+					GunSounds.play(level, itemOwner, ModSoundEvents.FLESHKIN_BECOME_AWAKENED.get());
+					return;
+				}
+
+				stack.set(ModDataComponents.ACID_REFLUX, state);
 			}
 		};
 	}

@@ -7,7 +7,9 @@ import com.github.elenterius.biomancy.api.serum.SerumInjector;
 import com.github.elenterius.biomancy.client.gui.InjectorScreen;
 import com.github.elenterius.biomancy.client.render.item.injector.InjectorRenderer;
 import com.github.elenterius.biomancy.client.util.ClientTextUtil;
+import com.github.elenterius.biomancy.component.InjectorContents;
 import com.github.elenterius.biomancy.init.ModCapabilities;
+import com.github.elenterius.biomancy.init.ModDataComponents;
 import com.github.elenterius.biomancy.init.ModEnchantments;
 import com.github.elenterius.biomancy.init.ModSoundEvents;
 import com.github.elenterius.biomancy.inventory.InjectorItemInventory;
@@ -28,7 +30,6 @@ import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -78,11 +79,8 @@ import java.util.function.Consumer;
 public class InjectorItem extends Item implements SerumInjector, ItemTooltipStyleProvider, CrosshairProvider, KeyPressListener, GeoItem {
 
 	public static final short MAX_SLOT_SIZE = 16;
-	public static final String INVENTORY_TAG = "inventory";
 	public static final int COOL_DOWN_TICKS = 25;
 	public static final int SCHEDULE_TICKS = Mth.ceil(0.32f * 20);
-	protected static final String CURRENT_VICTIM_KEY = "CurrentVictimId";
-	protected static final String CURRENT_HOST_KEY = "CurrentHostId";
 
 	private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
@@ -159,7 +157,7 @@ public class InjectorItem extends Item implements SerumInjector, ItemTooltipStyl
 			InteractionHand hand = slot == EquipmentSlot.MAINHAND ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND;
 			tryToOpenClientScreen(hand);
 		}
-		return KeyPressResult.fail(); //don't send button press to server
+		return KeyPressResult.fail();
 	}
 
 	@Override
@@ -173,9 +171,6 @@ public class InjectorItem extends Item implements SerumInjector, ItemTooltipStyl
 		}
 	}
 
-	/**
-	 * replace contents of injector inventory with new item from player inventory
-	 */
 	private void setInventory(ItemStack injector, Player player, int slotIndex) {
 		final Inventory playerInventory = player.getInventory();
 		final ItemStack foundStack = playerInventory.getItem(slotIndex);
@@ -204,7 +199,6 @@ public class InjectorItem extends Item implements SerumInjector, ItemTooltipStyl
 				}
 			}
 
-			//eject old stuff
 			if (!oldStack.isEmpty()) {
 				playerInventory.placeItemBackInInventory(oldStack);
 			}
@@ -353,71 +347,44 @@ public class InjectorItem extends Item implements SerumInjector, ItemTooltipStyl
 		return renderer instanceof InjectorRenderer injectorRenderer ? injectorRenderer : null;
 	}
 
-	/**
-	 * Stores the id of the entity that is holding/storing this ItemStack
-	 */
 	public void setEntityHost(ItemStack stack, Entity entity) {
 		if (stack.isEmpty()) return;
-		stack.getOrCreateTag().putInt(CURRENT_HOST_KEY, entity.getId());
+		stack.set(ModDataComponents.INJECTOR_HOST, entity.getId());
 	}
 
 	public void setInjectionSuccess(ItemStack stack, boolean flag) {
 		if (stack.isEmpty()) return;
-		stack.getOrCreateTag().putBoolean("IsInjectionSuccess", flag);
+		stack.set(ModDataComponents.INJECTION_SUCCESS, flag);
 	}
 
 	public boolean getInjectionSuccess(ItemStack stack) {
 		if (stack.isEmpty()) return false;
-		return stack.getOrCreateTag().getBoolean("IsInjectionSuccess");
+		return stack.getOrDefault(ModDataComponents.INJECTION_SUCCESS, false);
 	}
 
 	public void removeEntityHost(ItemStack stack) {
-		if (stack.hasTag()) {
-			CompoundTag tag = stack.getTag();
-			if (tag != null) {
-				tag.remove(CURRENT_HOST_KEY);
-			}
-		}
+		stack.remove(ModDataComponents.INJECTOR_HOST);
 	}
 
 	@Nullable
 	public Entity getEntityHost(ItemStack stack, Level level) {
-		if (stack.hasTag()) {
-			CompoundTag tag = stack.getTag();
-			if (tag != null && tag.contains(CURRENT_HOST_KEY, Tag.TAG_ANY_NUMERIC)) {
-				return level.getEntity(tag.getInt(CURRENT_HOST_KEY));
-			}
-		}
-
-		return null;
-
-		//return stack.getEntityRepresentation(); //usually null, ItemFrame or ItemEntity
-		//this would make it possible to play sounds/etc. via item animation at an ItemFrame or ItemEntity position
+		Integer entityId = stack.get(ModDataComponents.INJECTOR_HOST);
+		return entityId != null ? level.getEntity(entityId) : null;
 	}
 
 	public void setEntityVictim(ItemStack stack, Entity entity) {
 		if (stack.isEmpty()) return;
-		stack.getOrCreateTag().putInt(CURRENT_VICTIM_KEY, entity.getId());
+		stack.set(ModDataComponents.INJECTOR_VICTIM, entity.getId());
 	}
 
 	public void removeEntityVictim(ItemStack stack) {
-		if (stack.hasTag()) {
-			CompoundTag tag = stack.getTag();
-			if (tag != null) {
-				tag.remove(CURRENT_VICTIM_KEY);
-			}
-		}
+		stack.remove(ModDataComponents.INJECTOR_VICTIM);
 	}
 
 	@Nullable
 	public Entity getEntityVictim(ItemStack stack, Level level) {
-		if (stack.hasTag()) {
-			CompoundTag tag = stack.getTag();
-			if (tag != null && tag.contains(CURRENT_VICTIM_KEY, Tag.TAG_ANY_NUMERIC)) {
-				return level.getEntity(tag.getInt(CURRENT_VICTIM_KEY));
-			}
-		}
-		return null;
+		Integer entityId = stack.get(ModDataComponents.INJECTOR_VICTIM);
+		return entityId != null ? level.getEntity(entityId) : null;
 	}
 
 	@OnlyIn(Dist.CLIENT)
@@ -471,12 +438,12 @@ public class InjectorItem extends Item implements SerumInjector, ItemTooltipStyl
 		tooltip.addAll(ClientTextUtil.getItemInfoTooltip(stack));
 		tooltip.add(ComponentUtil.EMPTY_LINE);
 
-		CompoundTag tag = stack.getOrCreateTag();
-		if (tag.contains(INVENTORY_TAG)) {
+		InjectorContents contents = stack.get(ModDataComponents.INJECTOR_CONTENTS);
+		if (contents != null) {
 			Serum serum = getSerum(stack);
 			if (!serum.isEmpty()) {
 				CompoundTag serumData = getSerumData(stack);
-				short amount = tag.getCompound(INVENTORY_TAG).getShort(LargeSingleItemStackHandler.ITEM_AMOUNT_TAG);
+				short amount = contents.amount();
 				tooltip.add(ComponentUtil.literal(String.format("%dx ", amount)).append(serum.getDisplayName(serumData)).withStyle(ChatFormatting.GRAY));
 				if (ClientTextUtil.showExtraInfo(tooltip)) {
 					serum.appendTooltip(serumData, level, tooltip, isAdvanced);

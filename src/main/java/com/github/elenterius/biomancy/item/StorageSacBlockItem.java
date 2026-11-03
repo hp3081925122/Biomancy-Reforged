@@ -126,11 +126,10 @@ public class StorageSacBlockItem extends BlockItem implements ItemTooltipStylePr
 	}
 
 	private static class InventoryCapability implements ICapabilityProvider {
-		public static final ItemStackInventory.InventorySerializer SERIALIZER = ItemStackInventory.InventorySerializer.BLOCK_ENTITY_TAG;
 		private final ItemStackInventory inventory;
 
 		public InventoryCapability(ItemStack stack) {
-			inventory = ItemStackInventory.create(StorageSacBlockEntity.SLOTS, 64, stack, SERIALIZER);
+			inventory = ItemStackInventory.create(StorageSacBlockEntity.SLOTS, 64, stack);
 		}
 
 		@Override

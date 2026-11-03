@@ -6,10 +6,11 @@ import it.unimi.dsi.fastutil.ints.IntComparators;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.minecraft.core.NonNullList;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.Container;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.items.IItemHandler;
 
 import java.util.List;
 import java.util.Objects;
@@ -32,7 +33,7 @@ public class ItemStackCounter {
 		record DummyKey(int hash) implements HashKey {
 
 			DummyKey(ItemStack stack) {
-				this(Objects.hash(ForgeRegistries.ITEMS.getKey(stack.getItem()), stack.getTag()));
+				this(Objects.hash(BuiltInRegistries.ITEM.getKey(stack.getItem()), stack.getComponentsPatch()));
 			}
 
 			@Override
@@ -53,9 +54,6 @@ public class ItemStackCounter {
 			}
 		}
 
-		/**
-		 * @param stack copy of ItemStack
-		 */
 		record EntryKey(int hash, ItemStack stack) implements HashKey {
 
 			public EntryKey(int hash, ItemStack stack) {
@@ -64,7 +62,7 @@ public class ItemStackCounter {
 			}
 
 			EntryKey(ItemStack stack) {
-				this(Objects.hash(ForgeRegistries.ITEMS.getKey(stack.getItem()), stack.getTag()), stack);
+				this(Objects.hash(BuiltInRegistries.ITEM.getKey(stack.getItem()), stack.getComponentsPatch()), stack);
 			}
 
 			@Override
@@ -116,7 +114,7 @@ public class ItemStackCounter {
 	}
 
 	public void accountSimpleStack(ItemStack stack) {
-		if (!stack.isDamaged() && !stack.isEnchanted() && !stack.hasCustomHoverName()) accountStack(stack);
+		if (!stack.isDamaged() && !stack.isEnchanted() && !stack.has(DataComponents.CUSTOM_NAME)) accountStack(stack);
 	}
 
 	public void accountStack(ItemStack stack) {

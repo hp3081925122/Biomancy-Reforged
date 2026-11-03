@@ -63,7 +63,6 @@ public final class AcolyteArmorItem extends LivingArmorGeoItem implements Knowle
 
 	@Override
 	public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-		//TODO: add idle animations?
 	}
 
 	@Override
@@ -84,9 +83,6 @@ public final class AcolyteArmorItem extends LivingArmorGeoItem implements Knowle
 		tooltip.add(ComponentUtil.literal(" ").append(TextComponentUtil.getAbilityText("bio_alchemical_epidermis.desc")).withStyle(ChatFormatting.DARK_GRAY));
 
 		tooltip.add(ComponentUtil.EMPTY_LINE);
-
-		//		CompoundTag compoundTag = stack.getOrCreateTag().getCompound("damage_resistance_tracker");
-		//		AdaptiveDamageResistanceHandler.DamageTypeResistanceTracker.appendTooltipText(compoundTag, tooltip);
 
 		appendLivingToolTooltip(stack, tooltip);
 

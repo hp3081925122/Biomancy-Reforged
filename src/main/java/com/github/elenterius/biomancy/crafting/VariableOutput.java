@@ -2,7 +2,9 @@ package com.github.elenterius.biomancy.crafting;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
-import net.minecraft.nbt.CompoundTag;
+import com.mojang.serialization.JsonOps;
+import net.minecraft.core.component.DataComponentPatch;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.util.RandomSource;
@@ -10,16 +12,11 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.ShapedRecipe;
 import net.minecraft.world.level.ItemLike;
-import net.minecraftforge.registries.ForgeRegistries;
-import org.jspecify.annotations.Nullable;
-
-import java.util.Objects;
 
 public class VariableOutput {
 
 	private final Item item;
-	private final @Nullable
-	CompoundTag tag;
+	private final DataComponentPatch components;
 	private final ItemCountRange countRange;
 
 	public VariableOutput(ItemStack stack) {
@@ -27,15 +24,15 @@ public class VariableOutput {
 	}
 
 	public VariableOutput(ItemStack stack, int count) {
-		this(stack.getItem(), stack.getTag(), new ItemCountRange.ConstantValue(count));
+		this(stack.getItem(), stack.getComponentsPatch(), new ItemCountRange.ConstantValue(count));
 	}
 
 	public VariableOutput(ItemStack stack, int min, int max) {
-		this(stack.getItem(), stack.getTag(), new ItemCountRange.UniformRange(min, max));
+		this(stack.getItem(), stack.getComponentsPatch(), new ItemCountRange.UniformRange(min, max));
 	}
 
 	public VariableOutput(ItemStack stack, int n, float p) {
-		this(stack.getItem(), stack.getTag(), new ItemCountRange.BinomialRange(n, p));
+		this(stack.getItem(), stack.getComponentsPatch(), new ItemCountRange.BinomialRange(n, p));
 	}
 
 	public VariableOutput(ItemLike item) {
@@ -55,16 +52,16 @@ public class VariableOutput {
 	}
 
 	public VariableOutput(ItemStack stack, ItemCountRange countRange) {
-		this(stack.getItem(), stack.getTag(), countRange);
+		this(stack.getItem(), stack.getComponentsPatch(), countRange);
 	}
 
 	public VariableOutput(ItemLike item, ItemCountRange countRange) {
-		this(item, null, countRange);
+		this(item, DataComponentPatch.EMPTY, countRange);
 	}
 
-	public VariableOutput(ItemLike item, @Nullable CompoundTag tag, ItemCountRange countRange) {
+	public VariableOutput(ItemLike item, DataComponentPatch components, ItemCountRange countRange) {
 		this.item = item.asItem();
-		this.tag = tag;
+		this.components = components;
 		this.countRange = countRange;
 	}
 
@@ -73,24 +70,14 @@ public class VariableOutput {
 	}
 
 	public ItemStack getItemStack() {
-		ItemStack stack = new ItemStack(item);
-		if (tag != null && !tag.isEmpty()) {
-			stack.setTag(tag.copy());
-		}
-		return stack;
+		return new ItemStack(item.builtInRegistryHolder(), 1, components);
 	}
 
 	public ItemStack getItemStack(RandomSource rng) {
 		int count = getCount(rng);
 		if (count < 1) return ItemStack.EMPTY;
 
-		ItemStack stack = new ItemStack(item);
-		if (tag != null && !tag.isEmpty()) {
-			stack.setTag(tag.copy());
-		}
-		stack.setCount(count);
-
-		return stack;
+		return new ItemStack(item.builtInRegistryHolder(), count, components);
 	}
 
 	public int getCount(RandomSource rng) {
@@ -101,14 +88,14 @@ public class VariableOutput {
 
 	public JsonObject serialize() {
 		JsonObject result = new JsonObject();
-		result.addProperty("item", Objects.requireNonNull(ForgeRegistries.ITEMS.getKey(item)).toString());
+		result.addProperty("item", BuiltInRegistries.ITEM.getKey(item).toString());
 
 		JsonObject obj = new JsonObject();
 		ItemCountRange.toJson(obj, countRange);
 		result.add("countRange", obj);
 
-		if (tag != null && !tag.isEmpty()) {
-			result.addProperty("nbt", tag.getAsString());
+		if (!components.isEmpty()) {
+			result.add("components", DataComponentPatch.CODEC.encodeStart(JsonOps.INSTANCE, components).getOrThrow());
 		}
 
 		return result;

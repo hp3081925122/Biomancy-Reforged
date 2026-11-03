@@ -30,6 +30,7 @@ public final class BiomancyMod {
 
 		ModBlocks.BLOCKS.register(modEventBus);
 		ModItems.ITEMS.register(modEventBus);
+		ModDataComponents.DATA_COMPONENTS.register(modEventBus);
 		ModArmorMaterials.ARMOR_MATERIALS.register(modEventBus);
 		ModBlockEntities.BLOCK_ENTITIES.register(modEventBus);
 		ModCreativeModeTabs.CREATIVE_TABS.register(modEventBus);

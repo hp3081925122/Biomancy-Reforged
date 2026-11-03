@@ -26,6 +26,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.food.FoodProperties;
@@ -509,7 +510,7 @@ public class FleshVeinsBlock extends MultifaceBlock implements SimpleWaterlogged
 	static int getRawMeatNutrition(ItemStack itemStack) {
 		if (!itemStack.isEdible()) return 0;
 		FoodProperties food = itemStack.getFoodProperties(null);
-		return food != null && food.isMeat() && itemStack.is(ModItemTags.FRESH_RAW_MEATS) ? food.getNutrition() : 0;
+		return food != null && itemStack.is(ItemTags.MEAT) && itemStack.is(ModItemTags.FRESH_RAW_MEATS) ? food.getNutrition() : 0;
 	}
 
 	@Override

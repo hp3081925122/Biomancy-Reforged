@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.api.livingtool;
 
+import com.github.elenterius.biomancy.init.ModDataComponents;
 import com.github.elenterius.biomancy.init.ModSoundEvents;
 import com.github.elenterius.biomancy.sounds.SoundUtil;
 import com.github.elenterius.biomancy.styles.TextStyles;
@@ -17,11 +18,11 @@ import java.util.List;
 public interface SpecialLivingTool extends LivingTool {
 
 	default LivingToolState getLivingToolState(ItemStack livingTool) {
-		return LivingToolState.deserialize(livingTool.getOrCreateTag());
+		return livingTool.getOrDefault(ModDataComponents.LIVING_TOOL_STATE, LivingToolState.BROKEN);
 	}
 
 	default void setLivingToolState(ItemStack livingTool, LivingToolState state) {
-		state.serialize(livingTool.getOrCreateTag());
+		livingTool.set(ModDataComponents.LIVING_TOOL_STATE, state);
 	}
 
 	default void updateLivingToolState(ItemStack livingTool, ServerLevel level, Player player) {

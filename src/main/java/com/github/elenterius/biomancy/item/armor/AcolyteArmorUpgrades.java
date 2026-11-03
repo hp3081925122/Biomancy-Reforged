@@ -1,10 +1,10 @@
 package com.github.elenterius.biomancy.item.armor;
 
 import com.github.elenterius.biomancy.BiomancyMod;
+import com.github.elenterius.biomancy.init.ModDataComponents;
 import com.github.elenterius.biomancy.styles.TextComponentUtil;
 import com.github.elenterius.biomancy.styles.TextStyles;
 import com.github.elenterius.biomancy.util.ComponentUtil;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
@@ -35,13 +35,17 @@ public final class AcolyteArmorUpgrades {
 	}
 
 	public static ItemStack addUpgrade(ItemStack stack, Upgrade upgrade) {
-		stack.getOrCreateTag().putBoolean(upgrade.id.toString(), true);
+		List<ResourceLocation> upgrades = stack.getOrDefault(ModDataComponents.ARMOR_UPGRADES, List.of());
+		if (!upgrades.contains(upgrade.id)) {
+			List<ResourceLocation> newUpgrades = new ArrayList<>(upgrades);
+			newUpgrades.add(upgrade.id);
+			stack.set(ModDataComponents.ARMOR_UPGRADES, List.copyOf(newUpgrades));
+		}
 		return stack;
 	}
 
 	public static boolean hasUpgrade(ItemStack stack, Upgrade upgrade) {
-		CompoundTag tag = stack.getTag();
-		return tag != null && tag.contains(upgrade.id.toString());
+		return stack.getOrDefault(ModDataComponents.ARMOR_UPGRADES, List.of()).contains(upgrade.id);
 	}
 
 	public static void appendHoverText(ItemStack stack, List<Component> tooltip) {

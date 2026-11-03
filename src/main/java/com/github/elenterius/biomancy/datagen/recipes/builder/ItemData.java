@@ -1,20 +1,18 @@
 package com.github.elenterius.biomancy.datagen.recipes.builder;
 
 import com.google.gson.JsonObject;
-import net.minecraft.nbt.CompoundTag;
+import com.mojang.serialization.JsonOps;
+import net.minecraft.core.component.DataComponentPatch;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ItemLike;
-import net.minecraftforge.registries.ForgeRegistries;
-import org.jspecify.annotations.Nullable;
-
-import java.util.Objects;
 
 public final class ItemData {
 
 	private final ResourceLocation registryName;
 	private final int count;
-	private final @Nullable CompoundTag tag;
+	private final DataComponentPatch components;
 
 	public ItemData(ItemStack stack) {
 		this(stack, stack.getCount());
@@ -25,30 +23,30 @@ public final class ItemData {
 	}
 
 	public ItemData(ItemStack stack, int count) {
-		this(stack.getItem(), stack.getTag(), count);
+		this(stack.getItem(), stack.getComponentsPatch(), count);
 	}
 
 	public ItemData(ItemLike item, int count) {
-		this(item, null, count);
+		this(item, DataComponentPatch.EMPTY, count);
 	}
 
-	public ItemData(ItemLike item, @Nullable CompoundTag tag, int count) {
-		this.registryName = Objects.requireNonNull(ForgeRegistries.ITEMS.getKey(item.asItem()));
-		this.tag = tag;
+	public ItemData(ItemLike item, DataComponentPatch components, int count) {
+		this.registryName = BuiltInRegistries.ITEM.getKey(item.asItem());
+		this.components = components;
 		this.count = count;
 	}
 
 	public static ItemData from(String namespace, String path) {
-		return new ItemData(new ResourceLocation(namespace, path));
+		return new ItemData(ResourceLocation.fromNamespaceAndPath(namespace, path));
 	}
 
 	public ItemData(ResourceLocation registryName) {
-		this(registryName, null, 1);
+		this(registryName, DataComponentPatch.EMPTY, 1);
 	}
 
-	public ItemData(ResourceLocation registryName, @Nullable CompoundTag tag, int count) {
+	public ItemData(ResourceLocation registryName, DataComponentPatch components, int count) {
 		this.registryName = registryName;
-		this.tag = tag;
+		this.components = components;
 		this.count = count;
 	}
 
@@ -64,7 +62,7 @@ public final class ItemData {
 		JsonObject json = new JsonObject();
 		json.addProperty("item", registryName.toString());
 		if (count > 1) json.addProperty("count", count);
-		if (tag != null && !tag.isEmpty()) json.addProperty("nbt", tag.getAsString());
+		if (!components.isEmpty()) json.add("components", DataComponentPatch.CODEC.encodeStart(JsonOps.INSTANCE, components).getOrThrow());
 		return json;
 	}
 

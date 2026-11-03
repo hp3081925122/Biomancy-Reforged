@@ -1,6 +1,8 @@
 package com.github.elenterius.biomancy.inventory;
 
 import com.github.elenterius.biomancy.api.serum.SerumContainer;
+import com.github.elenterius.biomancy.component.InjectorContents;
+import com.github.elenterius.biomancy.init.ModDataComponents;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.IItemHandler;
@@ -35,11 +37,12 @@ public class InjectorItemInventory {
 	}
 
 	private void serializeToHost() {
-		cachedInventoryHost.getOrCreateTag().put("inventory", itemHandler.serializeNBT());
+		cachedInventoryHost.set(ModDataComponents.INJECTOR_CONTENTS, new InjectorContents(itemHandler.getStack(), (short) itemHandler.getAmount()));
 	}
 
 	private void deserializeFromHost() {
-		itemHandler.deserializeNBT(cachedInventoryHost.getOrCreateTag().getCompound("inventory"));
+		InjectorContents contents = cachedInventoryHost.getOrDefault(ModDataComponents.INJECTOR_CONTENTS, InjectorContents.EMPTY);
+		itemHandler.loadContents(contents.copyStack());
 	}
 
 	public boolean stillValid() {
@@ -47,13 +50,12 @@ public class InjectorItemInventory {
 	}
 
 	public LargeSingleItemStackHandler getItemHandler() {
-		deserializeFromHost(); //prime cheese
+		deserializeFromHost();
 		return itemHandler;
 	}
 
 	public LazyOptional<IItemHandler> getLazyOptional() {
-		deserializeFromHost(); //prime cheese
-		//we now get the inventory from the ItemStack NBT, this makes it available on the client as well if someone gets the cap
+		deserializeFromHost();
 		return optionalItemHandler;
 	}
 

@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.item.weapon.gun;
 
+import com.github.elenterius.biomancy.init.ModDataComponents;
 import com.github.elenterius.biomancy.client.util.ClientTextUtil;
 import com.github.elenterius.biomancy.entity.projectile.BaseProjectile;
 import com.github.elenterius.biomancy.item.KeyPressListener;
@@ -50,11 +51,11 @@ public abstract class GunItem<T extends BaseProjectile> extends ProjectileWeapon
 		if (state == GunState.NONE && !canReload(stack, player)) {
 			gunProperties.sounds().playLocalFail(level, player);
 			player.displayClientMessage(TextComponentUtil.getFailureMsgText("reload_not_possible"), true);
-			return KeyPressResult.fail(); //don't send button press to server
+			return KeyPressResult.fail();
 		}
 
 		if (state == GunState.SHOOTING_OR_CHARGING) {
-			return KeyPressResult.fail(); //don't send button press to server
+			return KeyPressResult.fail();
 		}
 
 		return KeyPressResult.success(flags);
@@ -109,10 +110,7 @@ public abstract class GunItem<T extends BaseProjectile> extends ProjectileWeapon
 			int elapsedTime = getUseDuration(stack) - remainingUseDuration;
 			int delayBetweenShots = getDelayBetweenShots(stack);
 
-			//prevent right click spam attack by user
 			if (elapsedTime == 0 && serverLevel.getGameTime() - getShootTimestamp(stack) < delayBetweenShots) {
-				// play sound to indicate that the gun is "jammed"
-				// playSFX(serverLevel, shooter, SoundEvents.DISPENSER_FAIL); //we don't play this sounds because it's misleading
 				return;
 			}
 
@@ -124,7 +122,7 @@ public abstract class GunItem<T extends BaseProjectile> extends ProjectileWeapon
 
 			if (canShoot) {
 				shoot(serverLevel, shooter, shooter.getUsedItemHand(), stack);
-				stack.getOrCreateTag().putLong(SHOOT_TIMESTAMP_KEY, serverLevel.getGameTime());
+				stack.set(ModDataComponents.GUN_SHOOT_TIMESTAMP, serverLevel.getGameTime());
 			}
 		}
 	}
@@ -139,12 +137,12 @@ public abstract class GunItem<T extends BaseProjectile> extends ProjectileWeapon
 			switch (gunProperties.shootBehavior()) {
 				case ON_RELEASE_INSTANT -> {
 					shoot(serverLevel, shooter, shooter.getUsedItemHand(), stack);
-					stack.getOrCreateTag().putLong(SHOOT_TIMESTAMP_KEY, serverLevel.getGameTime());
+					stack.set(ModDataComponents.GUN_SHOOT_TIMESTAMP, serverLevel.getGameTime());
 				}
 				case ON_RELEASE_WITH_FULL_CHARGE -> {
 					if (elapsedTime >= delayBetweenShots && serverLevel.getGameTime() - getShootTimestamp(stack) < delayBetweenShots) {
 						shoot(serverLevel, shooter, shooter.getUsedItemHand(), stack);
-						stack.getOrCreateTag().putLong(SHOOT_TIMESTAMP_KEY, serverLevel.getGameTime());
+						stack.set(ModDataComponents.GUN_SHOOT_TIMESTAMP, serverLevel.getGameTime());
 					}
 				}
 				default -> {}

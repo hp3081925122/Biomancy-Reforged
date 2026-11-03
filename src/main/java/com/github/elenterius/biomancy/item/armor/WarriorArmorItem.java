@@ -1,8 +1,10 @@
 package com.github.elenterius.biomancy.item.armor;
 
+import com.github.elenterius.biomancy.component.BulletJumpState;
 import com.github.elenterius.biomancy.client.render.item.armor.WarriorArmorRenderer;
 import com.github.elenterius.biomancy.client.util.ClientTextUtil;
 import com.github.elenterius.biomancy.entity.misc.LivingEntityData;
+import com.github.elenterius.biomancy.init.ModDataComponents;
 import com.github.elenterius.biomancy.init.ModSoundEvents;
 import com.github.elenterius.biomancy.init.client.ModKeyBindings;
 import com.github.elenterius.biomancy.item.ItemTooltipStyleProvider;
@@ -18,7 +20,6 @@ import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.model.HumanoidModel;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -111,10 +112,6 @@ public class WarriorArmorItem extends LivingArmorGeoItem implements KnowledgeRea
 		return slot == type.getSlot() ? brokenAttributeModifiers : ImmutableMultimap.of();
 	}
 
-	//	public double getJumpBoostPower(ItemStack stack) {
-	//		return type == ArmorItem.Type.LEGGINGS && getNutrients(stack) > 0 ? 0.15d : 0d;
-	//	}
-
 	@Override
 	public KeyPressResult onClientKeyPress(ItemStack stack, Level level, Player player, EquipmentSlot slot, byte flags) {
 		if (slot != EquipmentSlot.HEAD || type != Type.HELMET) return KeyPressResult.fail();
@@ -175,53 +172,37 @@ public class WarriorArmorItem extends LivingArmorGeoItem implements KnowledgeRea
 			return false;
 		}
 
-		//      // if we reintroduce this we must set the delta movement on the client side as well due to syncing issues
-		//		double jumpBoostPower = getJumpBoostPower(stack);
-		//		if (jumpBoostPower != 0d) {
-		//			if (getNutrients(stack) >= 1) {
-		//				livingEntity.setDeltaMovement(livingEntity.getDeltaMovement().add(0d, jumpBoostPower, 0d));
-		//				livingEntity.hasImpulse = true;
-		//				livingEntity.hurtMarked = true;
-		//				consumeNutrients(stack, 1);
-		//				return true;
-		//			}
-		//			else if (livingEntity instanceof ServerPlayer player) {
-		//				player.displayClientMessage(TextComponentUtil.getFailureMsgText("not_enough_nutrients"), true);
-		//				SoundUtil.Server.sendSoundToClient(player, ModSoundEvents.FLESHKIN_NO.get(), player.getSoundSource(), 1f, 1f + player.level().getRandom().nextFloat() * 0.4f);
-		//			}
-		//		}
-
 		return false;
 	}
 
 	private static int getBulletJumpCost(ServerPlayer player, ItemStack stack) {
-		CompoundTag tag = stack.getOrCreateTag();
-		long timestamp = tag.getLong("bullet_jump_timestamp");
+		BulletJumpState state = stack.getOrDefault(ModDataComponents.BULLET_JUMP, BulletJumpState.EMPTY);
+		long timestamp = state.timestamp();
 		long elapsedTime = player.level().getGameTime() - timestamp;
 
 		if (elapsedTime > BULLET_JUMP_COST_COOLDOWN) {
 			return BULLET_JUMP_COST[0];
 		}
 
-		int index = Mth.clamp(tag.getInt("bullet_jump_cost_index"), 0, BULLET_JUMP_COST.length - 1);
+		int index = Mth.clamp(state.costIndex(), 0, BULLET_JUMP_COST.length - 1);
 		return BULLET_JUMP_COST[index];
 	}
 
 	private static void increaseBulletJumpCost(ServerPlayer player, ItemStack stack) {
-		CompoundTag tag = stack.getOrCreateTag();
-		long timestamp = tag.getLong("bullet_jump_timestamp");
+		BulletJumpState state = stack.getOrDefault(ModDataComponents.BULLET_JUMP, BulletJumpState.EMPTY);
+		long timestamp = state.timestamp();
 		long gameTime = player.level().getGameTime();
 		long elapsedTime = gameTime - timestamp;
 
+		int index;
 		if (elapsedTime > BULLET_JUMP_COST_COOLDOWN) {
-			tag.putInt("bullet_jump_cost_index", 0);
+			index = 0;
 		}
 		else {
-			int index = Mth.clamp(tag.getInt("bullet_jump_cost_index") + 1, 0, BULLET_JUMP_COST.length - 1);
-			tag.putInt("bullet_jump_cost_index", index);
+			index = Mth.clamp(state.costIndex() + 1, 0, BULLET_JUMP_COST.length - 1);
 		}
 
-		tag.putLong("bullet_jump_timestamp", gameTime);
+		stack.set(ModDataComponents.BULLET_JUMP, new BulletJumpState(index, gameTime));
 	}
 
 	public void onFall(ItemStack stack, LivingFallEvent event) {
@@ -240,7 +221,7 @@ public class WarriorArmorItem extends LivingArmorGeoItem implements KnowledgeRea
 		Vec3 velocity = player.getDeltaMovement();
 
 		Vec3 UP = new Vec3(0, 1, 0);
-		double verticalSimilarity = UP.dot(lookVec); //1 = up, 0 = horizontal, -1 = down
+		double verticalSimilarity = UP.dot(lookVec);
 
 		double maxDistance = 32d;
 		double minDistance = maxDistance * 0.7d;
@@ -261,7 +242,6 @@ public class WarriorArmorItem extends LivingArmorGeoItem implements KnowledgeRea
 		Vec3 jumpDirection = lookTarget.subtract(player.position()).normalize();
 
 		if (canElytraFly(player)) {
-			//free boosted elytra takeoff without rockets
 			double maxPower = 0.75d + velocity.y;
 			double power = Mth.lerp(horizontalSimilarity, maxPower * 0.54d, maxPower);
 
@@ -283,18 +263,15 @@ public class WarriorArmorItem extends LivingArmorGeoItem implements KnowledgeRea
 					velocity.z + jumpDirection.z * power
 			);
 
-			player.startAutoSpinAttack(20); //note: we can't pick longer duration because auto spin ticks don't reset when the player collides with the ground
+			player.startAutoSpinAttack(20);
 			if (player.onGround()) {
-				//hack to allow consecutive execution of spin attacks when the user holds down shift continuously
 				player.move(MoverType.SELF, new Vec3(0d, 1.1999999f, 0d));
 			}
 		}
 
 		if (player.onGround()) {
-			//Fix warning "player moved wrongly!" caused by sneaking and trying to jump off block ledge (fall off prevention)
 			player.setShiftKeyDown(false);
 
-			//probably not needed
 			if (player instanceof LivingEntityData.TransientDataProvider provider) {
 				provider.biomancy$getData().setDiscardFriction(true);
 			}
@@ -377,7 +354,6 @@ public class WarriorArmorItem extends LivingArmorGeoItem implements KnowledgeRea
 
 	@Override
 	public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-		//TODO: add idle animations?
 	}
 
 	@Override
@@ -405,11 +381,6 @@ public class WarriorArmorItem extends LivingArmorGeoItem implements KnowledgeRea
 				tooltip.add(TextComponentUtil.getAbilityText("bullet_jump").withStyle(ChatFormatting.GRAY));
 				tooltip.add(ComponentUtil.space().append(TextComponentUtil.getAbilityText("bullet_jump.desc", BULLET_JUMP_COST[0], abilityCostToString(BULLET_JUMP_COST), BULLET_JUMP_COST_COOLDOWN / 20)).withStyle(ChatFormatting.DARK_GRAY));
 
-				//			double jumpBoostPower = getJumpBoostPower(stack);
-				//			if (jumpBoostPower != 0d) {
-				//				String prefix = jumpBoostPower > 0d ? "+" : "";
-				//				tooltip.add(ComponentUtil.space().append(prefix + jumpBoostPower + " Jump Boost Power").withStyle(ChatFormatting.DARK_GRAY));
-				//			}
 			}
 			case BOOTS -> {
 				tooltip.add(ComponentUtil.EMPTY_LINE);
@@ -421,9 +392,6 @@ public class WarriorArmorItem extends LivingArmorGeoItem implements KnowledgeRea
 		}
 
 		tooltip.add(ComponentUtil.EMPTY_LINE);
-
-		//		CompoundTag compoundTag = stack.getOrCreateTag().getCompound("damage_resistance_tracker");
-		//		AdaptiveDamageResistanceHandler.DamageTypeResistanceTracker.appendTooltipText(compoundTag, tooltip);
 
 		appendLivingToolTooltip(stack, tooltip);
 

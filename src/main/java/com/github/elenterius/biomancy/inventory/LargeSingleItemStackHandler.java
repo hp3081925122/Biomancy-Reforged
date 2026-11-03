@@ -51,6 +51,11 @@ public class LargeSingleItemStackHandler extends SingleItemStackHandler {
 		onContentsChanged();
 	}
 
+	public void loadContents(ItemStack stack) {
+		cachedStack = stack;
+		itemAmount = (short) cachedStack.getCount();
+	}
+
 	@Override
 	public ItemStack insertItem(int slot, ItemStack stackIn, boolean simulate) {
 		ItemStack remainder = internalInsertItem(slot, stackIn, simulate);
@@ -88,9 +93,9 @@ public class LargeSingleItemStackHandler extends SingleItemStackHandler {
 		if (!cachedStack.isEmpty()) {
 			serializeItemAmount(tag);
 			if (itemAmount > Byte.MAX_VALUE) {
-				cachedStack.setCount(Byte.MAX_VALUE); //prevent byte overflow (ItemStack serializes its item count as byte)
+				cachedStack.setCount(Byte.MAX_VALUE);
 				tag.put(ITEM_TAG, cachedStack.save(new CompoundTag()));
-				cachedStack.setCount(itemAmount); //restore item count
+				cachedStack.setCount(itemAmount);
 			}
 			else {
 				tag.put(ITEM_TAG, cachedStack.save(new CompoundTag()));
@@ -103,7 +108,7 @@ public class LargeSingleItemStackHandler extends SingleItemStackHandler {
 	public void deserializeNBT(CompoundTag tag) {
 		cachedStack = tag.contains(ITEM_TAG) ? ItemStack.of(tag.getCompound(ITEM_TAG)) : ItemStack.EMPTY;
 		if (!cachedStack.isEmpty()) {
-			cachedStack.setCount(deserializeItemAmount(tag)); //restore item amount
+			cachedStack.setCount(deserializeItemAmount(tag));
 		}
 	}
 

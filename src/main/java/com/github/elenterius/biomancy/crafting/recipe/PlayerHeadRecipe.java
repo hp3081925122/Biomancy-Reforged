@@ -1,20 +1,22 @@
 package com.github.elenterius.biomancy.crafting.recipe;
 
 import com.github.elenterius.biomancy.BiomancyMod;
+import com.github.elenterius.biomancy.component.EssenceData;
+import com.github.elenterius.biomancy.init.ModDataComponents;
 import com.github.elenterius.biomancy.init.ModItems;
 import com.github.elenterius.biomancy.init.ModRecipes;
 import com.github.elenterius.biomancy.item.EssenceItem;
 import com.mojang.authlib.GameProfile;
 import net.minecraft.core.RegistryAccess;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.NbtUtils;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.PlayerHeadItem;
+import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.item.component.ResolvableProfile;
 import net.minecraft.world.item.crafting.CraftingBookCategory;
 import net.minecraft.world.item.crafting.CustomRecipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
@@ -89,7 +91,8 @@ public class PlayerHeadRecipe extends CustomRecipe {
 				}
 				if (essenceItem.getEntityType(stack).filter(entityType -> entityType == EntityType.PLAYER).isPresent()) {
 					uuid = essenceItem.getEntityUUID(stack).orElse(null);
-					playerName = stack.getOrCreateTag().getString(EssenceItem.PLAYER_NAME_KEY);
+					EssenceData essenceData = stack.get(ModDataComponents.ESSENCE);
+					playerName = essenceData != null ? essenceData.playerName().orElse("") : "";
 				}
 			}
 			else return ItemStack.EMPTY;
@@ -101,10 +104,8 @@ public class PlayerHeadRecipe extends CustomRecipe {
 	private ItemStack createPlayerHeadFrom(UUID uuid, String playerName) {
 		ItemStack stack = Items.PLAYER_HEAD.getDefaultInstance();
 
-		CompoundTag tag = stack.getOrCreateTag();
-		tag.put(PlayerHeadItem.TAG_SKULL_OWNER, NbtUtils.writeGameProfile(new CompoundTag(), new GameProfile(uuid, playerName)));
-		tag.putBoolean(BiomancyMod.MOD_ID, true);
-		stack.getItem().verifyTagAfterLoad(tag);
+		stack.set(DataComponents.PROFILE, new ResolvableProfile(new GameProfile(uuid, playerName)));
+		CustomData.update(DataComponents.CUSTOM_DATA, stack, tag -> tag.putBoolean(BiomancyMod.MOD_ID, true));
 
 		return stack;
 	}

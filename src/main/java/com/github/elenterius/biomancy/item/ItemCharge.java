@@ -1,11 +1,10 @@
 package com.github.elenterius.biomancy.item;
 
+import com.github.elenterius.biomancy.init.ModDataComponents;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
 
 public interface ItemCharge {
-	String CHARGE_KEY = "Charge";
-
 	default boolean consumeCharge(ItemStack container, int amount) {
 		int charge = getCharge(container);
 		if (charge < amount) return false;
@@ -26,7 +25,7 @@ public interface ItemCharge {
 	void onChargeChanged(ItemStack container, int oldValue, int newValue);
 
 	default int getCharge(ItemStack container) {
-		return container.getOrCreateTag().getInt(CHARGE_KEY);
+		return container.getOrDefault(ModDataComponents.CHARGE, 0);
 	}
 
 	default boolean hasCharge(ItemStack container) {
@@ -37,7 +36,7 @@ public interface ItemCharge {
 		int maxCharge = getMaxCharge(container);
 		int oldValue = getCharge(container);
 		int newValue = Mth.clamp(amount, 0, maxCharge);
-		container.getOrCreateTag().putInt(CHARGE_KEY, newValue);
+		container.set(ModDataComponents.CHARGE, newValue);
 		onChargeChanged(container, oldValue, newValue);
 	}
 

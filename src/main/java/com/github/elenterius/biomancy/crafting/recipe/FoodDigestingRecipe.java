@@ -5,8 +5,10 @@ import com.github.elenterius.biomancy.crafting.AnyFoodIngredient;
 import com.github.elenterius.biomancy.init.ModItems;
 import com.github.elenterius.biomancy.init.ModRecipes;
 import com.google.gson.JsonObject;
+import com.mojang.serialization.JsonOps;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.network.FriendlyByteBuf;
@@ -161,7 +163,7 @@ public class FoodDigestingRecipe extends DynamicProcessingRecipe implements Dige
 				private JsonObject serialize(ItemStack stack) {
 					JsonObject json = new JsonObject();
 					json.addProperty("item", BuiltInRegistries.ITEM.getKey(stack.getItem()).toString());
-					if (stack.hasTag()) json.addProperty("nbt", stack.getTag().getAsString());
+					if (!stack.getComponentsPatch().isEmpty()) json.add("components", DataComponentPatch.CODEC.encodeStart(JsonOps.INSTANCE, stack.getComponentsPatch()).getOrThrow());
 					return json;
 				}
 

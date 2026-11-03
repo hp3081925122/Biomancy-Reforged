@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.api.nutrients;
 
+import com.github.elenterius.biomancy.init.ModDataComponents;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.SlotAccess;
 import net.minecraft.world.entity.player.Player;
@@ -13,8 +14,6 @@ import java.util.function.Predicate;
 
 @ApiStatus.Experimental
 public interface NutrientsContainerItem {
-
-	String NUTRIENTS_TAG_KEY = "biomancy:nutrients";
 
 	Predicate<ItemStack> NEED_NUTRIENTS_PREDICATE = stack -> stack.getItem() instanceof NutrientsContainerItem item && item.getNutrients(stack) < item.getMaxNutrients(stack);
 
@@ -47,7 +46,7 @@ public interface NutrientsContainerItem {
 	void onNutrientsChanged(ItemStack container, int oldValue, int newValue);
 
 	default int getNutrients(ItemStack container) {
-		return container.getOrCreateTag().getInt(NUTRIENTS_TAG_KEY);
+		return container.getOrDefault(ModDataComponents.NUTRIENTS, 0);
 	}
 
 	default boolean hasNutrients(ItemStack container) {
@@ -58,7 +57,7 @@ public interface NutrientsContainerItem {
 		int maxNutrients = getMaxNutrients(container);
 		int oldValue = getNutrients(container);
 		int newValue = Mth.clamp(amount, 0, maxNutrients);
-		container.getOrCreateTag().putInt(NUTRIENTS_TAG_KEY, newValue);
+		container.set(ModDataComponents.NUTRIENTS, newValue);
 		onNutrientsChanged(container, oldValue, newValue);
 	}
 

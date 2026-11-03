@@ -2,12 +2,13 @@ package com.github.elenterius.biomancy.item;
 
 import com.github.elenterius.biomancy.block.modularlarynx.MobSoundType;
 import com.github.elenterius.biomancy.client.util.ClientTextUtil;
+import com.github.elenterius.biomancy.component.EssenceData;
+import com.github.elenterius.biomancy.init.ModDataComponents;
 import com.github.elenterius.biomancy.init.ModEnchantments;
 import com.github.elenterius.biomancy.init.ModItems;
 import com.github.elenterius.biomancy.util.ComponentUtil;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
@@ -24,20 +25,12 @@ import net.minecraft.world.level.Level;
 import net.minecraftforge.common.ForgeSpawnEggItem;
 import org.jspecify.annotations.Nullable;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 public class EssenceItem extends Item implements ItemTooltipStyleProvider {
-
-	public static final String ENTITY_TYPE_KEY = "entity_type";
-	public static final String ESSENCE_DATA_KEY = "essence_data";
-	public static final String COLORS_KEY = "colors";
-	public static final String SOUNDS_KEY = "sounds";
-	public static final String ENTITY_NAME_KEY = "name";
-	public static final String ENTITY_UUID_KEY = "entity_uuid";
-	public static final String ESSENCE_TIER_KEY = "essence_tier";
-	public static final String PLAYER_NAME_KEY = "player_name";
 
 	public EssenceItem(Properties properties) {
 		super(properties);
@@ -55,7 +48,10 @@ public class EssenceItem extends Item implements ItemTooltipStyleProvider {
 
 		if (essenceItem.setEssenceData(stack, tier, livingEntity)) {
 			if (tier >= 3 && livingEntity instanceof Player player) {
-				stack.getOrCreateTag().putString(PLAYER_NAME_KEY, player.getGameProfile().getName());
+				EssenceData essenceData = stack.get(ModDataComponents.ESSENCE);
+				if (essenceData != null) {
+					stack.set(ModDataComponents.ESSENCE, essenceData.withPlayerName(player.getGameProfile().getName()));
+				}
 			}
 			return stack;
 		}
@@ -103,7 +99,7 @@ public class EssenceItem extends Item implements ItemTooltipStyleProvider {
 
 	public static int[] getEssenceColors(EntityType<?> entityType) {
 		if (entityType == EntityType.PLAYER) {
-			return new int[]{0x00AFAF, 0x463AA5}; //steve colors
+			return new int[]{0x00AFAF, 0x463AA5};
 		}
 
 		SpawnEggItem spawnEggItem = ForgeSpawnEggItem.fromEntityType(entityType);
@@ -113,7 +109,6 @@ public class EssenceItem extends Item implements ItemTooltipStyleProvider {
 			return new int[]{background, highlight};
 		}
 		else {
-			//handle mobs that don't have spawn eggs
 			ResourceLocation key = EntityType.getKey(entityType);
 			int background = key.hashCode() & 0xffffff;
 			int highlight = key.toString().hashCode() & 0xffffff;
@@ -142,22 +137,9 @@ public class EssenceItem extends Item implements ItemTooltipStyleProvider {
 
 		ResourceLocation entityTypeId = EntityType.getKey(entityType);
 
-		CompoundTag essenceTag = new CompoundTag();
-		essenceTag.putString(ENTITY_TYPE_KEY, entityTypeId.toString());
-		essenceTag.putString(ENTITY_NAME_KEY, entityType.getDescriptionId());
-
-		if (entityUUID != null) {
-			essenceTag.putUUID(ENTITY_UUID_KEY, entityUUID);
-		}
-
-		CompoundTag tag = stack.getOrCreateTag();
-		tag.put(ESSENCE_DATA_KEY, essenceTag);
-		tag.putIntArray(COLORS_KEY, colors);
-		if (tier > 0) tag.putInt(ESSENCE_TIER_KEY, tier);
-
-		if (mobSounds != null) {
-			tag.put(SOUNDS_KEY, mobSounds);
-		}
+		List<Integer> colorList = Arrays.stream(colors).boxed().toList();
+		EssenceData essenceData = new EssenceData(entityTypeId, entityType.getDescriptionId(), Optional.ofNullable(entityUUID), colorList, Math.max(tier, 0), Optional.ofNullable(mobSounds), Optional.empty());
+		stack.set(ModDataComponents.ESSENCE, essenceData);
 
 		return true;
 
@@ -168,36 +150,35 @@ public class EssenceItem extends Item implements ItemTooltipStyleProvider {
 	}
 
 	public Optional<EntityType<?>> getEntityType(ItemStack stack) {
-		CompoundTag tag = stack.getOrCreateTag().getCompound(ESSENCE_DATA_KEY);
-		return EntityType.byString(tag.getString(ENTITY_TYPE_KEY));
+		EssenceData essenceData = stack.get(ModDataComponents.ESSENCE);
+		if (essenceData == null) return Optional.empty();
+		return essenceData.getEntityType();
 	}
 
 	public Optional<UUID> getEntityUUID(ItemStack stack) {
-		CompoundTag tag = stack.getOrCreateTag().getCompound(ESSENCE_DATA_KEY);
-		if (tag.hasUUID(ENTITY_UUID_KEY)) {
-			return Optional.of(tag.getUUID(ENTITY_UUID_KEY));
-		}
-		return Optional.empty();
+		EssenceData essenceData = stack.get(ModDataComponents.ESSENCE);
+		if (essenceData == null) return Optional.empty();
+		return essenceData.entityUUID();
 	}
 
 	public Optional<SoundEvent> getMobSound(ItemStack stack, MobSoundType soundType) {
-		CompoundTag tag = stack.getOrCreateTag().getCompound(SOUNDS_KEY);
+		EssenceData essenceData = stack.get(ModDataComponents.ESSENCE);
+		CompoundTag tag = essenceData != null ? essenceData.sounds().orElseGet(CompoundTag::new) : new CompoundTag();
 		return Optional.ofNullable(soundType.getSound(tag));
 	}
 
 	public int getColor(ItemStack stack, int tintIndex) {
-		CompoundTag tag = stack.getOrCreateTag();
-		if (tag.contains(COLORS_KEY, Tag.TAG_INT_ARRAY)) {
-			int[] colors = tag.getIntArray(COLORS_KEY);
-			return tintIndex == 0 ? colors[0] : colors[1];
+		EssenceData essenceData = stack.get(ModDataComponents.ESSENCE);
+		if (essenceData != null && essenceData.colors().size() >= 2) {
+			return tintIndex == 0 ? essenceData.colors().get(0) : essenceData.colors().get(1);
 		}
 		return -1;
 	}
 
 	public int[] getColors(ItemStack stack) {
-		CompoundTag tag = stack.getOrCreateTag();
-		if (tag.contains(COLORS_KEY, Tag.TAG_INT_ARRAY)) {
-			return tag.getIntArray(COLORS_KEY);
+		EssenceData essenceData = stack.get(ModDataComponents.ESSENCE);
+		if (essenceData != null && !essenceData.colors().isEmpty()) {
+			return essenceData.colorArray();
 		}
 
 		return new int[]{0xffff_ffff, 0xffff_ffff};
@@ -207,27 +188,24 @@ public class EssenceItem extends Item implements ItemTooltipStyleProvider {
 	public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag isAdvanced) {
 		tooltip.addAll(ClientTextUtil.getItemInfoTooltip(stack));
 
-		CompoundTag compoundTag = stack.getOrCreateTag();
+		EssenceData essenceData = stack.get(ModDataComponents.ESSENCE);
+		if (essenceData == null) return;
 
-		if (compoundTag.contains(ESSENCE_DATA_KEY)) {
-			CompoundTag tag = compoundTag.getCompound(ESSENCE_DATA_KEY);
+		if (essenceData.entityUUID().isPresent()) {
+			tooltip.add(ComponentUtil.EMPTY_LINE);
 
-			if (tag.hasUUID(ENTITY_UUID_KEY)) {
-				tooltip.add(ComponentUtil.EMPTY_LINE);
+			UUID entityUUID = essenceData.entityUUID().get();
 
-				UUID entityUUID = tag.getUUID(ENTITY_UUID_KEY);
-
-				if (tag.getString(ENTITY_NAME_KEY).equals(EntityType.PLAYER.getDescriptionId()) && compoundTag.contains(PLAYER_NAME_KEY)) {
-					String name = compoundTag.getString(PLAYER_NAME_KEY);
-					tooltip.add(ComponentUtil.literal("Player: " + name).withStyle(ChatFormatting.GRAY));
-				}
-				else {
-					tooltip.add(ComponentUtil.literal("UUID: " + entityUUID).withStyle(ChatFormatting.GRAY));
-				}
+			if (essenceData.name().equals(EntityType.PLAYER.getDescriptionId()) && essenceData.playerName().isPresent()) {
+				String name = essenceData.playerName().get();
+				tooltip.add(ComponentUtil.literal("Player: " + name).withStyle(ChatFormatting.GRAY));
+			}
+			else {
+				tooltip.add(ComponentUtil.literal("UUID: " + entityUUID).withStyle(ChatFormatting.GRAY));
 			}
 		}
 
-		int tier = compoundTag.getInt(ESSENCE_TIER_KEY);
+		int tier = essenceData.tier();
 		if (tier > 0) {
 			tooltip.add(ComponentUtil.EMPTY_LINE);
 			tooltip.add(ComponentUtil.literal("Tier: " + tier));
@@ -236,16 +214,15 @@ public class EssenceItem extends Item implements ItemTooltipStyleProvider {
 
 	@Override
 	public Component getName(ItemStack stack) {
-		CompoundTag compoundTag = stack.getOrCreateTag();
+		EssenceData essenceData = stack.get(ModDataComponents.ESSENCE);
 
-		if (!compoundTag.contains(ESSENCE_DATA_KEY)) {
+		if (essenceData == null) {
 			return Component.translatable(getDescriptionId(stack));
 		}
 
-		CompoundTag tag = compoundTag.getCompound(ESSENCE_DATA_KEY);
-		MutableComponent entityName = ComponentUtil.translatable(tag.getString(ENTITY_NAME_KEY));
+		MutableComponent entityName = ComponentUtil.translatable(essenceData.name());
 
-		if (tag.hasUUID(ENTITY_UUID_KEY)) {
+		if (essenceData.entityUUID().isPresent()) {
 			return Component.translatable(getDescriptionId(stack) + ".unique_mob", entityName);
 		}
 

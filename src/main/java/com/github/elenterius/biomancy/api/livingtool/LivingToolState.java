@@ -2,7 +2,6 @@ package com.github.elenterius.biomancy.api.livingtool;
 
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.util.ComponentUtil;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.MutableComponent;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -12,12 +11,6 @@ import java.util.Locale;
 public enum LivingToolState {
 
 	BROKEN, DORMANT, AWAKENED;
-
-	public static final String STATE_TAG_KEY = "LivingToolState";
-
-	public static LivingToolState deserialize(CompoundTag tag) {
-		return deserialize(tag.getByte(STATE_TAG_KEY));
-	}
 
 	public static LivingToolState deserialize(byte stateId) {
 		if (stateId >= values().length) return BROKEN;
@@ -42,8 +35,8 @@ public enum LivingToolState {
 		return ComponentUtil.translatable(getTranslationKey());
 	}
 
-	public void serialize(CompoundTag tag) {
-		tag.putByte(STATE_TAG_KEY, (byte) ordinal());
+	public byte serialize() {
+		return (byte) ordinal();
 	}
 
 }

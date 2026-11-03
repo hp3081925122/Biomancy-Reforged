@@ -1,10 +1,11 @@
 package com.github.elenterius.biomancy.util;
 
+import net.minecraft.core.HolderLookup;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.common.util.INBTSerializable;
-import net.minecraftforge.items.ItemHandlerHelper;
+import net.neoforged.neoforge.common.util.INBTSerializable;
 import org.jspecify.annotations.Nullable;
 
 import java.util.function.Predicate;
@@ -26,12 +27,12 @@ public class ItemStackFilter implements Predicate<ItemStack>, INBTSerializable<C
 		this.isStrict = isStrict;
 	}
 
-	protected ItemStackFilter(CompoundTag tag) {
-		deserializeNBT(tag);
+	protected ItemStackFilter(HolderLookup.Provider provider, CompoundTag tag) {
+		deserializeNBT(provider, tag);
 	}
 
-	public static ItemStackFilter of(CompoundTag tag) {
-		return new ItemStackFilter(tag);
+	public static ItemStackFilter of(HolderLookup.Provider provider, CompoundTag tag) {
+		return new ItemStackFilter(provider, tag);
 	}
 
 	public static ItemStackFilter of(Item filter) {
@@ -46,14 +47,8 @@ public class ItemStackFilter implements Predicate<ItemStack>, INBTSerializable<C
 		if (filter == null) return ALLOW_ANY;
 		if (filter.isEmpty()) return ALLOW_NONE;
 
-		filter = filter.copyWithCount(1);
+		filter = new ItemStack(filter.getItemHolder(), 1, filter.getComponentsPatch().forget(type -> type == DataComponents.ENCHANTMENTS || type == DataComponents.ATTRIBUTE_MODIFIERS));
 
-		if (filter.hasTag()) {
-			CompoundTag stackTag = filter.getTag();
-			assert stackTag != null;
-			stackTag.remove("Enchantments");
-			stackTag.remove("AttributeModifiers");
-		}
 		return new ItemStackFilter(filter, isStrict);
 	}
 
@@ -65,7 +60,7 @@ public class ItemStackFilter implements Predicate<ItemStack>, INBTSerializable<C
 		if (filter.isEmpty()) return false;
 
 		if (isStrict) {
-			return ItemHandlerHelper.canItemStacksStack(filter, stack);
+			return ItemStack.isSameItemSameComponents(filter, stack);
 		}
 		else {
 			return filter.is(stack.getItem());
@@ -73,18 +68,18 @@ public class ItemStackFilter implements Predicate<ItemStack>, INBTSerializable<C
 	}
 
 	@Override
-	public CompoundTag serializeNBT() {
+	public CompoundTag serializeNBT(HolderLookup.Provider provider) {
 		CompoundTag tag = new CompoundTag();
 		if (filter != null) {
-			tag.put(FILTER_KEY, filter.serializeNBT());
+			tag.put(FILTER_KEY, filter.saveOptional(provider));
 			tag.putBoolean(STRICT_KEY, isStrict);
 		}
 		return tag;
 	}
 
 	@Override
-	public void deserializeNBT(CompoundTag tag) {
-		filter = tag.contains(FILTER_KEY) ? ItemStack.of(tag.getCompound(FILTER_KEY)) : null;
+	public void deserializeNBT(HolderLookup.Provider provider, CompoundTag tag) {
+		filter = tag.contains(FILTER_KEY) ? ItemStack.parseOptional(provider, tag.getCompound(FILTER_KEY)) : null;
 		isStrict = tag.getBoolean(STRICT_KEY);
 	}
 
