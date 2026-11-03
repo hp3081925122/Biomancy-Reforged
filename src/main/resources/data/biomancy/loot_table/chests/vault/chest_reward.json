@@ -63,7 +63,7 @@
           "functions": [
             {
               "function": "minecraft:enchant_randomly",
-              "enchantments": [
+              "options": [
                 "biomancy:despoil",
                 "biomancy:anesthetic",
                 "biomancy:surgical_precision",
@@ -73,7 +73,7 @@
             },
             {
               "function": "minecraft:enchant_randomly",
-              "enchantments": [
+              "options": [
                 "minecraft:sharpness",
                 "minecraft:piercing",
                 "minecraft:protection",
