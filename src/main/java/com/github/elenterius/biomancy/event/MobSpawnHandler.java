@@ -15,27 +15,22 @@ import net.minecraft.world.entity.animal.Chicken;
 import net.minecraft.world.entity.animal.Cow;
 import net.minecraft.world.entity.animal.Pig;
 import net.minecraft.world.entity.animal.Sheep;
-import net.minecraftforge.event.entity.living.BabyEntitySpawnEvent;
-import net.minecraftforge.event.entity.living.MobSpawnEvent;
-import net.minecraftforge.eventbus.api.Event;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.neoforge.event.entity.living.BabyEntitySpawnEvent;
+import net.neoforged.neoforge.event.entity.living.MobSpawnEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
 
 import java.util.function.Predicate;
 
-@Mod.EventBusSubscriber(modid = BiomancyMod.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = BiomancyMod.MOD_ID)
 public final class MobSpawnHandler {
 
 	private MobSpawnHandler() {}
 
-	//TODO: re-enable this
 	public static void onCheckSpawn(final MobSpawnEvent.PositionCheck event) {
-		if (event.isCanceled()) return;
-
 		if (event.getLevel() instanceof ServerLevel serverLevel) {
 			MobSpawnType spawnReason = event.getSpawnType();
 
-			//TODO: check unnatural spawns as well??
 			if (MobSpawnFilter.isNaturalSpawn(spawnReason)) {
 
 				Mob mob = event.getEntity();
@@ -48,9 +43,7 @@ public final class MobSpawnHandler {
 				boolean denySpawn = SpatialDBManager.getInstance(serverLevel).getAnyShape(serverLevel, mob, SpatialQueryStrategy.INTERSECTION, denySpawnPredicate) != null;
 
 				if (denySpawn) {
-					//TODO: chamber specific mob spawn filters? --> e.g. chamber only allows creepers spawns
-					//MoundChamber chamber = moundShape.getChamberAt(pos.getX(), pos.getY(), pos.getZ());
-					event.setResult(Event.Result.DENY);
+					event.setResult(MobSpawnEvent.PositionCheck.Result.FAIL);
 				}
 			}
 		}

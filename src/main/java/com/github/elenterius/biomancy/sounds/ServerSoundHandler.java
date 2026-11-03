@@ -11,14 +11,14 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.minecraft.core.registries.BuiltInRegistries;
 import org.jspecify.annotations.Nullable;
 
-@Mod.EventBusSubscriber(modid = BiomancyMod.MOD_ID, value = Dist.DEDICATED_SERVER)
+@EventBusSubscriber(modid = BiomancyMod.MOD_ID, value = Dist.DEDICATED_SERVER)
 public class ServerSoundHandler {
 
 	public static final String SOUND_LAYERS_KEY = "biomancy:sound_layers";
@@ -26,7 +26,7 @@ public class ServerSoundHandler {
 	private static @Nullable SoundEvent parseSoundEvent(String soundId) {
 		ResourceLocation key = ResourceLocation.tryParse(soundId);
 		if (key == null) return null;
-		return ForgeRegistries.SOUND_EVENTS.getValue(key);
+		return BuiltInRegistries.SOUND_EVENT.get(key);
 	}
 
 	@SubscribeEvent
@@ -66,22 +66,18 @@ public class ServerSoundHandler {
 		ModNetworkHandler.sendSoundLayerRemovalToClients(entity, soundLayerId, true);
 	}
 
-	/// triggers sound event on the client side at the eye positon of the player
 	public static void triggerSoundForClientPlayer(ServerPlayer player, SoundEvent soundEvent, float volume, float pitch) {
 		triggerSoundForClientPlayer(player, soundEvent, player.getSoundSource(), volume, pitch);
 	}
 
-	/// triggers sound event on the client side at the eye positon of the player
 	public static void triggerSoundForClientPlayer(ServerPlayer player, SoundEvent soundEvent, SoundSource source, float volume, float pitch) {
 		player.connection.send(new ClientboundSoundPacket(BuiltInRegistries.SOUND_EVENT.wrapAsHolder(soundEvent), source, player.getX(), player.getEyeY(), player.getZ(), volume, pitch, player.getRandom().nextLong()));
 	}
 
-	/// triggers sound event on the client side at the specified position
 	public static void triggerSoundOnClient(ServerPlayer player, Vec3 soundPosition, SoundEvent soundEvent, SoundSource source, float volume, float pitch) {
 		triggerSoundOnClient(player, soundPosition.x, soundPosition.y, soundPosition.z, soundEvent, source, volume, pitch);
 	}
 
-	/// triggers sound event on the client side at the specified position
 	public static void triggerSoundOnClient(ServerPlayer player, double x, double y, double z, SoundEvent soundEvent, SoundSource source, float volume, float pitch) {
 		player.connection.send(new ClientboundSoundPacket(BuiltInRegistries.SOUND_EVENT.wrapAsHolder(soundEvent), source, x, y, z, volume, pitch, player.getRandom().nextLong()));
 	}

@@ -19,18 +19,16 @@ import net.minecraft.network.chat.ComponentContents;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.world.inventory.tooltip.TooltipComponent;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RenderTooltipEvent;
-import net.minecraftforge.event.entity.player.ItemTooltipEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.RenderTooltipEvent;
+import net.neoforged.neoforge.event.entity.player.ItemTooltipEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
 
 import java.util.List;
 
-@Mod.EventBusSubscriber(modid = BiomancyMod.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
+@EventBusSubscriber(modid = BiomancyMod.MOD_ID, value = Dist.CLIENT)
 public final class TooltipHandler {
-
-	//	private static final ResourceLocation TOOLTIP_OVERLAY_TEXTURE = BiomancyMod.createRL("textures/gui/ui_tooltip.png");
 	private static final EmptyLineTooltipComponent EMPTY_LINE = new EmptyLineTooltipComponent();
 
 	private TooltipHandler() {}
@@ -72,14 +70,13 @@ public final class TooltipHandler {
 			Either<FormattedText, TooltipComponent> either = tooltipElements.get(i);
 			final int index = i;
 
-			//replace formattedText with TooltipComponent
 			either.ifLeft(formattedText -> {
 				if (formattedText instanceof Component component) {
 					ComponentContents componentContents = component.getContents();
 					if (componentContents instanceof TooltipContents contents) {
 						tooltipElements.set(index, Either.right(contents.component()));
 					}
-					else if (isOurTooltip && component == CommonComponents.EMPTY) { //vanilla bugfix: fixes empty lines disappearing when long text is wrapped
+					else if (isOurTooltip && component == CommonComponents.EMPTY) {
 						tooltipElements.set(index, Either.right(EMPTY_LINE));
 					}
 				}
@@ -111,37 +108,5 @@ public final class TooltipHandler {
 				y += clientComponent.getHeight() + (i == 0 ? 2 : 0);
 			}
 		}
-
-		//drawTooltipOverlay(poseStack, posX, posY, tooltipWidth, tooltipHeight);
 	}
-
-	//	private static void drawTooltipOverlay(PoseStack poseStack, int posX, int posY, int tooltipWidth, int tooltipHeight) {
-	//		int blitOffset = 400;
-	//
-	//		int textureWidth = 64;
-	//		int textureHeight = 32;
-	//
-	//		int cornerWidth = 8;
-	//		int cornerHeight = 8;
-	//		int centerWidth = 48;
-	//		int centerHeight = 8;
-	//
-	//		RenderSystem.setShaderColor(1, 1, 1, 1);
-	//		RenderSystem.setShaderTexture(0, TOOLTIP_OVERLAY_TEXTURE);
-	//
-	//		//corner pieces
-	//		int cornerOffset = 6;
-	//		GuiComponent.blit(poseStack, posX - cornerOffset, posY - cornerOffset, blitOffset, 0, 0, cornerWidth, cornerHeight, textureWidth, textureHeight);
-	//		GuiComponent.blit(poseStack, posX + tooltipWidth - cornerWidth + cornerOffset, posY - cornerOffset, blitOffset, centerWidth + cornerWidth, 0, cornerWidth, cornerHeight, textureWidth, textureHeight);
-	//		GuiComponent.blit(poseStack, posX - cornerOffset, posY + tooltipHeight - cornerHeight + cornerOffset, blitOffset, 0, cornerHeight, cornerWidth, cornerHeight, textureWidth, textureHeight);
-	//		GuiComponent.blit(poseStack, posX + tooltipWidth - cornerWidth + cornerOffset, posY + tooltipHeight - cornerHeight + cornerOffset, blitOffset, centerWidth + cornerWidth, cornerHeight, cornerWidth, cornerHeight, textureWidth, textureHeight);
-	//
-	//		//top and bottom pieces
-	//		if (tooltipWidth >= centerWidth) {
-	//			int centerOffset = 9;
-	//			GuiComponent.blit(poseStack, posX + tooltipWidth / 2 - centerWidth / 2, posY - centerOffset, blitOffset, cornerWidth, 0, centerWidth, centerHeight, textureWidth, textureHeight);
-	//			GuiComponent.blit(poseStack, posX + tooltipWidth / 2 - centerWidth / 2, posY + tooltipHeight - centerHeight + centerOffset, blitOffset, cornerWidth, centerHeight, centerWidth, centerHeight, textureWidth, textureHeight);
-	//		}
-	//	}
-
 }

@@ -17,15 +17,15 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RenderHighlightEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.RenderHighlightEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
 
 import java.util.IdentityHashMap;
 import java.util.Map;
 
-@Mod.EventBusSubscriber(modid = BiomancyMod.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
+@EventBusSubscriber(modid = BiomancyMod.MOD_ID, value = Dist.CLIENT)
 public final class RenderHighlightHandler {
 
 	private RenderHighlightHandler() {}
@@ -87,23 +87,6 @@ public final class RenderHighlightHandler {
 		}
 	}
 
-	/**
-	 * Adapted from:
-	 * https://github.com/klikli-dev/modonomicon/blob/c299f3617f5f784904cfb6f501a0272a42fb2732/src/main/java/com/klikli_dev/modonomicon/client/render/MultiblockPreviewRenderer.java#L403-L429
-	 * <p>
-	 * Copyright (C) 2022 klikli-dev
-	 * <p>
-	 * Permission is hereby granted, free of charge, to any person obtaining
-	 * a copy of this software and associated documentation files (the
-	 * "Software"), to deal in the Software without restriction, including
-	 * without limitation the rights to use, copy, modify, merge, publish,
-	 * distribute, sublicense, and/or sell copies of the Software, and to
-	 * permit persons to whom the Software is furnished to do so, subject to
-	 * the following conditions:
-	 * <p>
-	 * The above copyright notice and this permission notice shall be
-	 * included in all copies or substantial portions of the Software.
-	 */
 	private static class AlphaRenderType extends RenderType {
 		private static final Map<RenderType, AlphaRenderType> remappedTypes = new IdentityHashMap<>();
 		private static float alpha;

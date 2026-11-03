@@ -8,11 +8,11 @@ import com.github.elenterius.spatialdb.mvstore.SpatialDBException;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.event.level.LevelEvent;
-import net.minecraftforge.event.server.ServerStoppingEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.loading.FMLEnvironment;
+import net.neoforged.neoforge.event.level.LevelEvent;
+import net.neoforged.neoforge.event.server.ServerStoppingEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.loading.FMLEnvironment;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Marker;
@@ -27,7 +27,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-@Mod.EventBusSubscriber(modid = BiomancyMod.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = BiomancyMod.MOD_ID)
 public class SpatialDBManager {
 
 	public static final Logger LOGGER = LogManager.getLogger("SpatialDB");
@@ -47,7 +47,6 @@ public class SpatialDBManager {
 
 		if (FMLEnvironment.dist.isClient()) {
 			LOGGER.info(LOG_MARKER, "Registering shutdown hook...");
-			//this gets called too late on a dedicated server due to forge/mojang
 			Runtime.getRuntime().addShutdownHook(new Thread(SpatialDBManager::shutdownAll, "SpatialDB/ShutdownHook"));
 		}
 	}
@@ -61,7 +60,6 @@ public class SpatialDBManager {
 		String dbOwnerName = "[World/%s]".formatted(worldName);
 
 		try {
-			//clean up legacy files
 			FileUtils.delete(dataFolder.resolve("biomancy.spatial.dat").toString());
 		}
 		catch (Exception ignored) {}
@@ -98,7 +96,6 @@ public class SpatialDBManager {
 		}
 	}
 
-	/// Close [SpatialDB] if present for the given level and remove it from the cache
 	private static void shutdownDB(ServerLevel level) {
 		String key = getWorldName(level);
 		if (DATABASES.containsKey(key)) {
@@ -138,7 +135,7 @@ public class SpatialDBManager {
 	@SubscribeEvent
 	public static void onLevelLoad(final LevelEvent.Load event) {
 		if (!event.getLevel().isClientSide() && event.getLevel() instanceof ServerLevel serverLevel && (serverLevel.dimension() == Level.OVERWORLD)) {
-			getInstance(serverLevel); //force init spatial database
+			getInstance(serverLevel);
 		}
 	}
 
@@ -159,7 +156,7 @@ public class SpatialDBManager {
 	@SubscribeEvent
 	public static void onServerStop(final ServerStoppingEvent event) {
 		if (FMLEnvironment.dist.isDedicatedServer()) {
-			shutdownAll(); //explicitly force a shutdown because forge/mojang shutdowns the server in an incompatible way with JVM shutdown hooks
+			shutdownAll();
 		}
 	}
 

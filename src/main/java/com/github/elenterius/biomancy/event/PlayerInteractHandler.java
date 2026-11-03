@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.event;
 
+import net.neoforged.neoforge.common.util.TriState;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.api.serum.SerumContainer;
 import com.github.elenterius.biomancy.block.vialholder.VialHolderBlock;
@@ -12,13 +13,12 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.entity.PartEntity;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent;
-import net.minecraftforge.eventbus.api.Event;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.neoforge.entity.PartEntity;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
 
-@Mod.EventBusSubscriber(modid = BiomancyMod.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = BiomancyMod.MOD_ID)
 public final class PlayerInteractHandler {
 
 	private PlayerInteractHandler() {}
@@ -43,7 +43,7 @@ public final class PlayerInteractHandler {
 	@SubscribeEvent
 	public static void onPlayerInteractWithBlock(final PlayerInteractEvent.RightClickBlock event) {
 		if (event.getItemStack().getItem() instanceof SerumContainer && event.getLevel().getBlockState(event.getPos()).getBlock() instanceof VialHolderBlock) {
-			event.setUseBlock(Event.Result.ALLOW);
+			event.setUseBlock(TriState.TRUE);
 		}
 	}
 

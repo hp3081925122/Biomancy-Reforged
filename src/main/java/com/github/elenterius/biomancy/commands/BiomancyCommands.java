@@ -1,5 +1,9 @@
 package com.github.elenterius.biomancy.commands;
 
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.core.RegistryAccess;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.mixin.accessor.DisplayAccessor;
 import com.github.elenterius.biomancy.mixin.accessor.StructureTemplateAccessor;
@@ -34,13 +38,12 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.StructureMode;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
-import net.minecraft.world.level.storage.loot.LootDataManager;
+import net.minecraft.server.ReloadableServerRegistries;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.phys.AABB;
-import net.minecraftforge.event.RegisterCommandsEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -48,7 +51,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
-@Mod.EventBusSubscriber(modid = BiomancyMod.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = BiomancyMod.MOD_ID)
 public class BiomancyCommands {
 
 	@SubscribeEvent
@@ -71,7 +74,7 @@ public class BiomancyCommands {
 									return Command.SINGLE_SUCCESS;
 								}))
 						)
-						.then(Commands.literal("dump_biome_temps").executes(ctx -> dumpBiomeTemperatureAndHumidity() ? Command.SINGLE_SUCCESS : 0))
+						.then(Commands.literal("dump_biome_temps").executes(ctx -> dumpBiomeTemperatureAndHumidity(ctx.getSource().registryAccess()) ? Command.SINGLE_SUCCESS : 0))
 				);
 
 		LiteralCommandNode<CommandSourceStack> cmd = dispatcher.register(builder);
@@ -81,7 +84,7 @@ public class BiomancyCommands {
 	private static void placeAllStructures(CommandContext<CommandSourceStack> ctx, BlockPos origin) {
 		ServerLevel level = ctx.getSource().getLevel();
 		StructureTemplateManager structureManager = level.getServer().getStructureManager();
-		LootDataManager lootManager = level.getServer().getLootData();
+		ReloadableServerRegistries.Holder lootManager = level.getServer().reloadableRegistries();
 
 		List<ResourceLocation> templateIds = structureManager.listTemplates()
 				.filter(id -> id.getNamespace().equals(BiomancyMod.MOD_ID))
@@ -120,7 +123,7 @@ public class BiomancyCommands {
 				Vec3i templateSize = template.getSize();
 
 				BlockPos secondPos = cursor.offset(1 + templateSize.getX(), 1 + templateSize.getY(), 1 + templateSize.getZ());
-				List<Display> displays = level.getEntitiesOfClass(Display.class, new AABB(cursor, secondPos));
+				List<Display> displays = level.getEntitiesOfClass(Display.class, new AABB(Vec3.atLowerCornerOf(cursor), Vec3.atLowerCornerOf(secondPos)));
 				BiomancyMod.LOGGER.debug("Discarding {} old display entities...", displays.size());
 				for (Display display : displays) {
 					display.discard();
@@ -151,7 +154,8 @@ public class BiomancyCommands {
 					sbe.setStructureName(templateId);
 
 					try {
-						success = sbe.loadStructure(level, false, template);
+						success = sbe.loadStructureInfo(level);
+						if (success) sbe.placeStructure(level);
 						structuresPlaced.getAndIncrement();
 					}
 					catch (Exception e) {
@@ -174,7 +178,7 @@ public class BiomancyCommands {
 						boolean lootableExsists = false;
 						ResourceLocation id = ResourceLocation.tryParse(lootTableId);
 						if (id != null) {
-							LootTable lootTable = lootManager.getLootTable(id);
+							LootTable lootTable = lootManager.getLootTable(ResourceKey.create(Registries.LOOT_TABLE, id));
 							lootableExsists = lootTable != LootTable.EMPTY;
 						}
 
@@ -188,7 +192,7 @@ public class BiomancyCommands {
 						if (lootableExsists) {
 							BlockEntity blockEntity = level.getBlockEntity(new BlockPos(x, y, z));
 							if (blockEntity != null) {
-								CompoundTag data = blockEntity.saveWithoutMetadata();
+								CompoundTag data = blockEntity.saveWithoutMetadata(level.registryAccess());
 								if (!data.contains(RandomizableContainerBlockEntity.LOOT_TABLE_TAG, Tag.TAG_STRING)) {
 									text.append("\n").append(ComponentUtil.literal("LootTable is missing!").withStyle(TextStyles.ERROR));
 								}
@@ -251,10 +255,10 @@ public class BiomancyCommands {
 		}
 	}
 
-	private static boolean dumpBiomeTemperatureAndHumidity() {
+	private static boolean dumpBiomeTemperatureAndHumidity(RegistryAccess registryAccess) {
 		BiomancyMod.LOGGER.info("dumping biome default temperatures to biome_temperatures.csv...");
 		try {
-			Stream<String> stringStream = ForgeRegistries.BIOMES.getEntries().stream()
+			Stream<String> stringStream = registryAccess.registryOrThrow(Registries.BIOME).entrySet().stream()
 					.map(keyEntry -> "%s,%s,%s".formatted(keyEntry.getKey().location(), keyEntry.getValue().getBaseTemperature(), keyEntry.getValue().getModifiedClimateSettings().downfall()));
 
 			Files.write(Paths.get("biome_temperatures.csv"), (Iterable<String>) stringStream::iterator);
@@ -267,4 +271,3 @@ public class BiomancyCommands {
 	}
 
 }
-

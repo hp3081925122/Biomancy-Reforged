@@ -9,15 +9,15 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.InputEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.InputEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.Arrays;
 
-@Mod.EventBusSubscriber(modid = BiomancyMod.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
+@EventBusSubscriber(modid = BiomancyMod.MOD_ID, value = Dist.CLIENT)
 public final class ClientInputHandler {
 
 	private static final EquipmentSlot[] armorSlotTypes = Arrays.stream(EquipmentSlot.values()).filter(EquipmentSlot::isArmor).toArray(EquipmentSlot[]::new);
@@ -26,7 +26,7 @@ public final class ClientInputHandler {
 
 	@SubscribeEvent
 	public static void onKeyInput(final InputEvent.Key event) {
-		if (event.getAction() != GLFW.GLFW_RELEASE) return; //we only want key releases
+		if (event.getAction() != GLFW.GLFW_RELEASE) return;
 
 		LocalPlayer player = Minecraft.getInstance().player;
 		if (player == null) return;
@@ -61,19 +61,4 @@ public final class ClientInputHandler {
 			}
 		}
 	}
-
-	//	@SubscribeEvent
-	//	public static void onMouseClick(final InputEvent.ClickInputEvent event) {
-	//		if (event.isAttack()) {
-	//			ClientPlayerEntity player = Minecraft.getInstance().player;
-	//			if (player != null) {
-	//				ItemStack heldStack = player.getHeldItem(event.getHand());
-	//				if (!heldStack.isEmpty() && heldStack.getItem() == ModItems.INFESTED_RIFLE.get()) {
-	//					event.setSwingHand(false);
-	//					event.setCanceled(true);
-	//				}
-	//			}
-	//		}
-	//	}
-
 }

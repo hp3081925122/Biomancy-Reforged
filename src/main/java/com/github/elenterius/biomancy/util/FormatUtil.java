@@ -1,7 +1,7 @@
 package com.github.elenterius.biomancy.util;
 
 import net.minecraft.client.Minecraft;
-import net.minecraftforge.fml.loading.FMLEnvironment;
+import net.neoforged.fml.loading.FMLEnvironment;
 
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
@@ -79,7 +79,7 @@ public final class FormatUtil {
 	}
 
 	private static Locale getServerLocale() {
-		return Locale.US; // we provide the US locale because the server uses the default language en_us
+		return Locale.US;
 	}
 
 	private static void updateDecimalFormat() {

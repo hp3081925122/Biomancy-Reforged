@@ -11,19 +11,19 @@ import net.minecraft.client.sounds.WeighedSoundEvents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.Entity;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.EntityLeaveLevelEvent;
-import net.minecraftforge.event.level.LevelEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
+import net.neoforged.neoforge.event.level.LevelEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayDeque;
 import java.util.Map;
 import java.util.Queue;
 
-@Mod.EventBusSubscriber(modid = BiomancyMod.MOD_ID, value = Dist.CLIENT)
+@EventBusSubscriber(modid = BiomancyMod.MOD_ID, value = Dist.CLIENT)
 public final class ClientSoundHandler {
 
 	private static final Int2ObjectMap<EntitySoundLayers> ENTITY_SOUND_LAYERS = new Int2ObjectOpenHashMap<>();
@@ -74,8 +74,7 @@ public final class ClientSoundHandler {
 	}
 
 	@SubscribeEvent
-	public static void onClientTick(final TickEvent.ClientTickEvent event) {
-		if (event.phase == TickEvent.Phase.START) return;
+	public static void onClientTick(final ClientTickEvent.Post event) {
 
 		while (!QUEUE.isEmpty()) {
 			SoundLayerUpdate update = QUEUE.poll();
