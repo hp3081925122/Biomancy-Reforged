@@ -4,7 +4,10 @@ import com.github.elenterius.biomancy.mixin.accessor.ExplosionAccessor;
 import com.github.elenterius.biomancy.util.ClientUtil;
 import com.github.elenterius.biomancy.util.explosion.ExplosionType;
 import net.minecraft.core.BlockPos;
+import com.github.elenterius.biomancy.BiomancyMod;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
@@ -12,14 +15,16 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
-import java.util.function.Supplier;
 
-/// client bound message
-public class CustomExplosionMessage {
+public class CustomExplosionMessage implements CustomPacketPayload {
+
+	public static final Type<CustomExplosionMessage> TYPE = new Type<>(BiomancyMod.rl("custom_explosion"));
+
+	public static final StreamCodec<FriendlyByteBuf, CustomExplosionMessage> STREAM_CODEC = StreamCodec.ofMember(CustomExplosionMessage::encode, CustomExplosionMessage::decode);
 
 	private final ExplosionType type;
 	private final @Nullable Integer sourceId;
@@ -41,7 +46,7 @@ public class CustomExplosionMessage {
 		Entity source = explosion.getDirectSourceEntity();
 		sourceId = source != null ? source.getId() : null;
 
-		Vec3 position = explosion.getPosition();
+		Vec3 position = explosion.center();
 		x = position.x;
 		y = position.y;
 		z = position.z;
@@ -76,14 +81,13 @@ public class CustomExplosionMessage {
 		this.knockbackZ = knockbackZ;
 	}
 
-	public static void handle(CustomExplosionMessage packet, Supplier<NetworkEvent.Context> ctx) {
-		NetworkEvent.Context context = ctx.get();
+	@Override
+	public Type<CustomExplosionMessage> type() {
+		return TYPE;
+	}
 
-		if (context.getDirection().getReceptionSide().isClient()) {
-			context.enqueueWork(() -> ClientHandler.handle(packet));
-		}
-
-		context.setPacketHandled(true);
+	public static void handle(CustomExplosionMessage packet, IPayloadContext context) {
+		ClientHandler.handle(packet);
 	}
 
 	public void encode(final FriendlyByteBuf buffer) {

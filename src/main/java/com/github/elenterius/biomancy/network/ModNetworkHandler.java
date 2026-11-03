@@ -11,18 +11,18 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.Explosion;
-import net.minecraftforge.network.NetworkDirection;
-import net.minecraftforge.network.NetworkRegistry;
-import net.minecraftforge.network.PacketDistributor;
-import net.minecraftforge.network.simple.SimpleChannel;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
-import java.util.Optional;
-
+@EventBusSubscriber(modid = BiomancyMod.MOD_ID)
 public final class ModNetworkHandler {
 
 	private static final String PROTOCOL_VERSION = "1";
-	public static final SimpleChannel SIMPLE_NETWORK_CHANNEL = NetworkRegistry.newSimpleChannel(BiomancyMod.rl("main"), () -> PROTOCOL_VERSION, PROTOCOL_VERSION::equals, PROTOCOL_VERSION::equals);
 
 	private ModNetworkHandler() {}
 
@@ -32,19 +32,19 @@ public final class ModNetworkHandler {
 	}
 
 	public static void sendKeyBindPressToServer(EquipmentSlot slot, byte flag) {
-		SIMPLE_NETWORK_CHANNEL.sendToServer(new KeyPressMessage(slot.getFilterFlag(), flag));
+		PacketDistributor.sendToServer(new KeyPressMessage(slot.getFilterFlag(), flag));
 	}
 
 	public static void sendKeyBindPressToServer(int slotIndex, byte flag) {
-		SIMPLE_NETWORK_CHANNEL.sendToServer(new KeyPressMessage(slotIndex, flag));
+		PacketDistributor.sendToServer(new KeyPressMessage(slotIndex, flag));
 	}
 
-	public static void sendBioForgeRecipeToServer(int containerId, BioForgingRecipe recipe) {
-		SIMPLE_NETWORK_CHANNEL.sendToServer(new BioForgeRecipeMessage(containerId, recipe.getId()));
+	public static void sendBioForgeRecipeToServer(int containerId, RecipeHolder<BioForgingRecipe> recipe) {
+		PacketDistributor.sendToServer(new BioForgeRecipeMessage(containerId, recipe.id()));
 	}
 
 	public static void sendBioLabFilterToClient(ServerPlayer player, int containerId, ItemStackFilterList filters) {
-		SIMPLE_NETWORK_CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new BioLabFilterMessage(containerId, filters));
+		PacketDistributor.sendToPlayer(player, new BioLabFilterMessage(containerId, filters));
 	}
 
 	public static void sendCustomExplosionToClients(ServerLevel level, ExplosionType explosionType, Explosion explosion) {
@@ -56,31 +56,33 @@ public final class ModNetworkHandler {
 		double radiusSqr = radius * radius;
 
 		for (ServerPlayer player : level.players()) {
-			if (player.distanceToSqr(explosion.getPosition()) < radiusSqr) {
-				SIMPLE_NETWORK_CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new CustomExplosionMessage(explosionType, explosion, player));
+			if (player.distanceToSqr(explosion.center()) < radiusSqr) {
+				PacketDistributor.sendToPlayer(player, new CustomExplosionMessage(explosionType, explosion, player));
 			}
 		}
 	}
 
 	public static void sendSoundLayerUpdateToClient(ServerPlayer player, Entity entity, String soundLayerId, SoundEvent soundEvent, long startTime, float volume) {
-		SIMPLE_NETWORK_CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new EntitySoundLayerMessages.UpdateMessage(entity, soundLayerId, soundEvent, startTime, volume));
+		PacketDistributor.sendToPlayer(player, new EntitySoundLayerMessages.UpdateMessage(entity, soundLayerId, soundEvent, startTime, volume));
 	}
 
 	public static void sendSoundLayerUpdateToClients(Entity entity, String soundLayerId, SoundEvent soundEvent, long startTime, float volume) {
-		SIMPLE_NETWORK_CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> entity), new EntitySoundLayerMessages.UpdateMessage(entity, soundLayerId, soundEvent, startTime, volume));
+		PacketDistributor.sendToPlayersTrackingEntity(entity, new EntitySoundLayerMessages.UpdateMessage(entity, soundLayerId, soundEvent, startTime, volume));
 	}
 
 	public static void sendSoundLayerRemovalToClients(Entity entity, String soundLayerId, boolean fadeOut) {
-		SIMPLE_NETWORK_CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> entity), new EntitySoundLayerMessages.RemovalMessage(entity, soundLayerId, fadeOut));
+		PacketDistributor.sendToPlayersTrackingEntity(entity, new EntitySoundLayerMessages.RemovalMessage(entity, soundLayerId, fadeOut));
 	}
 
-	public static void register() {
-		int id = -1;
-		SIMPLE_NETWORK_CHANNEL.registerMessage(++id, KeyPressMessage.class, KeyPressMessage::encode, KeyPressMessage::decode, KeyPressMessage::handle);
-		SIMPLE_NETWORK_CHANNEL.registerMessage(++id, BioForgeRecipeMessage.class, BioForgeRecipeMessage::encode, BioForgeRecipeMessage::decode, BioForgeRecipeMessage::handle);
-		SIMPLE_NETWORK_CHANNEL.registerMessage(++id, BioLabFilterMessage.class, BioLabFilterMessage::encode, BioLabFilterMessage::decode, BioLabFilterMessage::handle, Optional.of(NetworkDirection.PLAY_TO_CLIENT));
-		SIMPLE_NETWORK_CHANNEL.registerMessage(++id, CustomExplosionMessage.class, CustomExplosionMessage::encode, CustomExplosionMessage::decode, CustomExplosionMessage::handle, Optional.of(NetworkDirection.PLAY_TO_CLIENT));
-		SIMPLE_NETWORK_CHANNEL.registerMessage(++id, EntitySoundLayerMessages.UpdateMessage.class, EntitySoundLayerMessages.UpdateMessage::encode, EntitySoundLayerMessages.UpdateMessage::decode, EntitySoundLayerMessages.UpdateMessage::handle, Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+	@SubscribeEvent
+	public static void register(final RegisterPayloadHandlersEvent event) {
+		PayloadRegistrar registrar = event.registrar(PROTOCOL_VERSION);
+		registrar.playToServer(KeyPressMessage.TYPE, KeyPressMessage.STREAM_CODEC, KeyPressMessage::handle);
+		registrar.playToServer(BioForgeRecipeMessage.TYPE, BioForgeRecipeMessage.STREAM_CODEC, BioForgeRecipeMessage::handle);
+		registrar.playToClient(BioLabFilterMessage.TYPE, BioLabFilterMessage.STREAM_CODEC, BioLabFilterMessage::handle);
+		registrar.playToClient(CustomExplosionMessage.TYPE, CustomExplosionMessage.STREAM_CODEC, CustomExplosionMessage::handle);
+		registrar.playToClient(EntitySoundLayerMessages.UpdateMessage.TYPE, EntitySoundLayerMessages.UpdateMessage.STREAM_CODEC, EntitySoundLayerMessages.UpdateMessage::handle);
+		registrar.playToClient(EntitySoundLayerMessages.RemovalMessage.TYPE, EntitySoundLayerMessages.RemovalMessage.STREAM_CODEC, EntitySoundLayerMessages.RemovalMessage::handle);
 	}
 
 }

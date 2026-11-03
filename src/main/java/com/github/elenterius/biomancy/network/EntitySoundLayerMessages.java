@@ -1,119 +1,79 @@
 package com.github.elenterius.biomancy.network;
 
+import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.sounds.ClientSoundHandler;
 import com.github.elenterius.biomancy.util.ClientUtil;
+import io.netty.buffer.ByteBuf;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.Entity;
-import net.minecraftforge.network.NetworkEvent;
-
-import java.util.function.Supplier;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 public final class EntitySoundLayerMessages {
 
 	private EntitySoundLayerMessages() {}
 
-	/// client bound message
-	public static class UpdateMessage {
+	public record UpdateMessage(int entityId, String soundLayerId, Holder<SoundEvent> sound, long startTime, float volume) implements CustomPacketPayload {
 
-		private final int entityId;
-		private final String soundLayerId;
-		private final Holder<SoundEvent> sound;
-		private final long startTime;
-		private final float volume;
+		public static final Type<UpdateMessage> TYPE = new Type<>(BiomancyMod.rl("sound_layer_update"));
+
+		public static final StreamCodec<RegistryFriendlyByteBuf, UpdateMessage> STREAM_CODEC = StreamCodec.composite(
+				ByteBufCodecs.VAR_INT, UpdateMessage::entityId,
+				ByteBufCodecs.STRING_UTF8, UpdateMessage::soundLayerId,
+				SoundEvent.STREAM_CODEC, UpdateMessage::sound,
+				ByteBufCodecs.VAR_LONG, UpdateMessage::startTime,
+				ByteBufCodecs.FLOAT, UpdateMessage::volume,
+				UpdateMessage::new
+		);
 
 		public UpdateMessage(Entity entity, String soundLayerId, SoundEvent soundEvent, long startTime, float volume) {
 			this(entity.getId(), soundLayerId, BuiltInRegistries.SOUND_EVENT.wrapAsHolder(soundEvent), startTime, volume);
 		}
 
-		protected UpdateMessage(int entityId, String soundLayerId, Holder<SoundEvent> sound, long startTime, float volume) {
-			this.entityId = entityId;
-			this.soundLayerId = soundLayerId;
-			this.sound = sound;
-			this.startTime = startTime;
-			this.volume = volume;
+		@Override
+		public Type<UpdateMessage> type() {
+			return TYPE;
 		}
 
-		public void encode(final FriendlyByteBuf buffer) {
-			buffer.writeVarInt(entityId);
-			buffer.writeUtf(soundLayerId);
-			buffer.writeId(BuiltInRegistries.SOUND_EVENT.asHolderIdMap(), sound, (b, s) -> s.writeToNetwork(b));
-			buffer.writeVarLong(startTime);
-			buffer.writeFloat(volume);
-		}
-
-		public static UpdateMessage decode(final FriendlyByteBuf buffer) {
-			int entityId = buffer.readVarInt();
-			String soundLayer = buffer.readUtf();
-			Holder<SoundEvent> sound = buffer.readById(BuiltInRegistries.SOUND_EVENT.asHolderIdMap(), SoundEvent::readFromNetwork);
-			long startTime = buffer.readVarLong();
-			float volume = buffer.readFloat();
-
-			return new UpdateMessage(entityId, soundLayer, sound, startTime, volume);
-		}
-
-		public static void handle(UpdateMessage message, Supplier<NetworkEvent.Context> contextSupplier) {
-			NetworkEvent.Context context = contextSupplier.get();
-
-			if (context.getDirection().getReceptionSide().isClient()) {
-				context.enqueueWork(() -> {
-					Entity entity = ClientUtil.getEntity(message.entityId);
-					if (entity != null) {
-						ClientSoundHandler.updateSoundLayer(entity, message.soundLayerId, message.sound.get(), message.startTime, message.volume);
-					}
-				});
+		public static void handle(UpdateMessage message, IPayloadContext context) {
+			Entity entity = ClientUtil.getEntity(message.entityId);
+			if (entity != null) {
+				ClientSoundHandler.updateSoundLayer(entity, message.soundLayerId, message.sound.value(), message.startTime, message.volume);
 			}
-
-			context.setPacketHandled(true);
 		}
 
 	}
 
-	/// client bound message
-	public static class RemovalMessage {
+	public record RemovalMessage(int entityId, String soundLayerId, boolean fadeOut) implements CustomPacketPayload {
 
-		private final int entityId;
-		private final String soundLayerId;
-		private final boolean fadeOut;
+		public static final Type<RemovalMessage> TYPE = new Type<>(BiomancyMod.rl("sound_layer_removal"));
+
+		public static final StreamCodec<ByteBuf, RemovalMessage> STREAM_CODEC = StreamCodec.composite(
+				ByteBufCodecs.VAR_INT, RemovalMessage::entityId,
+				ByteBufCodecs.STRING_UTF8, RemovalMessage::soundLayerId,
+				ByteBufCodecs.BOOL, RemovalMessage::fadeOut,
+				RemovalMessage::new
+		);
 
 		public RemovalMessage(Entity entity, String soundLayerId, boolean fadeOut) {
 			this(entity.getId(), soundLayerId, fadeOut);
 		}
 
-		protected RemovalMessage(int entityId, String soundLayerId, boolean fadeOut) {
-			this.entityId = entityId;
-			this.soundLayerId = soundLayerId;
-			this.fadeOut = fadeOut;
+		@Override
+		public Type<RemovalMessage> type() {
+			return TYPE;
 		}
 
-		public void encode(final FriendlyByteBuf buffer) {
-			buffer.writeVarInt(entityId);
-			buffer.writeUtf(soundLayerId);
-			buffer.writeBoolean(fadeOut);
-		}
-
-		public static RemovalMessage decode(final FriendlyByteBuf buffer) {
-			int entityId = buffer.readVarInt();
-			String soundLayer = buffer.readUtf();
-			boolean fadeOut = buffer.readBoolean();
-			return new RemovalMessage(entityId, soundLayer, fadeOut);
-		}
-
-		public static void handle(RemovalMessage message, Supplier<NetworkEvent.Context> contextSupplier) {
-			NetworkEvent.Context context = contextSupplier.get();
-
-			if (context.getDirection().getReceptionSide().isClient()) {
-				context.enqueueWork(() -> {
-					Entity entity = ClientUtil.getEntity(message.entityId);
-					if (entity != null) {
-						ClientSoundHandler.removeSoundLayer(entity, message.soundLayerId, message.fadeOut);
-					}
-				});
+		public static void handle(RemovalMessage message, IPayloadContext context) {
+			Entity entity = ClientUtil.getEntity(message.entityId);
+			if (entity != null) {
+				ClientSoundHandler.removeSoundLayer(entity, message.soundLayerId, message.fadeOut);
 			}
-
-			context.setPacketHandled(true);
 		}
 
 	}

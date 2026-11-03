@@ -5,7 +5,6 @@ import com.github.elenterius.biomancy.entity.projectile.GrenadeProjectile;
 import com.github.elenterius.biomancy.integration.ModsCompatHandler;
 import com.github.elenterius.biomancy.item.extractor.ExtractorItem;
 import com.github.elenterius.biomancy.item.injector.InjectorItem;
-import com.github.elenterius.biomancy.network.ModNetworkHandler;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Position;
@@ -31,7 +30,6 @@ public final class CommonSetupHandler {
 
 	@SubscribeEvent
 	public static void onSetup(final FMLCommonSetupEvent event) {
-		ModNetworkHandler.register();
 		ModRecipeBookTypes.init();
 
 		event.enqueueWork(() -> {
