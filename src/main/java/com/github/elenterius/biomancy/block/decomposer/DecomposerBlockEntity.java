@@ -37,6 +37,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.items.IItemHandler;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import org.jspecify.annotations.Nullable;
@@ -52,6 +53,7 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class DecomposerBlockEntity extends MachineBlockEntity<DecomposingRecipe, DecomposerStateData> implements MenuProvider, GeoBlockEntity {
 
@@ -152,15 +154,19 @@ public class DecomposerBlockEntity extends MachineBlockEntity<DecomposingRecipe,
 	}
 
 	DecomposerRecipeResult getComputedRecipeResult(DecomposingRecipe craftingGoal) {
-		if (computedRecipeResult == null || !computedRecipeResult.recipeId.equals(craftingGoal.getId())) {
-			return DecomposerRecipeResult.computeRecipeResult(craftingGoal, level.random.nextInt());
+		if (computedRecipeResult == null || computedRecipeResult.recipe != craftingGoal) {
+			ResourceLocation recipeId = stateData.getCraftingGoalRecipe(level)
+					.filter(holder -> holder.value() == craftingGoal)
+					.map(RecipeHolder::id)
+					.orElse(null);
+			return DecomposerRecipeResult.computeRecipeResult(recipeId, craftingGoal, level.random.nextInt());
 		}
 
 		return computedRecipeResult;
 	}
 
 	@Override
-	protected @Nullable DecomposingRecipe resolveRecipeFromInput(Level level) {
+	protected @Nullable RecipeHolder<DecomposingRecipe> resolveRecipeFromInput(Level level) {
 		return RECIPE_TYPE.get().getBestRecipeFor(level, inputInventory.getRecipeWrapper()).orElse(null);
 	}
 
@@ -261,7 +267,7 @@ public class DecomposerBlockEntity extends MachineBlockEntity<DecomposingRecipe,
 		super.setRemoved();
 	}
 
-	record DecomposerRecipeResult(ResourceLocation recipeId, int seed, List<ItemStack> items) {
+	record DecomposerRecipeResult(@Nullable ResourceLocation recipeId, DecomposingRecipe recipe, int seed, List<ItemStack> items) {
 
 		@Nullable
 		public static DecomposerRecipeResult deserialize(CompoundTag tag, RecipeManager recipeManager) {
@@ -269,15 +275,15 @@ public class DecomposerBlockEntity extends MachineBlockEntity<DecomposingRecipe,
 			ResourceLocation recipeId = ResourceLocation.tryParse(id);
 			if (recipeId == null) return null;
 
-			Recipe<Container> recipe = recipeManager.byType(RECIPE_TYPE.get()).get(recipeId);
-			if (recipe instanceof DecomposingRecipe decomposingRecipe) {
-				return computeRecipeResult(decomposingRecipe, tag.getInt("seed"));
+			Optional<RecipeHolder<?>> holder = recipeManager.byKey(recipeId);
+			if (holder.isPresent() && holder.get().value() instanceof DecomposingRecipe decomposingRecipe) {
+				return computeRecipeResult(recipeId, decomposingRecipe, tag.getInt("seed"));
 			}
 
 			return null;
 		}
 
-		public static DecomposerRecipeResult computeRecipeResult(DecomposingRecipe recipe, int seed) {
+		public static DecomposerRecipeResult computeRecipeResult(@Nullable ResourceLocation recipeId, DecomposingRecipe recipe, int seed) {
 			RandomSource random = RandomSource.create(seed);
 
 			List<ItemStack> items = new ArrayList<>();
@@ -286,12 +292,12 @@ public class DecomposerBlockEntity extends MachineBlockEntity<DecomposingRecipe,
 				if (!stack.isEmpty()) items.add(stack);
 			}
 
-			return new DecomposerRecipeResult(recipe.getId(), seed, items);
+			return new DecomposerRecipeResult(recipeId, recipe, seed, items);
 		}
 
 		public CompoundTag serialize() {
 			CompoundTag tag = new CompoundTag();
-			tag.putString("recipeId", recipeId().toString());
+			if (recipeId != null) tag.putString("recipeId", recipeId.toString());
 			tag.putInt("seed", seed);
 			return tag;
 		}

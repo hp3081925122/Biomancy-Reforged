@@ -5,10 +5,9 @@ import net.minecraft.core.component.DataComponents;
 import com.github.elenterius.biomancy.block.cradle.PrimordialCradleBlockEntity;
 import com.github.elenterius.biomancy.init.ModItems;
 import com.github.elenterius.biomancy.init.ModRecipes;
-import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.inventory.CraftingContainer;
+import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.CraftingBookCategory;
@@ -18,16 +17,16 @@ import net.minecraft.world.level.Level;
 
 public class CradleCleansingRecipe extends CustomRecipe {
 
-	public CradleCleansingRecipe(ResourceLocation id, CraftingBookCategory category) {
-		super(id, category);
+	public CradleCleansingRecipe(CraftingBookCategory category) {
+		super(category);
 	}
 
 	@Override
-	public boolean matches(CraftingContainer inventory, Level level) {
+	public boolean matches(CraftingInput inventory, Level level) {
 		ItemStack cradle = ItemStack.EMPTY;
 		ItemStack cleansingSerum = ItemStack.EMPTY;
 
-		for (int i = 0; i < inventory.getContainerSize(); i++) {
+		for (int i = 0; i < inventory.size(); i++) {
 			ItemStack stack = inventory.getItem(i);
 
 			if (stack.isEmpty()) continue;
@@ -51,11 +50,11 @@ public class CradleCleansingRecipe extends CustomRecipe {
 	}
 
 	@Override
-	public ItemStack assemble(CraftingContainer inventory, RegistryAccess registryAccess) {
+	public ItemStack assemble(CraftingInput inventory, HolderLookup.Provider registries) {
 		ItemStack cradle = ItemStack.EMPTY;
 		ItemStack cleansingSerum = ItemStack.EMPTY;
 
-		for (int i = 0; i < inventory.getContainerSize(); i++) {
+		for (int i = 0; i < inventory.size(); i++) {
 			ItemStack stack = inventory.getItem(i);
 
 			if (stack.isEmpty()) continue;

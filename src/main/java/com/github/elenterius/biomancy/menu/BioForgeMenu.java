@@ -21,6 +21,7 @@ import net.minecraft.world.inventory.ContainerListener;
 import net.minecraft.world.inventory.ResultContainer;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.neoforged.neoforge.items.SlotItemHandler;
 import org.apache.logging.log4j.MarkerManager;
 import org.jspecify.annotations.Nullable;
@@ -34,7 +35,7 @@ public class BioForgeMenu extends PlayerContainerMenu {
 	private int playerInvChanges;
 	private final ItemStackCounter itemCounter = new ItemStackCounter();
 	@Nullable
-	private BioForgingRecipe selectedRecipe;
+	private RecipeHolder<BioForgingRecipe> selectedRecipe;
 
 	protected BioForgeMenu(int id, Inventory playerInventory, @Nullable BioForgeBlockEntity bioforge) {
 		super(ModMenuTypes.BIO_FORGE.get(), id, playerInventory, 124, 137, 195);
@@ -58,7 +59,8 @@ public class BioForgeMenu extends PlayerContainerMenu {
 				@Override
 				public void dataChanged(AbstractContainerMenu container, int index, int value) {
 					if (index == BioForgeStateData.FUEL_INDEX && playerInventory.player instanceof ServerPlayer serverPlayer) {
-						BioForgingRecipe recipe = getSelectedRecipe();
+						RecipeHolder<BioForgingRecipe> holder = getSelectedRecipe();
+						BioForgingRecipe recipe = holder != null ? holder.value() : null;
 						if (recipe != null && recipe.getCraftingCostNutrients() > fuel && recipe.getCraftingCostNutrients() <= value) {
 							updateResultSlot(serverPlayer);
 						}
@@ -103,9 +105,9 @@ public class BioForgeMenu extends PlayerContainerMenu {
 	private void updateResultSlot(ServerPlayer serverPlayer) {
 		ItemStack resultStack = ItemStack.EMPTY;
 
-		BioForgingRecipe recipe = getSelectedRecipe();
-		if (recipe != null && resultContainer.setRecipeUsed(serverPlayer.level(), serverPlayer, recipe) && canCraft(recipe)) {
-			resultStack = recipe.getResultItem(serverPlayer.level().registryAccess()).copy();
+		RecipeHolder<BioForgingRecipe> recipe = getSelectedRecipe();
+		if (recipe != null && resultContainer.setRecipeUsed(serverPlayer.level(), serverPlayer, recipe) && canCraft(recipe.value())) {
+			resultStack = recipe.value().getResultItem(serverPlayer.level().registryAccess()).copy();
 		}
 
 		resultContainer.setItem(0, resultStack);
@@ -114,11 +116,11 @@ public class BioForgeMenu extends PlayerContainerMenu {
 	}
 
 	@Nullable
-	public BioForgingRecipe getSelectedRecipe() {
+	public RecipeHolder<BioForgingRecipe> getSelectedRecipe() {
 		return selectedRecipe;
 	}
 
-	public void setSelectedRecipe(@Nullable BioForgingRecipe recipe, ServerPlayer serverPlayer) {
+	public void setSelectedRecipe(@Nullable RecipeHolder<BioForgingRecipe> recipe, ServerPlayer serverPlayer) {
 		selectedRecipe = recipe;
 		countPlayerInvItems(serverPlayer, serverPlayer.getInventory());
 		updateResultSlot(serverPlayer);
@@ -298,9 +300,9 @@ public class BioForgeMenu extends PlayerContainerMenu {
 				return;
 			}
 
-			BioForgingRecipe recipe = getSelectedRecipe();
+			RecipeHolder<BioForgingRecipe> recipe = getSelectedRecipe();
 			if (recipe != null) {
-				consumeCraftingIngredients(player.getInventory(), recipe);
+				consumeCraftingIngredients(player.getInventory(), recipe.value());
 				broadcastChanges();
 			}
 

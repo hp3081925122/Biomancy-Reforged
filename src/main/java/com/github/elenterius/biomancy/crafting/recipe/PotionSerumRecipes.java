@@ -4,11 +4,12 @@ import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.crafting.IngredientStack;
 import com.github.elenterius.biomancy.datagen.recipes.builder.RecipeCostUtil;
 import com.github.elenterius.biomancy.init.ModItems;
-import com.github.elenterius.biomancy.mixin.accessor.PotionBrewingAccessor;
 import com.github.elenterius.biomancy.serum.PotionSerum;
 import com.github.elenterius.biomancy.util.ItemStackCounter;
+import net.minecraft.core.Holder;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.Container;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.item.Item;
@@ -16,14 +17,14 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.alchemy.Potion;
 import net.minecraft.world.item.alchemy.PotionBrewing;
-import net.minecraft.world.item.alchemy.PotionUtils;
+import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.item.alchemy.Potions;
 import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.item.crafting.RecipeInput;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.common.brewing.BrewingRecipe;
-import net.minecraftforge.common.brewing.BrewingRecipeRegistry;
-import net.minecraftforge.common.brewing.IBrewingRecipe;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.common.brewing.BrewingRecipe;
+import net.neoforged.neoforge.common.brewing.IBrewingRecipe;
 import org.jspecify.annotations.Nullable;
 
 import java.util.*;
@@ -32,26 +33,65 @@ import java.util.stream.Collectors;
 
 public final class PotionSerumRecipes {
 
-	public static final List<BioBrewingRecipe> RECIPES;
-	public static final Map<ResourceLocation, BioBrewingRecipe> RECIPES_BY_ID;
-	public static final Set<Potion> POTIONS;
-
 	public static final String NAME_PREFIX = "potion_serum_";
 
-	static {
+	private static final Map<PotionBrewing, Data> CACHE = Collections.synchronizedMap(new WeakHashMap<>());
+
+	private PotionSerumRecipes() {}
+
+	public record Data(List<RecipeHolder<BioBrewingRecipe>> recipes, Map<ResourceLocation, RecipeHolder<BioBrewingRecipe>> recipesById, Set<Holder<Potion>> potions) {}
+
+	public static Data get(PotionBrewing potionBrewing) {
+		return CACHE.computeIfAbsent(potionBrewing, PotionSerumRecipes::compute);
+	}
+
+	public static Data get(Level level) {
+		return get(level.potionBrewing());
+	}
+
+	public static List<RecipeHolder<BioBrewingRecipe>> getRecipes(Level level) {
+		return get(level).recipes();
+	}
+
+	public static Set<Holder<Potion>> getPotions(Level level) {
+		return get(level).potions();
+	}
+
+	public static Optional<RecipeHolder<BioBrewingRecipe>> byId(Level level, @Nullable ResourceLocation recipeId) {
+		return recipeId == null ? Optional.empty() : Optional.ofNullable(get(level).recipesById().get(recipeId));
+	}
+
+	public static @Nullable RecipeHolder<BioBrewingRecipe> getRecipeFor(Level level, RecipeInput input) {
+		RecipeHolder<BioBrewingRecipe> topRecipe = null;
+		int topPriority = Integer.MIN_VALUE;
+
+		for (RecipeHolder<BioBrewingRecipe> holder : getRecipes(level)) {
+			if (!holder.value().matches(input, level)) continue;
+
+			int currentPriority = holder.value().getMatchPriority();
+			if (currentPriority > topPriority) {
+				topRecipe = holder;
+				topPriority = currentPriority;
+			}
+		}
+
+		return topRecipe;
+	}
+
+	private static Data compute(PotionBrewing potionBrewing) {
 		Set<Potion> bestPotions = getBestPotions();
 		List<PotionRecipe> bestPotionRecipes = new ArrayList<>();
 		Map<Potion, List<PotionRecipe>> recipeLookup = new HashMap<>();
 
-		for (PotionBrewing.Mix<Potion> mix : PotionBrewingAccessor.biomancy$POTION_MIXES()) {
-			PotionRecipe recipe = new PotionRecipe(mix.ingredient, mix.from.value(), mix.to.value());
+		for (PotionBrewing.Mix<Potion> mix : potionBrewing.potionMixes) {
+			PotionRecipe recipe = new PotionRecipe(mix.ingredient(), mix.from().value(), mix.to().value());
 			recipeLookup.computeIfAbsent(recipe.result, potion -> new ArrayList<>()).add(recipe);
 			if (bestPotions.contains(recipe.result)) {
 				bestPotionRecipes.add(recipe);
 			}
 		}
 
-		for (IBrewingRecipe iBrewingRecipe : BrewingRecipeRegistry.getRecipes()) {
+		for (IBrewingRecipe iBrewingRecipe : potionBrewing.getRecipes()) {
 			if (iBrewingRecipe instanceof BrewingRecipe brewingRecipe) {
 				Potion result = getPotion(brewingRecipe.getOutput());
 				Ingredient ingredient = brewingRecipe.getIngredient();
@@ -66,25 +106,21 @@ public final class PotionSerumRecipes {
 			}
 		}
 
-		List<BioBrewingRecipe> recipes = new ArrayList<>();
-		Set<Potion> potions = new HashSet<>();
+		List<RecipeHolder<BioBrewingRecipe>> recipes = new ArrayList<>();
+		Set<Holder<Potion>> potions = new LinkedHashSet<>();
 		int index = 0;
 
 		for (PotionRecipe bestPotionRecipe : bestPotionRecipes) {
 			List<ResolvedRecipe> resolvedRecipes = resolveRecipes(bestPotionRecipe, recipeLookup);
-
-			//TODO: remap (fermented) spider eye to decay additive?
-			//TODO: remap glistening melon to healing additive?
+			Holder<Potion> resultHolder = BuiltInRegistries.POTION.wrapAsHolder(bestPotionRecipe.result);
 
 			if (resolvedRecipes.size() <= 2) {
 				for (ResolvedRecipe resolvedRecipe : resolvedRecipes) {
-					recipes.add(createRecipe(NAME_PREFIX + index++, resolvedRecipe.ingredients, resolvedRecipe.reactant.getDefaultInstance(), bestPotionRecipe.result));
-					potions.add(bestPotionRecipe.result);
+					recipes.add(createRecipe(NAME_PREFIX + index++, resolvedRecipe.ingredients, resolvedRecipe.reactant.getDefaultInstance(), resultHolder));
+					potions.add(resultHolder);
 				}
 				continue;
 			}
-
-			//REDUCE TOO MANY RECIPE VARIATIONS DOWN TO ONE
 
 			ItemStackCounter itemCounter = new ItemStackCounter();
 			for (ResolvedRecipe resolvedRecipe : resolvedRecipes) {
@@ -95,39 +131,15 @@ public final class PotionSerumRecipes {
 
 			List<Ingredient> ingredients = itemCounter.getItemsSorted(4, false).stream().map(Ingredient::of).toList();
 
-			recipes.add(createRecipe(NAME_PREFIX + index++, ingredients, ModItems.UNSTABLE_COMPOUND.get().getDefaultInstance(), bestPotionRecipe.result));
-			potions.add(bestPotionRecipe.result);
+			recipes.add(createRecipe(NAME_PREFIX + index++, ingredients, ModItems.UNSTABLE_COMPOUND.get().getDefaultInstance(), resultHolder));
+			potions.add(resultHolder);
 		}
 
-		RECIPES = Collections.unmodifiableList(recipes);
-		RECIPES_BY_ID = recipes.stream().collect(Collectors.toUnmodifiableMap(BioBrewingRecipe::getId, recipe -> recipe, (a, b) -> b));
-		POTIONS = Collections.unmodifiableSet(potions);
+		Map<ResourceLocation, RecipeHolder<BioBrewingRecipe>> recipesById = recipes.stream().collect(Collectors.toUnmodifiableMap(RecipeHolder::id, recipe -> recipe, (a, b) -> b));
+		return new Data(Collections.unmodifiableList(recipes), recipesById, Collections.unmodifiableSet(potions));
 	}
 
-	private PotionSerumRecipes() {}
-
-	public static Optional<BioBrewingRecipe> byId(@Nullable ResourceLocation recipeId) {
-		return recipeId == null ? Optional.empty() : Optional.ofNullable(PotionSerumRecipes.RECIPES_BY_ID.get(recipeId));
-	}
-
-	public static @Nullable BioBrewingRecipe getRecipeFor(Level level, Container inputInventory) {
-		BioBrewingRecipe topRecipe = null;
-		int topPriority = Integer.MIN_VALUE;
-
-		for (BioBrewingRecipe recipe : RECIPES) {
-			if (!recipe.matches(inputInventory, level)) continue;
-
-			int currentPriority = recipe.getMatchPriority();
-			if (currentPriority > topPriority) {
-				topRecipe = recipe;
-				topPriority = currentPriority;
-			}
-		}
-
-		return topRecipe;
-	}
-
-	private record PotionRecipe(Ingredient ingredient, Potion potionIngredient, Potion result) {}
+	private record PotionRecipe(Ingredient ingredient, @Nullable Potion potionIngredient, @Nullable Potion result) {}
 
 	private record ResolvedRecipe(List<Ingredient> ingredients, Item reactant) {}
 
@@ -138,14 +150,14 @@ public final class PotionSerumRecipes {
 	}
 
 	private static void resolveRecursive(PotionRecipe current, List<Ingredient> currentIngredients, Map<Potion, List<PotionRecipe>> recipeLookup, Consumer<ResolvedRecipe> accumulator) {
-		if (current.potionIngredient == Potions.WATER) {
+		if (current.potionIngredient == Potions.WATER.value()) {
 			List<Ingredient> ingredients = new ArrayList<>(currentIngredients);
 			ingredients.add(current.ingredient);
 			accumulator.accept(new ResolvedRecipe(ingredients, ModItems.ORGANIC_COMPOUND.get()));
 			return;
 		}
 
-		if (current.potionIngredient == Potions.MUNDANE) {
+		if (current.potionIngredient == Potions.MUNDANE.value()) {
 			List<Ingredient> ingredients = new ArrayList<>(currentIngredients);
 			ingredients.add(current.ingredient);
 			if (ingredients.size() < 4) {
@@ -159,7 +171,7 @@ public final class PotionSerumRecipes {
 			return;
 		}
 
-		if (current.potionIngredient == Potions.EMPTY || recipeLookup.getOrDefault(current.potionIngredient, List.of()).isEmpty()) {
+		if (current.potionIngredient == null || recipeLookup.getOrDefault(current.potionIngredient, List.of()).isEmpty()) {
 			List<Ingredient> ingredients = new ArrayList<>(currentIngredients);
 			ingredients.add(current.ingredient);
 			accumulator.accept(new ResolvedRecipe(ingredients, ModItems.EXOTIC_COMPOUND.get()));
@@ -167,7 +179,7 @@ public final class PotionSerumRecipes {
 		}
 
 		if (currentIngredients.size() >= 4) {
-			return; //TODO: handle this in a better way by replacing many cheap items with one expensive item
+			return;
 		}
 
 		List<PotionRecipe> subRecipes = recipeLookup.get(current.potionIngredient);
@@ -180,10 +192,10 @@ public final class PotionSerumRecipes {
 
 	private static Set<Potion> getBestPotions() {
 		Map<MobEffect, Map<Potion, MobEffectInstance>> primaryPotionEffects = new HashMap<>();
-		for (Potion potion : ForgeRegistries.POTIONS.getValues()) {
+		for (Potion potion : BuiltInRegistries.POTION) {
 			MobEffectInstance instance = PotionSerum.getPrimaryEffectInstance(potion.getEffects());
 			if (instance == null) continue;
-			primaryPotionEffects.computeIfAbsent(instance.getEffect(), k -> new HashMap<>()).put(potion, instance);
+			primaryPotionEffects.computeIfAbsent(instance.getEffect().value(), k -> new HashMap<>()).put(potion, instance);
 		}
 
 		Set<Potion> bestPotions = new HashSet<>();
@@ -200,25 +212,23 @@ public final class PotionSerumRecipes {
 		return bestPotions;
 	}
 
-	private static Potion getPotion(ItemStack stack) {
-		if (stack.getItem() != Items.POTION) return Potions.EMPTY;
-		return PotionUtils.getPotion(stack);
+	private static @Nullable Potion getPotion(ItemStack stack) {
+		if (!stack.is(Items.POTION)) return null;
+		return stack.getOrDefault(DataComponents.POTION_CONTENTS, PotionContents.EMPTY).potion().map(Holder::value).orElse(null);
 	}
 
 	private static Set<Potion> getPossiblePotions(Ingredient ingredient) {
 		Set<Potion> possiblePotions = new HashSet<>();
 
 		for (ItemStack stack : ingredient.getItems()) {
-			if (stack.getItem() != Items.POTION) continue;
-
-			Potion potion = PotionUtils.getPotion(stack);
-			if (potion != Potions.EMPTY) possiblePotions.add(potion);
+			Potion potion = getPotion(stack);
+			if (potion != null) possiblePotions.add(potion);
 		}
 
 		return possiblePotions;
 	}
 
-	private static BioBrewingRecipe createRecipe(String name, List<Ingredient> ingredients, ItemStack reactant, Potion result) {
+	private static RecipeHolder<BioBrewingRecipe> createRecipe(String name, List<Ingredient> ingredients, ItemStack reactant, Holder<Potion> result) {
 		ResourceLocation id = BiomancyMod.rl(name);
 
 		List<IngredientStack> ingredientStacks = new ArrayList<>();
@@ -229,14 +239,14 @@ public final class PotionSerumRecipes {
 		int craftingTimeTicks = BioBrewingRecipe.DEFAULT_CRAFTING_TIME_TICKS + ingredients.size() * 20;
 		int craftingCostNutrients = RecipeCostUtil.getCost(BioBrewingRecipe.DEFAULT_CRAFTING_COST_NUTRIENTS, craftingTimeTicks);
 
-		return new BioBrewingRecipe(
-				id,
+		BioBrewingRecipe recipe = new BioBrewingRecipe(
 				ModItems.POTION_SERUM.get().getInstanceFrom(result),
 				craftingTimeTicks,
 				craftingCostNutrients,
 				ingredientStacks,
 				Ingredient.of(reactant)
 		);
+		return new RecipeHolder<>(id, recipe);
 	}
 
 }

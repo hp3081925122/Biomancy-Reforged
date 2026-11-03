@@ -7,7 +7,6 @@ import com.github.elenterius.biomancy.crafting.recipe.DigestingRecipe;
 import com.github.elenterius.biomancy.init.tags.ModBlockTags;
 import com.github.elenterius.biomancy.init.tags.ModItemTags;
 import com.github.elenterius.biomancy.statuseffect.StatusEffectHandler;
-import com.mojang.datafixers.util.Pair;
 import net.minecraft.core.Direction;
 import net.minecraft.core.cauldron.CauldronInteraction;
 import net.minecraft.core.dispenser.DefaultDispenseItemBehavior;
@@ -38,6 +37,7 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.SoundActions;
 import net.neoforged.neoforge.items.ItemStackHandler;
 import net.neoforged.neoforge.items.wrapper.RecipeWrapper;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Map;
@@ -208,18 +208,17 @@ public final class AcidInteractions {
 			}
 
 			ResourceLocation lastRecipeId = ResourceLocation.tryParse(digestionData.getString(RECIPE_KEY));
-			Optional<Pair<ResourceLocation, DigestingRecipe>> optionalRecipe = DigesterBlockEntity.RECIPE_TYPE.get().getBestRecipeForIngredient(level, itemStack, lastRecipeId);
+			Optional<RecipeHolder<DigestingRecipe>> optionalRecipe = DigesterBlockEntity.RECIPE_TYPE.get().getBestRecipeForIngredient(level, itemStack, lastRecipeId);
 
 			if (optionalRecipe.isEmpty()) return;
 
-			ResourceLocation recipeId = optionalRecipe.get().getFirst();
-			DigestingRecipe recipe = optionalRecipe.get().getSecond();
+			ResourceLocation recipeId = optionalRecipe.get().id();
+			DigestingRecipe recipe = optionalRecipe.get().value();
 
 			if (!recipeId.equals(lastRecipeId)) {
 				digestionData.putString(RECIPE_KEY, recipeId.toString());
 
-				RecipeWrapper inventory = new RecipeWrapper(new ItemStackHandler(1));
-				inventory.setItem(0, itemStack);
+				RecipeWrapper inventory = createSingleSlotInput(itemStack);
 				digestionData.putInt(DELAY_KEY, recipe.getCraftingTimeTicks(inventory) / 40);
 			}
 
@@ -248,9 +247,14 @@ public final class AcidInteractions {
 			return new CompoundTag();
 		}
 
+		private static RecipeWrapper createSingleSlotInput(ItemStack stack) {
+			ItemStackHandler handler = new ItemStackHandler(1);
+			handler.setStackInSlot(0, stack);
+			return new RecipeWrapper(handler);
+		}
+
 		public static void digestAtPos(Level level, Vec3 pos, ItemStack inputStack, int maxAmount, DigestingRecipe recipe) {
-			RecipeWrapper inventory = new RecipeWrapper(new ItemStackHandler(1));
-			inventory.setItem(0, inputStack);
+			RecipeWrapper inventory = createSingleSlotInput(inputStack);
 
 			int amount = Math.min(inputStack.getCount(), maxAmount);
 

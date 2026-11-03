@@ -3,10 +3,10 @@ package com.github.elenterius.biomancy.crafting.state;
 import com.github.elenterius.biomancy.crafting.recipe.ProcessingRecipe;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.Container;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.crafting.Recipe;
-import net.minecraft.world.item.crafting.RecipeManager;
+import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.item.crafting.RecipeInput;
 import net.minecraft.world.level.Level;
 import org.jspecify.annotations.Nullable;
 
@@ -52,26 +52,22 @@ public abstract class RecipeCraftingStateData<T extends ProcessingRecipe> implem
 
 	protected abstract boolean isRecipeOfInstance(Recipe<?> recipe);
 
-	public Optional<T> getCraftingGoalRecipe(Level level) {
+	@SuppressWarnings("unchecked")
+	public Optional<RecipeHolder<T>> getCraftingGoalRecipe(Level level) {
 		if (recipeId == null) return Optional.empty();
 
-		RecipeManager recipeManager = level.getRecipeManager();
-		Optional<? extends Recipe<?>> optional = recipeManager.byKey(recipeId);
-		if (optional.isPresent()) {
-			Recipe<?> recipe = optional.get();
-			if (isRecipeOfInstance(recipe)) {
-				//noinspection unchecked
-				return Optional.of((T) recipe);
-			}
+		Optional<RecipeHolder<?>> optional = level.getRecipeManager().byKey(recipeId);
+		if (optional.isPresent() && isRecipeOfInstance(optional.get().value())) {
+			return Optional.of((RecipeHolder<T>) optional.get());
 		}
 
 		return Optional.empty();
 	}
 
-	public void setCraftingGoalRecipe(T recipe, Container inputInventory) {
-		recipeId = recipe.getId();
-		timeForCompletion = recipe.getCraftingTimeTicks(inputInventory);
-		nutrientsCost = recipe.getCraftingCostNutrients(inputInventory);
+	public void setCraftingGoalRecipe(RecipeHolder<T> recipe, RecipeInput input) {
+		recipeId = recipe.id();
+		timeForCompletion = recipe.value().getCraftingTimeTicks(input);
+		nutrientsCost = recipe.value().getCraftingCostNutrients(input);
 		timeElapsed = 0;
 	}
 

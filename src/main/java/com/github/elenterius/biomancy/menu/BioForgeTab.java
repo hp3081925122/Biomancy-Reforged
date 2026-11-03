@@ -1,18 +1,32 @@
 package com.github.elenterius.biomancy.menu;
 
+import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.init.ModBioForgeTabs;
-import com.google.gson.JsonObject;
-import net.minecraft.network.FriendlyByteBuf;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.GsonHelper;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 
 public final class BioForgeTab {
 	public static final String JSON_KEY = "bio_forge_tab";
+
+	private static final ResourceLocation DEPRECATED_WEAPONS_TAB = BiomancyMod.rl("weapons");
+
+	public static final Codec<BioForgeTab> CODEC = ResourceLocation.CODEC.comapFlatMap(BioForgeTab::byId, tab -> ModBioForgeTabs.REGISTRY.getKey(tab));
+
+	public static final StreamCodec<RegistryFriendlyByteBuf, BioForgeTab> STREAM_CODEC = StreamCodec.of(
+			(buffer, tab) -> buffer.writeResourceLocation(Objects.requireNonNull(ModBioForgeTabs.REGISTRY.getKey(tab))),
+			buffer -> {
+				BioForgeTab value = ModBioForgeTabs.REGISTRY.get(buffer.readResourceLocation());
+				return value != null ? value : ModBioForgeTabs.MISC.get();
+			}
+	);
+
 	private final int sortPriority;
 	private final Item iconItem;
 
@@ -25,27 +39,16 @@ public final class BioForgeTab {
 		this(0, itemSupplier);
 	}
 
-	@Nullable
-	public static BioForgeTab fromJson(JsonObject json) {
-		String categoryId = GsonHelper.getAsString(json, JSON_KEY);
-		return ModBioForgeTabs.REGISTRY.get(ResourceLocation.parse(categoryId));
-	}
+	private static DataResult<BioForgeTab> byId(ResourceLocation id) {
+		BioForgeTab tab = ModBioForgeTabs.REGISTRY.get(id);
+		if (tab != null) return DataResult.success(tab);
 
-	public static String getTabId(JsonObject json) {
-		return GsonHelper.getAsString(json, JSON_KEY);
-	}
+		if (id.equals(DEPRECATED_WEAPONS_TAB)) {
+			BiomancyMod.LOGGER.warn("A recipe uses the deprecated \"biomancy:weapons\" bio-forge tab instead of \"biomancy:tools\". Using \"biomancy:tools\" fallback, please update your recipe.");
+			return DataResult.success(ModBioForgeTabs.TOOLS.get());
+		}
 
-	public static BioForgeTab fromNetwork(FriendlyByteBuf buffer) {
-		BioForgeTab value = ModBioForgeTabs.REGISTRY.get(buffer.readResourceLocation());
-		return value != null ? value : ModBioForgeTabs.MISC.get();
-	}
-
-	public void toNetwork(FriendlyByteBuf buffer) {
-		buffer.writeResourceLocation(ModBioForgeTabs.REGISTRY.getKey(this));
-	}
-
-	public void toJson(JsonObject json) {
-		json.addProperty(JSON_KEY, ModBioForgeTabs.REGISTRY.getKey(this).toString());
+		return DataResult.error(() -> "Unknown Bio-Forge tab '%s'".formatted(id));
 	}
 
 	public ItemStack getIcon() {

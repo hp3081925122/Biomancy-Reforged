@@ -13,6 +13,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Nameable;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -68,7 +69,7 @@ public abstract class MachineBlockEntity<R extends ProcessingRecipe, S extends R
 
 	protected abstract boolean craftRecipe(R recipeToCraft, Level level);
 
-	protected abstract @Nullable R resolveRecipeFromInput(Level level);
+	protected abstract @Nullable RecipeHolder<R> resolveRecipeFromInput(Level level);
 
 	protected abstract boolean doesRecipeMatchInput(R recipeToTest, Level level);
 
@@ -99,31 +100,32 @@ public abstract class MachineBlockEntity<R extends ProcessingRecipe, S extends R
 		}
 
 		S state = getStateData();
-		R craftingGoal = state
-				.getCraftingGoalRecipe(level) //try to use the current/previous crafting goal first
-				.filter(r -> doesRecipeMatchInput(r, level)) //check if it's still matches with the ingredients in the input, if yes use it
-				.orElseGet(() -> resolveRecipeFromInput(level)); //else try to find new crafting goal
+		RecipeHolder<R> craftingGoalHolder = state
+				.getCraftingGoalRecipe(level)
+				.filter(holder -> doesRecipeMatchInput(holder.value(), level))
+				.orElseGet(() -> resolveRecipeFromInput(level));
 
 		boolean emitRedstoneSignal = false;
-		if (craftingGoal == null) {
+		if (craftingGoalHolder == null) {
 			state.cancelCrafting();
 		}
 		else {
+			R craftingGoal = craftingGoalHolder.value();
 			ItemStack itemToCraft = getItemToCraft(level, craftingGoal);
 			if (itemToCraft.isEmpty()) {
 				state.cancelCrafting();
 			}
 			else {
 				if (doesRecipeResultFitIntoOutputInv(craftingGoal, itemToCraft)) {
-					if (state.getCraftingState() == CraftingState.NONE) { // nothing is being crafted, try to start crafting
-						state.setCraftingGoalRecipe(craftingGoal, getInputInventory().getRecipeWrapper());
+					if (state.getCraftingState() == CraftingState.NONE) {
+						state.setCraftingGoalRecipe(craftingGoalHolder, getInputInventory().getRecipeWrapper());
 						if (hasEnoughFuel(craftingGoal)) {
 							state.setCraftingState(CraftingState.IN_PROGRESS);
 						}
 					}
-					else if (!state.isCraftingCanceled()) { // something is being crafted, check that the crafting goals match
-						R prevCraftingGoal = state.getCraftingGoalRecipe(level).orElse(null);
-						if (prevCraftingGoal == null || !craftingGoal.isRecipeEqual(prevCraftingGoal)) {
+					else if (!state.isCraftingCanceled()) {
+						RecipeHolder<R> prevCraftingGoal = state.getCraftingGoalRecipe(level).orElse(null);
+						if (prevCraftingGoal == null || !craftingGoalHolder.id().equals(prevCraftingGoal.id())) {
 							state.cancelCrafting();
 						}
 					}
@@ -133,7 +135,6 @@ public abstract class MachineBlockEntity<R extends ProcessingRecipe, S extends R
 				}
 			}
 
-			//change crafting progress
 			if (state.getCraftingState() == CraftingState.IN_PROGRESS) {
 				if (hasEnoughFuel(craftingGoal)) state.timeElapsed += 1;
 				else state.timeElapsed -= 2;
@@ -141,7 +142,6 @@ public abstract class MachineBlockEntity<R extends ProcessingRecipe, S extends R
 				if (state.timeElapsed < 0) state.timeElapsed = 0;
 			}
 
-			//craft the recipe output
 			if (state.getCraftingState() == CraftingState.IN_PROGRESS || state.getCraftingState() == CraftingState.COMPLETED) {
 				if (state.timeElapsed >= state.timeForCompletion) {
 					state.setCraftingState(CraftingState.COMPLETED);
@@ -154,7 +154,6 @@ public abstract class MachineBlockEntity<R extends ProcessingRecipe, S extends R
 			}
 		}
 
-		//clean-up states
 		if (state.isCraftingCanceled()) {
 			state.setCraftingState(CraftingState.NONE);
 		}

@@ -1,11 +1,14 @@
 package com.github.elenterius.biomancy.crafting;
 
 import com.github.elenterius.biomancy.util.ItemStackCounter;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
+import com.mojang.datafixers.util.Either;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import it.unimi.dsi.fastutil.ints.IntList;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.util.GsonHelper;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.world.entity.player.StackedContents;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
@@ -16,8 +19,31 @@ import java.util.List;
 
 public record IngredientStack(Ingredient ingredient, int count) {
 
-	public static final String ALT_INGREDIENT_KEY = "alt"; //legacy support, unused by Biomancy
+	public static final String ALT_INGREDIENT_KEY = "alt";
 	public static final String COUNT_KEY = "count";
+
+	private static final MapCodec<Ingredient> INGREDIENT_MAP_CODEC = Codec.mapEither(Ingredient.CODEC.fieldOf(ALT_INGREDIENT_KEY), Ingredient.MAP_CODEC_NONEMPTY).xmap(
+			either -> either.map(i -> i, i -> i),
+			ingredient -> !ingredient.isCustom() && ingredient.getValues().length != 1 ? Either.left(ingredient) : Either.right(ingredient)
+	);
+
+	public static final Codec<IngredientStack> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+			INGREDIENT_MAP_CODEC.forGetter(IngredientStack::ingredient),
+			Codec.INT.optionalFieldOf(COUNT_KEY, 1).forGetter(IngredientStack::count)
+	).apply(instance, IngredientStack::new));
+
+	public static final Codec<List<IngredientStack>> LIST_CODEC = CODEC.listOf().xmap(
+			list -> list.stream().filter(stack -> !stack.ingredient().isEmpty()).toList(),
+			list -> list
+	);
+
+	public static final StreamCodec<RegistryFriendlyByteBuf, IngredientStack> STREAM_CODEC = StreamCodec.composite(
+			Ingredient.CONTENTS_STREAM_CODEC, IngredientStack::ingredient,
+			ByteBufCodecs.VAR_INT, IngredientStack::count,
+			IngredientStack::new
+	);
+
+	public static final StreamCodec<RegistryFriendlyByteBuf, List<IngredientStack>> LIST_STREAM_CODEC = STREAM_CODEC.apply(ByteBufCodecs.list());
 
 	public ItemStack[] getItems() {
 		return ingredient.getItems();
@@ -58,49 +84,7 @@ public record IngredientStack(Ingredient ingredient, int count) {
 
 	private ItemStack copyItemStackWithCount(ItemStack stack) {
 		if (count == 0) return ItemStack.EMPTY;
-		ItemStack copy = stack.copy();
-		copy.setCount(count);
-		return copy;
-	}
-
-	public JsonObject toJson() {
-		JsonElement ingredientJson = ingredient.toJson();
-
-		if (ingredientJson.isJsonArray()) {
-			JsonObject json = new JsonObject();
-			json.add(ALT_INGREDIENT_KEY, ingredientJson);
-			if (count > 1) json.addProperty(COUNT_KEY, count);
-			return json;
-		}
-
-		JsonObject json = (JsonObject) ingredientJson;
-		if (count > 1) json.addProperty(COUNT_KEY, count);
-		return json;
-	}
-
-	public static IngredientStack fromJson(JsonObject json) {
-		Ingredient ingredient = readIngredient(json);
-		int count = GsonHelper.getAsInt(json, COUNT_KEY, 1);
-		return new IngredientStack(ingredient, count);
-	}
-
-	private static Ingredient readIngredient(JsonObject json) {
-		if (GsonHelper.isArrayNode(json, ALT_INGREDIENT_KEY)) {
-			return Ingredient.fromJson(GsonHelper.getAsJsonArray(json, ALT_INGREDIENT_KEY));
-		}
-		return Ingredient.fromJson(json);
-	}
-
-	public static IngredientStack fromNetwork(FriendlyByteBuf buffer) {
-		Ingredient ingredient = Ingredient.fromNetwork(buffer);
-		int count = buffer.readVarInt();
-
-		return new IngredientStack(ingredient, count);
-	}
-
-	public void toNetwork(FriendlyByteBuf buffer) {
-		ingredient.toNetwork(buffer);
-		buffer.writeVarInt(count);
+		return stack.copyWithCount(count);
 	}
 
 }

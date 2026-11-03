@@ -1,19 +1,34 @@
 package com.github.elenterius.biomancy.crafting;
 
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
-import com.mojang.serialization.JsonOps;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.util.GsonHelper;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.ShapedRecipe;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ItemLike;
 
 public class VariableOutput {
+
+	private static final Codec<Item> RESULT_ITEM_CODEC = BuiltInRegistries.ITEM.byNameCodec()
+			.validate(item -> item == Items.AIR ? DataResult.error(() -> "Result can't be Empty") : DataResult.success(item));
+
+	public static final Codec<VariableOutput> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+			RESULT_ITEM_CODEC.fieldOf("item").forGetter(VariableOutput::getItem),
+			DataComponentPatch.CODEC.optionalFieldOf("components", DataComponentPatch.EMPTY).forGetter(o -> o.components),
+			ItemCountRange.CODEC.fieldOf("countRange").forGetter(VariableOutput::getCountRange)
+	).apply(instance, VariableOutput::new));
+
+	public static final StreamCodec<RegistryFriendlyByteBuf, VariableOutput> STREAM_CODEC = StreamCodec.composite(
+			ItemStack.STREAM_CODEC, VariableOutput::getItemStack,
+			ItemCountRange.STREAM_CODEC, VariableOutput::getCountRange,
+			VariableOutput::new
+	);
 
 	private final Item item;
 	private final DataComponentPatch components;
@@ -84,39 +99,8 @@ public class VariableOutput {
 		return countRange.getCount(rng);
 	}
 
-	public ItemCountRange getCountRange() {return countRange;}
-
-	public JsonObject serialize() {
-		JsonObject result = new JsonObject();
-		result.addProperty("item", BuiltInRegistries.ITEM.getKey(item).toString());
-
-		JsonObject obj = new JsonObject();
-		ItemCountRange.toJson(obj, countRange);
-		result.add("countRange", obj);
-
-		if (!components.isEmpty()) {
-			result.add("components", DataComponentPatch.CODEC.encodeStart(JsonOps.INSTANCE, components).getOrThrow());
-		}
-
-		return result;
-	}
-
-	public static VariableOutput deserialize(JsonObject jsonObject) {
-		ItemStack stack = ShapedRecipe.itemStackFromJson(jsonObject);
-		ItemCountRange countRange = ItemCountRange.fromJson(GsonHelper.getAsJsonObject(jsonObject, "countRange"));
-		if (stack.isEmpty()) throw new JsonParseException("Result can't be Empty");
-		return new VariableOutput(stack, countRange);
-	}
-
-	public static VariableOutput fromNetwork(FriendlyByteBuf buffer) {
-		ItemStack stack = buffer.readItem();
-		ItemCountRange range = ItemCountRange.fromNetwork(buffer);
-		return new VariableOutput(stack, range);
-	}
-
-	public void toNetwork(FriendlyByteBuf buffer) {
-		buffer.writeItem(getItemStack());
-		ItemCountRange.toNetwork(buffer, countRange);
+	public ItemCountRange getCountRange() {
+		return countRange;
 	}
 
 }

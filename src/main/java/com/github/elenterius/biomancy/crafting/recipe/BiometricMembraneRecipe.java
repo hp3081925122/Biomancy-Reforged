@@ -6,12 +6,11 @@ import com.github.elenterius.biomancy.block.membrane.BiometricMembraneBlockEntit
 import com.github.elenterius.biomancy.init.ModItems;
 import com.github.elenterius.biomancy.init.ModRecipes;
 import com.github.elenterius.biomancy.item.EssenceItem;
-import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.inventory.CraftingContainer;
+import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.CraftingBookCategory;
@@ -24,19 +23,19 @@ import java.util.UUID;
 
 public class BiometricMembraneRecipe extends CustomRecipe {
 
-	public BiometricMembraneRecipe(ResourceLocation id, CraftingBookCategory category) {
-		super(id, category);
+	public BiometricMembraneRecipe(CraftingBookCategory category) {
+		super(category);
 	}
 
 	@Override
-	public boolean matches(CraftingContainer container, Level level) {
-		if (!canCraftInDimensions(container.getWidth(), container.getHeight())) return false;
+	public boolean matches(CraftingInput container, Level level) {
+		if (!canCraftInDimensions(container.width(), container.height())) return false;
 
 		ItemStack membrane = ItemStack.EMPTY;
 		ItemStack essence = ItemStack.EMPTY;
 		ItemStack inversion = ItemStack.EMPTY;
 
-		for (int i = 0; i < container.getContainerSize(); i++) {
+		for (int i = 0; i < container.size(); i++) {
 			ItemStack stack = container.getItem(i);
 			if (stack.isEmpty()) continue;
 
@@ -65,12 +64,12 @@ public class BiometricMembraneRecipe extends CustomRecipe {
 	}
 
 	@Override
-	public ItemStack assemble(CraftingContainer container, RegistryAccess registryAccess) {
+	public ItemStack assemble(CraftingInput container, HolderLookup.Provider registries) {
 		ItemStack membrane = ItemStack.EMPTY;
 		ItemStack essence = ItemStack.EMPTY;
 		ItemStack inversion = ItemStack.EMPTY;
 
-		for (int i = 0; i < container.getContainerSize(); i++) {
+		for (int i = 0; i < container.size(); i++) {
 			ItemStack stack = container.getItem(i);
 			if (stack.isEmpty()) continue;
 

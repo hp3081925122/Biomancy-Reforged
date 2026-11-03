@@ -91,7 +91,7 @@ public final class ModRecipes {
 		return RECIPE_SERIALIZERS.register(name, serializer);
 	}
 
-	private static <T extends Recipe<?>> DeferredHolder<RecipeType<?>, AdvancedRecipeType<T>> registerRecipeType(String namespacedId) {
+	private static <T extends Recipe<RecipeInput>> DeferredHolder<RecipeType<?>, AdvancedRecipeType<T>> registerRecipeType(String namespacedId) {
 		return RECIPE_TYPES.register(namespacedId, () -> new AdvancedRecipeType<>(BiomancyMod.rlStr(namespacedId)));
 	}
 

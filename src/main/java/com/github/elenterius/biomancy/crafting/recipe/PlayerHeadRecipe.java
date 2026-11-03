@@ -7,11 +7,10 @@ import com.github.elenterius.biomancy.init.ModItems;
 import com.github.elenterius.biomancy.init.ModRecipes;
 import com.github.elenterius.biomancy.item.EssenceItem;
 import com.mojang.authlib.GameProfile;
-import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.inventory.CraftingContainer;
+import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -26,17 +25,17 @@ import java.util.UUID;
 
 public class PlayerHeadRecipe extends CustomRecipe {
 
-	public PlayerHeadRecipe(ResourceLocation id, CraftingBookCategory category) {
-		super(id, category);
+	public PlayerHeadRecipe(CraftingBookCategory category) {
+		super(category);
 	}
 
 	@Override
-	public boolean matches(CraftingContainer inventory, Level level) {
+	public boolean matches(CraftingInput inventory, Level level) {
 		boolean hasPlayerHead = false;
 		boolean hasPlayerUUID = false;
 		boolean hasExoticDust = false;
 
-		for (int i = 0; i < inventory.getContainerSize(); i++) {
+		for (int i = 0; i < inventory.size(); i++) {
 			ItemStack stack = inventory.getItem(i);
 
 			if (stack.isEmpty()) continue;
@@ -64,14 +63,14 @@ public class PlayerHeadRecipe extends CustomRecipe {
 	}
 
 	@Override
-	public ItemStack assemble(CraftingContainer inventory, RegistryAccess registryAccess) {
+	public ItemStack assemble(CraftingInput inventory, HolderLookup.Provider registries) {
 		UUID uuid = null;
 		String playerName = null;
 
 		boolean hasPlayerHead = false;
 		boolean hasExoticDust = false;
 
-		for (int i = 0; i < inventory.getContainerSize(); i++) {
+		for (int i = 0; i < inventory.size(); i++) {
 			ItemStack stack = inventory.getItem(i);
 
 			if (stack.isEmpty()) continue;

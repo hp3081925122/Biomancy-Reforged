@@ -59,7 +59,7 @@ public class BiomancyJeiPlugin implements IModPlugin {
 
 		registration.addRecipes(DecomposingCategory.RECIPE_TYPE, recipeManager.getAllRecipesFor(ModRecipes.DECOMPOSING_RECIPE_TYPE.get()));
 		registration.addRecipes(BioBrewingCategory.RECIPE_TYPE, recipeManager.getAllRecipesFor(ModRecipes.BIO_BREWING_RECIPE_TYPE.get()));
-		registration.addRecipes(BioBrewingCategory.RECIPE_TYPE, PotionSerumRecipes.RECIPES);
+		registration.addRecipes(BioBrewingCategory.RECIPE_TYPE, PotionSerumRecipes.getRecipes(level));
 
 		registration.addRecipes(DigestingCategory.RECIPE_TYPE, DigestingRecipes.getRecipes(level));
 		registration.addRecipes(BioForgingCategory.RECIPE_TYPE, recipeManager.getAllRecipesFor(ModRecipes.BIO_FORGING_RECIPE_TYPE.get()));

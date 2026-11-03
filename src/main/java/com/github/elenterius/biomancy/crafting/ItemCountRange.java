@@ -1,119 +1,70 @@
 package com.github.elenterius.biomancy.crafting;
 
-import com.google.gson.JsonObject;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.util.GsonHelper;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.netty.buffer.ByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
-
-import java.util.function.Function;
+import net.minecraft.util.StringRepresentable;
 
 public interface ItemCountRange {
 
-	enum RangeSerializerType {
+	enum RangeSerializerType implements StringRepresentable {
 
-		CONSTANT(0, "constant", ConstantValue.SERIALIZER),
-		UNIFORM(1, "uniform", UniformRange.SERIALIZER),
-		BINOMIAL(2, "binomial", BinomialRange.SERIALIZER);
+		CONSTANT("constant", ConstantValue.CODEC, ConstantValue.STREAM_CODEC),
+		UNIFORM("uniform", UniformRange.CODEC, UniformRange.STREAM_CODEC),
+		BINOMIAL("binomial", BinomialRange.CODEC, BinomialRange.STREAM_CODEC);
 
-		final byte id;
+		public static final Codec<RangeSerializerType> CODEC = StringRepresentable.fromEnum(RangeSerializerType::values);
+		public static final StreamCodec<ByteBuf, RangeSerializerType> STREAM_CODEC = ByteBufCodecs.BYTE.map(b -> values()[b], t -> (byte) t.ordinal());
+
 		final String type;
-		final RangeSerializer<? extends ItemCountRange> serializer;
+		final MapCodec<? extends ItemCountRange> codec;
+		final StreamCodec<ByteBuf, ? extends ItemCountRange> streamCodec;
 
-		RangeSerializerType(int id, String type, RangeSerializer<? extends ItemCountRange> serializer) {
-			this.id = (byte) id;
+		RangeSerializerType(String type, MapCodec<? extends ItemCountRange> codec, StreamCodec<ByteBuf, ? extends ItemCountRange> streamCodec) {
 			this.type = type;
-			this.serializer = serializer;
-		}
-
-		public byte getId() {
-			return id;
+			this.codec = codec;
+			this.streamCodec = streamCodec;
 		}
 
 		public String getType() {
 			return type;
 		}
 
-		public static RangeSerializer<? extends ItemCountRange> getSerializer(String type) {
-			for (RangeSerializerType available : values()) {
-				if (type.equals(available.type)) {
-					return available.serializer;
-				}
-			}
-			throw new IllegalArgumentException("Invalid Type: " + type);
-		}
-
-		public static RangeSerializer<? extends ItemCountRange> getSerializer(byte id) {
-			for (RangeSerializerType available : values()) {
-				if (id == available.id) {
-					return available.serializer;
-				}
-			}
-			throw new IllegalArgumentException("Invalid Id: " + id);
-		}
-
-		public static String getType(RangeSerializer<? extends ItemCountRange> serializer) {
-			return get(serializer, RangeSerializerType::getType);
-		}
-
-		public static byte getId(RangeSerializer<? extends ItemCountRange> serializer) {
-			return get(serializer, RangeSerializerType::getId);
-		}
-
-		public static <T> T get(RangeSerializer<? extends ItemCountRange> serializer, Function<RangeSerializerType, T> func) {
-			for (RangeSerializerType available : values()) {
-				if (serializer == available.serializer) {
-					return func.apply(available);
-				}
-			}
-			throw new IllegalArgumentException("Invalid serializer: " + serializer);
+		@Override
+		public String getSerializedName() {
+			return type;
 		}
 
 	}
 
-	static <T extends ItemCountRange> void toJson(JsonObject jsonObject, T range) {
-		//noinspection unchecked
-		RangeSerializer<T> serializer = (RangeSerializer<T>) range.getSerializer();
-		jsonObject.addProperty("type", RangeSerializerType.getType(serializer));
-		serializer.toJson(jsonObject, range);
-	}
+	Codec<ItemCountRange> CODEC = RangeSerializerType.CODEC.dispatch("type", ItemCountRange::getSerializerType, t -> t.codec);
 
-	static ItemCountRange fromJson(JsonObject jsonObject) {
-		String type = GsonHelper.getAsString(jsonObject, "type");
-		return RangeSerializerType.getSerializer(type).fromJson(jsonObject);
-	}
-
-	static <T extends ItemCountRange> void toNetwork(FriendlyByteBuf buffer, T range) {
-		//noinspection unchecked
-		RangeSerializer<T> serializer = (RangeSerializer<T>) range.getSerializer();
-		buffer.writeByte(RangeSerializerType.getId(serializer));
-		serializer.toNetwork(buffer, range);
-	}
-
-	static ItemCountRange fromNetwork(FriendlyByteBuf buffer) {
-		RangeSerializer<? extends ItemCountRange> serializer = RangeSerializerType.getSerializer(buffer.readByte());
-		return serializer.fromNetwork(buffer);
-	}
+	@SuppressWarnings("unchecked")
+	StreamCodec<ByteBuf, ItemCountRange> STREAM_CODEC = RangeSerializerType.STREAM_CODEC.dispatch(ItemCountRange::getSerializerType, t -> (StreamCodec<ByteBuf, ItemCountRange>) t.streamCodec);
 
 	int getCount(RandomSource rng);
 
 	int getMaxCount();
 
-	RangeSerializer<?> getSerializer();
-
-	interface RangeSerializer<T extends ItemCountRange> {
-		void toJson(JsonObject jsonObject, T range);
-
-		T fromJson(JsonObject jsonObject);
-
-		void toNetwork(FriendlyByteBuf buffer, T range);
-
-		T fromNetwork(FriendlyByteBuf buffer);
-	}
+	RangeSerializerType getSerializerType();
 
 	record UniformRange(int min, int max) implements ItemCountRange {
 
-		public static final Serializer SERIALIZER = new Serializer();
+		public static final MapCodec<UniformRange> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+				Codec.INT.fieldOf("min").forGetter(UniformRange::min),
+				Codec.INT.fieldOf("max").forGetter(UniformRange::max)
+		).apply(instance, UniformRange::new));
+
+		public static final StreamCodec<ByteBuf, UniformRange> STREAM_CODEC = StreamCodec.composite(
+				ByteBufCodecs.VAR_INT, UniformRange::min,
+				ByteBufCodecs.VAR_INT, UniformRange::max,
+				UniformRange::new
+		);
 
 		@Override
 		public int getCount(RandomSource rng) {
@@ -126,41 +77,24 @@ public interface ItemCountRange {
 		}
 
 		@Override
-		public RangeSerializer<UniformRange> getSerializer() {
-			return SERIALIZER;
-		}
-
-		static class Serializer implements RangeSerializer<UniformRange> {
-			@Override
-			public void toJson(JsonObject jsonObject, UniformRange range) {
-				jsonObject.addProperty("min", range.min);
-				jsonObject.addProperty("max", range.max);
-			}
-
-			@Override
-			public UniformRange fromJson(JsonObject jsonObject) {
-				return new UniformRange(GsonHelper.getAsInt(jsonObject, "min"), GsonHelper.getAsInt(jsonObject, "max"));
-			}
-
-			@Override
-			public void toNetwork(FriendlyByteBuf buffer, UniformRange range) {
-				buffer.writeVarInt(range.min);
-				buffer.writeVarInt(range.max);
-			}
-
-			@Override
-			public UniformRange fromNetwork(FriendlyByteBuf buffer) {
-				int min1 = buffer.readVarInt();
-				int max1 = buffer.readVarInt();
-				return new UniformRange(min1, max1);
-			}
+		public RangeSerializerType getSerializerType() {
+			return RangeSerializerType.UNIFORM;
 		}
 
 	}
 
 	record BinomialRange(int n, float p) implements ItemCountRange {
 
-		public static final Serializer SERIALIZER = new Serializer();
+		public static final MapCodec<BinomialRange> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+				Codec.INT.fieldOf("n").forGetter(BinomialRange::n),
+				Codec.FLOAT.fieldOf("p").forGetter(BinomialRange::p)
+		).apply(instance, BinomialRange::new));
+
+		public static final StreamCodec<ByteBuf, BinomialRange> STREAM_CODEC = StreamCodec.composite(
+				ByteBufCodecs.VAR_INT, BinomialRange::n,
+				ByteBufCodecs.FLOAT, BinomialRange::p,
+				BinomialRange::new
+		);
 
 		@Override
 		public int getCount(RandomSource rng) {
@@ -177,42 +111,17 @@ public interface ItemCountRange {
 		}
 
 		@Override
-		public RangeSerializer<BinomialRange> getSerializer() {
-			return SERIALIZER;
-		}
-
-		static class Serializer implements RangeSerializer<BinomialRange> {
-
-			@Override
-			public void toJson(JsonObject jsonObject, BinomialRange range) {
-				jsonObject.addProperty("n", range.n);
-				jsonObject.addProperty("p", range.p);
-			}
-
-			@Override
-			public BinomialRange fromJson(JsonObject jsonObject) {
-				return new BinomialRange(GsonHelper.getAsInt(jsonObject, "n"), GsonHelper.getAsFloat(jsonObject, "p"));
-			}
-
-			@Override
-			public void toNetwork(FriendlyByteBuf buffer, BinomialRange range) {
-				buffer.writeVarInt(range.n);
-				buffer.writeFloat(range.p);
-			}
-
-			@Override
-			public BinomialRange fromNetwork(FriendlyByteBuf buffer) {
-				int n1 = buffer.readVarInt();
-				float p1 = buffer.readFloat();
-				return new BinomialRange(n1, p1);
-			}
+		public RangeSerializerType getSerializerType() {
+			return RangeSerializerType.BINOMIAL;
 		}
 
 	}
 
 	record ConstantValue(int value) implements ItemCountRange {
 
-		public static final Serializer SERIALIZER = new Serializer();
+		public static final MapCodec<ConstantValue> CODEC = Codec.INT.fieldOf("value").xmap(ConstantValue::new, ConstantValue::value);
+
+		public static final StreamCodec<ByteBuf, ConstantValue> STREAM_CODEC = ByteBufCodecs.VAR_INT.map(ConstantValue::new, ConstantValue::value);
 
 		@Override
 		public int getCount(RandomSource rng) {
@@ -225,31 +134,8 @@ public interface ItemCountRange {
 		}
 
 		@Override
-		public RangeSerializer<ConstantValue> getSerializer() {
-			return SERIALIZER;
-		}
-
-		static class Serializer implements RangeSerializer<ConstantValue> {
-			@Override
-			public void toJson(JsonObject jsonObject, ConstantValue constant) {
-				jsonObject.addProperty("value", constant.value);
-			}
-
-			@Override
-			public ConstantValue fromJson(JsonObject jsonObject) {
-				return new ConstantValue(jsonObject.get("value").getAsInt());
-			}
-
-			@Override
-			public void toNetwork(FriendlyByteBuf buffer, ConstantValue constant) {
-				buffer.writeVarInt(constant.value);
-			}
-
-			@Override
-			public ConstantValue fromNetwork(FriendlyByteBuf buffer) {
-				int constantValue = buffer.readVarInt();
-				return new ConstantValue(constantValue);
-			}
+		public RangeSerializerType getSerializerType() {
+			return RangeSerializerType.CONSTANT;
 		}
 
 	}

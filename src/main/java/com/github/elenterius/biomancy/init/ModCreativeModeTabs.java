@@ -5,6 +5,7 @@ import com.github.elenterius.biomancy.api.livingtool.LivingTool;
 import com.github.elenterius.biomancy.api.serum.SerumContainer;
 import com.github.elenterius.biomancy.crafting.recipe.PotionSerumRecipes;
 import com.github.elenterius.biomancy.item.SerumItem;
+import com.github.elenterius.biomancy.util.ClientUtil;
 import com.github.elenterius.biomancy.util.ComponentUtil;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup;
@@ -116,8 +117,11 @@ public final class ModCreativeModeTabs {
 					output.accept(PotionContents.createItemStack(Items.SPLASH_POTION, ModPotions.PRIMORDIAL_INFESTATION));
 					output.accept(PotionContents.createItemStack(Items.LINGERING_POTION, ModPotions.PRIMORDIAL_INFESTATION));
 
-					for (Holder<Potion> potion : PotionSerumRecipes.POTIONS) {
-						output.accept(ModItems.POTION_SERUM.get().getInstanceFrom(potion));
+					Level level = ClientUtil.getLevel();
+					if (level != null) {
+						for (Holder<Potion> potion : PotionSerumRecipes.getPotions(level)) {
+							output.accept(ModItems.POTION_SERUM.get().getInstanceFrom(potion));
+						}
 					}
 
 				});

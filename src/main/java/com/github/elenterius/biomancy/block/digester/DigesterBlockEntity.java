@@ -34,6 +34,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.items.IItemHandler;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import org.jspecify.annotations.Nullable;
@@ -143,7 +144,7 @@ public class DigesterBlockEntity extends MachineBlockEntity<DigestingRecipe, Dig
 	}
 
 	@Override
-	protected @Nullable DigestingRecipe resolveRecipeFromInput(Level level) {
+	protected @Nullable RecipeHolder<DigestingRecipe> resolveRecipeFromInput(Level level) {
 		return RECIPE_TYPE.get().getBestRecipeFor(level, inputInventory.getRecipeWrapper()).orElse(null);
 	}
 

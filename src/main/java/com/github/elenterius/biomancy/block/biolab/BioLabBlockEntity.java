@@ -37,6 +37,7 @@ import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.items.wrapper.CombinedInvWrapper;
 import net.neoforged.neoforge.items.wrapper.RangedWrapper;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import org.jspecify.annotations.Nullable;
@@ -165,10 +166,10 @@ public class BioLabBlockEntity extends MachineBlockEntity<BioBrewingRecipe, BioL
 	}
 
 	@Override
-	protected @Nullable BioBrewingRecipe resolveRecipeFromInput(Level level) {
+	protected @Nullable RecipeHolder<BioBrewingRecipe> resolveRecipeFromInput(Level level) {
 		return RECIPE_TYPE.get()
 				.getBestRecipeFor(level, inputInventory.getRecipeWrapper())
-				.orElse(PotionSerumRecipes.getRecipeFor(level, inputInventory.getRecipeWrapper()));
+				.orElseGet(() -> PotionSerumRecipes.getRecipeFor(level, inputInventory.getRecipeWrapper()));
 	}
 
 	@Override

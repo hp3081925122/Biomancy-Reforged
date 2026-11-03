@@ -1,61 +1,79 @@
 package com.github.elenterius.biomancy.crafting;
 
-import com.github.elenterius.biomancy.crafting.recipe.RecipeUtil;
+import com.github.elenterius.biomancy.component.EssenceData;
+import com.github.elenterius.biomancy.init.ModDataComponents;
+import com.github.elenterius.biomancy.init.ModItems;
+import com.github.elenterius.biomancy.init.ModRecipes;
 import com.github.elenterius.biomancy.item.EssenceItem;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import net.minecraft.advancements.critereon.NbtPredicate;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.FriendlyByteBuf;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.netty.buffer.ByteBuf;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraftforge.common.crafting.AbstractIngredient;
-import net.minecraftforge.common.crafting.CraftingHelper;
-import net.minecraftforge.common.crafting.IIngredientSerializer;
-import org.jspecify.annotations.Nullable;
+import net.neoforged.neoforge.common.crafting.ICustomIngredient;
+import net.neoforged.neoforge.common.crafting.IngredientType;
 
-import java.util.Objects;
 import java.util.stream.Stream;
 
-public class EssenceIngredient extends AbstractIngredient {
+public final class EssenceIngredient implements ICustomIngredient {
 
-	private final ItemStack itemStack;
-	private final CompoundTag partialTag;
-	private final NbtPredicate predicate;
+	public static final MapCodec<EssenceIngredient> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+			ResourceLocation.CODEC.fieldOf("entity_type").forGetter(EssenceIngredient::entityTypeId),
+			Codec.intRange(0, 3).optionalFieldOf("tier", 0).forGetter(EssenceIngredient::tier)
+	).apply(instance, EssenceIngredient::new));
 
-	protected EssenceIngredient(ItemStack itemStack, CompoundTag partialTag) {
-		super(Stream.of(new Ingredient.ItemValue(itemStack)));
+	public static final StreamCodec<ByteBuf, EssenceIngredient> STREAM_CODEC = StreamCodec.composite(
+			ResourceLocation.STREAM_CODEC, EssenceIngredient::entityTypeId,
+			ByteBufCodecs.VAR_INT, EssenceIngredient::tier,
+			EssenceIngredient::new
+	);
 
-		this.itemStack = itemStack;
-		this.partialTag = partialTag;
+	private final ResourceLocation entityTypeId;
+	private final int tier;
+	private final ItemStack displayStack;
 
-		predicate = new NbtPredicate(partialTag);
+	private EssenceIngredient(ResourceLocation entityTypeId, int tier) {
+		this.entityTypeId = entityTypeId;
+		this.tier = tier;
+		displayStack = EssenceItem.fromEntityType(BuiltInRegistries.ENTITY_TYPE.get(entityTypeId), tier);
 	}
 
-	public static EssenceIngredient of(EntityType<?> entityType) {
+	public static Ingredient of(EntityType<?> entityType) {
 		return of(entityType, 0);
 	}
 
-	public static EssenceIngredient of(EntityType<?> entityType, int tier) {
+	public static Ingredient of(EntityType<?> entityType, int tier) {
 		if (tier < 0 || tier > 3) throw new IllegalArgumentException("Cannot create a EssenceIngredient with invalid tier");
+		return new EssenceIngredient(EntityType.getKey(entityType), tier).toVanilla();
+	}
 
-		CompoundTag essenceTag = new CompoundTag();
-		essenceTag.putString(EssenceItem.ENTITY_TYPE_KEY, EntityType.getKey(entityType).toString());
+	public ResourceLocation entityTypeId() {
+		return entityTypeId;
+	}
 
-		CompoundTag partialTag = new CompoundTag();
-		partialTag.put(EssenceItem.ESSENCE_DATA_KEY, essenceTag);
-		if (tier > 0) partialTag.putInt(EssenceItem.ESSENCE_TIER_KEY, tier);
-
-		ItemStack stack = EssenceItem.fromEntityType(entityType, tier); //we set the tier here only for visual purposes
-
-		return new EssenceIngredient(stack, partialTag);
+	public int tier() {
+		return tier;
 	}
 
 	@Override
-	public boolean test(@Nullable ItemStack stack) {
-		if (stack == null) return false;
-		return itemStack.getItem() == stack.getItem() && predicate.matches(stack.getShareTag());
+	public boolean test(ItemStack stack) {
+		if (!stack.is(ModItems.ESSENCE.get())) return false;
+
+		EssenceData data = stack.get(ModDataComponents.ESSENCE);
+		if (data == null || !data.entityType().equals(entityTypeId)) return false;
+
+		return tier <= 0 || data.tier() == tier;
+	}
+
+	@Override
+	public Stream<ItemStack> getItems() {
+		return Stream.of(displayStack.copy());
 	}
 
 	@Override
@@ -64,43 +82,8 @@ public class EssenceIngredient extends AbstractIngredient {
 	}
 
 	@Override
-	public IIngredientSerializer<? extends Ingredient> getSerializer() {
-		return Serializer.INSTANCE;
-	}
-
-	@Override
-	public JsonElement toJson() {
-		JsonObject json = new JsonObject();
-		json.addProperty("type", Objects.requireNonNull(CraftingHelper.getID(Serializer.INSTANCE)).toString());
-		json.add("item", RecipeUtil.writeItemStack(itemStack));
-		json.addProperty("predicate_tag", partialTag.toString());
-		return json;
-	}
-
-	public static class Serializer implements IIngredientSerializer<EssenceIngredient> {
-
-		public static final Serializer INSTANCE = new Serializer();
-
-		@Override
-		public EssenceIngredient parse(JsonObject json) {
-			ItemStack stack = RecipeUtil.readItemStack(json.getAsJsonObject("item"));
-			CompoundTag tag = CraftingHelper.getNBT(json.get("predicate_tag"));
-			return new EssenceIngredient(stack, tag);
-		}
-
-		@Override
-		public EssenceIngredient parse(FriendlyByteBuf buffer) {
-			ItemStack stack = buffer.readItem();
-			CompoundTag tag = buffer.readNbt();
-			return new EssenceIngredient(stack, Objects.requireNonNull(tag));
-		}
-
-		@Override
-		public void write(FriendlyByteBuf buffer, EssenceIngredient ingredient) {
-			buffer.writeItem(ingredient.itemStack);
-			buffer.writeNbt(ingredient.partialTag);
-		}
-
+	public IngredientType<?> getType() {
+		return ModRecipes.ESSENCE_INGREDIENT.get();
 	}
 
 }
