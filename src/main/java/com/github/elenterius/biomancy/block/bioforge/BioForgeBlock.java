@@ -1,5 +1,10 @@
 package com.github.elenterius.biomancy.block.bioforge;
 
+import com.mojang.serialization.MapCodec;
+import com.github.elenterius.biomancy.util.BlockItemUtil;
+import net.minecraft.world.item.Item;
+import com.github.elenterius.biomancy.util.InteractionUtil;
+import net.minecraft.world.ItemInteractionResult;
 import com.github.elenterius.biomancy.init.ModBlockEntities;
 import com.github.elenterius.biomancy.init.ModSoundEvents;
 import com.github.elenterius.biomancy.sounds.SoundUtil;
@@ -17,7 +22,6 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -36,13 +40,14 @@ import net.minecraft.world.phys.shapes.BooleanOp;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.network.NetworkHooks;
 import org.jspecify.annotations.Nullable;
 
 import java.text.DecimalFormat;
 import java.util.List;
 
 public class BioForgeBlock extends BaseEntityBlock {
+
+	public static final MapCodec<BioForgeBlock> CODEC = simpleCodec(BioForgeBlock::new);
 
 	public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
 	protected static final VoxelShape SHAPE = createShape();
@@ -55,6 +60,11 @@ public class BioForgeBlock extends BaseEntityBlock {
 
 	public BioForgeBlock(Properties properties) {
 		super(properties);
+	}
+
+	@Override
+	protected MapCodec<? extends BioForgeBlock> codec() {
+		return CODEC;
 	}
 
 	@Override
@@ -84,15 +94,19 @@ public class BioForgeBlock extends BaseEntityBlock {
 	@Override
 	public void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
 		if (level.getBlockEntity(pos) instanceof BioForgeBlockEntity bioForge) {
-			bioForge.recheckOpen(); //this is only here because of ContainerOpenersCounter
+			bioForge.recheckOpen();
 		}
 	}
 
 	@Override
-	public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+	protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+		return InteractionUtil.toItemInteractionResult(use(state, level, pos, player, hand, hit));
+	}
+
+	protected InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
 		if (level.getBlockEntity(pos) instanceof BioForgeBlockEntity bioForge && bioForge.canPlayerInteract(player)) {
 			if (!level.isClientSide) {
-				NetworkHooks.openScreen((ServerPlayer) player, bioForge, buffer -> buffer.writeBlockPos(pos));
+				player.openMenu(bioForge, buffer -> buffer.writeBlockPos(pos));
 				SoundUtil.Server.playBlockSound((ServerLevel) level, pos, ModSoundEvents.UI_BIO_FORGE_OPEN);
 			}
 			return InteractionResult.SUCCESS;
@@ -127,7 +141,6 @@ public class BioForgeBlock extends BaseEntityBlock {
 		return SHAPE;
 	}
 
-
 	public BlockState rotate(BlockState state, Rotation rotation) {
 		return state.setValue(FACING, rotation.rotate(state.getValue(FACING)));
 	}
@@ -137,7 +150,7 @@ public class BioForgeBlock extends BaseEntityBlock {
 	}
 
 	@Override
-	public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> tooltip, TooltipFlag flag) {
+	public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
 		int fuelAmount = getFuelAmount(stack);
 		if (fuelAmount > 0) {
 			tooltip.add(ComponentUtil.EMPTY_LINE);
@@ -148,7 +161,7 @@ public class BioForgeBlock extends BaseEntityBlock {
 	}
 
 	public static int getFuelAmount(ItemStack stack) {
-		CompoundTag tag = BlockItem.getBlockEntityData(stack);
+		CompoundTag tag = BlockItemUtil.getBlockEntityData(stack);
 		return tag != null && tag.contains("Fuel") ? tag.getShort("Fuel") : 0;
 	}
 }

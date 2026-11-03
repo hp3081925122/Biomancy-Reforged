@@ -45,7 +45,7 @@ public interface Chrysalis {
 			if (removeEntity) {
 				entity.remove(Entity.RemovalReason.DISCARDED);
 			}
-			else if (cachedPassengers != null) { //if we don't remove the entity from the world we restore the passengers
+			else if (cachedPassengers != null) {
 				cachedPassengers.forEach(passenger -> passenger.startRiding(entity));
 			}
 			return true;
@@ -63,7 +63,7 @@ public interface Chrysalis {
 			tag.putString(ENTITY_NAME_KEY, entity.getType().getDescriptionId());
 
 			EntityDimensions dimensions = entity.getDimensions(entity.getPose());
-			float volume = dimensions.width * dimensions.height * dimensions.width;
+			float volume = dimensions.width() * dimensions.height() * dimensions.width();
 			tag.putFloat(ENTITY_VOLUME_KEY, volume);
 
 			compoundTag.put(ENTITY_KEY, tag);
@@ -89,10 +89,7 @@ public interface Chrysalis {
 
 		if (entityToSpawn != null) {
 			if (!MobUtil.isEntityIdUnique(level, entityToSpawn)) {
-				//reset UUID to prevent "Trying to add entity with duplicated UUID" issue
-				//this only happens if the item stack was copied (e.g. in creative mode) or if the original mob wasn't removed from the world
 				MobUtil.randomizeUUID(entityToSpawn);
-				//TODO: trigger secret achievement: Paradox! - There can't be two identical entities in the same world.
 			}
 			return level.addFreshEntity(entityToSpawn);
 		}

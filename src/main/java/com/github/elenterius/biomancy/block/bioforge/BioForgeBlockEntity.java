@@ -1,10 +1,10 @@
 package com.github.elenterius.biomancy.block.bioforge;
 
+import net.minecraft.core.HolderLookup;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.api.nutrients.FuelHandler;
 import com.github.elenterius.biomancy.api.nutrients.FuelHandlerImpl;
 import com.github.elenterius.biomancy.init.ModBlockEntities;
-import com.github.elenterius.biomancy.init.ModCapabilities;
 import com.github.elenterius.biomancy.inventory.InventoryHandler;
 import com.github.elenterius.biomancy.inventory.InventoryHandlers;
 import com.github.elenterius.biomancy.inventory.ItemHandlerUtil;
@@ -27,9 +27,8 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.ContainerOpenersCounter;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.items.IItemHandler;
 import org.jspecify.annotations.Nullable;
 import software.bernie.geckolib.animatable.GeoBlockEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
@@ -58,12 +57,10 @@ public class BioForgeBlockEntity extends BlockEntity implements MenuProvider, Pl
 
 		@Override
 		protected void onOpen(Level level, BlockPos pos, BlockState state) {
-			//play sound
 		}
 
 		@Override
 		protected void onClose(Level level, BlockPos pos, BlockState state) {
-			//play sound
 		}
 
 		@Override
@@ -88,15 +85,12 @@ public class BioForgeBlockEntity extends BlockEntity implements MenuProvider, Pl
 	private boolean playWorkingAnimation = false;
 	private int nearbyTimer = -10;
 
-	private LazyOptional<IFluidHandler> optionalFluidConsumer;
-
 	public BioForgeBlockEntity(BlockPos worldPosition, BlockState blockState) {
 		super(ModBlockEntities.BIO_FORGE.get(), worldPosition, blockState);
 		fuelInventory = InventoryHandlers.filterFuel(FUEL_SLOTS, this::onInventoryChanged);
 
 		fuelHandler = FuelHandlerImpl.createNutrientFuelHandler(MAX_FUEL, this::setChanged);
 		stateData = new BioForgeStateData(fuelHandler);
-		optionalFluidConsumer = LazyOptional.of(fuelHandler::getFluidConsumer);
 	}
 
 	public static void serverTick(Level level, BlockPos pos, BlockState state, BioForgeBlockEntity entity) {
@@ -192,50 +186,21 @@ public class BioForgeBlockEntity extends BlockEntity implements MenuProvider, Pl
 	}
 
 	@Override
-	protected void saveAdditional(CompoundTag tag) {
-		super.saveAdditional(tag);
-		tag.put("Fuel", fuelHandler.serializeNBT());
-		tag.put("FuelSlots", fuelInventory.serializeNBT());
+	protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+		super.saveAdditional(tag, registries);
+		tag.put("Fuel", fuelHandler.serializeNBT(registries));
+		tag.put("FuelSlots", fuelInventory.serializeNBT(registries));
 	}
 
 	@Override
-	public void load(CompoundTag tag) {
-		super.load(tag);
-		fuelHandler.deserializeNBT(tag.getCompound("Fuel"));
-		fuelInventory.deserializeNBT(tag.getCompound("FuelSlots"));
+	protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+		super.loadAdditional(tag, registries);
+		fuelHandler.deserializeNBT(registries, tag.getCompound("Fuel"));
+		fuelInventory.deserializeNBT(registries, tag.getCompound("FuelSlots"));
 	}
 
 	public void dropAllInvContents(Level level, BlockPos pos) {
 		ItemHandlerUtil.dropContents(level, pos, fuelInventory);
-	}
-
-	@Override
-	public <T> LazyOptional<T> getCapability(Capability<T> cap, @Nullable Direction side) {
-		if (remove) return super.getCapability(cap, side);
-
-		if (cap == ModCapabilities.ITEM_HANDLER && side != null && side.getAxis().isHorizontal()) {
-			return fuelInventory.getLazyOptional().cast();
-		}
-
-		if (cap == ModCapabilities.FLUID_HANDLER) {
-			return optionalFluidConsumer.cast();
-		}
-
-		return super.getCapability(cap, side);
-	}
-
-	@Override
-	public void invalidateCaps() {
-		super.invalidateCaps();
-		fuelInventory.invalidate();
-		optionalFluidConsumer.invalidate();
-	}
-
-	@Override
-	public void reviveCaps() {
-		super.reviveCaps();
-		fuelInventory.revive();
-		optionalFluidConsumer = LazyOptional.of(fuelHandler::getFluidConsumer);
 	}
 
 	@Override
@@ -302,6 +267,17 @@ public class BioForgeBlockEntity extends BlockEntity implements MenuProvider, Pl
 
 		private Animations() {}
 
+	}
+
+	public @Nullable IItemHandler getItemHandler(@Nullable Direction side) {
+		if (isRemoved()) return null;
+		if (side != null && side.getAxis().isHorizontal()) return fuelInventory;
+		return null;
+	}
+
+	public @Nullable IFluidHandler getFluidHandler(@Nullable Direction side) {
+		if (isRemoved()) return null;
+		return fuelHandler.getFluidConsumer();
 	}
 
 }

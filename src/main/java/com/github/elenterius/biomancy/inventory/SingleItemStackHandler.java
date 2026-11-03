@@ -1,12 +1,12 @@
 package com.github.elenterius.biomancy.inventory;
 
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.common.util.INBTSerializable;
-import net.minecraftforge.items.IItemHandlerModifiable;
-import net.minecraftforge.items.ItemHandlerHelper;
+import net.neoforged.neoforge.common.util.INBTSerializable;
+import net.neoforged.neoforge.items.IItemHandlerModifiable;
 
 public class SingleItemStackHandler implements SerializableItemHandler, IItemHandlerModifiable, INBTSerializable<CompoundTag> {
 
@@ -105,7 +105,7 @@ public class SingleItemStackHandler implements SerializableItemHandler, IItemHan
 		if (stackIn.isEmpty()) return ItemStack.EMPTY;
 		if (!isItemValid(slot, stackIn)) return stackIn;
 
-		if (!cachedStack.isEmpty() && !ItemHandlerHelper.canItemStacksStack(stackIn, cachedStack)) return stackIn;
+		if (!cachedStack.isEmpty() && !ItemHandlerUtil.canItemStacksStack(stackIn, cachedStack)) return stackIn;
 		if (getAmount() >= getMaxAmount()) return stackIn;
 
 		int insertGoal = stackIn.getCount();
@@ -114,11 +114,11 @@ public class SingleItemStackHandler implements SerializableItemHandler, IItemHan
 
 		if (!simulate) {
 			int insertAmount = overflow > 0 ? insertGoal - overflow : insertGoal;
-			if (cachedStack.isEmpty()) cachedStack = ItemHandlerHelper.copyStackWithSize(stackIn, insertAmount);
+			if (cachedStack.isEmpty()) cachedStack = stackIn.copyWithCount(insertAmount);
 			else cachedStack.grow(insertAmount);
 		}
 
-		return overflow > 0 ? ItemHandlerHelper.copyStackWithSize(stackIn, overflow) : ItemStack.EMPTY;
+		return overflow > 0 ? stackIn.copyWithCount(overflow) : ItemStack.EMPTY;
 	}
 
 	public ItemStack extractItem(int amount, boolean simulate) {
@@ -153,7 +153,7 @@ public class SingleItemStackHandler implements SerializableItemHandler, IItemHan
 			if (!simulate) {
 				cachedStack.grow(-extractGoal);
 			}
-			return ItemHandlerHelper.copyStackWithSize(cachedStack, extractGoal);
+			return cachedStack.copyWithCount(extractGoal);
 		}
 	}
 
@@ -164,31 +164,27 @@ public class SingleItemStackHandler implements SerializableItemHandler, IItemHan
 	}
 
 	@Override
-	public CompoundTag serializeNBT() {
+	public CompoundTag serializeNBT(HolderLookup.Provider provider) {
 		CompoundTag nbt = new CompoundTag();
 		serializeItemAmount(nbt);
 		if (!cachedStack.isEmpty()) {
-			int count = cachedStack.getCount();
-			if (count > 64) cachedStack.setCount(64); //prevent byte overflow
-			nbt.put(ITEM_TAG, cachedStack.save(new CompoundTag()));
-			if (count != cachedStack.getCount()) cachedStack.setCount(count); //restore item count
+			nbt.put(ITEM_TAG, cachedStack.copyWithCount(Math.min(cachedStack.getCount(), 64)).save(provider));
 		}
 		return nbt;
 	}
 
 	@Override
-	public void deserializeNBT(CompoundTag nbt) {
-		if (nbt.contains(ITEM_TAG)) cachedStack = ItemStack.of(nbt.getCompound(ITEM_TAG));
+	public void deserializeNBT(HolderLookup.Provider provider, CompoundTag nbt) {
+		if (nbt.contains(ITEM_TAG)) cachedStack = ItemStack.parseOptional(provider, nbt.getCompound(ITEM_TAG));
 		else cachedStack = ItemStack.EMPTY;
 
 		int itemAmount = deserializeItemAmount(nbt);
 		if (itemAmount > cachedStack.getCount()) {
-			cachedStack.setCount(itemAmount); //restore item amount
+			cachedStack.setCount(itemAmount);
 		}
 	}
 
 	protected void onContentsChanged() {
-		// to be overridden
 	}
 
 }

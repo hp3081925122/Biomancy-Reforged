@@ -1,5 +1,9 @@
 package com.github.elenterius.biomancy.block.storagesac;
 
+import com.mojang.serialization.MapCodec;
+import net.minecraft.core.component.DataComponents;
+import com.github.elenterius.biomancy.util.InteractionUtil;
+import net.minecraft.world.ItemInteractionResult;
 import com.github.elenterius.biomancy.block.base.WaterloggedFacingEntityBlock;
 import com.github.elenterius.biomancy.init.ModSoundEvents;
 import com.github.elenterius.biomancy.sounds.SoundUtil;
@@ -24,10 +28,11 @@ import net.minecraft.world.phys.shapes.BooleanOp;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.network.NetworkHooks;
 import org.jspecify.annotations.Nullable;
 
 public class StorageSacBlock extends WaterloggedFacingEntityBlock {
+
+	public static final MapCodec<StorageSacBlock> CODEC = simpleCodec(StorageSacBlock::new);
 
 	public static final VoxelShape SHAPE_UP = createShape(Direction.UP);
 	public static final VoxelShape SHAPE_DOWN = createShape(Direction.DOWN);
@@ -38,6 +43,11 @@ public class StorageSacBlock extends WaterloggedFacingEntityBlock {
 
 	public StorageSacBlock(Properties properties) {
 		super(properties);
+	}
+
+	@Override
+	protected MapCodec<? extends StorageSacBlock> codec() {
+		return CODEC;
 	}
 
 	private static VoxelShape createShape(Direction direction) {
@@ -54,16 +64,20 @@ public class StorageSacBlock extends WaterloggedFacingEntityBlock {
 
 	@Override
 	public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
-		if (level.getBlockEntity(pos) instanceof StorageSacBlockEntity sac && stack.hasCustomHoverName()) {
+		if (level.getBlockEntity(pos) instanceof StorageSacBlockEntity sac && stack.has(DataComponents.CUSTOM_NAME)) {
 			sac.setCustomName(stack.getHoverName());
 		}
 	}
 
 	@Override
-	public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+	protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+		return InteractionUtil.toItemInteractionResult(use(state, level, pos, player, hand, hit));
+	}
+
+	protected InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
 		if (level.getBlockEntity(pos) instanceof StorageSacBlockEntity sac && sac.canPlayerInteract(player)) {
 			if (!level.isClientSide) {
-				NetworkHooks.openScreen((ServerPlayer) player, sac, buffer -> buffer.writeBlockPos(pos));
+				player.openMenu(sac, buffer -> buffer.writeBlockPos(pos));
 				SoundUtil.Server.playBlockSound((ServerLevel) level, pos, ModSoundEvents.UI_STORAGE_SAC_OPEN);
 			}
 			return InteractionResult.SUCCESS;
@@ -73,17 +87,17 @@ public class StorageSacBlock extends WaterloggedFacingEntityBlock {
 	}
 
 	@Override
-	public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+	public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
 		if (!level.isClientSide && player.isCreative() && level.getBlockEntity(pos) instanceof StorageSacBlockEntity storage && !storage.isEmpty()) {
 			ItemStack stack = new ItemStack(this);
-			storage.saveToItem(stack);
-			if (storage.hasCustomName()) stack.setHoverName(storage.getCustomName());
+			storage.saveToItem(stack, level.registryAccess());
+			if (storage.hasCustomName()) stack.set(DataComponents.CUSTOM_NAME, storage.getCustomName());
 			ItemEntity itemEntity = new ItemEntity(level, pos.getX() + 0.5d, pos.getY() + 0.5D, pos.getZ() + 0.5d, stack);
 			itemEntity.setDefaultPickUpDelay();
 			level.addFreshEntity(itemEntity);
 		}
 
-		super.playerWillDestroy(level, pos, state, player);
+		return super.playerWillDestroy(level, pos, state, player);
 	}
 
 	@Override

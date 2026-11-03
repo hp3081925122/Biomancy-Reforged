@@ -1,5 +1,9 @@
 package com.github.elenterius.biomancy.block.mawhopper;
 
+import com.mojang.serialization.MapCodec;
+import net.minecraft.world.item.ItemStack;
+import com.github.elenterius.biomancy.util.InteractionUtil;
+import net.minecraft.world.ItemInteractionResult;
 import com.github.elenterius.biomancy.block.property.DirectedConnection;
 import com.github.elenterius.biomancy.block.property.VertexType;
 import com.github.elenterius.biomancy.init.ModBlockEntities;
@@ -34,6 +38,8 @@ import org.jspecify.annotations.Nullable;
 
 public class MawHopperBlock extends BaseEntityBlock implements SimpleWaterloggedBlock {
 
+	public static final MapCodec<MawHopperBlock> CODEC = simpleCodec(MawHopperBlock::new);
+
 	public static final EnumProperty<DirectedConnection> CONNECTION = ModBlockProperties.DIRECTED_CONNECTION;
 	public static final EnumProperty<VertexType> VERTEX_TYPE = ModBlockProperties.VERTEX_TYPE;
 	public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
@@ -42,6 +48,11 @@ public class MawHopperBlock extends BaseEntityBlock implements SimpleWaterlogged
 		super(properties);
 		registerDefaultState(defaultBlockState().setValue(CONNECTION, DirectedConnection.UP_DOWN).setValue(VERTEX_TYPE, VertexType.SOURCE).setValue(WATERLOGGED, false));
 		MawHopperShapes.computePossibleShapes(stateDefinition.getPossibleStates());
+	}
+
+	@Override
+	protected MapCodec<? extends MawHopperBlock> codec() {
+		return CODEC;
 	}
 
 	public static DirectedConnection getConnection(BlockState state) {
@@ -179,12 +190,10 @@ public class MawHopperBlock extends BaseEntityBlock implements SimpleWaterlogged
 	@Override
 	public void neighborChanged(BlockState state, Level level, BlockPos pos, Block block, BlockPos fromPos, boolean isMoving) {
 		super.neighborChanged(state, level, pos, block, fromPos, isMoving);
-		//TODO: mark BlockEntity dirty?
 	}
 
 	@Override
 	public void onNeighborChange(BlockState state, LevelReader level, BlockPos pos, BlockPos neighbor) {
-		//Neighbor BlockEntity changes
 	}
 
 	@Override
@@ -198,17 +207,21 @@ public class MawHopperBlock extends BaseEntityBlock implements SimpleWaterlogged
 	}
 
 	@Override
-	public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+	protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+		return InteractionUtil.toItemInteractionResult(use(state, level, pos, player, hand, hit));
+	}
+
+	protected InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
 		if (player.getItemInHand(hand).isEmpty() && level.getBlockEntity(pos) instanceof MawHopperBlockEntity blockEntity) {
 			if (level.isClientSide) return InteractionResult.SUCCESS;
 			blockEntity.giveInventoryContentsTo(level, pos, player);
 			return InteractionResult.CONSUME;
 		}
-		return super.use(state, level, pos, player, hand, hit);
+		return super.useWithoutItem(state, level, pos, player, hit);
 	}
 
 	@Override
-	public boolean isPathfindable(BlockState state, BlockGetter level, BlockPos pos, PathComputationType type) {
+	protected boolean isPathfindable(BlockState state, PathComputationType type) {
 		return false;
 	}
 

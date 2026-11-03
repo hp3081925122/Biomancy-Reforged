@@ -1,10 +1,12 @@
 package com.github.elenterius.biomancy.block.neural;
 
+import com.mojang.serialization.MapCodec;
 import com.github.elenterius.biomancy.sounds.SoundUtil;
 import com.github.elenterius.biomancy.world.MobSpawnFilterShape;
 import com.github.elenterius.spatialdb.SpatialDBManager;
 import com.github.elenterius.spatialdb.geometry.SphereShape;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ColorParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
@@ -24,6 +26,8 @@ import org.jspecify.annotations.Nullable;
 
 public class NeuralInterceptorBlock extends HorizontalDirectionalBlock {
 
+	public static final MapCodec<NeuralInterceptorBlock> CODEC = simpleCodec(NeuralInterceptorBlock::new);
+
 	protected static final VoxelShape SHAPE = createShape();
 
 	private static VoxelShape createShape() {
@@ -34,6 +38,11 @@ public class NeuralInterceptorBlock extends HorizontalDirectionalBlock {
 
 	public NeuralInterceptorBlock(Properties properties) {
 		super(properties);
+	}
+
+	@Override
+	protected MapCodec<? extends NeuralInterceptorBlock> codec() {
+		return CODEC;
 	}
 
 	@Override
@@ -76,12 +85,12 @@ public class NeuralInterceptorBlock extends HorizontalDirectionalBlock {
 	public void animateTick(BlockState state, Level level, BlockPos pos, RandomSource random) {
 		if (random.nextInt(4) == 0) {
 			int particleAmount = random.nextInt(2, 8);
-			int color = 0x9f4576; //magenta haze
+			int color = 0x9f4576;
 			double r = (color >> 16 & 255) / 255d;
 			double g = (color >> 8 & 255) / 255d;
 			double b = (color & 255) / 255d;
 			for (int i = 0; i < particleAmount; i++) {
-				level.addParticle(ParticleTypes.ENTITY_EFFECT, pos.getX() + (random.nextFloat() * 0.8f + 0.1f), pos.getY() + 0.75f, pos.getZ() + (random.nextFloat() * 0.8f + 0.1f), r, g, b);
+				level.addParticle(ColorParticleOption.create(ParticleTypes.ENTITY_EFFECT, (float) r, (float) g, (float) b), pos.getX() + (random.nextFloat() * 0.8f + 0.1f), pos.getY() + 0.75f, pos.getZ() + (random.nextFloat() * 0.8f + 0.1f), r, g, b);
 			}
 
 			if (random.nextInt(3) == 0) {

@@ -1,5 +1,7 @@
 package com.github.elenterius.biomancy.block.bloom;
 
+import com.github.elenterius.biomancy.util.InteractionUtil;
+import net.minecraft.world.ItemInteractionResult;
 import com.github.elenterius.biomancy.block.base.WaterloggedFacingBlock;
 import com.github.elenterius.biomancy.entity.projectile.BloomberryProjectile;
 import com.github.elenterius.biomancy.init.ModEntityTypes;
@@ -35,14 +37,14 @@ import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.common.ForgeHooks;
-import net.minecraftforge.common.IPlantable;
-import net.minecraftforge.common.PlantType;
+import com.github.elenterius.biomancy.block.PlantType;
+import com.github.elenterius.biomancy.block.PlantTypeProvider;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.neoforged.neoforge.common.CommonHooks;
 
-public class BloomBlock extends WaterloggedFacingBlock implements IPlantable {
+public class BloomBlock extends WaterloggedFacingBlock implements PlantTypeProvider {
 
 	public static final EnhancedIntegerProperty AGE = EnhancedIntegerProperty.wrap(BlockStateProperties.AGE_7);
 	public static final ConfiguredProjectile<BloomberryProjectile> BLOOM_BERRY = new ConfiguredProjectile<>(1.25f, 2, 0, 0.9f, ModSoundEvents.BLOOMBERRY_SHOOT.get(), ModEntityTypes.BLOOMBERRY_PROJECTILE);
@@ -99,7 +101,7 @@ public class BloomBlock extends WaterloggedFacingBlock implements IPlantable {
 	}
 
 	public boolean hasUnobstructedAim(BlockGetter level, BlockPos origin, BlockPos target) {
-		return level.clip(new ClipContext(Vec3.atCenterOf(origin), Vec3.atCenterOf(target), ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, null)).getType() == HitResult.Type.MISS;
+		return level.clip(new ClipContext(Vec3.atCenterOf(origin), Vec3.atCenterOf(target), ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, CollisionContext.empty())).getType() == HitResult.Type.MISS;
 	}
 
 	@Override
@@ -120,9 +122,9 @@ public class BloomBlock extends WaterloggedFacingBlock implements IPlantable {
 		if (age < AGE.getMax()) {
 			int growthSpeed = age < AGE.getMax() - 1 ? getGrowthSpeed(level, pos) : 1;
 
-			if (ForgeHooks.onCropsGrowPre(level, pos, state, random.nextInt(growthSpeed) == 0)) {
+			if (CommonHooks.canCropGrow(level, pos, state, random.nextInt(growthSpeed) == 0)) {
 				level.setBlock(pos, AGE.addValue(state, 1), Block.UPDATE_CLIENTS);
-				ForgeHooks.onCropsGrowPost(level, pos, state);
+				CommonHooks.fireCropGrowPost(level, pos, state);
 			}
 		}
 		else {
@@ -143,7 +145,11 @@ public class BloomBlock extends WaterloggedFacingBlock implements IPlantable {
 	}
 
 	@Override
-	public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+	protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+		return InteractionUtil.toItemInteractionResult(use(state, level, pos, player, hand, hit));
+	}
+
+	protected InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
 		int age = AGE.getValue(state);
 		if (age > 5 && player.getItemInHand(hand).isEmpty()) {
 			if (!level.isClientSide) {
@@ -161,14 +167,7 @@ public class BloomBlock extends WaterloggedFacingBlock implements IPlantable {
 			return InteractionResult.sidedSuccess(level.isClientSide);
 		}
 
-		return super.use(state, level, pos, player, hand, hit);
-	}
-
-	@Override
-	public BlockState getPlant(BlockGetter level, BlockPos pos) {
-		BlockState state = level.getBlockState(pos);
-		if (state.getBlock() != this) return defaultBlockState();
-		return state;
+		return super.useWithoutItem(state, level, pos, player, hit);
 	}
 
 	@Override
@@ -182,7 +181,7 @@ public class BloomBlock extends WaterloggedFacingBlock implements IPlantable {
 	}
 
 	public boolean mayPlaceOn(BlockGetter level, BlockPos pos, BlockState state, Direction facing) {
-		return state.canSustainPlant(level, pos, facing, this);
+		return state.canSustainPlant(level, pos, facing, defaultBlockState()).isTrue();
 	}
 
 	@Override

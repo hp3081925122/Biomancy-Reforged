@@ -8,8 +8,8 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.items.IItemHandlerModifiable;
-import net.minecraftforge.items.SlotItemHandler;
+import net.neoforged.neoforge.items.IItemHandlerModifiable;
+import net.neoforged.neoforge.items.SlotItemHandler;
 import org.apache.logging.log4j.MarkerManager;
 import org.jspecify.annotations.Nullable;
 
@@ -69,7 +69,7 @@ public class StorageSacMenu extends PlayerContainerMenu {
 
 		if (stackInSlot.getCount() == copyOfStack.getCount()) {
 			BiomancyMod.LOGGER.warn(MarkerManager.getMarker("GlandMenu"), "Stack transfer failed in an unexpected way!");
-			return ItemStack.EMPTY; //transfer error
+			return ItemStack.EMPTY;
 		}
 
 		slot.onTake(player, stackInSlot);

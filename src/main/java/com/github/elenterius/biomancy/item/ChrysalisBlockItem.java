@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.item;
 
+import com.github.elenterius.biomancy.util.BlockItemUtil;
 import com.github.elenterius.biomancy.block.chrysalis.Chrysalis;
 import com.github.elenterius.biomancy.init.ModBlockEntities;
 import com.github.elenterius.biomancy.init.ModSoundEvents;
@@ -44,7 +45,7 @@ public class ChrysalisBlockItem extends SimpleBlockItem {
 	public void onDestroyed(ItemEntity itemEntity) {
 		if (itemEntity.level().isClientSide) return;
 
-		CompoundTag compoundTag = BlockItem.getBlockEntityData(itemEntity.getItem());
+		CompoundTag compoundTag = BlockItemUtil.getBlockEntityData(itemEntity.getItem());
 		if (compoundTag == null || !compoundTag.contains(ENTITY_KEY)) return;
 
 		CompoundTag entityTag = compoundTag.getCompound(ENTITY_KEY);
@@ -52,7 +53,7 @@ public class ChrysalisBlockItem extends SimpleBlockItem {
 	}
 
 	public boolean isEmpty(ItemStack stack) {
-		CompoundTag compoundTag = BlockItem.getBlockEntityData(stack);
+		CompoundTag compoundTag = BlockItemUtil.getBlockEntityData(stack);
 		return compoundTag == null || !compoundTag.contains(ENTITY_KEY);
 	}
 
@@ -101,7 +102,7 @@ public class ChrysalisBlockItem extends SimpleBlockItem {
 			playInsertSound(player);
 
 			if (player.isCreative()) {
-				player.setItemInHand(usedHand, stack); //fix for creative mode (normally the stack is not modified in creative)
+				player.setItemInHand(usedHand, stack);
 			}
 			return InteractionResult.SUCCESS;
 		}
@@ -115,7 +116,7 @@ public class ChrysalisBlockItem extends SimpleBlockItem {
 		Player player = context.getPlayer();
 		if (player == null || !player.isSecondaryUseActive()) return InteractionResult.PASS;
 
-		CompoundTag compoundTag = BlockItem.getBlockEntityData(stack);
+		CompoundTag compoundTag = BlockItemUtil.getBlockEntityData(stack);
 		if (compoundTag == null || !compoundTag.contains(ENTITY_KEY)) return InteractionResult.PASS;
 
 		Level level = context.getLevel();
@@ -159,10 +160,7 @@ public class ChrysalisBlockItem extends SimpleBlockItem {
 
 		if (entityToSpawn != null) {
 			if (!MobUtil.isEntityIdUnique(level, entityToSpawn)) {
-				//reset UUID to prevent "Trying to add entity with duplicated UUID" issue
-				//this only happens if the item stack was copied (e.g. in creative mode) or if the original mob wasn't removed from the world
 				MobUtil.randomizeUUID(entityToSpawn);
-				//TODO: trigger secret achievement: Paradox! - There can't be two identical entities in the same world.
 			}
 			return level.addFreshEntity(entityToSpawn);
 		}
@@ -191,7 +189,7 @@ public class ChrysalisBlockItem extends SimpleBlockItem {
 	public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
 		super.appendHoverText(stack, level, tooltip, flag);
 
-		CompoundTag compoundTag = BlockItem.getBlockEntityData(stack);
+		CompoundTag compoundTag = BlockItemUtil.getBlockEntityData(stack);
 		if (compoundTag == null || !compoundTag.contains(ENTITY_KEY)) return;
 
 		CompoundTag tag = compoundTag.getCompound(ENTITY_KEY);
@@ -218,7 +216,7 @@ public class ChrysalisBlockItem extends SimpleBlockItem {
 
 	@Nullable
 	private MutableComponent getEntityTypeName(ItemStack stack) {
-		CompoundTag compoundTag = BlockItem.getBlockEntityData(stack);
+		CompoundTag compoundTag = BlockItemUtil.getBlockEntityData(stack);
 		if (compoundTag == null || !compoundTag.contains(ENTITY_KEY)) return null;
 
 		CompoundTag tag = compoundTag.getCompound(ENTITY_KEY);

@@ -1,5 +1,7 @@
 package com.github.elenterius.biomancy.block;
 
+import com.github.elenterius.biomancy.util.InteractionUtil;
+import net.minecraft.world.ItemInteractionResult;
 import com.github.elenterius.biomancy.block.property.Orientation;
 import com.github.elenterius.biomancy.init.ModBlockProperties;
 import com.github.elenterius.biomancy.init.ModBlockSetTypes;
@@ -36,7 +38,7 @@ import org.jspecify.annotations.Nullable;
 public class FleshDoorBlock extends DoorBlock {
 
 	public static final EnumProperty<Orientation> ORIENTATION = ModBlockProperties.ORIENTATION;
-	public static final int USE_UPDATE_FLAG = Block.UPDATE_CLIENTS | Block.UPDATE_IMMEDIATE; // 10
+	public static final int USE_UPDATE_FLAG = Block.UPDATE_CLIENTS | Block.UPDATE_IMMEDIATE;
 
 	protected static final int THICKNESS = 2;
 	protected static final int CLOSED_SHAPE_INDEX = 0;
@@ -49,7 +51,7 @@ public class FleshDoorBlock extends DoorBlock {
 	protected static final VoxelShape[] Z_POS_AABB = createClosedAndOpenShape(0, 0, 16d - THICKNESS, 16, 16, 16);
 
 	public FleshDoorBlock(Properties properties) {
-		super(properties, ModBlockSetTypes.FLESH_SET_TYPE.get());
+		super(ModBlockSetTypes.FLESH_SET_TYPE.get(), properties);
 		registerDefaultState(defaultBlockState().setValue(ORIENTATION, Orientation.X_MIDDLE));
 	}
 
@@ -72,7 +74,6 @@ public class FleshDoorBlock extends DoorBlock {
 
 	@Override
 	protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-		//note: FACING and HINGE are not used! This is only here to prevent crashes.
 		super.createBlockStateDefinition(builder);
 		builder.add(ORIENTATION);
 	}
@@ -109,7 +110,11 @@ public class FleshDoorBlock extends DoorBlock {
 	}
 
 	@Override
-	public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+	protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+		return InteractionUtil.toItemInteractionResult(use(state, level, pos, player, hand, hit));
+	}
+
+	protected InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
 		BlockState newState = state.cycle(OPEN);
 		level.setBlock(pos, newState, USE_UPDATE_FLAG);
 		triggerOpenCloseEvent(player, level, pos, isOpen(newState));
@@ -216,7 +221,7 @@ public class FleshDoorBlock extends DoorBlock {
 	}
 
 	@Override
-	public boolean isPathfindable(BlockState state, BlockGetter level, BlockPos pos, PathComputationType type) {
+	protected boolean isPathfindable(BlockState state, PathComputationType type) {
 		return switch (type) {
 			case LAND, AIR -> isOpen(state);
 			case WATER -> false;
@@ -225,7 +230,6 @@ public class FleshDoorBlock extends DoorBlock {
 
 	@Override
 	public BlockState rotate(BlockState state, Rotation rotationDirection) {
-		//Note: the Create Mod does not call IForgeBlock#rotate and calls this method directly (Create Train/Contraption disassembly)
 		Orientation orientation = state.getValue(ORIENTATION);
 		return state.setValue(ORIENTATION, orientation.rotate(rotationDirection));
 	}

@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.crafting.recipe;
 
+import com.github.elenterius.biomancy.util.BlockItemUtil;
 import com.github.elenterius.biomancy.block.membrane.BiometricMembraneBlock;
 import com.github.elenterius.biomancy.block.membrane.BiometricMembraneBlockEntity;
 import com.github.elenterius.biomancy.init.ModItems;
@@ -11,7 +12,6 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.inventory.CraftingContainer;
-import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.CraftingBookCategory;
@@ -58,7 +58,7 @@ public class BiometricMembraneRecipe extends CustomRecipe {
 		if (membrane.isEmpty()) return false;
 
 		if (essence.isEmpty() && inversion.isEmpty()) {
-			return BlockItem.getBlockEntityData(membrane) != null;
+			return BlockItemUtil.getBlockEntityData(membrane) != null;
 		}
 
 		return true;
@@ -93,7 +93,7 @@ public class BiometricMembraneRecipe extends CustomRecipe {
 	}
 
 	public ItemStack createItem(ItemStack membrane, ItemStack essenceStack, ItemStack inversionStack) {
-		CompoundTag compoundTag = BlockItem.getBlockEntityData(membrane);
+		CompoundTag compoundTag = BlockItemUtil.getBlockEntityData(membrane);
 		CompoundTag tag = compoundTag != null ? compoundTag.getCompound(BiometricMembraneBlockEntity.MEMBRANE_KEY) : new CompoundTag();
 
 		EntityType<?> entityType = EntityType.byString(tag.getString(BiometricMembraneBlockEntity.ENTITY_TYPE_KEY)).orElse(null);

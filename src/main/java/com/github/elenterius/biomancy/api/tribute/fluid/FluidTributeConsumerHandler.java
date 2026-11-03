@@ -1,12 +1,13 @@
 package com.github.elenterius.biomancy.api.tribute.fluid;
 
+import net.minecraft.core.HolderLookup;
 import com.github.elenterius.biomancy.api.tribute.SacrificeHandler;
 import com.github.elenterius.biomancy.inventory.Notify;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.Mth;
-import net.minecraftforge.common.util.INBTSerializable;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.common.util.INBTSerializable;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 
 public class FluidTributeConsumerHandler implements IFluidHandler, INBTSerializable<CompoundTag> {
 
@@ -104,7 +105,7 @@ public class FluidTributeConsumerHandler implements IFluidHandler, INBTSerializa
 
 	@Override
 	public int getTankCapacity(int tank) {
-		return 250; //bottle amount
+		return 250;
 	}
 
 	@Override
@@ -118,14 +119,14 @@ public class FluidTributeConsumerHandler implements IFluidHandler, INBTSerializa
 	}
 
 	@Override
-	public CompoundTag serializeNBT() {
+	public CompoundTag serializeNBT(HolderLookup.Provider provider) {
 		CompoundTag tag = new CompoundTag();
 		tag.putLongArray(MILLI_TRIBUTE_BUFFER_KEY, milliTributeBuffer);
 		return tag;
 	}
 
 	@Override
-	public void deserializeNBT(CompoundTag tag) {
+	public void deserializeNBT(HolderLookup.Provider provider, CompoundTag tag) {
 		long[] buffer = tag.getLongArray(MILLI_TRIBUTE_BUFFER_KEY);
 		System.arraycopy(buffer, 0, milliTributeBuffer, 0, milliTributeBuffer.length);
 	}

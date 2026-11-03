@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.block.cradle;
 
+import net.minecraft.core.HolderLookup;
 import com.github.elenterius.biomancy.BiomancyConfig;
 import com.github.elenterius.biomancy.api.tribute.SacrificeHandler;
 import com.github.elenterius.biomancy.api.tribute.Tribute;
@@ -38,10 +39,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.registries.DeferredHolder;
 import org.jspecify.annotations.Nullable;
 import software.bernie.geckolib.animatable.GeoBlockEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
@@ -59,7 +58,6 @@ import java.util.Set;
 
 public class PrimordialCradleBlockEntity extends SimpleSyncedBlockEntity implements PrimalEnergyHandler, GeoBlockEntity {
 
-	//	public static final String SACRIFICE_SYNC_KEY = "SyncSacrificeHandler";
 	public static final String SACRIFICE_KEY = "SacrificeHandler";
 	public static final String PRIMAL_ENERGY_KEY = "PrimalEnergy";
 	public static final String PROC_GEN_VALUES_KEY = "ProcGenValues";
@@ -69,7 +67,6 @@ public class PrimordialCradleBlockEntity extends SimpleSyncedBlockEntity impleme
 	private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
 	protected final SacrificeHandler sacrificeHandler;
-	private LazyOptional<IFluidHandler> optionalFluidConsumer;
 
 	private long ticks;
 	private int primalEnergy;
@@ -82,7 +79,6 @@ public class PrimordialCradleBlockEntity extends SimpleSyncedBlockEntity impleme
 			markChunkAsUnsaved();
 			syncToClient();
 		});
-		optionalFluidConsumer = LazyOptional.of(sacrificeHandler::getFluidConsumer);
 	}
 
 	public static void serverTick(Level level, BlockPos pos, BlockState state, PrimordialCradleBlockEntity cradle) {
@@ -116,9 +112,6 @@ public class PrimordialCradleBlockEntity extends SimpleSyncedBlockEntity impleme
 		}
 	}
 
-	/**
-	 * modifies the stack
-	 */
 	public boolean insertItem(ItemStack stack) {
 		if (level == null || level.isClientSide() || stack.isEmpty()) return false;
 		if (sacrificeHandler.isFull()) return false;
@@ -211,9 +204,6 @@ public class PrimordialCradleBlockEntity extends SimpleSyncedBlockEntity impleme
 		syncToClient();
 	}
 
-	/**
-	 * equivalent to calling #setChanged() but without notifying block neighbors of the change
-	 */
 	protected void markChunkAsUnsaved() {
 		if (level != null && level.hasChunkAt(worldPosition)) {
 			level.getChunkAt(worldPosition).setUnsaved(true);
@@ -398,7 +388,7 @@ public class PrimordialCradleBlockEntity extends SimpleSyncedBlockEntity impleme
 		mobToSpawn.push(level.random.nextGaussian() * 0.02d, 0.5d, level.random.nextGaussian() * 0.02d);
 		level.addFreshEntity(mobToSpawn);
 
-		RegistryObject<SoundEvent> soundEvent = mobToSpawn instanceof PrimordialFleshkin ? ModSoundEvents.CRADLE_SPAWN_PRIMORDIAL_MOB : ModSoundEvents.CRADLE_SPAWN_MOB;
+		DeferredHolder<SoundEvent, SoundEvent> soundEvent = mobToSpawn instanceof PrimordialFleshkin ? ModSoundEvents.CRADLE_SPAWN_PRIMORDIAL_MOB : ModSoundEvents.CRADLE_SPAWN_MOB;
 		SoundUtil.Server.playBlockSound(level, pos, soundEvent);
 	}
 
@@ -421,15 +411,15 @@ public class PrimordialCradleBlockEntity extends SimpleSyncedBlockEntity impleme
 		for (Entity entity : victims) {
 			float distSqr = (float) entity.distanceToSqr(origin);
 			float pct = distSqr / maxAttackDistanceSqr;
-			float damage = Mth.clamp(8f * (1 - pct), 0.5f, 8f); //linear damage falloff
+			float damage = Mth.clamp(8f * (1 - pct), 0.5f, 8f);
 			entity.hurt(ModDamageSources.primalSpikes(level, origin), damage);
 		}
 	}
 
 	@Override
-	protected void saveAdditional(CompoundTag tag) {
-		super.saveAdditional(tag);
-		tag.put(SACRIFICE_KEY, sacrificeHandler.serializeNBT());
+	protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+		super.saveAdditional(tag, registries);
+		tag.put(SACRIFICE_KEY, sacrificeHandler.serializeNBT(registries));
 		tag.putInt(PRIMAL_ENERGY_KEY, primalEnergy);
 
 		if (procGenValues != null) {
@@ -440,49 +430,22 @@ public class PrimordialCradleBlockEntity extends SimpleSyncedBlockEntity impleme
 	}
 
 	@Override
-	protected void saveForSyncToClient(CompoundTag tag) {
-		//		tag.put(SACRIFICE_SYNC_KEY, sacrificeHandler.serializeNBT());
-		tag.put(SACRIFICE_KEY, sacrificeHandler.serializeNBT());
+	protected void saveForSyncToClient(CompoundTag tag, HolderLookup.Provider registries) {
+		tag.put(SACRIFICE_KEY, sacrificeHandler.serializeNBT(registries));
 	}
 
 	@Override
-	public void load(CompoundTag tag) {
-		super.load(tag);
+	protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+		super.loadAdditional(tag, registries);
 		if (tag.contains(SACRIFICE_KEY)) {
-			sacrificeHandler.deserializeNBT(tag.getCompound(SACRIFICE_KEY));
+			sacrificeHandler.deserializeNBT(registries, tag.getCompound(SACRIFICE_KEY));
 		}
-		//		else if (tag.contains(SACRIFICE_SYNC_KEY)) {
-		//			sacrificeHandler.deserializeNBT(tag.getCompound(SACRIFICE_SYNC_KEY));
-		//		}
 
 		primalEnergy = tag.getInt(PRIMAL_ENERGY_KEY);
 
 		if (tag.contains(PROC_GEN_VALUES_KEY)) {
 			procGenValues = MoundShape.ProcGenValues.readFrom(tag.getCompound(PROC_GEN_VALUES_KEY));
 		}
-	}
-
-	@Override
-	public void invalidateCaps() {
-		super.invalidateCaps();
-		optionalFluidConsumer.invalidate();
-	}
-
-	@Override
-	public void reviveCaps() {
-		super.reviveCaps();
-		optionalFluidConsumer = LazyOptional.of(sacrificeHandler::getFluidConsumer);
-	}
-
-	@Override
-	public <T> LazyOptional<T> getCapability(Capability<T> cap, @Nullable Direction side) {
-		if (remove) return super.getCapability(cap, side);
-
-		if (cap == ModCapabilities.FLUID_HANDLER) {
-			return optionalFluidConsumer.cast();
-		}
-
-		return super.getCapability(cap, side);
 	}
 
 	protected void broadcastAnimation(TriggerableAnimation animation) {
@@ -532,6 +495,11 @@ public class PrimordialCradleBlockEntity extends SimpleSyncedBlockEntity impleme
 				}
 			}
 		}
+	}
+
+	public @Nullable IFluidHandler getFluidHandler(@Nullable Direction side) {
+		if (isRemoved()) return null;
+		return sacrificeHandler.getFluidConsumer();
 	}
 
 }

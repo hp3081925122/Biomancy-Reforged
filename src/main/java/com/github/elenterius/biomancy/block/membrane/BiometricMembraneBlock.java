@@ -1,5 +1,7 @@
 package com.github.elenterius.biomancy.block.membrane;
 
+import com.github.elenterius.biomancy.util.BlockItemUtil;
+import net.minecraft.world.item.Item;
 import com.github.elenterius.biomancy.init.ModBlockEntities;
 import com.github.elenterius.biomancy.init.ModItems;
 import com.github.elenterius.biomancy.util.ComponentUtil;
@@ -55,7 +57,7 @@ public class BiometricMembraneBlock extends MembraneBlock implements EntityBlock
 	}
 
 	public static int getTintColor(ItemStack stack, int tintIndex) {
-		CompoundTag compoundTag = BlockItem.getBlockEntityData(stack);
+		CompoundTag compoundTag = BlockItemUtil.getBlockEntityData(stack);
 		if (compoundTag == null || !compoundTag.contains(BiometricMembraneBlockEntity.MEMBRANE_KEY)) return 0xFFFF_FFFF;
 		CompoundTag tag = compoundTag.getCompound(BiometricMembraneBlockEntity.MEMBRANE_KEY);
 
@@ -83,10 +85,10 @@ public class BiometricMembraneBlock extends MembraneBlock implements EntityBlock
 	}
 
 	@Override
-	public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> tooltip, TooltipFlag flag) {
-		super.appendHoverText(stack, level, tooltip, flag);
+	public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
+		super.appendHoverText(stack, context, tooltip, flag);
 
-		CompoundTag compoundTag = BlockItem.getBlockEntityData(stack);
+		CompoundTag compoundTag = BlockItemUtil.getBlockEntityData(stack);
 		if (compoundTag == null || !compoundTag.contains(BiometricMembraneBlockEntity.MEMBRANE_KEY)) return;
 		CompoundTag tag = compoundTag.getCompound(BiometricMembraneBlockEntity.MEMBRANE_KEY);
 

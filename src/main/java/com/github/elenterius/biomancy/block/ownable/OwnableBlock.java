@@ -1,5 +1,8 @@
 package com.github.elenterius.biomancy.block.ownable;
 
+import net.minecraft.world.item.Item;
+import com.github.elenterius.biomancy.util.InteractionUtil;
+import net.minecraft.world.ItemInteractionResult;
 import com.github.elenterius.biomancy.init.ModSoundEvents;
 import com.github.elenterius.biomancy.item.EssenceItem;
 import com.github.elenterius.biomancy.util.ownable.Ownable;
@@ -32,8 +35,8 @@ public abstract class OwnableBlock extends BaseEntityBlock implements OwnableEnt
 	}
 
 	@Override
-	public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> tooltip, TooltipFlag flag) {
-		super.appendHoverText(stack, level, tooltip, flag);
+	public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
+		super.appendHoverText(stack, context, tooltip, flag);
 		OwnableEntityBlock.appendUserListToTooltip(stack, tooltip);
 	}
 
@@ -46,7 +49,11 @@ public abstract class OwnableBlock extends BaseEntityBlock implements OwnableEnt
 	}
 
 	@Override
-	public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+	protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+		return InteractionUtil.toItemInteractionResult(use(state, level, pos, player, hand, hit));
+	}
+
+	protected InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
 
 		if (level.getBlockEntity(pos) instanceof IRestrictedInteraction restrictedBlock && restrictedBlock.isActionAllowed(player, Actions.USE_BLOCK)) {
 			ItemStack stack = player.getItemInHand(hand);
@@ -69,12 +76,6 @@ public abstract class OwnableBlock extends BaseEntityBlock implements OwnableEnt
 
 		return InteractionResult.PASS;
 	}
-
-	//	@Override
-//	public void playerWillDestroy(Level worldIn, BlockPos pos, BlockState state, PlayerEntity player) {
-//		dropForCreativePlayer(worldIn, this, pos, player);
-//		super.playerWillDestroy(worldIn, pos, state, player);
-//	}
 
 	@Override
 	public float getDestroyProgress(BlockState state, Player player, BlockGetter level, BlockPos pos) {

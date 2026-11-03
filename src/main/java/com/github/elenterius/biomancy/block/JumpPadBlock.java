@@ -1,5 +1,7 @@
 package com.github.elenterius.biomancy.block;
 
+import com.github.elenterius.biomancy.util.InteractionUtil;
+import net.minecraft.world.ItemInteractionResult;
 import com.github.elenterius.biomancy.block.base.SimpleMultiFaceBlock;
 import com.github.elenterius.biomancy.entity.misc.LivingEntityData;
 import com.github.elenterius.biomancy.init.ModSoundEvents;
@@ -69,9 +71,6 @@ public class JumpPadBlock extends SimpleMultiFaceBlock {
 		builder.add(ENABLED);
 	}
 
-	/**
-	 * @param face this is not the direction but the face that is located at that position
-	 */
 	private static VoxelShape createFaceShape(Direction face) {
 		return VoxelShapeUtil.createXZRotatedTowards(face, 2, 14, 2, 14, 16, 14);
 	}
@@ -90,7 +89,11 @@ public class JumpPadBlock extends SimpleMultiFaceBlock {
 	}
 
 	@Override
-	public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
+	protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
+		return InteractionUtil.toItemInteractionResult(use(state, level, pos, player, hand, hitResult));
+	}
+
+	protected InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
 		if (!player.mayBuild()) return InteractionResult.PASS;
 		if (!player.isSecondaryUseActive()) return InteractionResult.PASS;
 		if (level.isClientSide) return InteractionResult.SUCCESS;
@@ -127,7 +130,7 @@ public class JumpPadBlock extends SimpleMultiFaceBlock {
 
 	@Override
 	public @Nullable PushReaction getPistonPushReaction(BlockState state) {
-		return PushReaction.DESTROY; //pulling the block with a piston causes an item dupe glitch
+		return PushReaction.DESTROY;
 	}
 
 	@Override
@@ -179,11 +182,7 @@ public class JumpPadBlock extends SimpleMultiFaceBlock {
 		if (collisionPrediction != CollisionPrediction.NONE) {
 			entity.fallDistance = 0;
 
-			// to be able to properly launch entities from the ground we need to disable friction
-			// we do this as well for unlaunched entities to allow players to exploit frictionless ground movement for other stuff
 			if (entity instanceof LivingEntityData.TransientDataProvider provider) {
-				// NOTE: we do not call the native method because we need to temporarily disable friction for the current and next tick,
-				//       our LivingEventHandler will re-enable friction after the next tick
 				if (!entity.isSteppingCarefully()) provider.biomancy$getData().setDiscardFriction(true);
 			}
 		}
@@ -195,26 +194,20 @@ public class JumpPadBlock extends SimpleMultiFaceBlock {
 		Vector3d mutableImpulse = new Vector3d();
 		for (Direction face : availableFaces) {
 			Vec3i normal = face.getOpposite().getNormal();
-			mutableImpulse.add(normal.getX() * 2d, normal.getY(), normal.getZ() * 2d); // make horizontal movement stronger
+			mutableImpulse.add(normal.getX() * 2d, normal.getY(), normal.getZ() * 2d);
 		}
 
 		final Vec3 velocity = entity.getDeltaMovement();
-		//		Vec3 direction = velocity.normalize();
-		//		double directionSimilarity = mutableImpulse.normalize().dot(direction.x, direction.y, direction.z);
-		//		double recoveredVelocity = velocity.length() * Mth.clamp(directionSimilarity * -1d, 0, 1); //only recover velocity from frontal collisions
-		//		double negateVelocity = Mth.clamp(directionSimilarity + 1d, 0, 1);
 
-		//		mutableImpulse.mul(Math.max(2d, recoveredVelocity) * (entity instanceof LivingEntity ? 1d : 0.8d));
 		double length = (entity instanceof LivingEntity ? 1d : 0.8d);
 		mutableImpulse.normalize(length + velocity.length() * 0.8d);
 
 		if (mutableImpulse.length() > 0d) {
-			//execute jump only once per tick -> players tend to call the entityInside method more than once per tick
 			if (debounce(entity, pos)) return;
 
 			entity.setDeltaMovement(mutableImpulse.x, mutableImpulse.y, mutableImpulse.z);
-			entity.hasImpulse = true; //force sync movement to client
-			entity.hurtMarked = true; //force sync for players
+			entity.hasImpulse = true;
+			entity.hurtMarked = true;
 
 			level.playSound(null, pos, ModSoundEvents.FLESH_BLOB_JUMP.get(), SoundSource.BLOCKS, 0.5f, 1.2f);
 		}
@@ -226,19 +219,16 @@ public class JumpPadBlock extends SimpleMultiFaceBlock {
 		Vec3 offset = currentPos.subtract(entity.position());
 		Vec3 prevPos = new Vec3(entity.xOld + offset.x, entity.yOld + offset.y, entity.zOld + offset.z);
 
-		//		double gravity = entity instanceof LivingEntity && !entity.isNoGravity() ? MobUtil.getGravity(entity) : 0d;
-		//		Vec3 nextPos = currentPos.add(entity.getDeltaMovement()).add(0d, -gravity, 0d); //predicted position
-		Vec3 nextPos = currentPos.add(entity.getDeltaMovement()); //predicted position
+		Vec3 nextPos = currentPos.add(entity.getDeltaMovement());
 
 		double halfX = entityAABB.getXsize() / 2d + EPSILON;
 		double halfY = entityAABB.getYsize() / 2d + EPSILON;
 		double halfZ = entityAABB.getZsize() / 2d + EPSILON;
 
 		for (AABB collisionAABB : collisionAABBs) {
-			AABB inflatedAABB = collisionAABB.inflate(halfX, halfY, halfZ); // minkowski sum
+			AABB inflatedAABB = collisionAABB.inflate(halfX, halfY, halfZ);
 
 			if (inflatedAABB.contains(currentPos)) {
-				//if (inflatedAABB.contains(nextPos)) return CollisionResult.NEXT_TICK;
 				return CollisionPrediction.CURRENT_TICK;
 			}
 
@@ -251,7 +241,6 @@ public class JumpPadBlock extends SimpleMultiFaceBlock {
 				if (inflatedAABB.contains(nextPos)) return CollisionPrediction.NEXT_TICK;
 
 				inflatedAABB.clip(currentPos, nextPos).ifPresent(clipPos -> {
-					//force entity closer to prevent jumps in the air above the pad
 					entity.setPos(clipPos.x - offset.x, clipPos.y - offset.y, clipPos.z - offset.z);
 				});
 

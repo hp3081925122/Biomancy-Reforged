@@ -1,8 +1,9 @@
 package com.github.elenterius.biomancy.item;
 
+import net.minecraft.world.item.Item;
+import net.neoforged.neoforge.capabilities.Capabilities;
 import com.github.elenterius.biomancy.block.storagesac.StorageSacBlockEntity;
 import com.github.elenterius.biomancy.client.util.ClientTextUtil;
-import com.github.elenterius.biomancy.init.ModCapabilities;
 import com.github.elenterius.biomancy.inventory.ItemHandlerWrapper;
 import com.github.elenterius.biomancy.inventory.ItemStackInventory;
 import com.github.elenterius.biomancy.tooltip.StorageSacTooltipComponent;
@@ -23,9 +24,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.ICapabilityProvider;
-import net.minecraftforge.common.util.LazyOptional;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
@@ -38,12 +36,7 @@ public class StorageSacBlockItem extends BlockItem implements ItemTooltipStylePr
 	}
 
 	public static Optional<ItemHandlerWrapper> getItemHandler(ItemStack stack) {
-		return stack.getCapability(ModCapabilities.ITEM_HANDLER).map(ItemHandlerWrapper::new);
-	}
-
-	@Override
-	public @Nullable ICapabilityProvider initCapabilities(ItemStack stack, @Nullable CompoundTag nbt) {
-		return new InventoryCapability(stack);
+		return Optional.ofNullable(stack.getCapability(Capabilities.ItemHandler.ITEM)).map(ItemHandlerWrapper::new);
 	}
 
 	@Override
@@ -107,10 +100,10 @@ public class StorageSacBlockItem extends BlockItem implements ItemTooltipStylePr
 	}
 
 	@Override
-	public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
+	public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
 		tooltip.addAll(ClientTextUtil.getItemInfoTooltip(stack));
 		tooltip.add(ComponentUtil.wrap(new StorageSacTooltipComponent(getItemHandler(stack).orElse(null))));
-		super.appendHoverText(stack, level, tooltip, flag);
+		super.appendHoverText(stack, context, tooltip, flag);
 	}
 
 	private void playRemoveFromSacSound(Player player) {
@@ -123,20 +116,6 @@ public class StorageSacBlockItem extends BlockItem implements ItemTooltipStylePr
 
 	private void playSound(Player player, SoundEvent soundEvent) {
 		player.playSound(soundEvent, 0.8f, 0.8f + player.level().getRandom().nextFloat() * 0.4f);
-	}
-
-	private static class InventoryCapability implements ICapabilityProvider {
-		private final ItemStackInventory inventory;
-
-		public InventoryCapability(ItemStack stack) {
-			inventory = ItemStackInventory.create(StorageSacBlockEntity.SLOTS, 64, stack);
-		}
-
-		@Override
-		public <T> LazyOptional<T> getCapability(Capability<T> capability, @Nullable Direction facing) {
-			return ModCapabilities.ITEM_HANDLER.orEmpty(capability, inventory.getLazyOptional());
-		}
-
 	}
 
 }

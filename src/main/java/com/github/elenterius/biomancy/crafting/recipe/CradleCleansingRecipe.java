@@ -1,5 +1,7 @@
 package com.github.elenterius.biomancy.crafting.recipe;
 
+import net.minecraft.world.item.component.CustomData;
+import net.minecraft.core.component.DataComponents;
 import com.github.elenterius.biomancy.block.cradle.PrimordialCradleBlockEntity;
 import com.github.elenterius.biomancy.init.ModItems;
 import com.github.elenterius.biomancy.init.ModRecipes;
@@ -7,7 +9,6 @@ import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.CraftingContainer;
-import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.CraftingBookCategory;
@@ -78,9 +79,9 @@ public class CradleCleansingRecipe extends CustomRecipe {
 	}
 
 	private ItemStack createItem(ItemStack stack) {
-		CompoundTag tag = BlockItem.getBlockEntityData(stack);
-		if (tag != null && tag.contains(PrimordialCradleBlockEntity.PROC_GEN_VALUES_KEY)) {
-			tag.remove(PrimordialCradleBlockEntity.PROC_GEN_VALUES_KEY);
+		CustomData data = stack.get(DataComponents.BLOCK_ENTITY_DATA);
+		if (data != null && data.contains(PrimordialCradleBlockEntity.PROC_GEN_VALUES_KEY)) {
+			CustomData.update(DataComponents.BLOCK_ENTITY_DATA, stack, tag -> tag.remove(PrimordialCradleBlockEntity.PROC_GEN_VALUES_KEY));
 		}
 		return stack;
 	}

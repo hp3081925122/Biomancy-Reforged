@@ -1,10 +1,11 @@
 package com.github.elenterius.biomancy.api.nutrients.fluid;
 
+import net.minecraft.core.HolderLookup;
 import com.github.elenterius.biomancy.api.nutrients.FuelHandler;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraftforge.common.util.INBTSerializable;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.common.util.INBTSerializable;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import org.jetbrains.annotations.ApiStatus;
 
 @ApiStatus.Experimental
@@ -35,20 +36,20 @@ public class FluidFuelConsumerHandler implements IFluidHandler, INBTSerializable
 		int milliFuel = conversion.getMilliFuelPerUnit(resource);
 		if (milliFuel <= 0) return 0;
 
-		long amountToConsume = resource.getAmount(); //8 of 120 --> 120/8 = 15
-		int fuelYield = (int) ((milliFuelBuffer + milliFuel * amountToConsume) / FluidToFuelConversion.MILLI_FUEL_SCALE); //1600 -> 1,6
+		long amountToConsume = resource.getAmount();
+		int fuelYield = (int) ((milliFuelBuffer + milliFuel * amountToConsume) / FluidToFuelConversion.MILLI_FUEL_SCALE);
 
 		if (fuelYield > 0) {
-			int fuelToFill = Math.min(fuelHandler.getMaxFuelAmount() - fuelHandler.getFuelAmount(), fuelYield); //1
-			long fuelMissing = (long) fuelToFill * FluidToFuelConversion.MILLI_FUEL_SCALE - milliFuelBuffer; //1000 - 800 = 200
+			int fuelToFill = Math.min(fuelHandler.getMaxFuelAmount() - fuelHandler.getFuelAmount(), fuelYield);
+			long fuelMissing = (long) fuelToFill * FluidToFuelConversion.MILLI_FUEL_SCALE - milliFuelBuffer;
 
-			amountToConsume = (int) (fuelMissing / milliFuel); // 200/100 = 2
+			amountToConsume = (int) (fuelMissing / milliFuel);
 
 			if (action.simulate()) return (int) amountToConsume;
 
 			fuelHandler.addFuelAmount(fuelToFill);
 
-			long remainder = (milliFuel * amountToConsume - fuelMissing); // 100 * 2 - 200
+			long remainder = (milliFuel * amountToConsume - fuelMissing);
 			milliFuelBuffer = remainder;
 		}
 		else {
@@ -61,12 +62,12 @@ public class FluidFuelConsumerHandler implements IFluidHandler, INBTSerializable
 
 	@Override
 	public FluidStack drain(FluidStack resource, FluidAction action) {
-		return FluidStack.EMPTY; //we only consume fuel
+		return FluidStack.EMPTY;
 	}
 
 	@Override
 	public FluidStack drain(int maxDrain, FluidAction action) {
-		return FluidStack.EMPTY; //we only consume fuel
+		return FluidStack.EMPTY;
 	}
 
 	@Override
@@ -76,7 +77,7 @@ public class FluidFuelConsumerHandler implements IFluidHandler, INBTSerializable
 
 	@Override
 	public int getTankCapacity(int tank) {
-		return fuelHandler.getMaxFuelAmount(); //misleading value as it does not represent the fluid volume but the amount of fuel stored in the machine
+		return fuelHandler.getMaxFuelAmount();
 	}
 
 	@Override
@@ -85,14 +86,14 @@ public class FluidFuelConsumerHandler implements IFluidHandler, INBTSerializable
 	}
 
 	@Override
-	public CompoundTag serializeNBT() {
+	public CompoundTag serializeNBT(HolderLookup.Provider provider) {
 		CompoundTag tag = new CompoundTag();
 		tag.putLong(MILLI_FUEL_BUFFER_KEY, milliFuelBuffer);
 		return tag;
 	}
 
 	@Override
-	public void deserializeNBT(CompoundTag tag) {
+	public void deserializeNBT(HolderLookup.Provider provider, CompoundTag tag) {
 		milliFuelBuffer = tag.getLong(MILLI_FUEL_BUFFER_KEY);
 	}
 

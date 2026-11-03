@@ -1,5 +1,8 @@
 package com.github.elenterius.biomancy.block;
 
+import net.minecraft.world.item.ItemStack;
+import com.github.elenterius.biomancy.util.InteractionUtil;
+import net.minecraft.world.ItemInteractionResult;
 import com.github.elenterius.biomancy.block.property.Orientation;
 import com.github.elenterius.biomancy.init.ModBlockProperties;
 import com.github.elenterius.biomancy.init.ModSoundEvents;
@@ -105,7 +108,11 @@ public class IrisDoorBlock extends Block implements SimpleWaterloggedBlock {
 	}
 
 	@Override
-	public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+	protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+		return InteractionUtil.toItemInteractionResult(use(state, level, pos, player, hand, hit));
+	}
+
+	protected InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
 		state = state.cycle(OPEN);
 		level.setBlock(pos, state, Block.UPDATE_CLIENTS);
 		if (isWaterlogged(state)) level.scheduleTick(pos, Fluids.WATER, Fluids.WATER.getTickDelay(level));
@@ -200,7 +207,6 @@ public class IrisDoorBlock extends Block implements SimpleWaterloggedBlock {
 
 	@Override
 	public BlockState rotate(BlockState state, Rotation rotationDirection) {
-		//Note: the Create Mod does not call IForgeBlock#rotate and calls this method directly (Create Train/Contraption disassembly)
 		Orientation orientation = state.getValue(ORIENTATION);
 		return state.setValue(ORIENTATION, orientation.rotate(rotationDirection));
 	}
@@ -212,7 +218,7 @@ public class IrisDoorBlock extends Block implements SimpleWaterloggedBlock {
 	}
 
 	@Override
-	public boolean isPathfindable(BlockState state, BlockGetter level, BlockPos pos, PathComputationType type) {
+	protected boolean isPathfindable(BlockState state, PathComputationType type) {
 		return switch (type) {
 			case LAND, AIR -> isOpen(state);
 			case WATER -> isWaterlogged(state);

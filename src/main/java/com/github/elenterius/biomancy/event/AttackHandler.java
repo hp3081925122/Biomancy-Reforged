@@ -66,44 +66,10 @@ public final class AttackHandler {
 		}
 	}
 
-	//	@SubscribeEvent
-	//	public static void onApplyDamage(final LivingDamageEvent event) {
-	//
-	//	}
-
-	//	@SubscribeEvent(priority = EventPriority.HIGHEST)
-	//	public static void onHurt(final LivingHurtEvent event) {
-	//		if (event.getSource().is(DamageTypeTags.BYPASSES_INVULNERABILITY)) return; //use BYPASSES_ARMOR instead?
-	//
-	//		List<ItemStack> armorPieces = new ArrayList<>();
-	//		for (ItemStack stack : event.getEntity().getArmorSlots()) {
-	//			if (stack.getItem() instanceof ArmorItem) armorPieces.add(stack);
-	//		}
-	//		int numberOfArmorPieces = armorPieces.size();
-	//
-	//		if (numberOfArmorPieces > 0) {
-	//			float damage = event.getAmount();
-	//			float partialDamage = damage * (1f / numberOfArmorPieces); //divide damage into number of available armor pieces
-	//			float reducedDamage = 0;
-	//
-	//			for (ItemStack stack : armorPieces) {
-	//				if (stack.getItem() instanceof AcolyteArmorItem armor) {
-	//					reducedDamage += AdaptiveDamageResistanceHandler.absorbDamage(event.getEntity(), event.getSource(), partialDamage, armor, stack);
-	//				}
-	//				else {
-	//					reducedDamage += partialDamage;
-	//				}
-	//			}
-	//
-	//			event.setAmount(reducedDamage);
-	//		}
-	//	}
-
 	@Deprecated(forRemoval = true)
 	@SubscribeEvent(receiveCanceled = false)
 	public static void onKnockback(final LivingKnockBackEvent event) {
-		//TODO: mutate damage type to have no knockback
-		event.getEntity().getCapability(ModCapabilities.NO_KNOCKBACK_FLAG_CAP).ifPresent(flag -> {
+		event.getEntity().getExistingData(ModCapabilities.NO_KNOCKBACK_FLAG_CAP).ifPresent(flag -> {
 			if (flag.isEnabled()) {
 				flag.disable();
 				event.setCanceled(true);

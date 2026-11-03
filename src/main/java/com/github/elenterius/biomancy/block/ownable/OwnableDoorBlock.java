@@ -1,5 +1,8 @@
 package com.github.elenterius.biomancy.block.ownable;
 
+import net.minecraft.world.item.Item;
+import com.github.elenterius.biomancy.util.InteractionUtil;
+import net.minecraft.world.ItemInteractionResult;
 import com.github.elenterius.biomancy.block.base.IBlockEntityDelegator;
 import com.github.elenterius.biomancy.init.ModBlockEntities;
 import com.github.elenterius.biomancy.init.ModSoundEvents;
@@ -42,10 +45,10 @@ import java.util.UUID;
 
 public class OwnableDoorBlock extends DoorBlock implements OwnableEntityBlock {
 
-	public static final int UPDATE_FLAGS = Block.UPDATE_CLIENTS | Block.UPDATE_IMMEDIATE; //10
+	public static final int UPDATE_FLAGS = Block.UPDATE_CLIENTS | Block.UPDATE_IMMEDIATE;
 
 	public OwnableDoorBlock(Properties properties, BlockSetType type) {
-		super(properties, type);
+		super(type, properties);
 	}
 
 	@Nullable
@@ -80,7 +83,11 @@ public class OwnableDoorBlock extends DoorBlock implements OwnableEntityBlock {
 	}
 
 	@Override
-	public InteractionResult use(BlockState state, Level level, final BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+	protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+		return InteractionUtil.toItemInteractionResult(use(state, level, pos, player, hand, hit));
+	}
+
+	protected InteractionResult use(BlockState state, Level level, final BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
 
 		if (!(getCorrectBlockEntity(state, level, pos) instanceof IRestrictedInteraction restrictedBlock)) return InteractionResult.PASS;
 		if (!restrictedBlock.isActionAllowed(player, Actions.USE_BLOCK)) return InteractionResult.PASS;
@@ -107,7 +114,6 @@ public class OwnableDoorBlock extends DoorBlock implements OwnableEntityBlock {
 		boolean isOpen = isOpen(state);
 		playSound(player, level, pos, isOpen);
 
-		//handle connected door (open/close double door feature)
 		boolean isRightHingeSide = state.getValue(HINGE) == DoorHingeSide.RIGHT;
 		Direction direction = state.getValue(FACING);
 		BlockPos connectedPos = switch (direction) {
@@ -118,9 +124,9 @@ public class OwnableDoorBlock extends DoorBlock implements OwnableEntityBlock {
 		};
 
 		BlockState connectedState = level.getBlockState(connectedPos);
-		if (connectedState.is(this) && connectedState.getValue(FACING) == direction && connectedState.getValue(HINGE) != state.getValue(HINGE)) { //check if it is a door with an opposite hinge
+		if (connectedState.is(this) && connectedState.getValue(FACING) == direction && connectedState.getValue(HINGE) != state.getValue(HINGE)) {
 			if (isInteractionAllowed(connectedState, level, connectedPos, player)) {
-				if (isOpen(connectedState) != isOpen) { //only updated connected door if its open state mismatches the targetState
+				if (isOpen(connectedState) != isOpen) {
 					connectedState = connectedState.setValue(OPEN, isOpen);
 					level.setBlock(connectedPos, connectedState, UPDATE_FLAGS);
 					playSound(player, level, connectedPos, isOpen);
@@ -151,8 +157,7 @@ public class OwnableDoorBlock extends DoorBlock implements OwnableEntityBlock {
 		if (getCorrectBlockEntity(state, level, pos) instanceof IRestrictedInteraction restricted) {
 			boolean isAllowed = false;
 
-			//check if th owner of the neighbor is allowed to interact with this block
-			if (neighborBlock instanceof OwnableEntityBlock && level.getBlockState(neighborPos).is(neighborBlock)) { //only allow "direct" neighbors
+			if (neighborBlock instanceof OwnableEntityBlock && level.getBlockState(neighborPos).is(neighborBlock)) {
 				if (level.getBlockEntity(neighborPos) instanceof Ownable neighbor) {
 					Optional<UUID> neighborOwner = neighbor.getOptionalOwnerUUID();
 					if (neighborOwner.isPresent()) {
@@ -175,7 +180,7 @@ public class OwnableDoorBlock extends DoorBlock implements OwnableEntityBlock {
 	private void handleForbiddenSignal(BlockState state, Level level, BlockPos posIn, boolean hasSignal, boolean isPowered) {
 		if (hasSignal == isPowered) return;
 
-		if (isOpen(state)) { //force close the door if open
+		if (isOpen(state)) {
 			playSound(null, level, posIn, false);
 			state = state.setValue(OPEN, false);
 			level.gameEvent(null, GameEvent.BLOCK_CLOSE, posIn);
@@ -187,7 +192,7 @@ public class OwnableDoorBlock extends DoorBlock implements OwnableEntityBlock {
 	}
 
 	private void handleAllowedSignal(BlockState state, Level level, BlockPos pos, boolean hasSignal) {
-		if (hasSignal == isOpen(state)) return; //door is already open or closed
+		if (hasSignal == isOpen(state)) return;
 
 		playSound(null, level, pos, hasSignal);
 		level.setBlock(pos, state.setValue(POWERED, hasSignal).setValue(OPEN, hasSignal), Block.UPDATE_CLIENTS);
@@ -197,14 +202,13 @@ public class OwnableDoorBlock extends DoorBlock implements OwnableEntityBlock {
 	@Override
 	public BlockState updateShape(BlockState state, Direction facing, BlockState facingState, LevelAccessor level, BlockPos currentPos, BlockPos facingPos) {
 		DoubleBlockHalf half = state.getValue(HALF);
-		if ((facing.getAxis() == Direction.Axis.Y) && (half == DoubleBlockHalf.LOWER == (facing == Direction.UP))) { //check if current state is the lower half and facing state is the upper half
-			if (facingState.is(this) && facingState.getValue(HALF) != half) { //check if upper half is a different door half
+		if ((facing.getAxis() == Direction.Axis.Y) && (half == DoubleBlockHalf.LOWER == (facing == Direction.UP))) {
+			if (facingState.is(this) && facingState.getValue(HALF) != half) {
 				return state.setValue(FACING, facingState.getValue(FACING)).setValue(OPEN, facingState.getValue(OPEN)).setValue(HINGE, facingState.getValue(HINGE)).setValue(POWERED, isPowered(facingState));
 			}
-			return Blocks.AIR.defaultBlockState(); //top door half is missing, set the lower half to air as well
+			return Blocks.AIR.defaultBlockState();
 		}
 		else {
-			//don't check if door is standing on a block, let it float
 			return state;
 		}
 	}
@@ -214,8 +218,8 @@ public class OwnableDoorBlock extends DoorBlock implements OwnableEntityBlock {
 	}
 
 	@Override
-	public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> tooltip, TooltipFlag flag) {
-		super.appendHoverText(stack, level, tooltip, flag);
+	public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
+		super.appendHoverText(stack, context, tooltip, flag);
 		OwnableEntityBlock.appendUserListToTooltip(stack, tooltip);
 	}
 
@@ -233,10 +237,8 @@ public class OwnableDoorBlock extends DoorBlock implements OwnableEntityBlock {
 	}
 
 	@Override
-	public void playerWillDestroy(Level level, final BlockPos posIn, BlockState state, Player player) {
-//		BlockPos pos = state.getValue(HALF) == DoubleBlockHalf.UPPER ? posIn.below() : posIn;
-//		dropForCreativePlayer(level, this, pos, player);
-		super.playerWillDestroy(level, posIn, state, player);
+	public BlockState playerWillDestroy(Level level, final BlockPos posIn, BlockState state, Player player) {
+		return super.playerWillDestroy(level, posIn, state, player);
 	}
 
 	@Override

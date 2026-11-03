@@ -1,10 +1,10 @@
 package com.github.elenterius.biomancy.api.nutrients.fluid;
 
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.material.FlowingFluid;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.fluids.FluidStack;
 import net.minecraftforge.registries.RegistryObject;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
@@ -24,7 +24,7 @@ public final class FluidNutrients {
 		if (fluid instanceof FlowingFluid flowingFluid) {
 			fluid = flowingFluid.getSource();
 		}
-		return ForgeRegistries.FLUIDS.getKey(fluid);
+		return BuiltInRegistries.FLUID.getKey(fluid);
 	}
 
 	public static void register(Fluid fluid, FluidToFuelConversion func) {

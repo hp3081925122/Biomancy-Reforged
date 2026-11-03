@@ -1,6 +1,5 @@
 package com.github.elenterius.biomancy.util;
 
-import com.github.elenterius.biomancy.init.ModCapabilities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.SectionPos;
@@ -12,8 +11,8 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.items.IItemHandler;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.items.IItemHandler;
 import org.jspecify.annotations.Nullable;
 
 import java.util.function.Predicate;
@@ -22,20 +21,22 @@ public final class LevelUtil {
 
 	private LevelUtil() {}
 
-	public static LazyOptional<IItemHandler> getItemHandler(ServerLevel level, BlockPos pos, @Nullable Direction direction) {
+	public static @Nullable IItemHandler getItemHandler(ServerLevel level, BlockPos pos, @Nullable Direction direction) {
 		BlockState state = level.getBlockState(pos);
 		if (state.hasBlockEntity()) {
 			BlockEntity blockEntity = level.getBlockEntity(pos);
 			if (blockEntity != null) {
-				return blockEntity.getCapability(ModCapabilities.ITEM_HANDLER, direction);
+				return level.getCapability(Capabilities.ItemHandler.BLOCK, pos, state, blockEntity, direction);
 			}
 		}
-		return LazyOptional.empty();
+		return null;
 	}
 
-	/**
-	 * @return max(skyLight, blockLight) in the range of [0, ..., 15]
-	 */
+	public static @Nullable BlockEntity getExistingBlockEntity(Level level, BlockPos pos) {
+		if (!level.hasChunk(SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getZ()))) return null;
+		return level.getChunkAt(pos).getBlockEntities().get(pos);
+	}
+
 	public static int getMaxBrightness(Level level, BlockPos pos) {
 		return level.getLightEngine().getRawBrightness(pos, 0);
 	}
@@ -88,9 +89,6 @@ public final class LevelUtil {
 		return (dx * dx + dz * dz) < distanceSquared;
 	}
 
-	/**
-	 * performance: vroom vroom
-	 */
 	public static <T extends BlockEntity> @Nullable T findNearestBlockEntity(ServerLevel level, BlockPos pos, int searchDist, Class<T> clazz) {
 		if (searchDist <= 0) return null;
 

@@ -1,5 +1,8 @@
 package com.github.elenterius.biomancy.block.vialholder;
 
+import com.mojang.serialization.MapCodec;
+import com.github.elenterius.biomancy.util.InteractionUtil;
+import net.minecraft.world.ItemInteractionResult;
 import com.github.elenterius.biomancy.init.ModBlockEntities;
 import com.github.elenterius.biomancy.init.ModBlockProperties;
 import com.github.elenterius.biomancy.util.VoxelShapeUtil;
@@ -34,6 +37,8 @@ import java.util.List;
 
 public class VialHolderBlock extends BaseEntityBlock {
 
+	public static final MapCodec<VialHolderBlock> CODEC = simpleCodec(VialHolderBlock::new);
+
 	public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
 
 	public static final BooleanProperty VIAL_0 = ModBlockProperties.VIAL_0;
@@ -57,6 +62,11 @@ public class VialHolderBlock extends BaseEntityBlock {
 			defaultState = defaultState.setValue(vialProperty, false);
 		}
 		registerDefaultState(defaultState.setValue(FACING, Direction.NORTH));
+	}
+
+	@Override
+	protected MapCodec<? extends VialHolderBlock> codec() {
+		return CODEC;
 	}
 
 	public static VoxelShape createShape(Direction direction) {
@@ -118,7 +128,11 @@ public class VialHolderBlock extends BaseEntityBlock {
 	}
 
 	@Override
-	public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+	protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+		return InteractionUtil.toItemInteractionResult(use(state, level, pos, player, hand, hit));
+	}
+
+	protected InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
 
 		if (level.getBlockEntity(pos) instanceof VialHolderBlockEntity vialHolder) {
 			ItemStack stackInHand = player.getItemInHand(hand);

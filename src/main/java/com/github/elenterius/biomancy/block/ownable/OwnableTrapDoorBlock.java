@@ -1,5 +1,8 @@
 package com.github.elenterius.biomancy.block.ownable;
 
+import net.minecraft.world.item.Item;
+import com.github.elenterius.biomancy.util.InteractionUtil;
+import net.minecraft.world.ItemInteractionResult;
 import com.github.elenterius.biomancy.block.property.UserSensitivity;
 import com.github.elenterius.biomancy.init.ModBlockEntities;
 import com.github.elenterius.biomancy.init.ModBlockProperties;
@@ -55,7 +58,7 @@ public class OwnableTrapDoorBlock extends TrapDoorBlock implements OwnableEntity
 	protected static final VoxelShape BOTTOM_COLLISION_SHAPE = Block.box(0d, 0.1d, 0d, 16d, 3d, 16d);
 
 	public OwnableTrapDoorBlock(Properties properties, BlockSetType type) {
-		super(properties, type);
+		super(type, properties);
 		registerDefaultState(defaultBlockState().setValue(SENSITIVITY, UserSensitivity.NONE));
 	}
 
@@ -78,14 +81,17 @@ public class OwnableTrapDoorBlock extends TrapDoorBlock implements OwnableEntity
 	@Override
 	public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
 		if (!isOpen(state) && state.getValue(HALF) == Half.BOTTOM) {
-			return hasCollision ? BOTTOM_COLLISION_SHAPE : Shapes.empty(); //substitute collision shape to enable entity collision from below
-			//Note: onEntityCollision is only called when the entity intersects a "block pos" (collided block positions ~= floor(entityAABB.minPos), ..., floor(entityAABB.maxPos))
+			return hasCollision ? BOTTOM_COLLISION_SHAPE : Shapes.empty();
 		}
 		return super.getCollisionShape(state, level, pos, context);
 	}
 
 	@Override
-	public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+	protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+		return InteractionUtil.toItemInteractionResult(use(state, level, pos, player, hand, hit));
+	}
+
+	protected InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
 		if (level.getBlockEntity(pos) instanceof IRestrictedInteraction restrictedBlock && restrictedBlock.isActionAllowed(player, Actions.USE_BLOCK)) {
 
 			ItemStack stack = player.getItemInHand(hand);
@@ -141,8 +147,7 @@ public class OwnableTrapDoorBlock extends TrapDoorBlock implements OwnableEntity
 		if (level.getBlockEntity(pos) instanceof IRestrictedInteraction restricted) {
 			boolean isAllowed = false;
 
-			// check if th owner of the neighbor is allowed to interact with this block
-			if (neighborBlock instanceof OwnableEntityBlock && level.getBlockState(neighborPos).is(neighborBlock)) { //only allow "direct" neighbors
+			if (neighborBlock instanceof OwnableEntityBlock && level.getBlockState(neighborPos).is(neighborBlock)) {
 				if (level.getBlockEntity(neighborPos) instanceof Ownable neighbor) {
 					Optional<UUID> neighborOwner = neighbor.getOptionalOwnerUUID();
 					if (neighborOwner.isPresent()) {
@@ -207,14 +212,12 @@ public class OwnableTrapDoorBlock extends TrapDoorBlock implements OwnableEntity
 				boolean actionAllowed = restricted.isActionAllowed(livingEntity, Actions.USE_BLOCK);
 				if (sensitivity == UserSensitivity.HOSTILE) {
 					if (!actionAllowed) {
-						// if block is inverted keep door open when not authorized (trap mode)
-						level.scheduleTick(pos, state.getBlock(), 60); //schedule tick for the next close attempt (~3sec)
+						level.scheduleTick(pos, state.getBlock(), 60);
 						return;
 					}
 				}
 				else if (actionAllowed) {
-					// when normal only keep door open for authorized users
-					level.scheduleTick(pos, state.getBlock(), 60); //schedule tick for the next close attempt (~3sec)
+					level.scheduleTick(pos, state.getBlock(), 60);
 					return;
 				}
 			}
@@ -227,7 +230,7 @@ public class OwnableTrapDoorBlock extends TrapDoorBlock implements OwnableEntity
 
 	@Override
 	public boolean collisionExtendsVertically(BlockState state, BlockGetter level, BlockPos pos, Entity collidingEntity) {
-		return false; //return early
+		return false;
 	}
 
 	@Override
@@ -275,7 +278,7 @@ public class OwnableTrapDoorBlock extends TrapDoorBlock implements OwnableEntity
 		level.setBlock(pos, state, Block.UPDATE_CLIENTS);
 		level.gameEvent(null, GameEvent.BLOCK_OPEN, pos);
 
-		if (autoClose) level.scheduleTick(pos, state.getBlock(), 40); //schedule tick to auto-close door after (~2sec)
+		if (autoClose) level.scheduleTick(pos, state.getBlock(), 40);
 		if (isWaterlogged(state)) level.scheduleTick(pos, Fluids.WATER, Fluids.WATER.getTickDelay(level));
 
 		level.playSound(null, pos, SoundEvents.WOODEN_TRAPDOOR_OPEN, SoundSource.BLOCKS, 1f, 1f);
@@ -290,16 +293,10 @@ public class OwnableTrapDoorBlock extends TrapDoorBlock implements OwnableEntity
 	}
 
 	@Override
-	public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> tooltip, TooltipFlag flag) {
-		super.appendHoverText(stack, level, tooltip, flag);
+	public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
+		super.appendHoverText(stack, context, tooltip, flag);
 		OwnableEntityBlock.appendUserListToTooltip(stack, tooltip);
 	}
-
-//	@Override
-//	public void playerWillDestroy(World level, BlockPos pos, BlockState state, PlayerEntity player) {
-//		dropForCreativePlayer(level, this, pos, player);
-//		super.playerWillDestroy(level, pos, state, player);
-//	}
 
 	@Override
 	public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {

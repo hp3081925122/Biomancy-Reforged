@@ -22,7 +22,6 @@ import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.items.ItemHandlerHelper;
 import org.jspecify.annotations.Nullable;
 import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.AnimationController;
@@ -100,7 +99,7 @@ public abstract class EaterFleshBlob extends FleshBlob implements FoodEater {
 
 			ItemStack heldStack = getFoodItem();
 			if (!heldStack.isEmpty()) {
-				spawnAtLocation(heldStack); //drop old item
+				spawnAtLocation(heldStack);
 			}
 
 			setFoodItem(stack);
@@ -115,10 +114,10 @@ public abstract class EaterFleshBlob extends FleshBlob implements FoodEater {
 
 			ItemStack heldStack = getFoodItem();
 			if (!heldStack.isEmpty()) {
-				spawnAtLocation(heldStack); //drop old item
+				spawnAtLocation(heldStack);
 			}
 
-			setFoodItem(ItemHandlerHelper.copyStackWithSize(stack, 1));
+			setFoodItem(stack.copyWithCount(1));
 			if (!player.getAbilities().instabuild) stack.shrink(1);
 
 			if (!isSilent()) {
@@ -131,15 +130,6 @@ public abstract class EaterFleshBlob extends FleshBlob implements FoodEater {
 
 		return super.mobInteract(player, hand);
 	}
-
-	//	@Override
-	//	protected void dropEquipment() {
-	//		ItemStack stack = getItemBySlot(EquipmentSlot.MAINHAND);
-	//		if (!stack.isEmpty()) {
-	//			spawnAtLocation(stack);
-	//			setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
-	//		}
-	//	}
 
 	@Override
 	public boolean isEating() {

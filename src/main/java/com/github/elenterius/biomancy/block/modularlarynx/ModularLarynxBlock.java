@@ -1,5 +1,9 @@
 package com.github.elenterius.biomancy.block.modularlarynx;
 
+import com.mojang.serialization.MapCodec;
+import net.minecraft.world.item.Item;
+import com.github.elenterius.biomancy.util.InteractionUtil;
+import net.minecraft.world.ItemInteractionResult;
 import com.github.elenterius.biomancy.block.property.BlockPropertyUtil;
 import com.github.elenterius.biomancy.init.ModBlockEntities;
 import com.github.elenterius.biomancy.init.ModBlockProperties;
@@ -42,6 +46,8 @@ import java.util.List;
 
 public class ModularLarynxBlock extends BaseEntityBlock {
 
+	public static final MapCodec<ModularLarynxBlock> CODEC = simpleCodec(ModularLarynxBlock::new);
+
 	public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
 	public static final IntegerProperty NOTE = BlockStateProperties.NOTE;
 	public static final EnumProperty<MobSoundType> MOB_SOUND_TYPE = ModBlockProperties.MOB_SOUND_TYPE;
@@ -55,6 +61,11 @@ public class ModularLarynxBlock extends BaseEntityBlock {
 				.setValue(POWERED, Boolean.FALSE)
 				.setValue(MOB_SOUND_TYPE, MobSoundType.AMBIENT)
 		);
+	}
+
+	@Override
+	protected MapCodec<? extends ModularLarynxBlock> codec() {
+		return CODEC;
 	}
 
 	private static VoxelShape createShape() {
@@ -82,7 +93,11 @@ public class ModularLarynxBlock extends BaseEntityBlock {
 	}
 
 	@Override
-	public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+	protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+		return InteractionUtil.toItemInteractionResult(use(state, level, pos, player, hand, hit));
+	}
+
+	protected InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
 		if (level.isClientSide) return InteractionResult.SUCCESS;
 
 		ItemStack heldStack = player.getItemInHand(hand);
@@ -187,8 +202,8 @@ public class ModularLarynxBlock extends BaseEntityBlock {
 	}
 
 	@Override
-	public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> tooltip, TooltipFlag flag) {
-		super.appendHoverText(stack, level, tooltip, flag);
+	public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
+		super.appendHoverText(stack, context, tooltip, flag);
 
 		tooltip.add(ComponentUtil.EMPTY_LINE);
 		tooltip.add(getExtraTooltip(this, "1").withStyle(ChatFormatting.GRAY));

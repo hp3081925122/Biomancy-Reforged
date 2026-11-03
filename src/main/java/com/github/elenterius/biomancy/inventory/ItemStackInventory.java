@@ -5,7 +5,6 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.ItemContainerContents;
-import net.minecraftforge.common.util.LazyOptional;
 import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.items.ItemStackHandler;
 
@@ -14,11 +13,9 @@ public class ItemStackInventory {
 	private final ItemStack cachedInventoryHost;
 
 	private final HostItemStackHandler itemHandler;
-	private final LazyOptional<IItemHandler> optionalItemHandler;
 
 	ItemStackInventory(int slots, int maxSlotSize, ItemStack inventoryHost) {
 		itemHandler = new HostItemStackHandler(slots, maxSlotSize);
-		optionalItemHandler = LazyOptional.of(() -> itemHandler);
 		cachedInventoryHost = inventoryHost;
 	}
 
@@ -46,11 +43,6 @@ public class ItemStackInventory {
 	public IItemHandler getItemHandler() {
 		deserializeFromHost();
 		return itemHandler;
-	}
-
-	public LazyOptional<IItemHandler> getLazyOptional() {
-		deserializeFromHost();
-		return optionalItemHandler;
 	}
 
 	private final class HostItemStackHandler extends ItemStackHandler {

@@ -1,5 +1,14 @@
 package com.github.elenterius.biomancy.block.cradle;
 
+import com.github.elenterius.biomancy.item.weapon.gun.GunbladeItem;
+import com.github.elenterius.biomancy.item.weapon.ClawsItem;
+import com.mojang.serialization.MapCodec;
+import com.github.elenterius.biomancy.util.BlockItemUtil;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import com.github.elenterius.biomancy.util.InteractionUtil;
+import net.minecraft.world.ItemInteractionResult;
+import net.neoforged.neoforge.capabilities.Capabilities;
 import com.github.elenterius.biomancy.init.*;
 import com.github.elenterius.biomancy.init.tags.ModItemTags;
 import com.github.elenterius.biomancy.integration.ModsCompatHandler;
@@ -10,6 +19,7 @@ import com.github.elenterius.biomancy.util.FormatUtil;
 import com.github.elenterius.biomancy.world.mound.MoundShape;
 import com.github.elenterius.spatialdb.SpatialDBManager;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ColorParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -41,7 +51,6 @@ import net.minecraft.world.phys.shapes.BooleanOp;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.items.ItemHandlerHelper;
 import org.jspecify.annotations.Nullable;
 
 import java.text.DecimalFormat;
@@ -51,20 +60,20 @@ import java.util.stream.Stream;
 
 public class PrimordialCradleBlock extends HorizontalDirectionalBlock implements EntityBlock {
 
+	public static final MapCodec<PrimordialCradleBlock> CODEC = simpleCodec(PrimordialCradleBlock::new);
+
 	public static final Predicate<ItemStack> CANNOT_BE_SACRIFICED = stack -> {
 		if (stack.is(ModItemTags.CANNOT_BE_EATEN_BY_CRADLE)) return true;
 
 		Item item = stack.getItem();
 
-		if (item instanceof TieredItem || item instanceof Vanishable) return true;
+		if (item instanceof TieredItem || item instanceof BowItem || item instanceof CompassItem || item instanceof CrossbowItem || item instanceof FishingRodItem || item instanceof TridentItem || item instanceof ClawsItem || item instanceof GunbladeItem) return true;
 
 		if (item instanceof BlockItem blockItem) {
 			Block block = blockItem.getBlock();
 
 			if (ModsCompatHandler.getOverweightFarmingHelper().isOverweightBlock(block)) return false;
 
-			//prevent all items that have a BlockEntity associated with it from being sacrificed
-			// e.g. complex modded blocks such as computers, machines, containers, etc.
 			if (block instanceof EntityBlock) return true;
 		}
 
@@ -72,7 +81,7 @@ public class PrimordialCradleBlock extends HorizontalDirectionalBlock implements
 
 		if (stack.isEnchanted()) return true;
 		if (!item.canFitInsideContainerItems()) return true;
-		return stack.getCapability(ModCapabilities.ITEM_HANDLER).isPresent();
+		return stack.getCapability(Capabilities.ItemHandler.ITEM) != null;
 	};
 
 	protected static final VoxelShape INSIDE_AABB = box(3, 4, 3, 13, 16, 13);
@@ -87,13 +96,17 @@ public class PrimordialCradleBlock extends HorizontalDirectionalBlock implements
 		super(properties);
 	}
 
+	@Override
+	protected MapCodec<? extends PrimordialCradleBlock> codec() {
+		return CODEC;
+	}
+
 	public static float getYRotation(BlockState state) {
 		return state.getValue(FACING).toYRot();
 	}
 
 	@Nullable
 	protected static <E extends BlockEntity, A extends BlockEntity> BlockEntityTicker<A> createTickerHelper(BlockEntityType<A> blockEntityType, BlockEntityType<E> targetType, BlockEntityTicker<? super E> entityTicker) {
-		//noinspection unchecked
 		return targetType == blockEntityType ? (BlockEntityTicker<A>) entityTicker : null;
 	}
 
@@ -129,7 +142,7 @@ public class PrimordialCradleBlock extends HorizontalDirectionalBlock implements
 	public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
 		if (!state.is(newState.getBlock())) {
 			if (level instanceof ServerLevel serverLevel) {
-				SpatialDBManager.getInstance(serverLevel).removeShape(serverLevel, pos); //removes mound shape from level
+				SpatialDBManager.getInstance(serverLevel).removeShape(serverLevel, pos);
 			}
 			super.onRemove(state, level, pos, newState, isMoving);
 		}
@@ -142,10 +155,14 @@ public class PrimordialCradleBlock extends HorizontalDirectionalBlock implements
 	}
 
 	@Override
-	public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+	protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+		return InteractionUtil.toItemInteractionResult(use(state, level, pos, player, hand, hit));
+	}
+
+	protected InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
 		ItemStack stack = player.getItemInHand(hand);
 
-		if (increaseFillLevel(player, level, pos, ItemHandlerHelper.copyStackWithSize(stack, 1))) {
+		if (increaseFillLevel(player, level, pos, stack.copyWithCount(1))) {
 			if (!level.isClientSide) {
 				boolean isPotion = stack.getItem() instanceof PotionItem;
 
@@ -196,7 +213,7 @@ public class PrimordialCradleBlock extends HorizontalDirectionalBlock implements
 		if (stack.isEmpty()) return false;
 		if (CANNOT_BE_SACRIFICED.test(stack)) return false;
 
-		ItemStack copyOfStack = ItemHandlerHelper.copyStackWithSize(stack, 1); //cradle#insertItem modifies the stack which may lead to it being empty
+		ItemStack copyOfStack = stack.copyWithCount(1);
 		if (level.getBlockEntity(pos) instanceof PrimordialCradleBlockEntity cradle && !cradle.isFull() && cradle.insertItem(stack)) {
 			if (player instanceof ServerPlayer serverPlayer) {
 				ModTriggers.SACRIFICED_ITEM_TRIGGER.trigger(serverPlayer, copyOfStack);
@@ -223,12 +240,12 @@ public class PrimordialCradleBlock extends HorizontalDirectionalBlock implements
 	public void animateTick(BlockState state, Level level, BlockPos pos, RandomSource random) {
 		if (random.nextInt(4) == 0 && level.getBlockEntity(pos) instanceof PrimordialCradleBlockEntity creator && creator.isFull()) {
 			int particleAmount = random.nextInt(2, 8);
-			int color = 0x9f4576; //magenta haze
+			int color = 0x9f4576;
 			double r = (color >> 16 & 255) / 255d;
 			double g = (color >> 8 & 255) / 255d;
 			double b = (color & 255) / 255d;
 			for (int i = 0; i < particleAmount; i++) {
-				level.addParticle(ParticleTypes.ENTITY_EFFECT, pos.getX() + ((random.nextFloat() * 0.60625) + 0.13125f), pos.getY() + 0.5f, pos.getZ() + ((random.nextFloat() * 0.60625) + 0.13125f), r, g, b);
+				level.addParticle(ColorParticleOption.create(ParticleTypes.ENTITY_EFFECT, (float) r, (float) g, (float) b), pos.getX() + ((random.nextFloat() * 0.60625) + 0.13125f), pos.getY() + 0.5f, pos.getZ() + ((random.nextFloat() * 0.60625) + 0.13125f), r, g, b);
 			}
 			if (random.nextInt(3) == 0) {
 				SoundUtil.Client.playBlockSound(level, pos, ModSoundEvents.CRADLE_CRAFTING_RANDOM, 0.85f);
@@ -237,8 +254,8 @@ public class PrimordialCradleBlock extends HorizontalDirectionalBlock implements
 	}
 
 	@Override
-	public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> tooltip, TooltipFlag flag) {
-		CompoundTag tag = BlockItem.getBlockEntityData(stack);
+	public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
+		CompoundTag tag = BlockItemUtil.getBlockEntityData(stack);
 		if (tag == null) return;
 
 		DecimalFormat df = FormatUtil.getIntegerFormatter();

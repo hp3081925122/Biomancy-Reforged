@@ -1,18 +1,45 @@
 package com.github.elenterius.biomancy.inventory;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.world.Containers;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.items.ItemHandlerHelper;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.items.wrapper.CombinedInvWrapper;
+import net.neoforged.neoforge.items.wrapper.PlayerArmorInvWrapper;
+import net.neoforged.neoforge.items.wrapper.PlayerInvWrapper;
+import net.neoforged.neoforge.items.wrapper.PlayerMainInvWrapper;
+import net.neoforged.neoforge.items.wrapper.PlayerOffhandInvWrapper;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
 public final class ItemHandlerUtil {
 
 	private ItemHandlerUtil() {}
+
+	public static boolean canItemStacksStack(ItemStack a, ItemStack b) {
+		return !a.isEmpty() && ItemStack.isSameItemSameComponents(a, b);
+	}
+
+	public static @Nullable IItemHandler getEntityItemHandler(Entity entity, @Nullable Direction side) {
+		if (entity instanceof Player player) {
+			if (!player.isAlive()) return null;
+			Inventory inventory = player.getInventory();
+			if (side == null) return new PlayerInvWrapper(inventory);
+			if (side.getAxis().isVertical()) return new PlayerMainInvWrapper(inventory);
+			return new CombinedInvWrapper(new PlayerArmorInvWrapper(inventory), new PlayerOffhandInvWrapper(inventory));
+		}
+
+		IItemHandler itemHandler = entity.getCapability(Capabilities.ItemHandler.ENTITY_AUTOMATION, side);
+		if (itemHandler != null) return itemHandler;
+		return entity.getCapability(Capabilities.ItemHandler.ENTITY, null);
+	}
 
 	public static void dropContents(Level level, BlockPos pos, IItemHandler itemHandler) {
 		dropContents(level, pos.getX(), pos.getY(), pos.getZ(), itemHandler);
@@ -93,7 +120,7 @@ public final class ItemHandlerUtil {
 			if (stack.isEmpty() || availableSlotSpace[index] <= 0) return false;
 			if (!itemHandler.isItemValid(index, stack)) return false;
 			if (itemInSlot[index].isEmpty()) return true;
-			return ItemHandlerHelper.canItemStacksStack(stack, itemInSlot[index]);
+			return ItemHandlerUtil.canItemStacksStack(stack, itemInSlot[index]);
 		}
 
 		private ItemStack insertItem(int index, ItemStack stack) {
@@ -104,7 +131,7 @@ public final class ItemHandlerUtil {
 
 			if (itemInSlot[index].isEmpty()) itemInSlot[index] = stack;
 
-			return stack.copyWithCount(stack.getCount() - insertAmount); //remainder
+			return stack.copyWithCount(stack.getCount() - insertAmount);
 		}
 
 		private boolean insertAllItems(List<ItemStack> items) {
@@ -112,7 +139,7 @@ public final class ItemHandlerUtil {
 				if (stack.isEmpty()) continue;
 
 				for (int i = 0; i < slots; i++) {
-					stack = insertItem(i, stack); //override stack with remainder
+					stack = insertItem(i, stack);
 				}
 
 				if (!stack.isEmpty()) return false;

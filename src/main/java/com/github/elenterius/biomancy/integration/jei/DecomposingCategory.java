@@ -28,8 +28,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.items.ItemStackHandler;
-import net.minecraftforge.items.wrapper.RecipeWrapper;
+import net.neoforged.neoforge.items.ItemStackHandler;
+import net.neoforged.neoforge.items.wrapper.RecipeWrapper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -78,7 +78,7 @@ public class DecomposingCategory implements IRecipeCategory<DecomposingRecipe> {
 		int x0 = 5;
 		int y0 = 9;
 		int x1 = 55;
-		int y1 = y0 + offset; // 35
+		int y1 = y0 + offset;
 
 		builder.addSlot(RecipeIngredientRole.INPUT, x0, y0).addItemStacks(recipe.getIngredientQuantity().getItemsWithCount());
 
@@ -152,7 +152,7 @@ public class DecomposingCategory implements IRecipeCategory<DecomposingRecipe> {
 		int offset = 16 + gap;
 		int y0 = 9 + 16 - Math.round(font.lineHeight / 2f) + 3;
 		int x = 55 + 16 + 3;
-		int y1 = y0 + offset; // 41
+		int y1 = y0 + offset;
 
 		List<VariableOutput> outputs = recipe.getOutputs();
 		drawOutputAmount(font, guiGraphics, x, y0, outputs, 0);

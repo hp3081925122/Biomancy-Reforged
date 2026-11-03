@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.block.ownable;
 
+import net.minecraft.core.HolderLookup;
 import com.github.elenterius.biomancy.block.base.SimpleContainerBlockEntity;
 import com.github.elenterius.biomancy.util.ownable.Ownable;
 import com.github.elenterius.biomancy.util.permission.Actions;
@@ -99,9 +100,9 @@ public abstract class OwnableContainerBlockEntity extends SimpleContainerBlockEn
 	}
 
 	@Override
-	public CompoundTag getUpdateTag() {
+	public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
 		CompoundTag tag = new CompoundTag();
-		saveForSyncToClient(tag);
+		saveForSyncToClient(tag, registries);
 		return tag;
 	}
 
@@ -111,7 +112,7 @@ public abstract class OwnableContainerBlockEntity extends SimpleContainerBlockEn
 		return ClientboundBlockEntityDataPacket.create(this);
 	}
 
-	protected void saveForSyncToClient(CompoundTag tag) {
+	protected void saveForSyncToClient(CompoundTag tag, HolderLookup.Provider registries) {
 		if (ownerId != null) tag.putUUID("OwnerUUID", ownerId);
 
 		if (!users.isEmpty()) {
@@ -127,8 +128,8 @@ public abstract class OwnableContainerBlockEntity extends SimpleContainerBlockEn
 	}
 
 	@Override
-	public void load(CompoundTag tag) {
-		super.load(tag);
+	protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+		super.loadAdditional(tag, registries);
 		ownerId = tag.hasUUID("OwnerUUID") ? tag.getUUID("OwnerUUID") : null;
 
 		users.clear();
@@ -144,8 +145,8 @@ public abstract class OwnableContainerBlockEntity extends SimpleContainerBlockEn
 	}
 
 	@Override
-	protected void saveAdditional(CompoundTag tag) {
-		super.saveAdditional(tag);
+	protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+		super.saveAdditional(tag, registries);
 		if (ownerId != null) tag.putUUID("OwnerUUID", ownerId);
 
 		if (!users.isEmpty()) {

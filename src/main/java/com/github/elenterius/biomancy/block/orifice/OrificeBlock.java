@@ -1,5 +1,10 @@
 package com.github.elenterius.biomancy.block.orifice;
 
+import org.jspecify.annotations.Nullable;
+import com.github.elenterius.biomancy.block.PlantType;
+import com.github.elenterius.biomancy.block.PlantTypeProvider;
+import com.github.elenterius.biomancy.util.InteractionUtil;
+import net.minecraft.world.ItemInteractionResult;
 import com.github.elenterius.biomancy.entity.projectile.AcidBlobProjectile;
 import com.github.elenterius.biomancy.init.*;
 import com.github.elenterius.biomancy.util.EnhancedIntegerProperty;
@@ -30,8 +35,7 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.common.IPlantable;
-import net.minecraftforge.common.PlantType;
+import net.neoforged.neoforge.common.util.TriState;
 
 import java.util.Optional;
 import java.util.function.ToIntFunction;
@@ -57,9 +61,10 @@ public class OrificeBlock extends Block implements BucketPickup {
 	}
 
 	@Override
-	public boolean canSustainPlant(BlockState state, BlockGetter world, BlockPos pos, Direction facing, IPlantable plantable) {
+	public TriState canSustainPlant(BlockState state, BlockGetter world, BlockPos pos, Direction facing, BlockState plant) {
+		if (!(plant.getBlock() instanceof PlantTypeProvider plantable)) return TriState.FALSE;
 		PlantType type = plantable.getPlantType(world, pos.relative(facing));
-		return type == ModPlantTypes.PRIMAL_FLESH;
+		return type == ModPlantTypes.PRIMAL_FLESH ? TriState.TRUE : TriState.FALSE;
 	}
 
 	@Override
@@ -91,7 +96,7 @@ public class OrificeBlock extends Block implements BucketPickup {
 	}
 
 	@Override
-	public ItemStack pickupBlock(LevelAccessor level, BlockPos pos, BlockState state) {
+	public ItemStack pickupBlock(@Nullable Player player, LevelAccessor level, BlockPos pos, BlockState state) {
 		if (AGE.getValue(state) == AGE.getMax()) {
 			level.setBlock(pos, AGE.setValue(state, AGE.getMin()), Block.UPDATE_CLIENTS);
 			return new ItemStack(ModFluids.ACID.get().getBucket());
@@ -101,7 +106,11 @@ public class OrificeBlock extends Block implements BucketPickup {
 	}
 
 	@Override
-	public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
+	protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
+		return InteractionUtil.toItemInteractionResult(use(state, level, pos, player, hand, hitResult));
+	}
+
+	protected InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
 		ItemStack stack = player.getItemInHand(hand);
 		if (!stack.is(ModItems.VIAL.get())) return InteractionResult.PASS;
 

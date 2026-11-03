@@ -1,5 +1,9 @@
 package com.github.elenterius.biomancy.block.tongue;
 
+import com.mojang.serialization.MapCodec;
+import net.minecraft.world.item.ItemStack;
+import com.github.elenterius.biomancy.util.InteractionUtil;
+import net.minecraft.world.ItemInteractionResult;
 import com.github.elenterius.biomancy.init.ModBlockEntities;
 import com.github.elenterius.biomancy.util.VoxelShapeUtil;
 import net.minecraft.core.BlockPos;
@@ -27,6 +31,8 @@ import org.jspecify.annotations.Nullable;
 
 public class TongueBlock extends HorizontalDirectionalBlock implements EntityBlock {
 
+	public static final MapCodec<TongueBlock> CODEC = simpleCodec(TongueBlock::new);
+
 	public static final VoxelShape SHAPE_NORTH = createVoxelShape(Direction.NORTH);
 	public static final VoxelShape SHAPE_SOUTH = createVoxelShape(Direction.SOUTH);
 	public static final VoxelShape SHAPE_WEST = createVoxelShape(Direction.WEST);
@@ -36,13 +42,17 @@ public class TongueBlock extends HorizontalDirectionalBlock implements EntityBlo
 		super(properties);
 	}
 
+	@Override
+	protected MapCodec<? extends TongueBlock> codec() {
+		return CODEC;
+	}
+
 	private static VoxelShape createVoxelShape(Direction direction) {
 		return VoxelShapeUtil.createYRotatedTowards(direction, 2, 3, 12, 14, 13, 16);
 	}
 
 	@Nullable
 	protected static <E extends BlockEntity, A extends BlockEntity> BlockEntityTicker<A> createTickerHelper(BlockEntityType<A> blockEntityType, BlockEntityType<E> targetType, BlockEntityTicker<? super E> entityTicker) {
-		//noinspection unchecked
 		return targetType == blockEntityType ? (BlockEntityTicker<A>) entityTicker : null;
 	}
 
@@ -81,7 +91,11 @@ public class TongueBlock extends HorizontalDirectionalBlock implements EntityBlo
 	}
 
 	@Override
-	public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+	protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+		return InteractionUtil.toItemInteractionResult(use(state, level, pos, player, hand, hit));
+	}
+
+	protected InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
 		if (!player.getItemInHand(hand).isEmpty()) return InteractionResult.PASS;
 
 		if (level.getBlockEntity(pos) instanceof TongueBlockEntity blockEntity) {

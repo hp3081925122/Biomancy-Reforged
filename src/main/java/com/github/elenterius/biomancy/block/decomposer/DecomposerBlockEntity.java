@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.block.decomposer;
 
+import net.minecraft.core.HolderLookup;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.api.nutrients.FuelHandler;
 import com.github.elenterius.biomancy.api.nutrients.FuelHandlerImpl;
@@ -9,7 +10,6 @@ import com.github.elenterius.biomancy.crafting.VariableOutput;
 import com.github.elenterius.biomancy.crafting.recipe.DecomposingRecipe;
 import com.github.elenterius.biomancy.crafting.recipe.SimpleRecipeType;
 import com.github.elenterius.biomancy.init.ModBlockEntities;
-import com.github.elenterius.biomancy.init.ModCapabilities;
 import com.github.elenterius.biomancy.init.ModRecipes;
 import com.github.elenterius.biomancy.init.ModSoundEvents;
 import com.github.elenterius.biomancy.inventory.InventoryHandler;
@@ -35,10 +35,10 @@ import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.items.IItemHandler;
+import net.minecraft.world.item.crafting.RecipeType;
+import net.neoforged.neoforge.registries.DeferredHolder;
 import org.jspecify.annotations.Nullable;
 import software.bernie.geckolib.animatable.GeoBlockEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
@@ -61,7 +61,7 @@ public class DecomposerBlockEntity extends MachineBlockEntity<DecomposingRecipe,
 
 	public static final int MAX_FUEL = 1_000;
 
-	public static final RegistryObject<SimpleRecipeType.AdvancedRecipeType<DecomposingRecipe>> RECIPE_TYPE = ModRecipes.DECOMPOSING_RECIPE_TYPE;
+	public static final DeferredHolder<RecipeType<?>, SimpleRecipeType.AdvancedRecipeType<DecomposingRecipe>> RECIPE_TYPE = ModRecipes.DECOMPOSING_RECIPE_TYPE;
 
 	protected static final RawAnimation WORKING_ANIM = RawAnimation.begin().thenLoop("decomposer.working");
 	protected static final RawAnimation IDLE_ANIM = RawAnimation.begin().thenLoop("decomposer.idle");
@@ -76,7 +76,6 @@ public class DecomposerBlockEntity extends MachineBlockEntity<DecomposingRecipe,
 	private LoopingSoundHelper loopingSoundHelper = LoopingSoundHelper.NULL;
 
 	private @Nullable DecomposerRecipeResult computedRecipeResult;
-	private LazyOptional<IFluidHandler> optionalFluidConsumer;
 
 	public DecomposerBlockEntity(BlockPos pos, BlockState state) {
 		super(ModBlockEntities.DECOMPOSER.get(), pos, state);
@@ -88,7 +87,6 @@ public class DecomposerBlockEntity extends MachineBlockEntity<DecomposingRecipe,
 		fuelHandler = FuelHandlerImpl.createNutrientFuelHandler(MAX_FUEL, this::onInventoryChanged);
 
 		stateData = new DecomposerStateData(fuelHandler);
-		optionalFluidConsumer = LazyOptional.of(fuelHandler::getFluidConsumer);
 	}
 
 	@Override
@@ -172,29 +170,29 @@ public class DecomposerBlockEntity extends MachineBlockEntity<DecomposingRecipe,
 	}
 
 	@Override
-	protected void saveAdditional(CompoundTag tag) {
-		super.saveAdditional(tag);
+	protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+		super.saveAdditional(tag, registries);
 		stateData.serialize(tag);
 		if (computedRecipeResult != null) {
 			tag.put("ComputedRecipeResult", computedRecipeResult.serialize());
 		}
-		tag.put("Fuel", fuelHandler.serializeNBT());
-		tag.put("FuelSlots", fuelInventory.serializeNBT());
-		tag.put("InputSlots", inputInventory.serializeNBT());
-		tag.put("OutputSlots", outputInventory.serializeNBT());
+		tag.put("Fuel", fuelHandler.serializeNBT(registries));
+		tag.put("FuelSlots", fuelInventory.serializeNBT(registries));
+		tag.put("InputSlots", inputInventory.serializeNBT(registries));
+		tag.put("OutputSlots", outputInventory.serializeNBT(registries));
 	}
 
 	@Override
-	public void load(CompoundTag tag) {
-		super.load(tag);
+	protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+		super.loadAdditional(tag, registries);
 		stateData.deserialize(tag);
 		if (level != null && tag.contains("ComputedRecipeResult")) {
 			computedRecipeResult = DecomposerRecipeResult.deserialize(tag.getCompound("ComputedRecipeResult"), level.getRecipeManager());
 		}
-		fuelHandler.deserializeNBT(tag.getCompound("Fuel"));
-		fuelInventory.deserializeNBT(tag.getCompound("FuelSlots"));
-		inputInventory.deserializeNBT(tag.getCompound("InputSlots"));
-		outputInventory.deserializeNBT(tag.getCompound("OutputSlots"));
+		fuelHandler.deserializeNBT(registries, tag.getCompound("Fuel"));
+		fuelInventory.deserializeNBT(registries, tag.getCompound("FuelSlots"));
+		inputInventory.deserializeNBT(registries, tag.getCompound("InputSlots"));
+		outputInventory.deserializeNBT(registries, tag.getCompound("OutputSlots"));
 	}
 
 	@Override
@@ -205,49 +203,14 @@ public class DecomposerBlockEntity extends MachineBlockEntity<DecomposingRecipe,
 	}
 
 	@Override
-	public <T> LazyOptional<T> getCapability(Capability<T> cap, @Nullable Direction side) {
-		if (remove) return super.getCapability(cap, side);
-
-		if (cap == ModCapabilities.ITEM_HANDLER) {
-			if (side == null || side == Direction.DOWN) return outputInventory.getLazyOptional().cast();
-			if (side == Direction.UP) return inputInventory.getLazyOptional().cast();
-			return fuelInventory.getLazyOptional().cast();
-		}
-
-		if (cap == ModCapabilities.FLUID_HANDLER) {
-			return optionalFluidConsumer.cast();
-		}
-
-		return super.getCapability(cap, side);
-	}
-
-	@Override
-	public void invalidateCaps() {
-		super.invalidateCaps();
-		fuelInventory.invalidate();
-		inputInventory.invalidate();
-		outputInventory.invalidate();
-		optionalFluidConsumer.invalidate();
-	}
-
-	@Override
-	public void reviveCaps() {
-		super.reviveCaps();
-		fuelInventory.revive();
-		inputInventory.revive();
-		outputInventory.revive();
-		optionalFluidConsumer = LazyOptional.of(fuelHandler::getFluidConsumer);
-	}
-
-	@Override
 	protected boolean craftRecipe(DecomposingRecipe recipeToCraft, Level level) {
 		DecomposerRecipeResult precomputedResult = getComputedRecipeResult(recipeToCraft);
 
 		if (!ItemHandlerUtil.doAllItemsFit(outputInventory.getRaw(), precomputedResult.items)) return false;
 
-		inputInventory.extractItem(0, recipeToCraft.getIngredientQuantity().count(), false); //consume input
+		inputInventory.extractItem(0, recipeToCraft.getIngredientQuantity().count(), false);
 
-		for (ItemStack stack : precomputedResult.items) {  //output result
+		for (ItemStack stack : precomputedResult.items) {
 			ItemHandlerUtil.insertItem(outputInventory.getRaw(), stack);
 		}
 
@@ -333,6 +296,18 @@ public class DecomposerBlockEntity extends MachineBlockEntity<DecomposingRecipe,
 			return tag;
 		}
 
+	}
+
+	public @Nullable IItemHandler getItemHandler(@Nullable Direction side) {
+		if (isRemoved()) return null;
+		if (side == null || side == Direction.DOWN) return outputInventory;
+		if (side == Direction.UP) return inputInventory;
+		return fuelInventory;
+	}
+
+	public @Nullable IFluidHandler getFluidHandler(@Nullable Direction side) {
+		if (isRemoved()) return null;
+		return fuelHandler.getFluidConsumer();
 	}
 
 }

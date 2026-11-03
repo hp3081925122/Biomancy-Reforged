@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.block.biolab;
 
+import net.minecraft.core.HolderLookup;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.api.nutrients.FuelHandler;
 import com.github.elenterius.biomancy.api.nutrients.FuelHandlerImpl;
@@ -11,7 +12,6 @@ import com.github.elenterius.biomancy.crafting.recipe.BioBrewingRecipe;
 import com.github.elenterius.biomancy.crafting.recipe.PotionSerumRecipes;
 import com.github.elenterius.biomancy.crafting.recipe.SimpleRecipeType;
 import com.github.elenterius.biomancy.init.ModBlockEntities;
-import com.github.elenterius.biomancy.init.ModCapabilities;
 import com.github.elenterius.biomancy.init.ModRecipes;
 import com.github.elenterius.biomancy.init.ModSoundEvents;
 import com.github.elenterius.biomancy.inventory.BehavioralItemHandler;
@@ -33,13 +33,12 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.items.wrapper.CombinedInvWrapper;
-import net.minecraftforge.items.wrapper.RangedWrapper;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.items.wrapper.CombinedInvWrapper;
+import net.neoforged.neoforge.items.wrapper.RangedWrapper;
+import net.minecraft.world.item.crafting.RecipeType;
+import net.neoforged.neoforge.registries.DeferredHolder;
 import org.jspecify.annotations.Nullable;
 import software.bernie.geckolib.animatable.GeoBlockEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
@@ -60,7 +59,7 @@ public class BioLabBlockEntity extends MachineBlockEntity<BioBrewingRecipe, BioL
 
 	public static final int MAX_FUEL = 1_000;
 
-	public static final RegistryObject<SimpleRecipeType.AdvancedRecipeType<BioBrewingRecipe>> RECIPE_TYPE = ModRecipes.BIO_BREWING_RECIPE_TYPE;
+	public static final DeferredHolder<RecipeType<?>, SimpleRecipeType.AdvancedRecipeType<BioBrewingRecipe>> RECIPE_TYPE = ModRecipes.BIO_BREWING_RECIPE_TYPE;
 
 	protected static final RawAnimation WORKING_ANIM = RawAnimation.begin().thenLoop("bio_lab.working");
 	protected static final RawAnimation IDLE_ANIM = RawAnimation.begin().thenLoop("bio_lab.idle");
@@ -76,8 +75,7 @@ public class BioLabBlockEntity extends MachineBlockEntity<BioBrewingRecipe, BioL
 	private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 	private LoopingSoundHelper loopingSoundHelper = LoopingSoundHelper.NULL;
 
-	private LazyOptional<IItemHandler> optionalCombinedInventory;
-	private LazyOptional<IFluidHandler> optionalFluidConsumer;
+	private final IItemHandler combinedInventory;
 
 	public BioLabBlockEntity(BlockPos worldPosition, BlockState blockState) {
 		super(ModBlockEntities.BIO_LAB.get(), worldPosition, blockState);
@@ -88,24 +86,21 @@ public class BioLabBlockEntity extends MachineBlockEntity<BioBrewingRecipe, BioL
 
 		fuelInventory = InventoryHandlers.filterFuel(FUEL_SLOTS, this::onInventoryChanged);
 
-		optionalCombinedInventory = createCombinedInventory();
-
 		fuelHandler = FuelHandlerImpl.createNutrientFuelHandler(MAX_FUEL, this::setChanged);
-		optionalFluidConsumer = LazyOptional.of(fuelHandler::getFluidConsumer);
 
 		stateData = new BioLabStateData(fuelHandler, inputInventory.get());
+		combinedInventory = createCombinedInventory();
 	}
 
-	private LazyOptional<IItemHandler> createCombinedInventory() {
-		return LazyOptional.of(() -> new CombinedInvWrapper(
+	private IItemHandler createCombinedInventory() {
+		return new CombinedInvWrapper(
 				fuelInventory,
 				new RangedWrapper(inputInventory, inputInventory.getSlots() - 1, inputInventory.getSlots())) {
 					@Override
 					public boolean isItemValid(int slot, ItemStack stack) {
 						return !Nutrients.FUEL_PREDICATE.test(stack) && super.isItemValid(slot, stack);
 					}
-				}
-		);
+				};
 	}
 
 	@Override
@@ -182,23 +177,23 @@ public class BioLabBlockEntity extends MachineBlockEntity<BioBrewingRecipe, BioL
 	}
 
 	@Override
-	protected void saveAdditional(CompoundTag tag) {
-		super.saveAdditional(tag);
+	protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+		super.saveAdditional(tag, registries);
 		stateData.serialize(tag);
-		tag.put("Fuel", fuelHandler.serializeNBT());
-		tag.put("FuelSlots", fuelInventory.serializeNBT());
-		tag.put("InputSlots", inputInventory.serializeNBT());
-		tag.put("OutputSlots", outputInventory.serializeNBT());
+		tag.put("Fuel", fuelHandler.serializeNBT(registries));
+		tag.put("FuelSlots", fuelInventory.serializeNBT(registries));
+		tag.put("InputSlots", inputInventory.serializeNBT(registries));
+		tag.put("OutputSlots", outputInventory.serializeNBT(registries));
 	}
 
 	@Override
-	public void load(CompoundTag tag) {
-		super.load(tag);
+	protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+		super.loadAdditional(tag, registries);
 		stateData.deserialize(tag);
-		fuelHandler.deserializeNBT(tag.getCompound("Fuel"));
-		fuelInventory.deserializeNBT(tag.getCompound("FuelSlots"));
-		inputInventory.deserializeNBT(tag.getCompound("InputSlots"));
-		outputInventory.deserializeNBT(tag.getCompound("OutputSlots"));
+		fuelHandler.deserializeNBT(registries, tag.getCompound("Fuel"));
+		fuelInventory.deserializeNBT(registries, tag.getCompound("FuelSlots"));
+		inputInventory.deserializeNBT(registries, tag.getCompound("InputSlots"));
+		outputInventory.deserializeNBT(registries, tag.getCompound("OutputSlots"));
 	}
 
 	@Override
@@ -209,63 +204,23 @@ public class BioLabBlockEntity extends MachineBlockEntity<BioBrewingRecipe, BioL
 	}
 
 	@Override
-	public <T> LazyOptional<T> getCapability(Capability<T> cap, @Nullable Direction side) {
-		if (remove) return super.getCapability(cap, side);
-
-		if (cap == ModCapabilities.ITEM_HANDLER) {
-			if (side == null || side == Direction.DOWN) return outputInventory.getLazyOptional().cast();
-			if (side == Direction.UP) return inputInventory.getLazyOptional().cast();
-			return optionalCombinedInventory.cast();
-		}
-
-		if (cap == ModCapabilities.FLUID_HANDLER) {
-			return optionalFluidConsumer.cast();
-		}
-
-		return super.getCapability(cap, side);
-	}
-
-	@Override
-	public void invalidateCaps() {
-		super.invalidateCaps();
-		fuelInventory.invalidate();
-		inputInventory.invalidate();
-		outputInventory.invalidate();
-		optionalCombinedInventory.invalidate();
-		optionalFluidConsumer.invalidate();
-	}
-
-	@Override
-	public void reviveCaps() {
-		super.reviveCaps();
-		fuelInventory.revive();
-		inputInventory.revive();
-		outputInventory.revive();
-		optionalCombinedInventory = createCombinedInventory();
-		optionalFluidConsumer = LazyOptional.of(fuelHandler::getFluidConsumer);
-	}
-
-	@Override
 	protected boolean craftRecipe(BioBrewingRecipe recipeToCraft, Level level) {
 		ItemStack result = recipeToCraft.getResultItem(level.registryAccess()).copy();
 		if (result.isEmpty() || !doesRecipeResultFitIntoOutputInv(recipeToCraft, result)) {
 			return false;
 		}
 
-		//get ingredients cost
 		List<IngredientStack> ingredients = recipeToCraft.getIngredientQuantities();
 		int[] ingredientCost = new int[ingredients.size()];
 		for (int i = 0; i < ingredients.size(); i++) {
 			ingredientCost[i] = ingredients.get(i).count();
 		}
 
-		//consume reactant
 		final int lastIndex = inputInventory.getSlots() - 1;
 		inputInventory.extractItem(lastIndex, 1, false);
 
-		//consume ingredients
 		for (int idx = 0; idx < lastIndex; idx++) {
-			final ItemStack foundStack = inputInventory.getStackInSlot(idx); //do not modify this stack
+			final ItemStack foundStack = inputInventory.getStackInSlot(idx);
 			if (!foundStack.isEmpty()) {
 				for (int i = 0; i < ingredients.size(); i++) {
 					int remainingCost = ingredientCost[i];
@@ -279,7 +234,6 @@ public class BioLabBlockEntity extends MachineBlockEntity<BioBrewingRecipe, BioL
 			}
 		}
 
-		//output result
 		outputInventory.getRaw().insertItem(0, result, false);
 
 		SoundUtil.Server.playBlockSound((ServerLevel) level, getBlockPos(), ModSoundEvents.BIO_LAB_CRAFTING_COMPLETED);
@@ -319,6 +273,18 @@ public class BioLabBlockEntity extends MachineBlockEntity<BioBrewingRecipe, BioL
 			loopingSoundHelper.clear();
 		}
 		super.setRemoved();
+	}
+
+	public @Nullable IItemHandler getItemHandler(@Nullable Direction side) {
+		if (isRemoved()) return null;
+		if (side == null || side == Direction.DOWN) return outputInventory;
+		if (side == Direction.UP) return inputInventory;
+		return combinedInventory;
+	}
+
+	public @Nullable IFluidHandler getFluidHandler(@Nullable Direction side) {
+		if (isRemoved()) return null;
+		return fuelHandler.getFluidConsumer();
 	}
 
 }

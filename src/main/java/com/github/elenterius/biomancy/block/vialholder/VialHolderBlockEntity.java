@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.block.vialholder;
 
+import net.minecraft.core.HolderLookup;
 import com.github.elenterius.biomancy.api.serum.Serum;
 import com.github.elenterius.biomancy.api.serum.SerumContainer;
 import com.github.elenterius.biomancy.block.base.SimpleSyncedBlockEntity;
@@ -13,8 +14,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
-import net.minecraftforge.items.ItemStackHandler;
-
+import net.neoforged.neoforge.items.ItemStackHandler;
 
 public class VialHolderBlockEntity extends SimpleSyncedBlockEntity {
 
@@ -66,21 +66,21 @@ public class VialHolderBlockEntity extends SimpleSyncedBlockEntity {
 	}
 
 	@Override
-	protected void saveAdditional(CompoundTag tag) {
-		super.saveAdditional(tag);
-		tag.put(INVENTORY_TAG, inventory.serializeNBT());
+	protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+		super.saveAdditional(tag, registries);
+		tag.put(INVENTORY_TAG, inventory.serializeNBT(registries));
 	}
 
 	@Override
-	public void load(CompoundTag tag) {
-		super.load(tag);
-		inventory.deserializeNBT(tag.getCompound(INVENTORY_TAG));
+	protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+		super.loadAdditional(tag, registries);
+		inventory.deserializeNBT(registries, tag.getCompound(INVENTORY_TAG));
 		updateBlockStateDelayed();
 	}
 
 	@Override
-	protected void saveForSyncToClient(CompoundTag tag) {
-		tag.put(INVENTORY_TAG, inventory.serializeNBT());
+	protected void saveForSyncToClient(CompoundTag tag, HolderLookup.Provider registries) {
+		tag.put(INVENTORY_TAG, inventory.serializeNBT(registries));
 	}
 
 	public void dropInventoryContents(Level level, BlockPos pos, boolean removeWithoutUpdate) {

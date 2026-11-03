@@ -6,8 +6,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.common.IPlantable;
-import net.minecraftforge.common.PlantType;
+import net.neoforged.neoforge.common.util.TriState;
 
 public class FleshBlock extends Block {
 
@@ -24,9 +23,10 @@ public class FleshBlock extends Block {
 	}
 
 	@Override
-	public boolean canSustainPlant(BlockState state, BlockGetter world, BlockPos pos, Direction facing, IPlantable plantable) {
+	public TriState canSustainPlant(BlockState state, BlockGetter world, BlockPos pos, Direction facing, BlockState plant) {
+		if (!(plant.getBlock() instanceof PlantTypeProvider plantable)) return TriState.FALSE;
 		PlantType type = plantable.getPlantType(world, pos.relative(facing));
-		return type == supportedPlantType;
+		return type == supportedPlantType ? TriState.TRUE : TriState.FALSE;
 	}
 
 }

@@ -1,7 +1,8 @@
 package com.github.elenterius.biomancy.util.permission;
 
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraftforge.common.util.INBTSerializable;
+import net.neoforged.neoforge.common.util.INBTSerializable;
 
 import java.util.Objects;
 import java.util.UUID;
@@ -41,7 +42,7 @@ public class UserAuthorization implements INBTSerializable<CompoundTag> {
 	}
 
 	@Override
-	public CompoundTag serializeNBT() {
+	public CompoundTag serializeNBT(HolderLookup.Provider provider) {
 		CompoundTag nbt = new CompoundTag();
 		nbt.putUUID("UserUUID", userUUID);
 		authority.serialize(nbt);
@@ -49,7 +50,7 @@ public class UserAuthorization implements INBTSerializable<CompoundTag> {
 	}
 
 	@Override
-	public void deserializeNBT(CompoundTag nbt) {
+	public void deserializeNBT(HolderLookup.Provider provider, CompoundTag nbt) {
 		userUUID = nbt.getUUID("UserUUID");
 		authority = UserType.deserialize(nbt);
 	}

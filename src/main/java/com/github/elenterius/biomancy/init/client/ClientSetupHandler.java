@@ -38,6 +38,7 @@ import com.github.elenterius.biomancy.tooltip.HrTooltipComponent;
 import com.github.elenterius.biomancy.tooltip.StorageSacTooltipComponent;
 import com.github.elenterius.biomancy.util.TransliterationUtil;
 import net.minecraft.client.particle.AttackSweepParticle;
+import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 import net.minecraft.client.particle.BubblePopParticle;
 import net.minecraft.client.particle.HugeExplosionParticle;
 import net.minecraft.client.particle.PlayerCloudParticle;
@@ -67,8 +68,6 @@ public final class ClientSetupHandler {
 
 	@SubscribeEvent
 	public static void onSetup(final FMLClientSetupEvent event) {
-		ModScreens.registerMenuScreens();
-
 		setBlockRenderLayers();
 
 		event.enqueueWork(ClientSetupHandler::onPostSetup);
@@ -81,6 +80,11 @@ public final class ClientSetupHandler {
 	private static void onPostSetup() {
 		registerItemModelProperties();
 		ModArmPoses.init();
+	}
+
+	@SubscribeEvent
+	public static void onRegisterMenuScreens(final RegisterMenuScreensEvent event) {
+		ModScreens.registerMenuScreens(event);
 	}
 
 	@SubscribeEvent
@@ -133,8 +137,6 @@ public final class ClientSetupHandler {
 		ItemBlockRenderTypes.setRenderLayer(ModFluids.ACID.get(), RenderType.translucent());
 		ItemBlockRenderTypes.setRenderLayer(ModFluids.FLOWING_ACID.get(), RenderType.translucent());
 
-		//block with "glowing" overlay texture, also needs a overlay model see onModelBakeEvent() in ClientSetupHandler
-		//ItemBlockRenderTypes.setRenderLayer(ModBlocks.FOOBAR.get(), renderType -> renderType == RenderType.getCutout() || renderType == RenderType.getTranslucent());
 	}
 
 	@SubscribeEvent
@@ -178,12 +180,10 @@ public final class ClientSetupHandler {
 
 	@SubscribeEvent
 	public static void registerLayers(final EntityRenderersEvent.AddLayers event) {
-		//placeholder
 	}
 
 	@SubscribeEvent
 	public static void onBlockModelRegistry(final ModelEvent.RegisterAdditional event) {
-		//placeholder
 	}
 
 	@SubscribeEvent
@@ -198,7 +198,6 @@ public final class ClientSetupHandler {
 	public static void onBlockColorRegistry(final RegisterColorHandlersEvent.Block event) {
 		event.register(VialHolderBlock::getTintColor, ModBlocks.VIAL_HOLDER.get());
 		event.register(BiometricMembraneBlock::getTintColor, ModBlocks.BIOMETRIC_MEMBRANE.get());
-		//		event.register((state, level, pos, tintIndex) -> tintIndex == 0 ? ModFluids.ACID_TYPE.get().getTintColor() : 0xFF_FFFFFF, ModBlocks.ACID_CAULDRON.get());
 	}
 
 	@SubscribeEvent

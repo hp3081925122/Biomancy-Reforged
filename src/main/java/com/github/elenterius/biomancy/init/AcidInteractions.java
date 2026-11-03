@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.init;
 
+import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.api.nutrients.Nutrients;
 import com.github.elenterius.biomancy.block.digester.DigesterBlockEntity;
 import com.github.elenterius.biomancy.crafting.recipe.DigestingRecipe;
@@ -19,7 +20,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.stats.Stats;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.InteractionResult;
+import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Item;
@@ -34,9 +35,9 @@ import net.minecraft.world.level.block.WeatheringCopper;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.common.SoundActions;
-import net.minecraftforge.items.ItemStackHandler;
-import net.minecraftforge.items.wrapper.RecipeWrapper;
+import net.neoforged.neoforge.common.SoundActions;
+import net.neoforged.neoforge.items.ItemStackHandler;
+import net.neoforged.neoforge.items.wrapper.RecipeWrapper;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Map;
@@ -45,7 +46,7 @@ import java.util.Optional;
 
 public final class AcidInteractions {
 
-	public static final Map<Item, CauldronInteraction> ACID_CAULDRON = CauldronInteraction.newInteractionMap();
+	public static final CauldronInteraction.InteractionMap ACID_CAULDRON = CauldronInteraction.newInteractionMap(BiomancyMod.MOD_ID + ":acid");
 
 	public static final Map<Block, BlockState> NORMAL_TO_ERODED_BLOCK_CONVERSION = Map.of(
 			Blocks.GRASS_BLOCK, Blocks.DIRT.defaultBlockState(),
@@ -69,11 +70,10 @@ public final class AcidInteractions {
 			return CauldronInteraction.emptyBucket(level, pos, player, hand, stack, ModBlocks.ACID_CAULDRON.get().defaultBlockState().setValue(LayeredCauldronBlock.LEVEL, 3), sound);
 		};
 
-		CauldronInteraction.EMPTY.put(ModItems.ACID_BUCKET.get(), fillWithAcid);
+		CauldronInteraction.EMPTY.map().put(ModItems.ACID_BUCKET.get(), fillWithAcid);
 
-		//we wrap the original potion interaction to retain its behavior while injecting our own logic
-		final CauldronInteraction originalPotionInteraction = Objects.requireNonNull(CauldronInteraction.EMPTY.get(Items.POTION));
-		CauldronInteraction.EMPTY.put(ModItems.ACID_EXTRACT.get(), (state, level, pos, player, hand, stack) -> {
+		final CauldronInteraction originalPotionInteraction = Objects.requireNonNull(CauldronInteraction.EMPTY.map().get(Items.POTION));
+		CauldronInteraction.EMPTY.map().put(ModItems.ACID_EXTRACT.get(), (state, level, pos, player, hand, stack) -> {
 			if (!level.isClientSide) {
 				player.setItemInHand(hand, ItemUtils.createFilledResult(stack, player, ModItems.VIAL.get().getDefaultInstance()));
 				player.awardStat(Stats.USE_CAULDRON);
@@ -83,15 +83,15 @@ public final class AcidInteractions {
 				level.gameEvent(player, GameEvent.FLUID_PLACE, pos);
 			}
 
-			return InteractionResult.sidedSuccess(level.isClientSide);
+			return ItemInteractionResult.sidedSuccess(level.isClientSide);
 		});
 
-		ACID_CAULDRON.put(ModItems.ACID_BUCKET.get(), fillWithAcid);
-		ACID_CAULDRON.put(Items.BUCKET, (state, level, pos, player, hand, stack) -> {
+		ACID_CAULDRON.map().put(ModItems.ACID_BUCKET.get(), fillWithAcid);
+		ACID_CAULDRON.map().put(Items.BUCKET, (state, level, pos, player, hand, stack) -> {
 			SoundEvent sound = Objects.requireNonNullElse(ModFluids.ACID_TYPE.get().getSound(SoundActions.BUCKET_FILL), SoundEvents.BUCKET_FILL);
 			return CauldronInteraction.fillBucket(state, level, pos, player, hand, stack, ModItems.ACID_BUCKET.get().getDefaultInstance(), AcidInteractions::isCauldronFull, sound);
 		});
-		ACID_CAULDRON.put(ModItems.VIAL.get(), (state, level, pos, player, hand, stack) -> {
+		ACID_CAULDRON.map().put(ModItems.VIAL.get(), (state, level, pos, player, hand, stack) -> {
 			if (!level.isClientSide) {
 				player.setItemInHand(hand, ItemUtils.createFilledResult(stack, player, ModItems.ACID_EXTRACT.get().getDefaultInstance()));
 				player.awardStat(Stats.USE_CAULDRON);
@@ -101,9 +101,9 @@ public final class AcidInteractions {
 				level.gameEvent(player, GameEvent.FLUID_PICKUP, pos);
 			}
 
-			return InteractionResult.sidedSuccess(level.isClientSide);
+			return ItemInteractionResult.sidedSuccess(level.isClientSide);
 		});
-		ACID_CAULDRON.put(ModItems.ACID_EXTRACT.get(), (state, level, pos, player, hand, stack) -> {
+		ACID_CAULDRON.map().put(ModItems.ACID_EXTRACT.get(), (state, level, pos, player, hand, stack) -> {
 			if (!isCauldronFull(state)) {
 				if (!level.isClientSide) {
 					player.setItemInHand(hand, ItemUtils.createFilledResult(stack, player, ModItems.VIAL.get().getDefaultInstance()));
@@ -114,10 +114,10 @@ public final class AcidInteractions {
 					level.gameEvent(player, GameEvent.FLUID_PLACE, pos);
 				}
 
-				return InteractionResult.sidedSuccess(level.isClientSide);
+				return ItemInteractionResult.sidedSuccess(level.isClientSide);
 			}
 
-			return InteractionResult.PASS;
+			return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
 		});
 	}
 
@@ -167,27 +167,19 @@ public final class AcidInteractions {
 	}
 
 	public static final class InWorldItemDigesting {
-		//NBT Tag keys
 		public static final String BASE_DATA_KEY = "biomancy:acid_digestion";
 		public static final String TIMER_KEY = "timer";
 		public static final String DELAY_KEY = "delay";
 		public static final String RECIPE_KEY = "recipe";
 
-		/**
-		 * Balancing multiplier applied to the output of any found recipes.
-		 */
 		public static final double EFFICIENCY = 0.8d;
 
-		/**
-		 * How many times {@link #tryDigestSubmergedItem} should be called on a digestible item before it is processed.<br>
-		 * This is not directly ticks, as submerged items are only actually processed every 10 ticks.
-		 */
 		public static final int BASE_DELAY = 10;
 
 		private InWorldItemDigesting() {}
 
 		public static void tryDigestSubmergedItem(ItemEntity itemEntity) {
-			if (itemEntity.getAge() % 10 != 0) return; //Only tick digestion every 10 ticks.
+			if (itemEntity.getAge() % 10 != 0) return;
 			if (!isDigestible(itemEntity)) return;
 
 			Level level = itemEntity.level();
@@ -243,7 +235,7 @@ public final class AcidInteractions {
 						itemEntity.discard();
 					}
 					else {
-						itemEntity.setItem(itemStack); //update ItemStack
+						itemEntity.setItem(itemStack);
 					}
 				}
 
@@ -252,7 +244,7 @@ public final class AcidInteractions {
 		}
 
 		public static CompoundTag getOrCreateDigestionData(CompoundTag entityData) {
-			if (entityData.contains(BASE_DATA_KEY)) return entityData.getCompound(BASE_DATA_KEY); //avoid try catch
+			if (entityData.contains(BASE_DATA_KEY)) return entityData.getCompound(BASE_DATA_KEY);
 			return new CompoundTag();
 		}
 
@@ -291,7 +283,7 @@ public final class AcidInteractions {
 			}
 		}
 
-		@SuppressWarnings("RedundantIfStatement") //Let me write readable code please, thanks
+		@SuppressWarnings("RedundantIfStatement")
 		public static boolean isDigestible(ItemEntity itemEntity) {
 			if (itemEntity.getItem().is(ModItemTags.CANNOT_BE_DIGESTED_IN_ACID)) return false;
 			if (!itemEntity.isInFluidType(ModFluids.ACID_TYPE.get()) && !itemEntity.level().getBlockState(itemEntity.blockPosition()).is(ModBlocks.ACID_CAULDRON.get())) return false;

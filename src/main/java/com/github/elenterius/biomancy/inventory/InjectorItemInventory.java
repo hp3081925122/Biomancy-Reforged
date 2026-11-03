@@ -4,14 +4,11 @@ import com.github.elenterius.biomancy.api.serum.SerumContainer;
 import com.github.elenterius.biomancy.component.InjectorContents;
 import com.github.elenterius.biomancy.init.ModDataComponents;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.items.IItemHandler;
 
 public class InjectorItemInventory {
 
 	private final ItemStack cachedInventoryHost;
 	private final LargeSingleItemStackHandler itemHandler;
-	private final LazyOptional<IItemHandler> optionalItemHandler;
 
 	private InjectorItemInventory(short maxSlotSize, ItemStack inventoryHost) {
 		itemHandler = new LargeSingleItemStackHandler(maxSlotSize) {
@@ -26,7 +23,6 @@ public class InjectorItemInventory {
 				serializeToHost();
 			}
 		};
-		optionalItemHandler = LazyOptional.of(() -> itemHandler);
 		cachedInventoryHost = inventoryHost;
 	}
 
@@ -52,11 +48,6 @@ public class InjectorItemInventory {
 	public LargeSingleItemStackHandler getItemHandler() {
 		deserializeFromHost();
 		return itemHandler;
-	}
-
-	public LazyOptional<IItemHandler> getLazyOptional() {
-		deserializeFromHost();
-		return optionalItemHandler;
 	}
 
 }

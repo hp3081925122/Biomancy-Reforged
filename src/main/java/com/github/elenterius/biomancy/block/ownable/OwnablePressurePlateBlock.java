@@ -1,5 +1,8 @@
 package com.github.elenterius.biomancy.block.ownable;
 
+import net.minecraft.world.item.Item;
+import com.github.elenterius.biomancy.util.InteractionUtil;
+import net.minecraft.world.ItemInteractionResult;
 import com.github.elenterius.biomancy.block.property.UserSensitivity;
 import com.github.elenterius.biomancy.init.ModBlockEntities;
 import com.github.elenterius.biomancy.init.ModBlockProperties;
@@ -43,7 +46,7 @@ public class OwnablePressurePlateBlock extends PressurePlateBlock implements Own
 	public static final Predicate<Entity> ENTITY_SELECTOR = entity -> !entity.isSpectator() && !entity.isIgnoringBlockTriggers();
 
 	public OwnablePressurePlateBlock(Properties properties, BlockSetType type) {
-		super(Sensitivity.MOBS, properties, type);
+		super(type, properties);
 		registerDefaultState(defaultBlockState().setValue(USER_SENSITIVITY, UserSensitivity.FRIENDLY));
 	}
 
@@ -69,11 +72,15 @@ public class OwnablePressurePlateBlock extends PressurePlateBlock implements Own
 
 	@Override
 	public BlockState updateShape(BlockState state, Direction facing, BlockState facingState, LevelAccessor level, BlockPos currentPos, BlockPos facingPos) {
-		return state; //don't check if pressure plate is standing on a block, let it float
+		return state;
 	}
 
 	@Override
-	public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+	protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+		return InteractionUtil.toItemInteractionResult(use(state, level, pos, player, hand, hit));
+	}
+
+	protected InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
 		if (level.getBlockEntity(pos) instanceof IRestrictedInteraction restrictedBlock && restrictedBlock.isActionAllowed(player, Actions.USE_BLOCK)) {
 
 			ItemStack stack = player.getItemInHand(hand);
@@ -133,12 +140,6 @@ public class OwnablePressurePlateBlock extends PressurePlateBlock implements Own
 		return 0;
 	}
 
-//	@Override
-//	public void playerWillDestroy(World worldIn, BlockPos pos, BlockState state, PlayerEntity player) {
-//		dropForCreativePlayer(worldIn, this, pos, player);
-//		super.playerWillDestroy(worldIn, pos, state, player);
-//	}
-
 	@Override
 	public float getDestroyProgress(BlockState state, Player player, BlockGetter level, BlockPos pos) {
 		if (level.getBlockEntity(pos) instanceof IRestrictedInteraction interaction && interaction.isActionAllowed(player, Actions.DESTROY_BLOCK)) {
@@ -153,8 +154,8 @@ public class OwnablePressurePlateBlock extends PressurePlateBlock implements Own
 	}
 
 	@Override
-	public void appendHoverText(ItemStack stack, @Nullable BlockGetter pLevel, List<Component> tooltip, TooltipFlag flag) {
-		super.appendHoverText(stack, pLevel, tooltip, flag);
+	public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
+		super.appendHoverText(stack, context, tooltip, flag);
 		OwnableEntityBlock.appendUserListToTooltip(stack, tooltip);
 	}
 

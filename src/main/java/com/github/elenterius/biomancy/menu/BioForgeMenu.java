@@ -21,7 +21,7 @@ import net.minecraft.world.inventory.ContainerListener;
 import net.minecraft.world.inventory.ResultContainer;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.items.SlotItemHandler;
+import net.neoforged.neoforge.items.SlotItemHandler;
 import org.apache.logging.log4j.MarkerManager;
 import org.jspecify.annotations.Nullable;
 
@@ -110,7 +110,6 @@ public class BioForgeMenu extends PlayerContainerMenu {
 
 		resultContainer.setItem(0, resultStack);
 		setRemoteSlot(0, resultStack);
-		//serverPlayer.connection.send(new ClientboundContainerSetSlotPacket(containerId, incrementStateId(), resultSlotIndex, resultStack));
 		broadcastChanges();
 	}
 
@@ -183,7 +182,7 @@ public class BioForgeMenu extends PlayerContainerMenu {
 
 		if (stackInSlot.getCount() == copyOfStack.getCount()) {
 			BiomancyMod.LOGGER.warn(MarkerManager.getMarker("BioForgeMenu"), "Stack transfer failed in an unexpected way!");
-			return ItemStack.EMPTY; //transfer error
+			return ItemStack.EMPTY;
 		}
 
 		slot.onTake(player, stackInSlot);
@@ -289,7 +288,6 @@ public class BioForgeMenu extends PlayerContainerMenu {
 		@Override
 		protected void checkTakeAchievements(ItemStack stack) {
 			if (removeCount > 0) stack.onCraftedBy(player.level(), player, removeCount);
-			//((ResultContainer) container).awardUsedRecipes(player, List.of());
 			removeCount = 0;
 		}
 
@@ -308,7 +306,7 @@ public class BioForgeMenu extends PlayerContainerMenu {
 
 			setChanged();
 			checkTakeAchievements(stack);
-			onPlayerMainInventoryChanged(player.getInventory()); //ensures the recipe output slot is filled again if possible, integral for quick crafting to work
+			onPlayerMainInventoryChanged(player.getInventory());
 
 			if (bioforge != null && bioforge.getLevel() instanceof ServerLevel serverLevel) {
 				long time = serverLevel.getGameTime();
@@ -333,7 +331,6 @@ public class BioForgeMenu extends PlayerContainerMenu {
 			ingredientCost[i] = ingredients.get(i).count();
 		}
 
-		//consume ingredients
 		for (int idx = 0; idx < inventory.items.size(); idx++) {
 			ItemStack foundStack = inventory.items.get(idx);
 			if (!foundStack.isEmpty()) {
@@ -351,7 +348,6 @@ public class BioForgeMenu extends PlayerContainerMenu {
 
 		inventory.setChanged();
 
-		//consume nutrients
 		bioforge.getStateData().fuelHandler.addFuelAmount(-recipe.getCraftingCostNutrients());
 	}
 

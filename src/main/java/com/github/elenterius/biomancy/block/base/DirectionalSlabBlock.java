@@ -27,6 +27,7 @@ import net.minecraft.world.level.pathfinder.PathComputationType;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraft.world.entity.player.Player;
 import org.jspecify.annotations.Nullable;
 
 public class DirectionalSlabBlock extends Block implements SimpleWaterloggedBlock {
@@ -65,8 +66,8 @@ public class DirectionalSlabBlock extends Block implements SimpleWaterloggedBloc
 	}
 
 	@Override
-	public boolean canPlaceLiquid(BlockGetter level, BlockPos pos, BlockState state, Fluid fluid) {
-		return state.getValue(TYPE) != DirectionalSlabType.FULL && SimpleWaterloggedBlock.super.canPlaceLiquid(level, pos, state, fluid);
+	public boolean canPlaceLiquid(@Nullable Player player, BlockGetter level, BlockPos pos, BlockState state, Fluid fluid) {
+		return state.getValue(TYPE) != DirectionalSlabType.FULL && SimpleWaterloggedBlock.super.canPlaceLiquid(player, level, pos, state, fluid);
 	}
 
 	@Nullable
@@ -130,7 +131,6 @@ public class DirectionalSlabBlock extends Block implements SimpleWaterloggedBloc
 
 	@Override
 	public BlockState rotate(BlockState state, Rotation rotationDirection) {
-		//Note: the Create Mod does not call IForgeBlock#rotate and calls this method directly (Create Train/Contraption disassembly)
 		DirectionalSlabType type = state.getValue(TYPE);
 		return state.setValue(TYPE, type.rotate(rotationDirection));
 	}
@@ -150,15 +150,15 @@ public class DirectionalSlabBlock extends Block implements SimpleWaterloggedBloc
 			case HALF_SOUTH -> SHAPE_SOUTH;
 			case HALF_WEST -> SHAPE_WEST;
 			case HALF_EAST -> SHAPE_EAST;
-			default -> Shapes.block(); //full slab type
+			default -> Shapes.block();
 		};
 	}
 
 	@Override
-	public boolean isPathfindable(BlockState pState, BlockGetter plevel, BlockPos pos, PathComputationType type) {
+	protected boolean isPathfindable(BlockState pState, PathComputationType type) {
 		return switch (type) {
 			case LAND, AIR -> false;
-			case WATER -> plevel.getFluidState(pos).is(FluidTags.WATER);
+			case WATER -> pState.getFluidState().is(FluidTags.WATER);
 		};
 	}
 

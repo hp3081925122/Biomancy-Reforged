@@ -1,5 +1,7 @@
 package com.github.elenterius.biomancy.item.injector;
 
+import net.neoforged.neoforge.capabilities.Capabilities;
+import com.github.elenterius.biomancy.inventory.ItemHandlerUtil;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.api.serum.Serum;
 import com.github.elenterius.biomancy.api.serum.SerumContainer;
@@ -8,7 +10,6 @@ import com.github.elenterius.biomancy.client.gui.InjectorScreen;
 import com.github.elenterius.biomancy.client.render.item.injector.InjectorRenderer;
 import com.github.elenterius.biomancy.client.util.ClientTextUtil;
 import com.github.elenterius.biomancy.component.InjectorContents;
-import com.github.elenterius.biomancy.init.ModCapabilities;
 import com.github.elenterius.biomancy.init.ModDataComponents;
 import com.github.elenterius.biomancy.init.ModEnchantments;
 import com.github.elenterius.biomancy.init.ModSoundEvents;
@@ -54,13 +55,9 @@ import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.LevelEvent;
 import net.minecraft.world.phys.AABB;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.ICapabilityProvider;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.items.ItemHandlerHelper;
 import org.jspecify.annotations.Nullable;
 import software.bernie.geckolib.animatable.GeoItem;
 import software.bernie.geckolib.animatable.SingletonGeoAnimatable;
@@ -139,7 +136,7 @@ public class InjectorItem extends Item implements SerumInjector, ItemTooltipStyl
 	}
 
 	public static Optional<LargeSingleItemStackHandler> getItemHandler(ItemStack stack) {
-		return stack.getCapability(ModCapabilities.ITEM_HANDLER).map(LargeSingleItemStackHandler.class::cast);
+		return Optional.ofNullable(stack.getCapability(Capabilities.ItemHandler.ITEM)).map(LargeSingleItemStackHandler.class::cast);
 	}
 
 	@OnlyIn(Dist.CLIENT)
@@ -180,7 +177,7 @@ public class InjectorItem extends Item implements SerumInjector, ItemTooltipStyl
 
 		getItemHandler(injector).ifPresent(handler -> {
 			ItemStack oldStack = ItemStack.EMPTY;
-			if (!handler.getStack().isEmpty() && !ItemHandlerHelper.canItemStacksStack(foundStack, handler.getStack())) {
+			if (!handler.getStack().isEmpty() && !ItemHandlerUtil.canItemStacksStack(foundStack, handler.getStack())) {
 				oldStack = handler.extractItem(handler.getMaxAmount(), false);
 			}
 
@@ -191,7 +188,7 @@ public class InjectorItem extends Item implements SerumInjector, ItemTooltipStyl
 				int slots = playerInventory.getContainerSize();
 				for (int idx = 0; idx < slots; idx++) {
 					ItemStack stack = playerInventory.getItem(idx);
-					if (ItemHandlerHelper.canItemStacksStack(stack, handler.getStack())) {
+					if (ItemHandlerUtil.canItemStacksStack(stack, handler.getStack())) {
 						remainder = handler.insertItem(stack, false);
 						playerInventory.setItem(idx, remainder);
 						if (!remainder.isEmpty()) break;
@@ -323,10 +320,6 @@ public class InjectorItem extends Item implements SerumInjector, ItemTooltipStyl
 	}
 
 	@Nullable
-	@Override
-	public ICapabilityProvider initCapabilities(ItemStack stack, @Nullable CompoundTag nbt) {
-		return new InventoryCapability(stack);
-	}
 
 	@Override
 	public void initializeClient(Consumer<IClientItemExtensions> consumer) {
@@ -494,21 +487,6 @@ public class InjectorItem extends Item implements SerumInjector, ItemTooltipStyl
 					controller.triggerableAnim(injectorAnimation.name, injectorAnimation.rawAnimation);
 				}
 			}
-		}
-
-	}
-
-	private static class InventoryCapability implements ICapabilityProvider {
-
-		private final InjectorItemInventory itemHandler;
-
-		public InventoryCapability(ItemStack stack) {
-			itemHandler = InjectorItemInventory.create(MAX_SLOT_SIZE, stack);
-		}
-
-		@Override
-		public <T> LazyOptional<T> getCapability(Capability<T> capability, @Nullable Direction facing) {
-			return ModCapabilities.ITEM_HANDLER.orEmpty(capability, itemHandler.getLazyOptional());
 		}
 
 	}

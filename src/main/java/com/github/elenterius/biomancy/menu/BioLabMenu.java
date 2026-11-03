@@ -20,7 +20,7 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.items.SlotItemHandler;
+import net.neoforged.neoforge.items.SlotItemHandler;
 import org.apache.logging.log4j.MarkerManager;
 import org.jspecify.annotations.Nullable;
 
@@ -50,7 +50,7 @@ public class BioLabMenu extends PlayerContainerMenu {
 					addSlot(new SlotItemHandler(itemHandler, 1, 70, 28)),
 					addSlot(new SlotItemHandler(itemHandler, 2, 90, 28)),
 					addSlot(new SlotItemHandler(itemHandler, 3, 110, 28)),
-					addSlot(new SlotItemHandler(itemHandler, 4, 80, 62)) // reactant/vial slot
+					addSlot(new SlotItemHandler(itemHandler, 4, 80, 62))
 			);
 
 			addSlot(new SlotItemHandler(bioLab.getOutputInventory(), 0, 80, 88));
@@ -166,7 +166,7 @@ public class BioLabMenu extends PlayerContainerMenu {
 
 		if (stackInSlot.getCount() == copyOfStack.getCount()) {
 			BiomancyMod.LOGGER.warn(MarkerManager.getMarker("DecomposerMenu"), "Stack transfer failed in an unexpected way!");
-			return ItemStack.EMPTY; //transfer error
+			return ItemStack.EMPTY;
 		}
 
 		slot.onTake(player, stackInSlot);

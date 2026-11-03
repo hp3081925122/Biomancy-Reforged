@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.block.veins;
 
+import com.mojang.serialization.MapCodec;
 import com.github.elenterius.biomancy.block.bloom.BloomBlock;
 import com.github.elenterius.biomancy.block.cradle.PrimalEnergyHandler;
 import com.github.elenterius.biomancy.init.*;
@@ -55,6 +56,8 @@ import java.util.function.Predicate;
 
 public class FleshVeinsBlock extends MultifaceBlock implements SimpleWaterloggedBlock {
 
+	public static final MapCodec<FleshVeinsBlock> CODEC = simpleCodec(FleshVeinsBlock::new);
+
 	public static final Predicate<BlockState> BLOCKS_TO_AVOID_PREDICATE = blockState -> blockState.is(ModBlocks.PRIMAL_BLOOM.get());
 	protected static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
 	protected static final EnhancedIntegerProperty CHARGE = ModBlockProperties.CHARGE;
@@ -63,6 +66,11 @@ public class FleshVeinsBlock extends MultifaceBlock implements SimpleWaterlogged
 	public FleshVeinsBlock(Properties properties) {
 		super(properties.randomTicks().ignitedByLava());
 		registerDefaultState(defaultBlockState().setValue(WATERLOGGED, false).setValue(CHARGE.get(), CHARGE.getMin()));
+	}
+
+	@Override
+	protected MapCodec<? extends FleshVeinsBlock> codec() {
+		return CODEC;
 	}
 
 	public static boolean convert(BlockState state, ServerLevel level, BlockPos pos, int directNeighbors, @Nullable MoundShape mound, float nearBoundingCenterPct, @Nullable PrimalEnergyHandler energyHandler) {
@@ -94,7 +102,6 @@ public class FleshVeinsBlock extends MultifaceBlock implements SimpleWaterlogged
 			CellularNoise cellularNoise = PrimordialEcosystem.getCellularNoise(level);
 			float noiseValue = cellularNoise.getValueAtCenter(pos);
 
-			//vein face points inwards and the direction is in reference to itself and not in reference to the block it's attached to
 			Direction axisDirection = Direction.from3DDataValue(5 - facesSet.nextSetBit(0));
 
 			boolean hasConvertedAnyOtherBlocks = convertDirectNeighborBlock(level, pos, axisDirection, directNeighbors, cellularNoise, noiseValue);
@@ -152,7 +159,6 @@ public class FleshVeinsBlock extends MultifaceBlock implements SimpleWaterlogged
 				BlockState farOffsetState = level.getBlockState(farOffsetPos);
 
 				if (!chamberContainsCloseOffsetPos) {
-					// create "Door" between two adjacent chambers that are separated by a one block thick wall
 					if (!mound.hasChamberAt(closeOffsetPos)) {
 						MoundChamber farChamber = mound.getChamberAt(farOffsetPos);
 						if (farChamber != null && farChamber != chamber) {
@@ -161,7 +167,6 @@ public class FleshVeinsBlock extends MultifaceBlock implements SimpleWaterlogged
 					}
 				}
 
-				// create light source in dark areas
 				if (ChamberSpecialDecorator.BLOOMLIGHT.canDecorate(chamber, level, pos, axisDirection, closeOffsetPos, closeOffsetState, farOffsetPos, farOffsetState)) {
 					return ChamberSpecialDecorator.BLOOMLIGHT.decorate(chamber, level, pos, axisDirection, closeOffsetPos, closeOffsetState, farOffsetPos, farOffsetState);
 				}
@@ -251,7 +256,7 @@ public class FleshVeinsBlock extends MultifaceBlock implements SimpleWaterlogged
 	protected static boolean convertSelfIntoStairs(ServerLevel level, BlockPos pos, Bit32Set facesSet) {
 		int mask = facesSet.getBits();
 
-		if (mask == 0b10_10_00) { //down & north
+		if (mask == 0b10_10_00) {
 			BlockState blockState = ModBlocks.MALIGNANT_FLESH_STAIRS.get().defaultBlockState()
 					.setValue(StairBlock.HALF, Half.BOTTOM)
 					.setValue(StairBlock.FACING, Direction.NORTH)
@@ -259,7 +264,7 @@ public class FleshVeinsBlock extends MultifaceBlock implements SimpleWaterlogged
 			return level.setBlock(pos, blockState, Block.UPDATE_CLIENTS);
 		}
 
-		if (mask == 0b10_01_00) { //down & south
+		if (mask == 0b10_01_00) {
 			BlockState blockState = ModBlocks.MALIGNANT_FLESH_STAIRS.get().defaultBlockState()
 					.setValue(StairBlock.HALF, Half.BOTTOM)
 					.setValue(StairBlock.FACING, Direction.SOUTH)
@@ -267,7 +272,7 @@ public class FleshVeinsBlock extends MultifaceBlock implements SimpleWaterlogged
 			return level.setBlock(pos, blockState, Block.UPDATE_CLIENTS);
 		}
 
-		if (mask == 0b10_00_10) { //down & west
+		if (mask == 0b10_00_10) {
 			BlockState blockState = ModBlocks.MALIGNANT_FLESH_STAIRS.get().defaultBlockState()
 					.setValue(StairBlock.HALF, Half.BOTTOM)
 					.setValue(StairBlock.FACING, Direction.WEST)
@@ -275,7 +280,7 @@ public class FleshVeinsBlock extends MultifaceBlock implements SimpleWaterlogged
 			return level.setBlock(pos, blockState, Block.UPDATE_CLIENTS);
 		}
 
-		if (mask == 0b10_00_01) { //down & east
+		if (mask == 0b10_00_01) {
 			BlockState blockState = ModBlocks.MALIGNANT_FLESH_STAIRS.get().defaultBlockState()
 					.setValue(StairBlock.HALF, Half.BOTTOM)
 					.setValue(StairBlock.FACING, Direction.EAST)
@@ -283,7 +288,7 @@ public class FleshVeinsBlock extends MultifaceBlock implements SimpleWaterlogged
 			return level.setBlock(pos, blockState, Block.UPDATE_CLIENTS);
 		}
 
-		if (mask == 0b10_10_01) { //down & north & east
+		if (mask == 0b10_10_01) {
 			BlockState blockState = ModBlocks.MALIGNANT_FLESH_STAIRS.get().defaultBlockState()
 					.setValue(StairBlock.HALF, Half.BOTTOM)
 					.setValue(StairBlock.FACING, Direction.NORTH)
@@ -291,7 +296,7 @@ public class FleshVeinsBlock extends MultifaceBlock implements SimpleWaterlogged
 			return level.setBlock(pos, blockState, Block.UPDATE_CLIENTS);
 		}
 
-		if (mask == 0b10_10_10) { //down & north & west
+		if (mask == 0b10_10_10) {
 			BlockState blockState = ModBlocks.MALIGNANT_FLESH_STAIRS.get().defaultBlockState()
 					.setValue(StairBlock.HALF, Half.BOTTOM)
 					.setValue(StairBlock.FACING, Direction.WEST)
@@ -299,7 +304,7 @@ public class FleshVeinsBlock extends MultifaceBlock implements SimpleWaterlogged
 			return level.setBlock(pos, blockState, Block.UPDATE_CLIENTS);
 		}
 
-		if (mask == 0b10_01_10) { //down & south & west
+		if (mask == 0b10_01_10) {
 			BlockState blockState = ModBlocks.MALIGNANT_FLESH_STAIRS.get().defaultBlockState()
 					.setValue(StairBlock.HALF, Half.BOTTOM)
 					.setValue(StairBlock.FACING, Direction.SOUTH)
@@ -307,7 +312,7 @@ public class FleshVeinsBlock extends MultifaceBlock implements SimpleWaterlogged
 			return level.setBlock(pos, blockState, Block.UPDATE_CLIENTS);
 		}
 
-		if (mask == 0b10_01_01) { //down & south & west
+		if (mask == 0b10_01_01) {
 			BlockState blockState = ModBlocks.MALIGNANT_FLESH_STAIRS.get().defaultBlockState()
 					.setValue(StairBlock.HALF, Half.BOTTOM)
 					.setValue(StairBlock.FACING, Direction.EAST)
@@ -315,7 +320,7 @@ public class FleshVeinsBlock extends MultifaceBlock implements SimpleWaterlogged
 			return level.setBlock(pos, blockState, Block.UPDATE_CLIENTS);
 		}
 
-		if (mask == 0b01_10_01) { //up & north & east
+		if (mask == 0b01_10_01) {
 			BlockState blockState = ModBlocks.MALIGNANT_FLESH_STAIRS.get().defaultBlockState()
 					.setValue(StairBlock.HALF, Half.TOP)
 					.setValue(StairBlock.FACING, Direction.NORTH)
@@ -323,7 +328,7 @@ public class FleshVeinsBlock extends MultifaceBlock implements SimpleWaterlogged
 			return level.setBlock(pos, blockState, Block.UPDATE_CLIENTS);
 		}
 
-		if (mask == 0b01_01_10) { //up & south & west
+		if (mask == 0b01_01_10) {
 			BlockState blockState = ModBlocks.MALIGNANT_FLESH_STAIRS.get().defaultBlockState()
 					.setValue(StairBlock.HALF, Half.TOP)
 					.setValue(StairBlock.FACING, Direction.SOUTH)
@@ -331,7 +336,7 @@ public class FleshVeinsBlock extends MultifaceBlock implements SimpleWaterlogged
 			return level.setBlock(pos, blockState, Block.UPDATE_CLIENTS);
 		}
 
-		if (mask == 0b01_01_01) { //up & south & east
+		if (mask == 0b01_01_01) {
 			BlockState blockState = ModBlocks.MALIGNANT_FLESH_STAIRS.get().defaultBlockState()
 					.setValue(StairBlock.HALF, Half.TOP)
 					.setValue(StairBlock.FACING, Direction.EAST)
@@ -339,7 +344,7 @@ public class FleshVeinsBlock extends MultifaceBlock implements SimpleWaterlogged
 			return level.setBlock(pos, blockState, Block.UPDATE_CLIENTS);
 		}
 
-		if (mask == 0b01_10_10) { //up & north & west
+		if (mask == 0b01_10_10) {
 			BlockState blockState = ModBlocks.MALIGNANT_FLESH_STAIRS.get().defaultBlockState()
 					.setValue(StairBlock.HALF, Half.TOP)
 					.setValue(StairBlock.FACING, Direction.WEST)
@@ -347,7 +352,7 @@ public class FleshVeinsBlock extends MultifaceBlock implements SimpleWaterlogged
 			return level.setBlock(pos, blockState, Block.UPDATE_CLIENTS);
 		}
 
-		if (mask == 0b01_10_00) { //up & north
+		if (mask == 0b01_10_00) {
 			BlockState blockState = ModBlocks.MALIGNANT_FLESH_STAIRS.get().defaultBlockState()
 					.setValue(StairBlock.HALF, Half.TOP)
 					.setValue(StairBlock.FACING, Direction.NORTH)
@@ -355,7 +360,7 @@ public class FleshVeinsBlock extends MultifaceBlock implements SimpleWaterlogged
 			return level.setBlock(pos, blockState, Block.UPDATE_CLIENTS);
 		}
 
-		if (mask == 0b01_01_00) { //up & south
+		if (mask == 0b01_01_00) {
 			BlockState blockState = ModBlocks.MALIGNANT_FLESH_STAIRS.get().defaultBlockState()
 					.setValue(StairBlock.HALF, Half.TOP)
 					.setValue(StairBlock.FACING, Direction.SOUTH)
@@ -363,7 +368,7 @@ public class FleshVeinsBlock extends MultifaceBlock implements SimpleWaterlogged
 			return level.setBlock(pos, blockState, Block.UPDATE_CLIENTS);
 		}
 
-		if (mask == 0b01_00_10) { //up & west
+		if (mask == 0b01_00_10) {
 			BlockState blockState = ModBlocks.MALIGNANT_FLESH_STAIRS.get().defaultBlockState()
 					.setValue(StairBlock.HALF, Half.TOP)
 					.setValue(StairBlock.FACING, Direction.WEST)
@@ -371,7 +376,7 @@ public class FleshVeinsBlock extends MultifaceBlock implements SimpleWaterlogged
 			return level.setBlock(pos, blockState, Block.UPDATE_CLIENTS);
 		}
 
-		if (mask == 0b01_00_01) { //up & east
+		if (mask == 0b01_00_01) {
 			BlockState blockState = ModBlocks.MALIGNANT_FLESH_STAIRS.get().defaultBlockState()
 					.setValue(StairBlock.HALF, Half.TOP)
 					.setValue(StairBlock.FACING, Direction.EAST)
@@ -508,9 +513,8 @@ public class FleshVeinsBlock extends MultifaceBlock implements SimpleWaterlogged
 	}
 
 	static int getRawMeatNutrition(ItemStack itemStack) {
-		if (!itemStack.isEdible()) return 0;
 		FoodProperties food = itemStack.getFoodProperties(null);
-		return food != null && itemStack.is(ItemTags.MEAT) && itemStack.is(ModItemTags.FRESH_RAW_MEATS) ? food.getNutrition() : 0;
+		return food != null && itemStack.is(ItemTags.MEAT) && itemStack.is(ModItemTags.FRESH_RAW_MEATS) ? food.nutrition() : 0;
 	}
 
 	@Override
@@ -526,7 +530,7 @@ public class FleshVeinsBlock extends MultifaceBlock implements SimpleWaterlogged
 			mound = moundShape;
 
 			BlockPos origin = mound.getOrigin();
-			BlockEntity existingBlockEntity = level.getExistingBlockEntity(origin);
+			BlockEntity existingBlockEntity = LevelUtil.getExistingBlockEntity(level, origin);
 			if (existingBlockEntity instanceof PrimalEnergyHandler peh) {
 				energyHandler = peh;
 			}
@@ -559,7 +563,6 @@ public class FleshVeinsBlock extends MultifaceBlock implements SimpleWaterlogged
 
 		if (random.nextFloat() < conversionChance && convert(state, level, pos, directNeighbors, mound, nearBoundingCenterPct, energyHandler)) {
 			level.playSound(null, pos, ModSoundEvents.FLESH_BLOCK_STEP.get(), SoundSource.BLOCKS, 0.8f, 0.15f + random.nextFloat() * 0.5f);
-			//return; //TODO: exiting early hampers growth to a very extreme degree. reevaluate which conversions should return true or be ignored
 		}
 
 		if (charge > 4) {

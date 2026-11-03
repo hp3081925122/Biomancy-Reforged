@@ -23,7 +23,6 @@ import net.minecraft.world.phys.shapes.EntityCollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
-/// We don't schedule andy fluid ticks on purpose to avoid water spreading everywhere
 public class WaterGelBlock extends HalfTransparentBlock {
 
 	private static final FluidState WATER_SOURCE = Fluids.WATER.getSource(false);
@@ -94,7 +93,7 @@ public class WaterGelBlock extends HalfTransparentBlock {
 	}
 
 	@Override
-	public boolean isPathfindable(BlockState state, BlockGetter level, BlockPos pos, PathComputationType type) {
+	protected boolean isPathfindable(BlockState state, PathComputationType type) {
 		return true;
 	}
 

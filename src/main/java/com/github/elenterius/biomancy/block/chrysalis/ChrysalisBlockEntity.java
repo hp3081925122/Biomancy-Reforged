@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.block.chrysalis;
 
+import net.minecraft.core.HolderLookup;
 import com.github.elenterius.biomancy.init.ModBlockEntities;
 import com.github.elenterius.biomancy.init.ModBlocks;
 import net.minecraft.core.BlockPos;
@@ -46,10 +47,10 @@ public class ChrysalisBlockEntity extends BlockEntity implements Nameable {
 	}
 
 	@Override
-	protected void saveAdditional(CompoundTag tag) {
-		super.saveAdditional(tag);
+	protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+		super.saveAdditional(tag, registries);
 		if (name != null) {
-			tag.putString(CUSTOM_NAME_KEY, Component.Serializer.toJson(name));
+			tag.putString(CUSTOM_NAME_KEY, Component.Serializer.toJson(name, registries));
 		}
 		if (entityTag != null) {
 			tag.put(Chrysalis.ENTITY_KEY, entityTag);
@@ -57,10 +58,10 @@ public class ChrysalisBlockEntity extends BlockEntity implements Nameable {
 	}
 
 	@Override
-	public void load(CompoundTag tag) {
-		super.load(tag);
+	protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+		super.loadAdditional(tag, registries);
 		if (tag.contains(CUSTOM_NAME_KEY, Tag.TAG_STRING)) {
-			name = Component.Serializer.fromJson(tag.getString(CUSTOM_NAME_KEY));
+			name = parseCustomNameSafe(tag.getString(CUSTOM_NAME_KEY), registries);
 		}
 		if (tag.contains(Chrysalis.ENTITY_KEY, Tag.TAG_COMPOUND)) {
 			entityTag = tag.getCompound(Chrysalis.ENTITY_KEY);

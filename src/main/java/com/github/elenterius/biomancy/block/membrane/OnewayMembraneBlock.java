@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.block.membrane;
 
+import com.mojang.serialization.MapCodec;
 import com.github.elenterius.biomancy.block.base.FacingBlock;
 import com.github.elenterius.biomancy.util.VoxelShapeUtil;
 import net.minecraft.core.BlockPos;
@@ -16,6 +17,8 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 
 public class OnewayMembraneBlock extends FacingBlock implements Membrane {
 
+	public static final MapCodec<OnewayMembraneBlock> CODEC = simpleCodec(OnewayMembraneBlock::new);
+
 	public static final VoxelShape SOLID_SHAPE_UP = createShape(Direction.UP);
 	public static final VoxelShape SOLID_SHAPE_DOWN = createShape(Direction.DOWN);
 	public static final VoxelShape SOLID_SHAPE_NORTH = createShape(Direction.NORTH);
@@ -25,6 +28,11 @@ public class OnewayMembraneBlock extends FacingBlock implements Membrane {
 
 	public OnewayMembraneBlock(BlockBehaviour.Properties properties) {
 		super(properties);
+	}
+
+	@Override
+	protected MapCodec<? extends OnewayMembraneBlock> codec() {
+		return CODEC;
 	}
 
 	private static VoxelShape createShape(Direction facing) {

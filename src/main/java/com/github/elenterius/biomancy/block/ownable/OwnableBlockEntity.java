@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.block.ownable;
 
+import net.minecraft.core.HolderLookup;
 import com.github.elenterius.biomancy.block.base.SimpleSyncedBlockEntity;
 import com.github.elenterius.biomancy.init.ModBlockEntities;
 import com.github.elenterius.biomancy.util.ownable.Ownable;
@@ -88,7 +89,7 @@ public class OwnableBlockEntity extends SimpleSyncedBlockEntity implements Ownab
 	}
 
 	@Override
-	protected void saveForSyncToClient(CompoundTag tag) {
+	protected void saveForSyncToClient(CompoundTag tag, HolderLookup.Provider registries) {
 		if (ownerId != null) tag.putUUID("OwnerUUID", ownerId);
 
 		if (users.size() > 0) {
@@ -104,8 +105,8 @@ public class OwnableBlockEntity extends SimpleSyncedBlockEntity implements Ownab
 	}
 
 	@Override
-	public void load(CompoundTag tag) {
-		super.load(tag);
+	protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+		super.loadAdditional(tag, registries);
 		ownerId = tag.hasUUID("OwnerUUID") ? tag.getUUID("OwnerUUID") : null;
 
 		users.clear();
@@ -121,8 +122,8 @@ public class OwnableBlockEntity extends SimpleSyncedBlockEntity implements Ownab
 	}
 
 	@Override
-	protected void saveAdditional(CompoundTag tag) {
-		super.saveAdditional(tag);
+	protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+		super.saveAdditional(tag, registries);
 		if (ownerId != null) tag.putUUID("OwnerUUID", ownerId);
 
 		if (users.size() > 0) {

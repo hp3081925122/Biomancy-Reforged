@@ -1,11 +1,12 @@
 package com.github.elenterius.biomancy.inventory;
 
+import net.minecraft.core.HolderLookup;
 import com.github.elenterius.biomancy.util.ItemStackFilter;
 import com.github.elenterius.biomancy.util.ItemStackFilterList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.items.IItemHandler;
+import net.neoforged.neoforge.items.IItemHandler;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
@@ -60,9 +61,6 @@ public interface BehavioralItemHandler extends IItemHandler {
 
 	}
 
-	/**
-	 * prevents item insertion, therefore only allowing item extraction (e.g. output slots).
-	 */
 	class DenyInput extends Wrapper<SerializableItemHandler> implements SerializableItemHandler {
 
 		public DenyInput(SerializableItemHandler itemHandler) {
@@ -80,13 +78,13 @@ public interface BehavioralItemHandler extends IItemHandler {
 		}
 
 		@Override
-		public CompoundTag serializeNBT() {
-			return itemHandler.serializeNBT();
+		public CompoundTag serializeNBT(HolderLookup.Provider provider) {
+			return itemHandler.serializeNBT(provider);
 		}
 
 		@Override
-		public void deserializeNBT(CompoundTag tag) {
-			itemHandler.deserializeNBT(tag);
+		public void deserializeNBT(HolderLookup.Provider provider, CompoundTag tag) {
+			itemHandler.deserializeNBT(provider, tag);
 		}
 
 		@Override
@@ -95,9 +93,6 @@ public interface BehavioralItemHandler extends IItemHandler {
 		}
 	}
 
-	/**
-	 * only allows item insertion of matching items
-	 */
 	class PredicateFilterInput extends Wrapper<SerializableItemHandler> implements SerializableItemHandler {
 
 		protected final List<Predicate<ItemStack>> filters;
@@ -126,13 +121,13 @@ public interface BehavioralItemHandler extends IItemHandler {
 		}
 
 		@Override
-		public CompoundTag serializeNBT() {
-			return itemHandler.serializeNBT();
+		public CompoundTag serializeNBT(HolderLookup.Provider provider) {
+			return itemHandler.serializeNBT(provider);
 		}
 
 		@Override
-		public void deserializeNBT(CompoundTag tag) {
-			itemHandler.deserializeNBT(tag);
+		public void deserializeNBT(HolderLookup.Provider provider, CompoundTag tag) {
+			itemHandler.deserializeNBT(provider, tag);
 		}
 
 		@Override
@@ -168,17 +163,17 @@ public interface BehavioralItemHandler extends IItemHandler {
 		}
 
 		@Override
-		public CompoundTag serializeNBT() {
+		public CompoundTag serializeNBT(HolderLookup.Provider provider) {
 			CompoundTag tag = new CompoundTag();
-			tag.put("Handler", itemHandler.serializeNBT());
-			tag.put("Filters", filters.serializeNBT());
+			tag.put("Handler", itemHandler.serializeNBT(provider));
+			tag.put("Filters", filters.serializeNBT(provider));
 			return tag;
 		}
 
 		@Override
-		public void deserializeNBT(CompoundTag tag) {
-			itemHandler.deserializeNBT(tag.getCompound("Handler"));
-			filters.deserializeNBT(tag.getList("Filters", Tag.TAG_COMPOUND));
+		public void deserializeNBT(HolderLookup.Provider provider, CompoundTag tag) {
+			itemHandler.deserializeNBT(provider, tag.getCompound("Handler"));
+			filters.deserializeNBT(provider, tag.getList("Filters", Tag.TAG_COMPOUND));
 		}
 
 		@Override
@@ -233,15 +228,15 @@ public interface BehavioralItemHandler extends IItemHandler {
 		}
 
 		@Override
-		public CompoundTag serializeNBT() {
-			CompoundTag tag = super.serializeNBT();
+		public CompoundTag serializeNBT(HolderLookup.Provider provider) {
+			CompoundTag tag = super.serializeNBT(provider);
 			tag.putBoolean("Locked", locked);
 			return tag;
 		}
 
 		@Override
-		public void deserializeNBT(CompoundTag tag) {
-			super.deserializeNBT(tag);
+		public void deserializeNBT(HolderLookup.Provider provider, CompoundTag tag) {
+			super.deserializeNBT(provider, tag);
 			locked = tag.getBoolean("Locked");
 		}
 	}

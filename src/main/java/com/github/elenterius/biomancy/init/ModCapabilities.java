@@ -1,32 +1,57 @@
 package com.github.elenterius.biomancy.init;
 
 import com.github.elenterius.biomancy.BiomancyMod;
-import net.minecraft.core.Direction;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraftforge.common.capabilities.*;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.event.AttachCapabilitiesEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.items.IItemHandler;
-import org.jspecify.annotations.Nullable;
+import com.github.elenterius.biomancy.block.base.BlockEntityDelegator;
+import com.github.elenterius.biomancy.block.bioforge.BioForgeBlockEntity;
+import com.github.elenterius.biomancy.block.biolab.BioLabBlockEntity;
+import com.github.elenterius.biomancy.block.cradle.PrimordialCradleBlockEntity;
+import com.github.elenterius.biomancy.block.decomposer.DecomposerBlockEntity;
+import com.github.elenterius.biomancy.block.digester.DigesterBlockEntity;
+import com.github.elenterius.biomancy.block.mawhopper.MawHopperBlockEntity;
+import com.github.elenterius.biomancy.block.modularlarynx.ModularLarynxBlockEntity;
+import com.github.elenterius.biomancy.block.storagesac.StorageSacBlockEntity;
+import com.github.elenterius.biomancy.inventory.InjectorItemInventory;
+import com.github.elenterius.biomancy.inventory.ItemStackInventory;
+import com.github.elenterius.biomancy.item.injector.InjectorItem;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.attachment.AttachmentType;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
+import net.neoforged.neoforge.registries.DeferredRegister;
+import net.neoforged.neoforge.registries.NeoForgeRegistries;
 
-@Mod.EventBusSubscriber(modid = BiomancyMod.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
+import java.util.function.Supplier;
+
+@EventBusSubscriber(modid = BiomancyMod.MOD_ID, bus = EventBusSubscriber.Bus.MOD)
 public final class ModCapabilities {
 
-	@Deprecated
-	public static final Capability<FlagCapImpl> NO_KNOCKBACK_FLAG_CAP = CapabilityManager.get(new CapabilityToken<>() {});
+	public static final DeferredRegister<AttachmentType<?>> ATTACHMENT_TYPES = DeferredRegister.create(NeoForgeRegistries.Keys.ATTACHMENT_TYPES, BiomancyMod.MOD_ID);
 
-	public static final Capability<IItemHandler> ITEM_HANDLER = ForgeCapabilities.ITEM_HANDLER;
-	public static final Capability<IFluidHandler> FLUID_HANDLER = ForgeCapabilities.FLUID_HANDLER;
+	@Deprecated
+	public static final Supplier<AttachmentType<FlagCapImpl>> NO_KNOCKBACK_FLAG_CAP = ATTACHMENT_TYPES.register("no_knockback", () -> AttachmentType.builder(FlagCapImpl::new).build());
 
 	private ModCapabilities() {}
 
 	@SubscribeEvent
 	public static void onRegisterCapabilities(final RegisterCapabilitiesEvent event) {
-		event.register(FlagCapImpl.class);
+		event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.DIGESTER.get(), DigesterBlockEntity::getItemHandler);
+		event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, ModBlockEntities.DIGESTER.get(), DigesterBlockEntity::getFluidHandler);
+		event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.DECOMPOSER.get(), DecomposerBlockEntity::getItemHandler);
+		event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, ModBlockEntities.DECOMPOSER.get(), DecomposerBlockEntity::getFluidHandler);
+		event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.BIO_LAB.get(), BioLabBlockEntity::getItemHandler);
+		event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, ModBlockEntities.BIO_LAB.get(), BioLabBlockEntity::getFluidHandler);
+		event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.BIO_FORGE.get(), BioForgeBlockEntity::getItemHandler);
+		event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, ModBlockEntities.BIO_FORGE.get(), BioForgeBlockEntity::getFluidHandler);
+		event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, ModBlockEntities.PRIMORDIAL_CRADLE.get(), PrimordialCradleBlockEntity::getFluidHandler);
+		event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.MAW_HOPPER.get(), MawHopperBlockEntity::getItemHandler);
+		event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.MODULAR_LARYNX.get(), ModularLarynxBlockEntity::getItemHandler);
+		event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.STORAGE_SAC.get(), StorageSacBlockEntity::getItemHandler);
+		event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.BE_DELEGATOR.get(), (delegator, side) -> delegator.getDelegateCapability(Capabilities.ItemHandler.BLOCK, side));
+		event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, ModBlockEntities.BE_DELEGATOR.get(), (delegator, side) -> delegator.getDelegateCapability(Capabilities.FluidHandler.BLOCK, side));
+
+		event.registerItem(Capabilities.ItemHandler.ITEM, (stack, context) -> InjectorItemInventory.create(InjectorItem.MAX_SLOT_SIZE, stack).getItemHandler(), ModItems.INJECTOR.get());
+		event.registerItem(Capabilities.ItemHandler.ITEM, (stack, context) -> ItemStackInventory.create(StorageSacBlockEntity.SLOTS, 64, stack).getItemHandler(), ModItems.STORAGE_SAC.get());
 	}
 
 	public interface IFlagCap {
@@ -45,30 +70,6 @@ public final class ModCapabilities {
 		default void toggle() {
 			set(!isEnabled());
 		}
-	}
-
-	@Mod.EventBusSubscriber(modid = BiomancyMod.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
-	public static final class CapabilityAttacher {
-		private CapabilityAttacher() {}
-
-		@SubscribeEvent
-		public static void onAttachCapabilities(final AttachCapabilitiesEvent<Entity> event) {
-			if (!(event.getObject() instanceof LivingEntity)) return;
-
-			FlagCapImpl backing = new FlagCapImpl();
-			LazyOptional<FlagCapImpl> optionalCap = LazyOptional.of(() -> backing);
-
-			ICapabilityProvider volatileCapProvider = new ICapabilityProvider() {
-				@Override
-				public <T> LazyOptional<T> getCapability(Capability<T> capability, @Nullable Direction facing) {
-					return NO_KNOCKBACK_FLAG_CAP.orEmpty(capability, optionalCap);
-				}
-			};
-
-			event.addCapability(BiomancyMod.rl("no_knockback"), volatileCapProvider);
-			event.addListener(optionalCap::invalidate);
-		}
-
 	}
 
 	public static class FlagCapImpl implements IFlagCap {

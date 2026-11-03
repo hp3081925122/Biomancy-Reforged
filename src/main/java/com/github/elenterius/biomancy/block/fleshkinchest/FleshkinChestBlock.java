@@ -1,5 +1,14 @@
 package com.github.elenterius.biomancy.block.fleshkinchest;
 
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
+import net.minecraft.world.level.LevelReader;
+import net.minecraft.core.component.DataComponents;
+import com.github.elenterius.biomancy.util.BlockItemUtil;
+import net.minecraft.world.item.Item;
+import com.github.elenterius.biomancy.util.InteractionUtil;
+import net.minecraft.world.ItemInteractionResult;
 import com.github.elenterius.biomancy.init.ModBlockEntities;
 import com.github.elenterius.biomancy.init.ModSoundEvents;
 import com.github.elenterius.biomancy.item.EssenceItem;
@@ -54,15 +63,16 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.common.ForgeHooks;
-import net.minecraftforge.items.ItemHandlerHelper;
-import net.minecraftforge.network.NetworkHooks;
+import net.neoforged.neoforge.event.EventHooks;
+import net.neoforged.neoforge.items.ItemHandlerHelper;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.UUID;
 
 public class FleshkinChestBlock extends BaseEntityBlock implements SimpleWaterloggedBlock, OwnableEntityBlock {
+
+	public static final MapCodec<FleshkinChestBlock> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(propertiesCodec(), Codec.FLOAT.fieldOf("destroy_speed").forGetter(block -> block.destroySpeed)).apply(instance, FleshkinChestBlock::new));
 
 	public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
 	public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
@@ -72,14 +82,19 @@ public class FleshkinChestBlock extends BaseEntityBlock implements SimpleWaterlo
 	private final float destroySpeed;
 
 	public FleshkinChestBlock(Properties properties, float destroySpeed) {
-		super(properties.destroyTime(-1).explosionResistance(1200)); //set destroy speed to -1f to make the block unbreakable for the Create Drill & other stuff
+		super(properties.destroyTime(-1).explosionResistance(1200));
 		this.destroySpeed = destroySpeed;
 		registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(WATERLOGGED, false));
 	}
 
+	@Override
+	protected MapCodec<? extends FleshkinChestBlock> codec() {
+		return CODEC;
+	}
+
 	public ItemStack createItemStackForCreativeTab() {
 		ItemStack stack = new ItemStack(this);
-		stack.setHoverName(ComponentUtil.literal("[TEST/other_owner] ").append(stack.getHoverName()));
+		stack.set(DataComponents.CUSTOM_NAME, ComponentUtil.literal("[TEST/other_owner] ").append(stack.getHoverName()));
 		CompoundTag tag = new CompoundTag();
 		tag.putUUID(OwnableEntityBlock.NBT_KEY_OWNER, Util.NIL_UUID);
 		BlockItem.setBlockEntityData(stack, ModBlockEntities.FLESHKIN_CHEST.get(), tag);
@@ -100,7 +115,7 @@ public class FleshkinChestBlock extends BaseEntityBlock implements SimpleWaterlo
 	@Override
 	public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
 		if (level.getBlockEntity(pos) instanceof FleshkinChestBlockEntity chest) {
-			if (stack.hasCustomHoverName()) {
+			if (stack.has(DataComponents.CUSTOM_NAME)) {
 				chest.setCustomName(stack.getHoverName());
 			}
 
@@ -122,14 +137,17 @@ public class FleshkinChestBlock extends BaseEntityBlock implements SimpleWaterlo
 		return super.updateShape(state, direction, neighborState, level, currentPos, neighborPos);
 	}
 
-
 	@Override
 	public FluidState getFluidState(BlockState state) {
 		return Boolean.TRUE.equals(state.getValue(WATERLOGGED)) ? Fluids.WATER.getSource(false) : super.getFluidState(state);
 	}
 
 	@Override
-	public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+	protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+		return InteractionUtil.toItemInteractionResult(use(state, level, pos, player, hand, hit));
+	}
+
+	protected InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
 		if (level.isClientSide()) return InteractionResult.SUCCESS;
 
 		if (player instanceof ServerPlayer serverPlayer && !ChestBlock.isChestBlockedAt(level, pos)) {
@@ -154,7 +172,7 @@ public class FleshkinChestBlock extends BaseEntityBlock implements SimpleWaterlo
 
 					MenuProvider menuProvider = getMenuProvider(state, level, pos);
 					if (menuProvider != null) {
-						NetworkHooks.openScreen(serverPlayer, menuProvider, buffer -> buffer.writeBlockPos(pos));
+						serverPlayer.openMenu(menuProvider, buffer -> buffer.writeBlockPos(pos));
 						return InteractionResult.SUCCESS;
 					}
 				}
@@ -172,7 +190,7 @@ public class FleshkinChestBlock extends BaseEntityBlock implements SimpleWaterlo
 			}
 		}
 
-		return InteractionResult.CONSUME; //prevent accidental placement of blocks, etc
+		return InteractionResult.CONSUME;
 	}
 
 	@Override
@@ -190,23 +208,22 @@ public class FleshkinChestBlock extends BaseEntityBlock implements SimpleWaterlo
 
 	@Override
 	public void onBlockExploded(BlockState state, Level level, BlockPos pos, Explosion explosion) {
-		//ignore the explosion, the block is not destroyed
 	}
 
 	@Override
 	public float getDestroyProgress(BlockState state, Player player, BlockGetter level, BlockPos pos) {
 		if (level.getBlockEntity(pos) instanceof IRestrictedInteraction interaction && interaction.isActionAllowed(player, Actions.DESTROY_BLOCK)) {
-			int i = ForgeHooks.isCorrectToolForDrops(state, player) ? 30 : 100;
+			int i = EventHooks.doPlayerHarvestCheck(player, state, level, pos) ? 30 : 100;
 			return player.getDigSpeed(state, pos) / destroySpeed / i;
 		}
 		return 0;
 	}
 
 	@Override
-	public ItemStack getCloneItemStack(BlockState state, HitResult target, BlockGetter level, BlockPos pos, Player player) {
+	public ItemStack getCloneItemStack(BlockState state, HitResult target, LevelReader level, BlockPos pos, Player player) {
 		ItemStack stack = super.getCloneItemStack(state, target, level, pos, player);
 		if (level.getBlockEntity(pos) instanceof FleshkinChestBlockEntity chest) {
-			chest.saveToItem(stack);
+			chest.saveToItem(stack, level.registryAccess());
 		}
 		return stack;
 	}
@@ -249,19 +266,19 @@ public class FleshkinChestBlock extends BaseEntityBlock implements SimpleWaterlo
 	}
 
 	@Override
-	public boolean isPathfindable(BlockState state, BlockGetter level, BlockPos pos, PathComputationType type) {
+	protected boolean isPathfindable(BlockState state, PathComputationType type) {
 		return false;
 	}
 
 	@Override
-	public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> tooltip, TooltipFlag flag) {
-		super.appendHoverText(stack, level, tooltip, flag);
+	public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
+		super.appendHoverText(stack, context, tooltip, flag);
 
 		OwnableEntityBlock.appendUserListToTooltip(stack, tooltip);
 
 		if (Minecraft.getInstance().player == null) return;
 
-		CompoundTag tag = BlockItem.getBlockEntityData(stack);
+		CompoundTag tag = BlockItemUtil.getBlockEntityData(stack);
 		if (tag != null) {
 			tooltip.add(ComponentUtil.EMPTY_LINE);
 
@@ -270,7 +287,7 @@ public class FleshkinChestBlock extends BaseEntityBlock implements SimpleWaterlo
 				if (!inventoryTag.isEmpty() && inventoryTag.contains("Items", Tag.TAG_LIST)) {
 					int size = inventoryTag.contains("Size") ? inventoryTag.getInt("Size") : FleshkinChestBlockEntity.SLOTS;
 					NonNullList<ItemStack> itemList = NonNullList.withSize(size, ItemStack.EMPTY);
-					ContainerHelper.loadAllItems(inventoryTag, itemList);
+					ContainerHelper.loadAllItems(inventoryTag, itemList, Minecraft.getInstance().player.registryAccess());
 					int count = 0;
 					int totalCount = 0;
 

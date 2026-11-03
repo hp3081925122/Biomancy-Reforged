@@ -1,11 +1,10 @@
 package com.github.elenterius.biomancy.inventory;
 
 import com.github.elenterius.biomancy.api.nutrients.Nutrients;
-import com.github.elenterius.biomancy.init.ModCapabilities;
 import net.minecraft.world.item.BundleItem;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.items.IItemHandler;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.items.IItemHandler;
 
 import java.util.List;
 import java.util.function.Predicate;
@@ -18,22 +17,16 @@ public final class InventoryHandlers {
 		if (stack.getItem() instanceof BundleItem) return false;
 		if (!stack.getItem().canFitInsideContainerItems()) return false;
 
-		LazyOptional<IItemHandler> capability = stack.getCapability(ModCapabilities.ITEM_HANDLER);
-		final boolean[] isEmpty = {true};
-		capability.ifPresent(itemHandler -> {
-			int slots = itemHandler.getSlots();
-			if (slots > 200) {
-				isEmpty[0] = false;
-				return;
-			}
-			for (int i = 0; i < slots; i++) {
-				if (!itemHandler.getStackInSlot(i).isEmpty()) {
-					isEmpty[0] = false;
-					break;
-				}
-			}
-		});
-		return isEmpty[0];
+		IItemHandler itemHandler = stack.getCapability(Capabilities.ItemHandler.ITEM);
+		if (itemHandler == null) return true;
+
+		int slots = itemHandler.getSlots();
+		if (slots > 200) return false;
+
+		for (int i = 0; i < slots; i++) {
+			if (!itemHandler.getStackInSlot(i).isEmpty()) return false;
+		}
+		return true;
 	};
 
 	private InventoryHandlers() {}
