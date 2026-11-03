@@ -19,7 +19,8 @@ import java.util.List;
 
 public final class GuiRenderUtil {
 
-	protected static final ResourceLocation GUI_ICONS_TEXTURE = new ResourceLocation("textures/gui/icons.png");
+	protected static final ResourceLocation ATTACK_INDICATOR_BACKGROUND_SPRITE = ResourceLocation.withDefaultNamespace("hud/crosshair_attack_indicator_background");
+	protected static final ResourceLocation ATTACK_INDICATOR_PROGRESS_SPRITE = ResourceLocation.withDefaultNamespace("hud/crosshair_attack_indicator_progress");
 
 	private GuiRenderUtil() {}
 
@@ -38,8 +39,8 @@ public final class GuiRenderUtil {
 
 	public static void drawAttackIndicator(GuiGraphics guiGraphics, int x, int y, float pct) {
 		RenderSystem.blendFuncSeparate(GlStateManager.SourceFactor.ONE_MINUS_DST_COLOR, GlStateManager.DestFactor.ONE_MINUS_SRC_COLOR, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
-		guiGraphics.blit(GUI_ICONS_TEXTURE, x, y, 36, 94, 16, 4);
-		guiGraphics.blit(GUI_ICONS_TEXTURE, x, y, 52, 94, (int) (pct * 17f), 4);
+		guiGraphics.blitSprite(ATTACK_INDICATOR_BACKGROUND_SPRITE, x, y, 16, 4);
+		guiGraphics.blitSprite(ATTACK_INDICATOR_PROGRESS_SPRITE, 16, 4, 0, 0, x, y, (int) (pct * 17f), 4);
 	}
 
 	public static void drawSquareProgressBar(GuiGraphics guiGraphics, int centerX, int centerY, int blitOffset, int radius, float pct) {
@@ -49,24 +50,21 @@ public final class GuiRenderUtil {
 
 	private static void drawSquareProgressBar(GuiGraphics guiGraphics, int centerX, int centerY, int radius, int blitOffset, float pct, int argbColor) {
 		int size = 1;
-		int sideLength = radius * 2; //of the square
+		int sideLength = radius * 2;
 		int halfLength = radius;
-		int currentLength = Math.round(pct * (sideLength * 4)); //sideLength * 4 = totalLength
+		int currentLength = Math.round(pct * (sideLength * 4));
 
 		Matrix4f matrix4f = guiGraphics.pose().last().pose();
 
 		RenderSystem.enableBlend();
-		//		RenderSystem.disableTexture();
 		RenderSystem.setShader(GameRenderer::getPositionColorShader);
 
-		// top right line
 		int dist = Math.min(currentLength, halfLength);
 		if (dist > 0) {
 			int y = centerY - halfLength;
 			drawQuad(matrix4f, centerX, y - size, centerX + halfLength + 1, y + size, blitOffset, argbColor);
 		}
 
-		// right line
 		dist = Math.min(currentLength - halfLength, sideLength);
 		if (dist > 0) {
 			int x = centerX + halfLength;
@@ -74,7 +72,6 @@ public final class GuiRenderUtil {
 			drawQuad(matrix4f, x - size + 1, y, x + size + 1, y + dist, blitOffset, argbColor);
 		}
 
-		// bottom line
 		dist = Math.min(currentLength - 3 * halfLength, sideLength);
 		if (dist > 0) {
 			int x = centerX + halfLength;
@@ -82,7 +79,6 @@ public final class GuiRenderUtil {
 			drawQuad(matrix4f, x - dist, y - size, x, y + size, blitOffset, argbColor);
 		}
 
-		// left line
 		dist = Math.min(currentLength - 5 * halfLength, sideLength);
 		if (dist > 0) {
 			int x = centerX - halfLength;
@@ -90,7 +86,6 @@ public final class GuiRenderUtil {
 			drawQuad(matrix4f, x - size, y - dist, x + size, y, blitOffset, argbColor);
 		}
 
-		// top left line
 		dist = Math.min(currentLength - 7 * halfLength, halfLength);
 		if (dist > 0) {
 			int x = centerX - halfLength;
@@ -98,7 +93,6 @@ public final class GuiRenderUtil {
 			drawQuad(matrix4f, x, y - size, x + halfLength, y + size, blitOffset, argbColor);
 		}
 
-		//		RenderSystem.enableTexture();
 		RenderSystem.disableBlend();
 	}
 
@@ -115,28 +109,26 @@ public final class GuiRenderUtil {
 			maxY = n;
 		}
 
-		BufferBuilder bufferbuilder = Tesselator.getInstance().getBuilder();
-		bufferbuilder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
-		bufferbuilder.vertex(matrix4f, minX, maxY, z).color(argbColor).endVertex();
-		bufferbuilder.vertex(matrix4f, maxX, maxY, z).color(argbColor).endVertex();
-		bufferbuilder.vertex(matrix4f, maxX, minY, z).color(argbColor).endVertex();
-		bufferbuilder.vertex(matrix4f, minX, minY, z).color(argbColor).endVertex();
-		BufferUploader.drawWithShader(bufferbuilder.end());
+		BufferBuilder bufferbuilder = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+		bufferbuilder.addVertex(matrix4f, minX, maxY, z).setColor(argbColor);
+		bufferbuilder.addVertex(matrix4f, maxX, maxY, z).setColor(argbColor);
+		bufferbuilder.addVertex(matrix4f, maxX, minY, z).setColor(argbColor);
+		bufferbuilder.addVertex(matrix4f, minX, minY, z).setColor(argbColor);
+		BufferUploader.drawWithShader(bufferbuilder.buildOrThrow());
 	}
 
 	public static void fill(GuiGraphics guiGraphics, float minX, float minY, float maxX, float maxY, int z, int colorARGB) {
 		Matrix4f matrix4f = guiGraphics.pose().last().pose();
 
-		BufferBuilder bufferbuilder = Tesselator.getInstance().getBuilder();
 		RenderSystem.enableBlend();
 		RenderSystem.defaultBlendFunc();
 		RenderSystem.setShader(GameRenderer::getPositionColorShader);
-		bufferbuilder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
-		bufferbuilder.vertex(matrix4f, minX, maxY, z).color(colorARGB).endVertex();
-		bufferbuilder.vertex(matrix4f, maxX, maxY, z).color(colorARGB).endVertex();
-		bufferbuilder.vertex(matrix4f, maxX, minY, z).color(colorARGB).endVertex();
-		bufferbuilder.vertex(matrix4f, minX, minY, z).color(colorARGB).endVertex();
-		BufferUploader.drawWithShader(bufferbuilder.end());
+		BufferBuilder bufferbuilder = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+		bufferbuilder.addVertex(matrix4f, minX, maxY, z).setColor(colorARGB);
+		bufferbuilder.addVertex(matrix4f, maxX, maxY, z).setColor(colorARGB);
+		bufferbuilder.addVertex(matrix4f, maxX, minY, z).setColor(colorARGB);
+		bufferbuilder.addVertex(matrix4f, minX, minY, z).setColor(colorARGB);
+		BufferUploader.drawWithShader(bufferbuilder.buildOrThrow());
 		RenderSystem.disableBlend();
 	}
 

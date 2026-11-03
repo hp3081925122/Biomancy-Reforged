@@ -1,16 +1,11 @@
 package com.github.elenterius.biomancy.item;
 
-import com.github.elenterius.biomancy.client.render.item.BEWLItemRenderer;
-import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 import net.neoforged.neoforge.common.util.Lazy;
 import org.jspecify.annotations.Nullable;
-
-import java.util.function.Consumer;
 
 public class BEWLBlockItem extends SimpleBlockItem {
 
@@ -24,16 +19,6 @@ public class BEWLBlockItem extends SimpleBlockItem {
 	@Nullable
 	public BlockEntity getCachedBEWL() {
 		return cachedBlockEntityWithoutLevel.get();
-	}
-
-	@Override
-	public void initializeClient(Consumer<IClientItemExtensions> consumer) {
-		consumer.accept(new IClientItemExtensions() {
-			@Override
-			public BlockEntityWithoutLevelRenderer getCustomRenderer() {
-				return BEWLItemRenderer.INSTANCE;
-			}
-		});
 	}
 
 }

@@ -17,8 +17,8 @@ import net.minecraft.world.level.block.LayeredCauldronBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import software.bernie.geckolib.animatable.GeoEntity;
-import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.animation.AnimatableManager;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 public class AcidBlobProjectile extends AcidSpitProjectile implements GeoEntity {
@@ -101,7 +101,6 @@ public class AcidBlobProjectile extends AcidSpitProjectile implements GeoEntity 
 
 	@Override
 	public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-		//do nothing
 	}
 
 	@Override

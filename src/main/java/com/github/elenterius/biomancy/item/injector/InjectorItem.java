@@ -59,16 +59,16 @@ import net.minecraft.world.level.block.LevelEvent;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
-import net.minecraftforge.client.extensions.common.IClientItemExtensions;
+import software.bernie.geckolib.animatable.client.GeoRenderProvider;
 import org.jspecify.annotations.Nullable;
 import software.bernie.geckolib.animatable.GeoItem;
 import software.bernie.geckolib.animatable.SingletonGeoAnimatable;
-import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.core.animation.AnimatableManager;
-import software.bernie.geckolib.core.animation.AnimationController;
-import software.bernie.geckolib.core.animation.RawAnimation;
-import software.bernie.geckolib.core.keyframe.event.SoundKeyframeEvent;
-import software.bernie.geckolib.core.object.PlayState;
+import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.animation.AnimatableManager;
+import software.bernie.geckolib.animation.AnimationController;
+import software.bernie.geckolib.animation.RawAnimation;
+import software.bernie.geckolib.animation.keyframe.event.SoundKeyframeEvent;
+import software.bernie.geckolib.animation.PlayState;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.List;
@@ -321,16 +321,13 @@ public class InjectorItem extends Item implements SerumInjector, ItemTooltipStyl
 		return false;
 	}
 
-	@Nullable
-
 	@Override
-	public void initializeClient(Consumer<IClientItemExtensions> consumer) {
-		super.initializeClient(consumer);
-		consumer.accept(new IClientItemExtensions() {
+	public void createGeoRenderer(Consumer<GeoRenderProvider> consumer) {
+		consumer.accept(new GeoRenderProvider() {
 			private final InjectorRenderer renderer = new InjectorRenderer();
 
 			@Override
-			public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+			public BlockEntityWithoutLevelRenderer getGeoItemRenderer() {
 				return renderer;
 			}
 		});
@@ -338,7 +335,7 @@ public class InjectorItem extends Item implements SerumInjector, ItemTooltipStyl
 
 	@Nullable
 	private InjectorRenderer getInjectorRenderer(InjectorItem item) {
-		BlockEntityWithoutLevelRenderer renderer = IClientItemExtensions.of(this).getCustomRenderer();
+		BlockEntityWithoutLevelRenderer renderer = GeoRenderProvider.of(this).getGeoItemRenderer();
 		return renderer instanceof InjectorRenderer injectorRenderer ? injectorRenderer : null;
 	}
 
@@ -401,7 +398,7 @@ public class InjectorItem extends Item implements SerumInjector, ItemTooltipStyl
 	}
 
 	private void soundListener(SoundKeyframeEvent<InjectorItem> event) {
-		if (IClientItemExtensions.of(this).getCustomRenderer() instanceof InjectorRenderer renderer) {
+		if (GeoRenderProvider.of(this).getGeoItemRenderer() instanceof InjectorRenderer renderer) {
 			onSoundKeyFrame(renderer.getCurrentItemStack(), event.getKeyframeData().getSound(), event.getAnimationTick());
 		}
 	}

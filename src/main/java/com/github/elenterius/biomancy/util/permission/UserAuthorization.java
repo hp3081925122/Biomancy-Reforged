@@ -13,7 +13,8 @@ public class UserAuthorization implements INBTSerializable<CompoundTag> {
 	private UserType authority;
 
 	public UserAuthorization(CompoundTag nbt) {
-		deserializeNBT(nbt);
+		userUUID = nbt.getUUID("UserUUID");
+		authority = UserType.deserialize(nbt);
 	}
 
 	public UserAuthorization(UUID userUUID) {

@@ -6,9 +6,6 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.network.chat.Component;
 
-/**
- * disables the drawing of the background but keeps the paddings/margins intact
- */
 public class CustomEditBox extends EditBox {
 
 	private Component hint = ComponentUtil.EMPTY;
@@ -17,7 +14,7 @@ public class CustomEditBox extends EditBox {
 
 	public CustomEditBox(Font font, int x, int y, int width, int height, Component message) {
 		super(font, x, y, width, height, message);
-		setBordered(true); //redundant, only for sanity
+		setBordered(true);
 		this.font = font;
 	}
 
@@ -27,17 +24,6 @@ public class CustomEditBox extends EditBox {
 
 	@Override
 	public void setBordered(boolean enableBackgroundDrawing) {
-		// do nothing, as the **bordered** boolean field should always be true
-	}
-
-	@Override
-	public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-		if (visible) {
-			if (!isFocused() && getValue().isEmpty()) {
-				guiGraphics.drawString(font, hint, getX() + 4, getY() + (height - 8) / 2, 0xff_ffffff);
-			}
-			else super.render(guiGraphics, mouseX, mouseY, partialTick);
-		}
 	}
 
 	@Override
@@ -46,12 +32,17 @@ public class CustomEditBox extends EditBox {
 	}
 
 	@Override
-	protected boolean isBordered() {
+	public boolean isBordered() {
 		return !isBackgroundDisabled;
 	}
 
 	@Override
 	public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+		if (!isFocused() && getValue().isEmpty()) {
+			guiGraphics.drawString(font, hint, getX() + 4, getY() + (height - 8) / 2, 0xff_ffffff);
+			return;
+		}
+
 		isBackgroundDisabled = true;
 		super.renderWidget(guiGraphics, mouseX, mouseY, partialTick);
 		isBackgroundDisabled = false;

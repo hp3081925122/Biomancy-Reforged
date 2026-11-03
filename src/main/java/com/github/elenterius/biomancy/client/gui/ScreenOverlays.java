@@ -39,25 +39,21 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
-import net.minecraftforge.client.gui.overlay.ForgeGui;
-import net.minecraftforge.client.gui.overlay.IGuiOverlay;
+import net.minecraft.client.gui.LayeredDraw;
 import org.joml.Matrix4f;
 import org.jspecify.annotations.Nullable;
 
 public final class ScreenOverlays {
-
-	//hud overlays
 	public static final ResourceLocation INJECTOR_COOL_DOWN = BiomancyMod.rl("textures/gui/indicator_injector_cooldown.png");
 	public static final ResourceLocation BLOOD_CHARGE_METER = BiomancyMod.rl("textures/gui/blood_charge_meter.png");
 	public static final int BLOOD_CHARGE_METER_FRAMES = 5;
 
-	//fullscreen overlays
 	public static final ResourceLocation VEINS = BiomancyMod.rl("textures/gui/overlay/veins.png");
 	public static final ResourceLocation VIGNETTE = BiomancyMod.rl("textures/gui/overlay/vignette.png");
 	public static final ResourceLocation MEMBRANE = BiomancyMod.rl("textures/gui/overlay/membrane.png");
-	public static final ResourceLocation WATER_GEL = new ResourceLocation("minecraft", "textures/misc/underwater.png");
+	public static final ResourceLocation WATER_GEL = ResourceLocation.withDefaultNamespace("textures/misc/underwater.png");
 
-	public static final IGuiOverlay INSIDE_BLOCK_OVERLAY = (gui, guiGraphics, partialTicks, screenWidth, screenHeight) -> {
+	public static final LayeredDraw.Layer INSIDE_BLOCK_OVERLAY = layer((guiGraphics, partialTicks, screenWidth, screenHeight) -> {
 		Minecraft minecraft = Minecraft.getInstance();
 
 		if (minecraft.player == null) return;
@@ -75,9 +71,9 @@ public final class ScreenOverlays {
 			float brightness = LightTexture.getBrightness(minecraft.player.level().dimensionType(), minecraft.player.level().getMaxLocalRawBrightness(camera.getBlockPosition()));
 			renderInsideBlockOverlay(guiGraphics, -90, screenWidth, screenHeight, brightness, MEMBRANE);
 		}
-	};
+	});
 
-	public static final IGuiOverlay FRENZY_OVERLAY = (gui, guiGraphics, partialTicks, screenWidth, screenHeight) -> {
+	public static final LayeredDraw.Layer FRENZY_OVERLAY = layer((guiGraphics, partialTicks, screenWidth, screenHeight) -> {
 		Minecraft minecraft = Minecraft.getInstance();
 
 		if (minecraft.player == null || minecraft.level == null) return;
@@ -112,31 +108,31 @@ public final class ScreenOverlays {
 		RenderSystem.enableDepthTest();
 
 		guiGraphics.pose().popPose();
-	};
+	});
 
-	public static final IGuiOverlay GUN_OVERLAY = (gui, poseStack, partialTicks, screenWidth, screenHeight) -> {
+	public static final LayeredDraw.Layer GUN_OVERLAY = layer((poseStack, partialTicks, screenWidth, screenHeight) -> {
 		Minecraft minecraft = Minecraft.getInstance();
 		if (!minecraft.options.hideGui && minecraft.player != null) {
 			ItemStack itemStack = minecraft.player.getMainHandItem();
 			if (itemStack.isEmpty() || !(itemStack.getItem() instanceof Gun<?> gun)) return;
 
-			gui.setupOverlayRenderState(true, false);
-			renderGunOverlay(gui, poseStack, screenWidth, screenHeight, -90, minecraft.player, itemStack, gun);
+			setupOverlayRenderState(true, false);
+			renderGunOverlay(minecraft.font, poseStack, screenWidth, screenHeight, -90, minecraft.player, itemStack, gun);
 		}
-	};
+	});
 
-	public static final IGuiOverlay INJECTOR_OVERLAY = (gui, guiGraphics, partialTicks, screenWidth, screenHeight) -> {
+	public static final LayeredDraw.Layer INJECTOR_OVERLAY = layer((guiGraphics, partialTicks, screenWidth, screenHeight) -> {
 		Minecraft minecraft = Minecraft.getInstance();
 		if (!minecraft.options.hideGui && minecraft.player != null) {
 			ItemStack itemStack = minecraft.player.getMainHandItem();
 			if (itemStack.isEmpty() || !(itemStack.getItem() instanceof InjectorItem injector)) return;
 
-			gui.setupOverlayRenderState(true, false);
-			renderInjectorOverlay(guiGraphics, gui.getFont(), partialTicks, screenWidth, screenHeight, -90, minecraft.player, itemStack, injector);
+			setupOverlayRenderState(true, false);
+			renderInjectorOverlay(guiGraphics, minecraft.font, partialTicks, screenWidth, screenHeight, -90, minecraft.player, itemStack, injector);
 		}
-	};
+	});
 
-	public static final IGuiOverlay CHARGE_BAR_OVERLAY = (gui, guiGraphics, partialTicks, screenWidth, screenHeight) -> {
+	public static final LayeredDraw.Layer CHARGE_BAR_OVERLAY = layer((guiGraphics, partialTicks, screenWidth, screenHeight) -> {
 		Minecraft minecraft = Minecraft.getInstance();
 		if (!minecraft.options.hideGui && minecraft.player != null) {
 			ItemStack stack = minecraft.player.getMainHandItem();
@@ -144,21 +140,21 @@ public final class ScreenOverlays {
 
 			if (stack.getItem() instanceof ItemCharge abilityCharge) {
 				if (GuiUtil.isFirstPersonView()) {
-					gui.setupOverlayRenderState(true, false);
-					renderBloodChargeMeter(guiGraphics, gui.getFont(), screenWidth, screenHeight, -90, abilityCharge.getCharge(stack), abilityCharge.getChargePct(stack));
+					setupOverlayRenderState(true, false);
+					renderBloodChargeMeter(guiGraphics, minecraft.font, screenWidth, screenHeight, -90, abilityCharge.getCharge(stack), abilityCharge.getChargePct(stack));
 				}
 			}
 
 			if (stack.getItem() instanceof CausticGunbladeItem) {
 				if (GuiUtil.isFirstPersonView()) {
-					gui.setupOverlayRenderState(true, false);
-					CausticGunbladeItem.Abilities.ACID_REFLUX.render(gui, guiGraphics, partialTicks, screenWidth, screenHeight, stack);
+					setupOverlayRenderState(true, false);
+					CausticGunbladeItem.Abilities.ACID_REFLUX.render(minecraft.font, guiGraphics, partialTicks, screenWidth, screenHeight, stack);
 				}
 			}
 		}
-	};
+	});
 
-	public static final IGuiOverlay KNOWLEDGE_OVERLAY = (gui, guiGraphics, partialTicks, screenWidth, screenHeight) -> {
+	public static final LayeredDraw.Layer KNOWLEDGE_OVERLAY = layer((guiGraphics, partialTicks, screenWidth, screenHeight) -> {
 		Minecraft minecraft = Minecraft.getInstance();
 
 		if (minecraft.player == null || minecraft.level == null) return;
@@ -171,14 +167,43 @@ public final class ScreenOverlays {
 		if (KnowledgeReader.canShowKnowledgeOverlay(minecraft.player, EquipmentSlot.HEAD)) {
 			BlockPos blockPos = blockHitResult.getBlockPos();
 			BlockState blockState = minecraft.level.getBlockState(blockPos);
-			if (blockState.getBlock() instanceof PrimordialCradleBlock && minecraft.level.getExistingBlockEntity(blockPos) instanceof PrimordialCradleBlockEntity cradle) {
-				gui.setupOverlayRenderState(true, false);
-				renderKnowledgeOverlay(gui, guiGraphics, screenWidth, screenHeight, cradle);
+			if (blockState.getBlock() instanceof PrimordialCradleBlock && minecraft.level.getBlockEntity(blockPos) instanceof PrimordialCradleBlockEntity cradle) {
+				setupOverlayRenderState(true, false);
+				renderKnowledgeOverlay(minecraft.font, guiGraphics, screenWidth, screenHeight, cradle);
 			}
 		}
-	};
+	});
 
 	private ScreenOverlays() {}
+
+	private static LayeredDraw.Layer layer(Overlay overlay) {
+		return (guiGraphics, deltaTracker) -> overlay.render(guiGraphics, deltaTracker.getGameTimeDeltaPartialTick(true), guiGraphics.guiWidth(), guiGraphics.guiHeight());
+	}
+
+	static void setupOverlayRenderState(boolean blend, boolean depthTest) {
+		if (blend) {
+			RenderSystem.enableBlend();
+			RenderSystem.defaultBlendFunc();
+		}
+		else {
+			RenderSystem.disableBlend();
+		}
+
+		if (depthTest) {
+			RenderSystem.enableDepthTest();
+		}
+		else {
+			RenderSystem.disableDepthTest();
+		}
+
+		RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
+		RenderSystem.setShader(GameRenderer::getPositionTexShader);
+	}
+
+	@FunctionalInterface
+	private interface Overlay {
+		void render(GuiGraphics guiGraphics, float partialTicks, int screenWidth, int screenHeight);
+	}
 
 	static void renderInsideBlockOverlay(GuiGraphics guiGraphics, int blitOffset, int screenWidth, int screenHeight, float brightness, ResourceLocation texture) {
 		int x1 = 0, y1 = 0;
@@ -193,25 +218,22 @@ public final class ScreenOverlays {
 		RenderSystem.setShaderTexture(0, texture);
 
 		Matrix4f matrix4f = guiGraphics.pose().last().pose();
-		BufferBuilder bufferbuilder = Tesselator.getInstance().getBuilder();
-		bufferbuilder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
-		bufferbuilder.vertex(matrix4f, x1, y1, blitOffset).uv(minU, minV).endVertex();
-		bufferbuilder.vertex(matrix4f, x1, screenHeight, blitOffset).uv(minU, maxV).endVertex();
-		bufferbuilder.vertex(matrix4f, screenWidth, screenHeight, blitOffset).uv(maxU, maxV).endVertex();
-		bufferbuilder.vertex(matrix4f, screenWidth, y1, blitOffset).uv(maxU, minV).endVertex();
-		BufferUploader.drawWithShader(bufferbuilder.end());
+		BufferBuilder bufferbuilder = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+		bufferbuilder.addVertex(matrix4f, x1, y1, blitOffset).setUv(minU, minV);
+		bufferbuilder.addVertex(matrix4f, x1, screenHeight, blitOffset).setUv(minU, maxV);
+		bufferbuilder.addVertex(matrix4f, screenWidth, screenHeight, blitOffset).setUv(maxU, maxV);
+		bufferbuilder.addVertex(matrix4f, screenWidth, y1, blitOffset).setUv(maxU, minV);
+		BufferUploader.drawWithShader(bufferbuilder.buildOrThrow());
 
 		RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
 		RenderSystem.disableBlend();
 	}
 
-	static void renderKnowledgeOverlay(ForgeGui gui, GuiGraphics guiGraphics, int screenWidth, int screenHeight, PrimordialCradleBlockEntity cradle) {
-		Font font = gui.getFont();
+	static void renderKnowledgeOverlay(Font font, GuiGraphics guiGraphics, int screenWidth, int screenHeight, PrimordialCradleBlockEntity cradle) {
 
 		int x = screenWidth / 2 + 64;
 		int y = screenHeight / 2 - font.lineHeight - 2;
 
-		//		drawValueWithLabel(guiGraphics, font, cradle.getSuccessChance(), "Success", x, y);
 		y += font.lineHeight;
 		drawValueWithLabel(guiGraphics, font, cradle.getBiomassPct(), "Biomass", x, y += font.lineHeight + 2);
 		drawValueWithLabel(guiGraphics, font, cradle.getLifeEnergyPct(), "Life", x, y += font.lineHeight + 2);
@@ -231,12 +253,10 @@ public final class ScreenOverlays {
 		drawValueWithLabel(guiGraphics, font, Math.round(value * 100f) + "%", label, x, y, TextStyles.LIGHT_GRAY, TextStyles.GRAY);
 	}
 
-	static void renderGunOverlay(ForgeGui gui, GuiGraphics guiGraphics, int screenWidth, int screenHeight, int zDepth, LocalPlayer player, ItemStack stack, Gun<?> gun) {
-		renderAmmoOverlay(guiGraphics, gui.getFont(), screenWidth, screenHeight, zDepth, stack, gun);
+	static void renderGunOverlay(Font font, GuiGraphics guiGraphics, int screenWidth, int screenHeight, int zDepth, LocalPlayer player, ItemStack stack, Gun<?> gun) {
+		renderAmmoOverlay(guiGraphics, font, screenWidth, screenHeight, zDepth, stack, gun);
 
 		if (GuiUtil.isFirstPersonView()) {
-			//			ResourceLocation crosshairTexture = gun.getCrosshairTexture(stack, player);
-
 			renderReloadIndicator(guiGraphics, screenWidth, screenHeight, zDepth, player, stack, gun);
 		}
 	}
@@ -266,14 +286,6 @@ public final class ScreenOverlays {
 		int y = (screenHeight - 31) / 2;
 
 		guiGraphics.blit(BLOOD_CHARGE_METER, x, y, zDepth, 0, (int) (chargePct * (BLOOD_CHARGE_METER_FRAMES - 1)) * 31, 31, 31, 31, 31 * 5);
-
-		//		if (Minecraft.getInstance().crosshairPickEntity instanceof LivingEntity crosshairTarget && crosshairTarget.isAlive()) {
-		//			x = screenWidth / 2 - 24;
-		//			y = screenHeight / 2 - 4;
-		//			guiGraphics.blit(ATTACK_REACH, x, y, zDepth, 0, 0, 48, 16, 48, 16); //ornament
-		//		}
-
-		//		if (charge <= 0) return;
 	}
 
 	static void renderReloadIndicator(GuiGraphics guiGraphics, int screenWidth, int screenHeight, int zDepth, LocalPlayer player, ItemStack stack, Gun<?> gun) {
@@ -302,7 +314,7 @@ public final class ScreenOverlays {
 				case ON_RELEASE_INSTANT, ON_RELEASE_WITH_FULL_CHARGE -> {
 					if (player.isUsingItem()) {
 						int delayBetweenShots = Math.max(gun.getDelayBetweenShots(stack), 1);
-						float elapsedDuration = (float) stack.getUseDuration() - ((float) player.getUseItemRemainingTicks());
+						float elapsedDuration = (float) stack.getUseDuration(player) - ((float) player.getUseItemRemainingTicks());
 						float chargePercentage = Mth.clamp(elapsedDuration / delayBetweenShots, 0f, 1f);
 						GuiRenderUtil.drawSquareProgressBar(guiGraphics, x, y, zDepth, 10, chargePercentage);
 					}
@@ -327,7 +339,7 @@ public final class ScreenOverlays {
 		int y = screenHeight - font.lineHeight - 4;
 		guiGraphics.drawString(font, maxAmmo, x, y, secondaryColor);
 		guiGraphics.pose().pushPose();
-		float scale = 1.5f; //make font bigger
+		float scale = 1.5f;
 		guiGraphics.pose().translate(x - font.width(ammo) * scale, y - font.lineHeight * scale * 0.5f, zDepth);
 		guiGraphics.pose().scale(scale, scale, 0);
 		guiGraphics.drawString(font, ammo, 0, 0, primaryColor);

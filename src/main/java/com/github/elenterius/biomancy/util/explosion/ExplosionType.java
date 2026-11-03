@@ -1,6 +1,8 @@
 package com.github.elenterius.biomancy.util.explosion;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Explosion;
@@ -11,7 +13,10 @@ import org.jspecify.annotations.Nullable;
 import java.util.List;
 
 public enum ExplosionType {
-	VANILLA(Explosion::new, Explosion::new),
+	VANILLA(
+			(level, source, damageSource, damageCalculator, x, y, z, radius, fire, interaction) -> new Explosion(level, source, damageSource, damageCalculator, x, y, z, radius, fire, interaction, ParticleTypes.EXPLOSION, ParticleTypes.EXPLOSION_EMITTER, SoundEvents.GENERIC_EXPLODE),
+			(level, source, x, y, z, radius, positions) -> new Explosion(level, source, x, y, z, radius, positions, Explosion.BlockInteraction.DESTROY_WITH_DECAY, ParticleTypes.EXPLOSION, ParticleTypes.EXPLOSION_EMITTER, SoundEvents.GENERIC_EXPLODE)
+	),
 	DECAY(DecayExplosion::new, DecayExplosion::new),
 	VOLATILE(VolatileExplosion::new, VolatileExplosion::new);
 

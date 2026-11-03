@@ -16,8 +16,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import software.bernie.geckolib.animatable.GeoEntity;
-import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.animation.AnimatableManager;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 public class BloomberryProjectile extends BaseProjectile implements GeoEntity {
@@ -35,7 +35,7 @@ public class BloomberryProjectile extends BaseProjectile implements GeoEntity {
 
 	@Override
 	public boolean hurt(DamageSource source, float amount) {
-		return false; //explode on death?
+		return false;
 	}
 
 	@Override
@@ -71,7 +71,6 @@ public class BloomberryProjectile extends BaseProjectile implements GeoEntity {
 
 	@Override
 	public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-		//do nothing
 	}
 
 	@Override

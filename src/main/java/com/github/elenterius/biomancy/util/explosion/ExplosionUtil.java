@@ -11,7 +11,7 @@ import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.ExplosionDamageCalculator;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.event.ForgeEventFactory;
+import net.neoforged.neoforge.event.EventHooks;
 import org.jspecify.annotations.Nullable;
 
 public class ExplosionUtil {
@@ -32,13 +32,13 @@ public class ExplosionUtil {
 		Explosion.BlockInteraction blockInteraction = switch (explosionInteraction) {
 			case NONE -> Explosion.BlockInteraction.KEEP;
 			case BLOCK -> getDestroyType(level, GameRules.RULE_BLOCK_EXPLOSION_DROP_DECAY);
-			case MOB -> ForgeEventFactory.getMobGriefingEvent(level, source) ? getDestroyType(level, GameRules.RULE_MOB_EXPLOSION_DROP_DECAY) : Explosion.BlockInteraction.KEEP;
+			case MOB -> EventHooks.canEntityGrief(level, source) ? getDestroyType(level, GameRules.RULE_MOB_EXPLOSION_DROP_DECAY) : Explosion.BlockInteraction.KEEP;
 			case TNT -> getDestroyType(level, GameRules.RULE_TNT_EXPLOSION_DROP_DECAY);
 		};
 
 		Explosion explosion = explosionType.serverFactory.create(level, source, damageSource, damageCalculator, x, y, z, radius, fire, blockInteraction);
 
-		if (ForgeEventFactory.onExplosionStart(level, explosion)) return;
+		if (EventHooks.onExplosionStart(level, explosion)) return;
 
 		explosion.explode();
 		explosion.finalizeExplosion(spawnParticles);

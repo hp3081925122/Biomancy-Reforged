@@ -37,7 +37,7 @@ public class AcidSprayRenderer extends EntityRenderer<AcidSprayProjectile> {
 	private static final float TRAIL_WIDTH = 0.25f;
 	private static final float MAX_SEGMENT_LENGTH_SQUARED = 5f;
 
-	private static final ResourceLocation TEXTURE = new ResourceLocation("textures/particle/drip_hang.png");
+	private static final ResourceLocation TEXTURE = ResourceLocation.withDefaultNamespace("textures/particle/drip_hang.png");
 
 	public AcidSprayRenderer(EntityRendererProvider.Context context) {
 		super(context);
@@ -59,16 +59,14 @@ public class AcidSprayRenderer extends EntityRenderer<AcidSprayProjectile> {
 
 		RenderSystem.setShaderTexture(0, getTextureLocation(entity));
 		RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
-		BufferBuilder consumer = Tesselator.getInstance().getBuilder();
-
 		Matrix4f m = poseStack.last().pose();
 
-		consumer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
-		consumer.vertex(m, QUAD[0].x(), QUAD[0].y(), QUAD[0].z()).uv(1f, 1f).color(r, g, b, alpha).uv2(lightMap).endVertex();
-		consumer.vertex(m, QUAD[1].x(), QUAD[1].y(), QUAD[1].z()).uv(1f, 0f).color(r, g, b, alpha).uv2(lightMap).endVertex();
-		consumer.vertex(m, QUAD[2].x(), QUAD[2].y(), QUAD[2].z()).uv(0f, 0f).color(r, g, b, alpha).uv2(lightMap).endVertex();
-		consumer.vertex(m, QUAD[3].x(), QUAD[3].y(), QUAD[3].z()).uv(0f, 1f).color(r, g, b, alpha).uv2(lightMap).endVertex();
-		BufferUploader.drawWithShader(consumer.end());
+		BufferBuilder consumer = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
+		consumer.addVertex(m, QUAD[0].x(), QUAD[0].y(), QUAD[0].z()).setUv(1f, 1f).setColor(r, g, b, alpha).setLight(lightMap);
+		consumer.addVertex(m, QUAD[1].x(), QUAD[1].y(), QUAD[1].z()).setUv(1f, 0f).setColor(r, g, b, alpha).setLight(lightMap);
+		consumer.addVertex(m, QUAD[2].x(), QUAD[2].y(), QUAD[2].z()).setUv(0f, 0f).setColor(r, g, b, alpha).setLight(lightMap);
+		consumer.addVertex(m, QUAD[3].x(), QUAD[3].y(), QUAD[3].z()).setUv(0f, 1f).setColor(r, g, b, alpha).setLight(lightMap);
+		BufferUploader.drawWithShader(consumer.buildOrThrow());
 		poseStack.popPose();
 
 		renderTrail(entity, poseStack, buffer, partialTick, r, g, b);
@@ -108,7 +106,7 @@ public class AcidSprayRenderer extends EntityRenderer<AcidSprayProjectile> {
 	private void renderSegments(Vec3[] points, float baseWidth, PoseStack poseStack, VertexConsumer consumer, float r, float g, float b, boolean useAxis2) {
 		Camera camera = entityRenderDispatcher.camera;
 		Matrix4f matrix = poseStack.last().pose();
-		Matrix3f normal = poseStack.last().normal();
+		PoseStack.Pose normal = poseStack.last();
 
 		int segments = points.length - 1;
 
@@ -143,8 +141,8 @@ public class AcidSprayRenderer extends EntityRenderer<AcidSprayProjectile> {
 				V_2.set(to.x, to.y, to.z).sub(AXIS_1);
 			}
 
-			consumer.vertex(matrix, V_1.x, V_1.y, V_1.z).color(r, g, b, alpha).normal(normal, 0, 1, 0).endVertex();
-			consumer.vertex(matrix, V_2.x, V_2.y, V_2.z).color(r, g, b, alpha).normal(normal, 0, 1, 0).endVertex();
+			consumer.addVertex(matrix, V_1.x, V_1.y, V_1.z).setColor(r, g, b, alpha).setNormal(normal, 0, 1, 0);
+			consumer.addVertex(matrix, V_2.x, V_2.y, V_2.z).setColor(r, g, b, alpha).setNormal(normal, 0, 1, 0);
 		}
 	}
 
@@ -152,16 +150,4 @@ public class AcidSprayRenderer extends EntityRenderer<AcidSprayProjectile> {
 	public ResourceLocation getTextureLocation(AcidSprayProjectile entity) {
 		return TEXTURE;
 	}
-
-	//	protected int getLightMap(AcidSprayProjectile entity) {
-	//		BlockPos pos = entity.blockPosition();
-	//		Level level = entity.level();
-	//		return level.hasChunkAt(pos) ? LevelRenderer.getLightColor(level, pos) : 0;
-	//	}
-
-	//	@Override
-	//	public boolean shouldRender(AcidSprayProjectile livingEntity, Frustum camera, double camX, double camY, double camZ) {
-	//		return super.shouldRender(livingEntity, camera, camX, camY, camZ);
-	//	}
-
 }

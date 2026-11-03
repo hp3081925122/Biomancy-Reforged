@@ -6,9 +6,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.material.FlowingFluid;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraftforge.common.ForgeMod;
+import net.neoforged.neoforge.common.NeoForgeMod;
 import net.neoforged.neoforge.fluids.FluidStack;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.neoforge.registries.DeferredHolder;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
 
@@ -23,7 +23,7 @@ public final class FluidTributes {
 	private static final FluidTribute MILK_MILLI_TRIBUTE = FluidTribute.of(Tributes.getTribute(Items.MILK_BUCKET.getDefaultInstance()), 1000);
 
 	static {
-		ForgeMod.MILK.ifPresent(fluid -> register(fluid, resource -> MILK_MILLI_TRIBUTE));
+		register(NeoForgeMod.MILK, resource -> MILK_MILLI_TRIBUTE);
 	}
 
 	private FluidTributes() {}
@@ -42,7 +42,7 @@ public final class FluidTributes {
 		FLUIDS.put(key, func);
 	}
 
-	public static void register(RegistryObject<? extends Fluid> fluidHolder, FluidToTributeConversion func) {
+	public static void register(DeferredHolder<Fluid, ? extends Fluid> fluidHolder, FluidToTributeConversion func) {
 		ResourceLocation key = fluidHolder.getId();
 		FLUIDS.put(key, func);
 	}

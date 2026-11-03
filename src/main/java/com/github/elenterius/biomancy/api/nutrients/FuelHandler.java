@@ -2,7 +2,6 @@ package com.github.elenterius.biomancy.api.nutrients;
 
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.items.ItemHandlerHelper;
 import org.jetbrains.annotations.ApiStatus;
 
 @ApiStatus.Experimental
@@ -39,9 +38,8 @@ public interface FuelHandler {
 		if (consumeCount > 0) {
 			int amount = Mth.clamp(currFuelAmount + fuelValue * consumeCount, 0, getMaxFuelAmount());
 			setFuelAmount(amount);
-			return ItemHandlerHelper.copyStackWithSize(stack, stack.getCount() - consumeCount);
+			return stack.copyWithCount(stack.getCount() - consumeCount);
 		}
 		return stack;
 	}
 }
-

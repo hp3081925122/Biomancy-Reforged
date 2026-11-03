@@ -17,7 +17,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidState;
-import net.minecraftforge.event.ForgeEventFactory;
+import net.neoforged.neoforge.event.EventHooks;
 import net.neoforged.neoforge.fluids.BaseFlowingFluid;
 
 public abstract class AcidFluid extends BaseFlowingFluid {
@@ -49,7 +49,7 @@ public abstract class AcidFluid extends BaseFlowingFluid {
 
 	@Override
 	protected void beforeDestroyingBlock(LevelAccessor level, BlockPos pos, BlockState state) {
-		if (state.is(ModBlockTags.ACID_DESTRUCTIBLE)) return; //don't drop any block resources i.e. "destroy" them
+		if (state.is(ModBlockTags.ACID_DESTRUCTIBLE)) return;
 
 		super.beforeDestroyingBlock(level, pos, state);
 	}
@@ -94,7 +94,7 @@ public abstract class AcidFluid extends BaseFlowingFluid {
 
 	protected boolean corrodeCopper(Level level, BlockPos liquidPos, Block block, BlockState blockState, BlockPos pos) {
 		if (block instanceof WeatheringCopper weatheringCopper && WeatheringCopper.getNext(block).isPresent()) {
-			weatheringCopper.getNext(blockState).ifPresent(state -> level.setBlockAndUpdate(pos, ForgeEventFactory.fireFluidPlaceBlockEvent(level, pos, liquidPos, state)));
+			weatheringCopper.getNext(blockState).ifPresent(state -> level.setBlockAndUpdate(pos, EventHooks.fireFluidPlaceBlockEvent(level, pos, liquidPos, state)));
 			level.levelEvent(LevelEvent.LAVA_FIZZ, pos, 0);
 			return true;
 		}
@@ -106,7 +106,7 @@ public abstract class AcidFluid extends BaseFlowingFluid {
 		if (!blockState.is(ModBlockTags.ACID_DESTRUCTIBLE)) return false;
 
 		SoundType soundType = block.getSoundType(blockState, level, pos, null);
-		level.setBlockAndUpdate(pos, ForgeEventFactory.fireFluidPlaceBlockEvent(level, pos, liquidPos, Blocks.AIR.defaultBlockState()));
+		level.setBlockAndUpdate(pos, EventHooks.fireFluidPlaceBlockEvent(level, pos, liquidPos, Blocks.AIR.defaultBlockState()));
 		level.playSound(null, pos, soundType.getBreakSound(), SoundSource.BLOCKS, soundType.volume, soundType.pitch);
 		level.levelEvent(LevelEvent.LAVA_FIZZ, pos, 0);
 		return true;
@@ -116,7 +116,7 @@ public abstract class AcidFluid extends BaseFlowingFluid {
 		if (!AcidInteractions.NORMAL_TO_ERODED_BLOCK_CONVERSION.containsKey(block)) return false;
 
 		SoundType soundType = block.getSoundType(blockState, level, pos, null);
-		level.setBlockAndUpdate(pos, ForgeEventFactory.fireFluidPlaceBlockEvent(level, pos, liquidPos, AcidInteractions.NORMAL_TO_ERODED_BLOCK_CONVERSION.get(block)));
+		level.setBlockAndUpdate(pos, EventHooks.fireFluidPlaceBlockEvent(level, pos, liquidPos, AcidInteractions.NORMAL_TO_ERODED_BLOCK_CONVERSION.get(block)));
 		level.playSound(null, pos, soundType.getBreakSound(), SoundSource.BLOCKS, soundType.volume, soundType.pitch);
 		level.levelEvent(LevelEvent.LAVA_FIZZ, pos, 0);
 		return true;
@@ -124,7 +124,7 @@ public abstract class AcidFluid extends BaseFlowingFluid {
 
 	protected void destroyFleshVeins(Level level, BlockPos liquidPos, Block block, BlockState blockState, BlockPos pos) {
 		if (block instanceof FleshVeinsBlock) {
-			level.setBlockAndUpdate(pos, ForgeEventFactory.fireFluidPlaceBlockEvent(level, pos, liquidPos, Blocks.AIR.defaultBlockState()));
+			level.setBlockAndUpdate(pos, EventHooks.fireFluidPlaceBlockEvent(level, pos, liquidPos, Blocks.AIR.defaultBlockState()));
 			level.levelEvent(LevelEvent.LAVA_FIZZ, pos, 0);
 		}
 	}

@@ -12,16 +12,12 @@ import net.minecraft.world.flag.FeatureFlagSet;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
-import net.minecraftforge.network.PlayMessages;
 import org.jspecify.annotations.Nullable;
 
-import java.util.function.BiFunction;
 import java.util.function.Predicate;
 import java.util.function.ToIntFunction;
 
 public class ProjectileEntityType<T extends BaseProjectile> extends EntityType<T> {
-
-	// all these default values are derived from vanilla arrow
 	public static final float DEFAULT_AIR_DRAG = 0.01f;
 	public static final float DEFAULT_WATER_DRAG = 0.4f;
 	public static final float DEFAULT_GRAVITY = 0.05f;
@@ -36,10 +32,9 @@ public class ProjectileEntityType<T extends BaseProjectile> extends EntityType<T
 			EntityDimensions dimensions,
 			int clientTrackingRange, int updateInterval, FeatureFlagSet requiredFeatures,
 			final Predicate<EntityType<?>> velocityUpdateSupplier, final ToIntFunction<EntityType<?>> trackingRangeSupplier, final ToIntFunction<EntityType<?>> updateIntervalSupplier,
-			@Nullable final BiFunction<PlayMessages.SpawnEntity, Level, T> customClientFactory,
 			float airDrag, float waterDrag, float gravity
 	) {
-		super(factory, MobCategory.MISC, serialize, summon, fireImmune, true, immuneTo, dimensions, clientTrackingRange, updateInterval, requiredFeatures, velocityUpdateSupplier, trackingRangeSupplier, updateIntervalSupplier, customClientFactory);
+		super(factory, MobCategory.MISC, serialize, summon, fireImmune, true, immuneTo, dimensions, 1f, clientTrackingRange, updateInterval, requiredFeatures, velocityUpdateSupplier, trackingRangeSupplier, updateIntervalSupplier);
 		if (airDrag < 0f || airDrag > 1f) throw new IllegalArgumentException("Drag is outside of valid range");
 		if (waterDrag < 0f || waterDrag > 1f) throw new IllegalArgumentException("WaterDrag is outside of valid range");
 
@@ -74,7 +69,6 @@ public class ProjectileEntityType<T extends BaseProjectile> extends EntityType<T
 		private static final ToIntFunction<EntityType<?>> DEFAULT_UPDATE_INTERVAL_FUNC = entityType -> DEFAULT_UPDATE_INTERVAL;
 
 		private final EntityType.EntityFactory<T> factory;
-		private @Nullable BiFunction<PlayMessages.SpawnEntity, Level, T> customClientFactory;
 		private boolean serialize = true;
 		private boolean summon = true;
 
@@ -150,13 +144,6 @@ public class ProjectileEntityType<T extends BaseProjectile> extends EntityType<T
 			return this;
 		}
 
-		/// By default, entities are spawned clientside via [EntityType#create(Level)].
-		/// If you need finer control over the spawning process, use this to get read access to the spawn packet.
-		public Builder<T> customClientFactory(BiFunction<PlayMessages.SpawnEntity, Level, T> factory) {
-			customClientFactory = factory;
-			return this;
-		}
-
 		public Builder<T> airDrag(float airDrag) {
 			this.airDrag = airDrag;
 			return this;
@@ -181,7 +168,7 @@ public class ProjectileEntityType<T extends BaseProjectile> extends EntityType<T
 					factory, serialize, summon,
 					fireImmune, immuneTo, dimensions,
 					clientTrackingRange, updateInterval, requiredFeatures,
-					velocityUpdateSupplier, trackingRangeSupplier, updateIntervalSupplier, customClientFactory,
+					velocityUpdateSupplier, trackingRangeSupplier, updateIntervalSupplier,
 					airDrag, waterDrag, gravity
 			);
 		}

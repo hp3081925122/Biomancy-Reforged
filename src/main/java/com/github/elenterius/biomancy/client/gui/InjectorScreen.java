@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.client.gui;
 
+import net.minecraft.core.component.DataComponents;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.api.serum.Serum;
 import com.github.elenterius.biomancy.api.serum.SerumContainer;
@@ -39,7 +40,7 @@ public class InjectorScreen extends Screen {
 	public static final int CANCEL_ID = -1;
 	public static final int CLEAR_ID = -2;
 
-	static final float DIAGONAL_OF_ITEM = Mth.SQRT_OF_TWO * 32; // 16 * 2
+	static final float DIAGONAL_OF_ITEM = Mth.SQRT_OF_TWO * 32;
 	static final int TRANSITION_DURATION_TICKS = 10;
 
 	private int ticks;
@@ -62,7 +63,6 @@ public class InjectorScreen extends Screen {
 		refreshCacheTicks = 0;
 		cachedStacks = null;
 
-		//move mouse up, to make cancel action selected by default
 		double x = minecraft.getWindow().getScreenWidth() / 2d;
 		double y = minecraft.getWindow().getScreenHeight() / 2d - 16;
 		InputConstants.grabOrReleaseMouse(minecraft.getWindow().getWindow(), 212993, x, y);
@@ -96,12 +96,6 @@ public class InjectorScreen extends Screen {
 			cachedStacks = findSerumStacks(minecraft.player);
 		}
 
-		//		if (Screen.hasControlDown()) {
-		//			ticks++;
-		//		}
-		//		else {
-		//			ticks -= 2;
-		//		}
 		ticks++;
 
 		if (ticks > TRANSITION_DURATION_TICKS) ticks = TRANSITION_DURATION_TICKS;
@@ -123,7 +117,7 @@ public class InjectorScreen extends Screen {
 		float y = height / 2f;
 		float upperBound = segments * angleIncrement - Mth.HALF_PI + angleIncrement / 2f;
 		float lowerBound = -Mth.HALF_PI - angleIncrement / 2f;
-		float mouseAngle = (float) Mth.atan2(mouseY - y, mouseX - x); //cartesian to polar
+		float mouseAngle = (float) Mth.atan2(mouseY - y, mouseX - x);
 		if (mouseAngle > upperBound) mouseAngle -= Mth.TWO_PI;
 		if (mouseAngle < lowerBound) mouseAngle += Mth.TWO_PI;
 
@@ -173,7 +167,7 @@ public class InjectorScreen extends Screen {
 
 		float upperBound = segments * angleIncrement - Mth.HALF_PI + angleIncrement / 2f;
 		float lowerBound = -Mth.HALF_PI - angleIncrement / 2f;
-		float mouseAngle = (float) Mth.atan2(mouseY - y, mouseX - x); //cartesian to polar
+		float mouseAngle = (float) Mth.atan2(mouseY - y, mouseX - x);
 		if (mouseAngle > upperBound) mouseAngle -= Mth.TWO_PI;
 		if (mouseAngle < lowerBound) mouseAngle += Mth.TWO_PI;
 
@@ -186,12 +180,12 @@ public class InjectorScreen extends Screen {
 
 			boolean isMouseInSection = radius > baseRadius - 1 && mouseAngle >= currentAngle - angleIncrement / 2f && mouseAngle < currentAngle + angleIncrement / 2f;
 
-			int color = isMouseInSection ? ColorStyles.GENERIC_TOOLTIP.borderStartColor() & 0xFA_FFFFFF : ColorStyles.GENERIC_TOOLTIP.backgroundColor() & 0xE0_FFFFFF; //decrease alpha
+			int color = isMouseInSection ? ColorStyles.GENERIC_TOOLTIP.borderStartColor() & 0xFA_FFFFFF : ColorStyles.GENERIC_TOOLTIP.backgroundColor() & 0xE0_FFFFFF;
 
 			drawSegment(guiGraphics, x, y, radius, currentAngle - angleIncrement / 2f, currentAngle, color, blitOffset);
 			drawSegment(guiGraphics, x, y, radius, currentAngle, currentAngle + angleIncrement / 2f, color, blitOffset);
 
-			float v = x + radius * Mth.cos(currentAngle); //polar to cartesian
+			float v = x + radius * Mth.cos(currentAngle);
 			float w = y + radius * Mth.sin(currentAngle);
 
 			ItemStack currentStack = entry.getKey();
@@ -215,7 +209,6 @@ public class InjectorScreen extends Screen {
 
 		if (radius <= baseRadius - 1) return;
 
-		//draw text for selected section
 		MutableComponent text;
 		if (stack == CLEAR_DUMMY_STACK) {
 			text = ComponentUtil.literal("Clear").withStyle(TextStyles.ERROR);
@@ -225,7 +218,7 @@ public class InjectorScreen extends Screen {
 		}
 		else {
 			text = ComponentUtil.mutable().append(stack.getHighlightTip(stack.getHoverName()));
-			if (stack.hasCustomHoverName()) text.withStyle(ChatFormatting.ITALIC);
+			if (stack.has(DataComponents.CUSTOM_NAME)) text.withStyle(ChatFormatting.ITALIC);
 		}
 
 		int textRadius = radius + 16 + 8 + 2;
@@ -234,11 +227,11 @@ public class InjectorScreen extends Screen {
 		int lineWidth = font.width(text);
 
 		float offsetAngle = textAngle + Mth.HALF_PI;
-		if (offsetAngle == 0f || offsetAngle == Mth.PI) { //we are in the middle of the screen
+		if (offsetAngle == 0f || offsetAngle == Mth.PI) {
 			xt -= lineWidth / 2f;
 		}
 
-		if (offsetAngle > Mth.PI) { //we are on the left screen side
+		if (offsetAngle > Mth.PI) {
 			xt -= lineWidth;
 		}
 
@@ -266,18 +259,17 @@ public class InjectorScreen extends Screen {
 		RenderSystem.defaultBlendFunc();
 		RenderSystem.setShader(GameRenderer::getPositionColorShader);
 
-		BufferBuilder bufferBuilder = Tesselator.getInstance().getBuilder();
-		bufferBuilder.begin(VertexFormat.Mode.TRIANGLE_FAN, DefaultVertexFormat.POSITION_COLOR);
+		BufferBuilder bufferBuilder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLE_FAN, DefaultVertexFormat.POSITION_COLOR);
 
 		float innerRadius = Math.max(radius - 16, 0);
-		bufferBuilder.vertex(matrix4f, x + innerRadius * Mth.cos(startAngle), y + innerRadius * Mth.sin(startAngle), blitOffset).color(argbColor).endVertex();
-		bufferBuilder.vertex(matrix4f, x + innerRadius * Mth.cos(endAngle), y + innerRadius * Mth.sin(endAngle), blitOffset).color(argbColor).endVertex();
+		bufferBuilder.addVertex(matrix4f, x + innerRadius * Mth.cos(startAngle), y + innerRadius * Mth.sin(startAngle), blitOffset).setColor(argbColor);
+		bufferBuilder.addVertex(matrix4f, x + innerRadius * Mth.cos(endAngle), y + innerRadius * Mth.sin(endAngle), blitOffset).setColor(argbColor);
 
 		float outerRadius = radius + 16;
-		bufferBuilder.vertex(matrix4f, x + outerRadius * Mth.cos(endAngle), y + outerRadius * Mth.sin(endAngle), blitOffset).color(argbColor).endVertex();
-		bufferBuilder.vertex(matrix4f, x + outerRadius * Mth.cos(startAngle), y + outerRadius * Mth.sin(startAngle), blitOffset).color(argbColor).endVertex();
+		bufferBuilder.addVertex(matrix4f, x + outerRadius * Mth.cos(endAngle), y + outerRadius * Mth.sin(endAngle), blitOffset).setColor(argbColor);
+		bufferBuilder.addVertex(matrix4f, x + outerRadius * Mth.cos(startAngle), y + outerRadius * Mth.sin(startAngle), blitOffset).setColor(argbColor);
 
-		BufferUploader.drawWithShader(bufferBuilder.end());
+		BufferUploader.drawWithShader(bufferBuilder.buildOrThrow());
 
 		RenderSystem.disableBlend();
 	}

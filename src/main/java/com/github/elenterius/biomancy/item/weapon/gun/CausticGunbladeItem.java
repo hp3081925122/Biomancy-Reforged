@@ -53,20 +53,20 @@ import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.client.extensions.common.IClientItemExtensions;
-import net.minecraftforge.client.gui.overlay.ForgeGui;
+import software.bernie.geckolib.animatable.client.GeoRenderProvider;
+import net.minecraft.client.gui.Font;
 import net.neoforged.neoforge.common.ItemAbilities;
 import org.joml.Vector3f;
 import org.jspecify.annotations.Nullable;
 import software.bernie.geckolib.animatable.GeoItem;
 import software.bernie.geckolib.animatable.SingletonGeoAnimatable;
 import software.bernie.geckolib.constant.DataTickets;
-import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.core.animation.AnimatableManager;
-import software.bernie.geckolib.core.animation.AnimationController;
-import software.bernie.geckolib.core.animation.AnimationState;
-import software.bernie.geckolib.core.animation.RawAnimation;
-import software.bernie.geckolib.core.object.PlayState;
+import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.animation.AnimatableManager;
+import software.bernie.geckolib.animation.AnimationController;
+import software.bernie.geckolib.animation.AnimationState;
+import software.bernie.geckolib.animation.RawAnimation;
+import software.bernie.geckolib.animation.PlayState;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.ArrayList;
@@ -318,19 +318,13 @@ public class CausticGunbladeItem extends LivingGunItem<AcidSprayProjectile> impl
 	}
 
 	@Override
-	public void initializeClient(Consumer<IClientItemExtensions> consumer) {
-		super.initializeClient(consumer);
-		consumer.accept(new IClientItemExtensions() {
+	public void createGeoRenderer(Consumer<GeoRenderProvider> consumer) {
+		consumer.accept(new GeoRenderProvider() {
 			private final CausticGunbladeRenderer renderer = new CausticGunbladeRenderer();
 
 			@Override
-			public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+			public BlockEntityWithoutLevelRenderer getGeoItemRenderer() {
 				return renderer;
-			}
-
-			@Override
-			public HumanoidModel.@Nullable ArmPose getArmPose(LivingEntity entityLiving, InteractionHand hand, ItemStack itemStack) {
-				return entityLiving.isUsingItem() ? HumanoidModel.ArmPose.CROSSBOW_HOLD : null;
 			}
 		});
 	}
@@ -378,7 +372,7 @@ public class CausticGunbladeItem extends LivingGunItem<AcidSprayProjectile> impl
 			components.addAll(ClientTextUtil.splitLinesByNewLine(ComponentUtil.translatable(translationKey + ".desc").withStyle(TextStyles.DARK_GRAY)));
 		}
 
-		void render(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight, ItemStack stack);
+		void render(Font font, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight, ItemStack stack);
 
 	}
 
@@ -396,10 +390,10 @@ public class CausticGunbladeItem extends LivingGunItem<AcidSprayProjectile> impl
 			}
 
 			@Override
-			public void render(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight, ItemStack stack) {
+			public void render(Font font, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight, ItemStack stack) {
 				int acidLevel = getState(stack).acidLevel();
 				float acidLevelPct = acidLevel / (float) MAX_ACID_LEVEL;
-				ScreenOverlays.renderBloodChargeMeter(guiGraphics, gui.getFont(), screenWidth, screenHeight, -90, acidLevel, acidLevelPct);
+				ScreenOverlays.renderBloodChargeMeter(guiGraphics, font, screenWidth, screenHeight, -90, acidLevel, acidLevelPct);
 			}
 
 			@Override

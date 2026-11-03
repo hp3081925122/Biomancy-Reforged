@@ -1,70 +1,61 @@
 package com.github.elenterius.biomancy.advancements.trigger;
 
-import com.github.elenterius.biomancy.BiomancyMod;
-import com.google.gson.JsonObject;
-import net.minecraft.advancements.critereon.*;
-import net.minecraft.resources.ResourceLocation;
+import com.github.elenterius.biomancy.init.ModTriggers;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.minecraft.advancements.Criterion;
+import net.minecraft.advancements.critereon.ContextAwarePredicate;
+import net.minecraft.advancements.critereon.EntityPredicate;
+import net.minecraft.advancements.critereon.ItemPredicate;
+import net.minecraft.advancements.critereon.SimpleCriterionTrigger;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ItemLike;
 
+import java.util.Optional;
+
 public class SacrificedItemTrigger extends SimpleCriterionTrigger<SacrificedItemTrigger.TriggerInstance> {
 
-	private static final ResourceLocation ID = BiomancyMod.rl("sacrificed_item");
-
 	@Override
-	public ResourceLocation getId() {
-		return ID;
-	}
-
-	@Override
-	public SacrificedItemTrigger.TriggerInstance createInstance(JsonObject json, ContextAwarePredicate entityPredicate, DeserializationContext conditionsParser) {
-		ItemPredicate itempredicate = ItemPredicate.fromJson(json.get("item"));
-		return new SacrificedItemTrigger.TriggerInstance(entityPredicate, itempredicate);
+	public Codec<TriggerInstance> codec() {
+		return TriggerInstance.CODEC;
 	}
 
 	public void trigger(ServerPlayer player, ItemStack stack) {
 		trigger(player, triggerInstance -> triggerInstance.matches(stack));
 	}
 
-	public static class TriggerInstance extends AbstractCriterionTriggerInstance {
-		private final ItemPredicate itemPredicate;
+	public record TriggerInstance(Optional<ContextAwarePredicate> player, Optional<ItemPredicate> item) implements SimpleCriterionTrigger.SimpleInstance {
 
-		public TriggerInstance(ContextAwarePredicate player, ItemPredicate itemPredicate) {
-			super(SacrificedItemTrigger.ID, player);
-			this.itemPredicate = itemPredicate;
+		public static final Codec<TriggerInstance> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+				EntityPredicate.ADVANCEMENT_CODEC.optionalFieldOf("player").forGetter(TriggerInstance::player),
+				ItemPredicate.CODEC.optionalFieldOf("item").forGetter(TriggerInstance::item)
+		).apply(instance, TriggerInstance::new));
+
+		public static Criterion<TriggerInstance> sacrificedItems(ItemLike... items) {
+			return create(Optional.of(ItemPredicate.Builder.item().of(items).build()));
 		}
 
-		public static SacrificedItemTrigger.TriggerInstance sacrificedItems(ItemLike... items) {
-			ItemPredicate predicate = ItemPredicate.Builder.item().of(items).build();
-			return new SacrificedItemTrigger.TriggerInstance(ContextAwarePredicate.ANY, predicate);
+		public static Criterion<TriggerInstance> sacrificedItem(ItemLike item) {
+			return create(Optional.of(ItemPredicate.Builder.item().of(item).build()));
 		}
 
-		public static SacrificedItemTrigger.TriggerInstance sacrificedItem(ItemLike item) {
-			ItemPredicate predicate = ItemPredicate.Builder.item().of(item).build();
-			return new SacrificedItemTrigger.TriggerInstance(ContextAwarePredicate.ANY, predicate);
+		public static Criterion<TriggerInstance> sacrificedItem(TagKey<Item> tag) {
+			return create(Optional.of(ItemPredicate.Builder.item().of(tag).build()));
 		}
 
-		public static SacrificedItemTrigger.TriggerInstance sacrificedItem(TagKey<Item> tag) {
-			ItemPredicate predicate = ItemPredicate.Builder.item().of(tag).build();
-			return new SacrificedItemTrigger.TriggerInstance(ContextAwarePredicate.ANY, predicate);
+		public static Criterion<TriggerInstance> sacrificedItem() {
+			return create(Optional.empty());
 		}
 
-		public static SacrificedItemTrigger.TriggerInstance sacrificedItem() {
-			return new SacrificedItemTrigger.TriggerInstance(ContextAwarePredicate.ANY, ItemPredicate.ANY);
+		private static Criterion<TriggerInstance> create(Optional<ItemPredicate> predicate) {
+			return ModTriggers.SACRIFICED_ITEM_TRIGGER.get().createCriterion(new TriggerInstance(Optional.empty(), predicate));
 		}
 
 		public boolean matches(ItemStack stack) {
-			return itemPredicate.matches(stack);
-		}
-
-		@Override
-		public JsonObject serializeToJson(SerializationContext conditions) {
-			JsonObject jsonObject = super.serializeToJson(conditions);
-			jsonObject.add("item", itemPredicate.serializeToJson());
-			return jsonObject;
+			return item.isEmpty() || item.get().test(stack);
 		}
 
 	}

@@ -12,12 +12,9 @@ import net.minecraft.util.FastColor;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidState;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
-/**
- * Almost exact copy of vanilla code because DripParticle class can't be extended
- */
 @OnlyIn(Dist.CLIENT)
 public class VanillaDripParticle extends TextureSheetParticle {
 
@@ -77,7 +74,7 @@ public class VanillaDripParticle extends TextureSheetParticle {
 		}
 	}
 
-	protected void postMoveUpdate() { /* placeholder */ }
+	protected void postMoveUpdate() {  }
 
 	protected void setColorRGB(int color) {
 		rCol = FastColor.ARGB32.red(color) / 255f;

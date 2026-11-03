@@ -7,7 +7,9 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.enchantment.ProtectionEnchantment;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.ExplosionDamageCalculator;
 import net.minecraft.world.level.Level;
@@ -16,7 +18,7 @@ import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.event.ForgeEventFactory;
+import net.neoforged.neoforge.event.EventHooks;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
@@ -26,7 +28,7 @@ import java.util.Set;
 public abstract class GenericExplosion extends Explosion {
 
 	public GenericExplosion(Level level, @Nullable Entity source, double x, double y, double z, float radius, List<BlockPos> positions) {
-		super(level, source, x, y, z, radius, positions);
+		super(level, source, x, y, z, radius, positions, BlockInteraction.DESTROY_WITH_DECAY, ParticleTypes.EXPLOSION, ParticleTypes.EXPLOSION_EMITTER, SoundEvents.GENERIC_EXPLODE);
 	}
 
 	public GenericExplosion(Level level, @Nullable Entity source, double x, double y, double z, float radius, boolean fire, BlockInteraction blockInteraction, List<BlockPos> positions) {
@@ -38,7 +40,7 @@ public abstract class GenericExplosion extends Explosion {
 	}
 
 	public GenericExplosion(Level level, @Nullable Entity source, @Nullable DamageSource damageSource, @Nullable ExplosionDamageCalculator damageCalculator, double x, double y, double z, float radius, boolean fire, BlockInteraction blockInteraction) {
-		super(level, source, damageSource, damageCalculator, x, y, z, radius, fire, blockInteraction);
+		super(level, source, damageSource, damageCalculator, x, y, z, radius, fire, blockInteraction, ParticleTypes.EXPLOSION, ParticleTypes.EXPLOSION_EMITTER, SoundEvents.GENERIC_EXPLODE);
 	}
 
 	@Override
@@ -109,12 +111,12 @@ public abstract class GenericExplosion extends Explosion {
 		int maxZ = Mth.floor(z + diameter + 1d);
 
 		List<Entity> entities = level.getEntities(source, new AABB(minX, minY, minZ, maxX, maxY, maxZ));
-		ForgeEventFactory.onExplosionDetonate(level, this, entities, diameter);
+		EventHooks.onExplosionDetonate(level, this, entities, diameter);
 
-		Vec3 position = getPosition();
+		Vec3 position = center();
 
 		for (Entity entity : entities) {
-			if (entity.ignoreExplosion()) continue;
+			if (entity.ignoreExplosion(this)) continue;
 
 			double distanceAwayPercent = Math.sqrt(entity.distanceToSqr(position)) / diameter;
 			if (distanceAwayPercent > 1d) continue;
@@ -146,14 +148,14 @@ public abstract class GenericExplosion extends Explosion {
 
 	protected double getKnockbackStrength(Entity entity, double nearExplosionPercent) {
 		if (entity instanceof LivingEntity livingentity) {
-			return ProtectionEnchantment.getExplosionKnockbackAfterDampener(livingentity, nearExplosionPercent);
+			return nearExplosionPercent * (1d - livingentity.getAttributeValue(Attributes.EXPLOSION_KNOCKBACK_RESISTANCE));
 		}
 
 		return nearExplosionPercent;
 	}
 
 	protected void hurtEntity(Entity entity, float amount) {
-		entity.hurt(getDamageSource(), amount);
+		entity.hurt(damageSource, amount);
 	}
 
 }

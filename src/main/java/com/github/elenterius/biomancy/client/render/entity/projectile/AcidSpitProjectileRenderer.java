@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.client.render.entity.projectile;
 
+import net.minecraft.util.FastColor;
 import com.github.elenterius.biomancy.entity.projectile.AcidSpitProjectile;
 import com.github.elenterius.biomancy.init.ModMobEffects;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -15,7 +16,7 @@ import net.minecraft.util.Mth;
 
 public class AcidSpitProjectileRenderer extends EntityRenderer<AcidSpitProjectile> {
 
-	private static final ResourceLocation TEXTURE = new ResourceLocation("textures/entity/llama/spit.png");
+	private static final ResourceLocation TEXTURE = ResourceLocation.withDefaultNamespace("textures/entity/llama/spit.png");
 	private final LlamaSpitModel<AcidSpitProjectile> model;
 
 	public AcidSpitProjectileRenderer(EntityRendererProvider.Context context) {
@@ -32,10 +33,7 @@ public class AcidSpitProjectileRenderer extends EntityRenderer<AcidSpitProjectil
 		poseStack.mulPose(Axis.ZP.rotationDegrees(Mth.lerp(partialTick, entity.xRotO, entity.getXRot())));
 
 		int rgb = ModMobEffects.CORROSIVE.get().getColor();
-		float r = (rgb >> 16 & 255) / 255f;
-		float g = (rgb >> 8 & 255) / 255f;
-		float b = (rgb & 255) / 255f;
-		model.renderToBuffer(poseStack, buffer.getBuffer(model.renderType(TEXTURE)), packedLight, OverlayTexture.NO_OVERLAY, r, g, b, 1);
+		model.renderToBuffer(poseStack, buffer.getBuffer(model.renderType(TEXTURE)), packedLight, OverlayTexture.NO_OVERLAY, FastColor.ARGB32.opaque(rgb));
 
 		poseStack.popPose();
 

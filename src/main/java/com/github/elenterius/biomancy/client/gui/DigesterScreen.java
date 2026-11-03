@@ -28,14 +28,12 @@ public class DigesterScreen extends AbstractContainerScreen<DigesterMenu> implem
 
 	@Override
 	public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-		renderBackground(guiGraphics);
 		super.render(guiGraphics, mouseX, mouseY, partialTick);
 		renderTooltip(guiGraphics, mouseX, mouseY);
 	}
 
 	@Override
 	protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-		//don't draw any labels
 	}
 
 	@Override

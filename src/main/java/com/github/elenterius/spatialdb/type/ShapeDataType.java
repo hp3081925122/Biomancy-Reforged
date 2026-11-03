@@ -37,7 +37,7 @@ public class ShapeDataType extends BasicDataType<Shape> {
 		ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(bytes);
 
 		try (DataInputStream inputStream = new DataInputStream(new GZIPInputStream(byteArrayInputStream))) {
-			return NbtIo.read(inputStream, NbtAccounter.UNLIMITED);
+			return NbtIo.read(inputStream, NbtAccounter.unlimitedHeap());
 		}
 		catch (IOException e) {
 			return new CompoundTag();
@@ -53,7 +53,7 @@ public class ShapeDataType extends BasicDataType<Shape> {
 		int averageSize = averageSizes.getOrDefault(shape.getClass(), 1000);
 		int size = data.length * 2;
 		long n = 15L;
-		averageSize = (int) ((size + n * averageSize) / (n + 1)); //exponential moving average
+		averageSize = (int) ((size + n * averageSize) / (n + 1));
 		averageSizes.put(shape.getClass(), averageSize);
 	}
 

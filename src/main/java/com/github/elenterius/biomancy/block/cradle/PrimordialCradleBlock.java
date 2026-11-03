@@ -216,7 +216,7 @@ public class PrimordialCradleBlock extends HorizontalDirectionalBlock implements
 		ItemStack copyOfStack = stack.copyWithCount(1);
 		if (level.getBlockEntity(pos) instanceof PrimordialCradleBlockEntity cradle && !cradle.isFull() && cradle.insertItem(stack)) {
 			if (player instanceof ServerPlayer serverPlayer) {
-				ModTriggers.SACRIFICED_ITEM_TRIGGER.trigger(serverPlayer, copyOfStack);
+				ModTriggers.SACRIFICED_ITEM_TRIGGER.get().trigger(serverPlayer, copyOfStack);
 			}
 			SoundEvent soundEvent = cradle.isFull() ? ModSoundEvents.CRADLE_BECAME_FULL.get() : ModSoundEvents.CRADLE_EAT.get();
 			SoundUtil.Server.playBlockSound((ServerLevel) level, pos, soundEvent);

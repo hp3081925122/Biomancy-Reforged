@@ -6,8 +6,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 
 public class ClimateUtil {
-	public static final float MIN_TEMP = -0.7f; //frozen peaks biome
-	public static final float MAX_TEMP = 2; //desert biome
+	public static final float MIN_TEMP = -0.7f;
+	public static final float MAX_TEMP = 2;
 	public static final float TEMP_DIFF = MAX_TEMP - MIN_TEMP;
 
 	public static float rescale(float minecraftTemperature) {
@@ -23,7 +23,7 @@ public class ClimateUtil {
 	}
 
 	public static float getTemperature(Level level, BlockPos pos) {
-		Biome biome = level.getBiome(pos).get();
+		Biome biome = level.getBiome(pos).value();
 		return getTemperature(biome, pos);
 	}
 

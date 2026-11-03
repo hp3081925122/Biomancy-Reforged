@@ -63,7 +63,7 @@ public class VolatileExplosion extends GenericExplosion {
 	}
 
 	public VolatileExplosion(Level level, @Nullable Entity source, @Nullable DamageSource damageSource, @Nullable ExplosionDamageCalculator damageCalculator, double x, double y, double z, float radius, boolean ignoredFire, BlockInteraction interaction) {
-		super(level, source, damageSource, damageCalculator, x, y, z, radius, true, interaction); //fire is always true
+		super(level, source, damageSource, damageCalculator, x, y, z, radius, true, interaction);
 	}
 
 	@Override
@@ -83,7 +83,7 @@ public class VolatileExplosion extends GenericExplosion {
 	@Override
 	public void finalizeExplosion(boolean spawnParticles) {
 		if (level.isClientSide) {
-			level.playLocalSound(x, y, z, SoundEvents.GENERIC_EXPLODE, SoundSource.BLOCKS, 4f, (1f + (level.random.nextFloat() - level.random.nextFloat()) * 0.2f) * 0.7f, false);
+			level.playLocalSound(x, y, z, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.BLOCKS, 4f, (1f + (level.random.nextFloat() - level.random.nextFloat()) * 0.2f) * 0.7f, false);
 		}
 
 		boolean interactsWithBlocks = interactsWithBlocks();
@@ -131,7 +131,7 @@ public class VolatileExplosion extends GenericExplosion {
 					}
 
 					state.spawnAfterBreak(serverlevel, pos, ItemStack.EMPTY, isPlayerSource);
-					state.getDrops(lootParams).forEach(stack -> addBlockDrops(drops, stack, pos.immutable()));
+					state.getDrops(lootParams).forEach(stack -> addOrAppendStack(drops, stack, pos.immutable()));
 				}
 
 				state.onBlockExploded(level, pos, this);
@@ -152,8 +152,6 @@ public class VolatileExplosion extends GenericExplosion {
 						BlockPos neighborPos = pos.relative(direction);
 						BlockState neighborState = level.getBlockState(neighborPos);
 						if (neighborState.isFaceSturdy(level, neighborPos, direction.getOpposite())) {
-							//isFlammable(level, neighborPos, direction.getOpposite())
-							//level.setBlockAndUpdate(pos, BaseFireBlock.getState(level, pos));
 							ModBlocks.VOLATILE_SPLATTER.get().spreadSplatter(serverLevel, pos, direction.getOpposite(), random);
 							break;
 						}

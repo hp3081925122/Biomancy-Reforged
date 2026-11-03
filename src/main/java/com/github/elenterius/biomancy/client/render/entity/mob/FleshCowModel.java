@@ -2,8 +2,8 @@ package com.github.elenterius.biomancy.client.render.entity.mob;
 
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.entity.mob.FleshCow;
-import net.minecraft.client.Minecraft;
-import software.bernie.geckolib.core.molang.MolangParser;
+import com.github.elenterius.biomancy.client.util.MolangUtil;
+import software.bernie.geckolib.animation.AnimationState;
 import software.bernie.geckolib.model.DefaultedEntityGeoModel;
 
 public class FleshCowModel<T extends FleshCow> extends DefaultedEntityGeoModel<T> {
@@ -13,31 +13,32 @@ public class FleshCowModel<T extends FleshCow> extends DefaultedEntityGeoModel<T
 	}
 
 	@Override
-	public void applyMolangQueries(T animatable, double animTime) {
-		super.applyMolangQueries(animatable, animTime);
+	public void applyMolangQueries(AnimationState<T> animationState, double animTime) {
+		super.applyMolangQueries(animationState, animTime);
 
-		MolangParser parser = MolangParser.INSTANCE;
+		T animatable = animationState.getAnimatable();
+		float partialTick = animationState.getPartialTick();
 
-		parser.setMemoizedValue("variable.limb_swing", () -> {
+		MolangUtil.setMemoizedValue("variable.limb_swing", () -> {
 			boolean shouldSit = animatable.isPassenger() && (animatable.getVehicle() != null && animatable.getVehicle().shouldRiderSit());
 
 			float limbSwing = 0;
 
 			if (!shouldSit && animatable.isAlive()) {
-				limbSwing = animatable.walkAnimation.position(Minecraft.getInstance().getPartialTick());
+				limbSwing = animatable.walkAnimation.position(partialTick);
 				if (animatable.isBaby()) limbSwing *= 3f;
 			}
 
 			return limbSwing;
 		});
 
-		parser.setMemoizedValue("variable.limb_swing_amount", () -> {
+		MolangUtil.setMemoizedValue("variable.limb_swing_amount", () -> {
 			boolean shouldSit = animatable.isPassenger() && (animatable.getVehicle() != null && animatable.getVehicle().shouldRiderSit());
 
 			float limbSwingAmount = 0;
 
 			if (!shouldSit && animatable.isAlive()) {
-				limbSwingAmount = animatable.walkAnimation.speed(Minecraft.getInstance().getPartialTick());
+				limbSwingAmount = animatable.walkAnimation.speed(partialTick);
 				if (limbSwingAmount > 1f) limbSwingAmount = 1f;
 			}
 

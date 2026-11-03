@@ -17,7 +17,7 @@ import net.minecraft.resources.ResourceLocation;
 
 public class ChromaSheepFurLayer extends RenderLayer<ChromaSheep, SheepModel<ChromaSheep>> {
 
-	private static final ResourceLocation TEXTURE = new ResourceLocation("textures/entity/sheep/sheep_fur.png");
+	private static final ResourceLocation TEXTURE = ResourceLocation.withDefaultNamespace("textures/entity/sheep/sheep_fur.png");
 
 	private final SheepFurModel<ChromaSheep> model;
 
@@ -35,7 +35,7 @@ public class ChromaSheepFurLayer extends RenderLayer<ChromaSheep, SheepModel<Chr
 		model.prepareMobModel(livingEntity, limbSwing, limbSwingAmount, partialTicks);
 		model.setupAnim(livingEntity, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch);
 		VertexConsumer vertexconsumer = buffer.getBuffer(getRenderType(TEXTURE));
-		model.renderToBuffer(poseStack, vertexconsumer, packedLight, LivingEntityRenderer.getOverlayCoords(livingEntity, 0f), 1f, 1f, 1f, 1f);
+		model.renderToBuffer(poseStack, vertexconsumer, packedLight, LivingEntityRenderer.getOverlayCoords(livingEntity, 0f));
 	}
 
 	protected RenderType getRenderType(ResourceLocation texture) {

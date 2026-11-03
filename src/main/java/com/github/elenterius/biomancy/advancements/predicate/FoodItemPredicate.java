@@ -1,33 +1,21 @@
 package com.github.elenterius.biomancy.advancements.predicate;
 
-import com.github.elenterius.biomancy.BiomancyMod;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import net.minecraft.advancements.critereon.ItemPredicate;
-import net.minecraft.resources.ResourceLocation;
+import com.mojang.serialization.MapCodec;
+import net.minecraft.advancements.critereon.ItemSubPredicate;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.ItemStack;
 
-public class FoodItemPredicate extends ItemPredicate {
+public final class FoodItemPredicate implements ItemSubPredicate {
 
-	public static final ResourceLocation ID = BiomancyMod.rl("is_food_item");
+	public static final FoodItemPredicate INSTANCE = new FoodItemPredicate();
+	public static final ItemSubPredicate.Type<FoodItemPredicate> TYPE = new ItemSubPredicate.Type<>(MapCodec.unit(INSTANCE).codec());
 
-	public FoodItemPredicate() {}
+	private FoodItemPredicate() {}
 
 	@Override
 	public boolean matches(ItemStack stack) {
-		if (!stack.isEdible()) return false;
+		if (!stack.has(DataComponents.FOOD)) return false;
 		return stack.getFoodProperties(null) != null;
-	}
-
-	@Override
-	public JsonElement serializeToJson() {
-		JsonObject jsonObject = new JsonObject();
-		jsonObject.addProperty("type", ID.toString());
-		return jsonObject;
-	}
-
-	public static FoodItemPredicate deserializeFromJson(JsonObject jsonObject) {
-		return new FoodItemPredicate();
 	}
 
 }

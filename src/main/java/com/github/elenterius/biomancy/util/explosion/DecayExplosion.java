@@ -64,12 +64,12 @@ public class DecayExplosion extends GenericExplosion {
 	}
 
 	public DecayExplosion(Level level, @Nullable Entity source, @Nullable DamageSource damageSource, @Nullable ExplosionDamageCalculator damageCalculator, double x, double y, double z, float radius, boolean ignoredFire, BlockInteraction interaction) {
-		super(level, source, damageSource, damageCalculator, x, y, z, radius, false, interaction); //fire is always false
+		super(level, source, damageSource, damageCalculator, x, y, z, radius, false, interaction);
 	}
 
 	@Override
 	protected void hurtEntity(Entity entity, float amount) {
-		entity.hurt(getDamageSource(), amount * ATTACK_DAMAGE_MULTIPLIER);
+		entity.hurt(damageSource, amount * ATTACK_DAMAGE_MULTIPLIER);
 	}
 
 	@Override
@@ -80,7 +80,7 @@ public class DecayExplosion extends GenericExplosion {
 	@Override
 	public void finalizeExplosion(boolean spawnParticles) {
 		if (level.isClientSide) {
-			level.playLocalSound(x, y, z, SoundEvents.GENERIC_EXPLODE, SoundSource.BLOCKS, 4f, (1f + (level.random.nextFloat() - level.random.nextFloat()) * 0.2f) * 0.7f, false);
+			level.playLocalSound(x, y, z, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.BLOCKS, 4f, (1f + (level.random.nextFloat() - level.random.nextFloat()) * 0.2f) * 0.7f, false);
 		}
 
 		boolean interactsWithBlocks = interactsWithBlocks();
@@ -123,7 +123,7 @@ public class DecayExplosion extends GenericExplosion {
 					}
 
 					state.spawnAfterBreak(serverlevel, pos, ItemStack.EMPTY, isPlayerSource);
-					state.getDrops(lootParams).forEach(stack -> addBlockDrops(drops, stack, pos.immutable()));
+					state.getDrops(lootParams).forEach(stack -> addOrAppendStack(drops, stack, pos.immutable()));
 				}
 
 				state.onBlockExploded(level, pos, this);

@@ -16,10 +16,10 @@ import net.minecraft.world.item.ArmorMaterial;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.client.extensions.common.IClientItemExtensions;
+import software.bernie.geckolib.animatable.client.GeoRenderProvider;
 import org.jspecify.annotations.Nullable;
-import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.animation.AnimatableManager;
 import software.bernie.geckolib.renderer.GeoArmorRenderer;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
@@ -35,17 +35,15 @@ public final class AcolyteArmorItem extends LivingArmorGeoItem implements Knowle
 	}
 
 	@Override
-	public void initializeClient(Consumer<IClientItemExtensions> consumer) {
-		consumer.accept(new IClientItemExtensions() {
+	public void createGeoRenderer(Consumer<GeoRenderProvider> consumer) {
+		consumer.accept(new GeoRenderProvider() {
 			private @Nullable GeoArmorRenderer<?> renderer;
 
 			@Override
-			public HumanoidModel<?> getHumanoidArmorModel(LivingEntity livingEntity, ItemStack itemStack, EquipmentSlot slot, HumanoidModel<?> original) {
+			public <E extends LivingEntity> HumanoidModel<?> getGeoArmorRenderer(@Nullable E livingEntity, ItemStack itemStack, @Nullable EquipmentSlot slot, @Nullable HumanoidModel<E> original) {
 				if (renderer == null) {
 					renderer = new AcolyteArmorRenderer();
 				}
-
-				renderer.prepForRender(livingEntity, itemStack, slot, original);
 
 				return renderer;
 			}

@@ -14,13 +14,13 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.Equipable;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.client.extensions.common.IClientItemExtensions;
+import software.bernie.geckolib.animatable.client.GeoRenderProvider;
 import software.bernie.geckolib.animatable.GeoItem;
 import software.bernie.geckolib.constant.DataTickets;
-import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.core.animation.AnimatableManager;
-import software.bernie.geckolib.core.animation.AnimationController;
-import software.bernie.geckolib.core.animation.RawAnimation;
+import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.animation.AnimatableManager;
+import software.bernie.geckolib.animation.AnimationController;
+import software.bernie.geckolib.animation.RawAnimation;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.List;
@@ -37,7 +37,7 @@ public class ThornShieldItem extends LivingShieldItem implements Equipable, Shie
 	@Override
 	public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
 		if (level instanceof ServerLevel serverLevel) {
-			GeoItem.getOrAssignId(stack, serverLevel); //hack to always ensure we have a unique id for the animation
+			GeoItem.getOrAssignId(stack, serverLevel);
 		}
 	}
 
@@ -60,13 +60,12 @@ public class ThornShieldItem extends LivingShieldItem implements Equipable, Shie
 	}
 
 	@Override
-	public void initializeClient(Consumer<IClientItemExtensions> consumer) {
-		super.initializeClient(consumer);
-		consumer.accept(new IClientItemExtensions() {
+	public void createGeoRenderer(Consumer<GeoRenderProvider> consumer) {
+		consumer.accept(new GeoRenderProvider() {
 			private final ThornShieldRenderer renderer = new ThornShieldRenderer();
 
 			@Override
-			public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+			public BlockEntityWithoutLevelRenderer getGeoItemRenderer() {
 				return renderer;
 			}
 		});

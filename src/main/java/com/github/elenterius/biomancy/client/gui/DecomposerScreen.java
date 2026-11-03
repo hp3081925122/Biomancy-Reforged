@@ -28,14 +28,12 @@ public class DecomposerScreen extends AbstractContainerScreen<DecomposerMenu> im
 
 	@Override
 	public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-		renderBackground(guiGraphics);
 		super.render(guiGraphics, mouseX, mouseY, partialTick);
 		renderTooltip(guiGraphics, mouseX, mouseY);
 	}
 
 	@Override
 	protected void renderLabels(GuiGraphics guiGraphics, int pMouseX, int pMouseY) {
-		//don't draw any labels
 	}
 
 	@Override

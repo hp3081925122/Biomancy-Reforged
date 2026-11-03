@@ -50,6 +50,24 @@
       "name": "BIOMANCY_BIO_FORGE",
       "constructor": "()V",
       "parameters": []
+    },
+    {
+      "enum": "net/minecraft/client/RecipeBookCategories",
+      "name": "BIOMANCY_BIO_FORGE",
+      "constructor": "(Ljava/util/function/Supplier;)V",
+      "parameters": {
+        "class": "com/github/elenterius/biomancy/init/client/ModRecipeBookCategories$Proxies",
+        "field": "BIO_FORGE"
+      }
+    },
+    {
+      "enum": "net/minecraft/client/model/HumanoidModel$ArmPose",
+      "name": "BIOMANCY_HOLD_AND_AIM_GUN_TWO_HANDED",
+      "constructor": "(ZLnet/neoforged/neoforge/client/IArmPoseTransformer;)V",
+      "parameters": {
+        "class": "com/github/elenterius/biomancy/init/client/ModArmPoses$Proxies",
+        "field": "HOLD_AND_AIM_GUN_TWO_HANDED"
+      }
     }
   ]
 }

@@ -23,7 +23,7 @@ public final class MoundGenerator {
 	}
 
 	public static MoundShape constructShape(Level level, BlockPos blockOrigin, long seed) {
-		Biome biome = level.getBiome(blockOrigin).get();
+		Biome biome = level.getBiome(blockOrigin).value();
 		MoundShape.ProcGenValues procGenValues = new MoundShape.ProcGenValues(
 				seed,
 				(byte) -21,
@@ -138,7 +138,6 @@ public final class MoundGenerator {
 			totalHeight = height;
 		}
 
-		//end cap shape
 		ChamberFactoryType chamberType = isMainSpire ? ChamberFactoryType.END_CAP_MAIN_SPIRE : ChamberFactoryType.END_CAP_SUB_SPIRE;
 		genSphereWithChambers(x + prevLean.x, y + totalHeight + (prevRadius / 2) * 1.5f, z + prevLean.z, prevRadius / 2f, prevRadius / 2f, context, chamberType, isMainSpire);
 	}
@@ -158,10 +157,6 @@ public final class MoundGenerator {
 		}
 
 		Consumer<MoundChamber> filteredConsumer = chamber -> {
-			//			Vec3 closestPoint = GeometryUtil.closestPointOnAABB(chamber.getAABB(), context.origin);
-			//			double distSqr = closestPoint.distanceToSqr(context.origin);
-			//			boolean noIntersectionWithCradleChambers = distSqr > context.mainChamberRadius * context.mainChamberRadius;
-
 			if (isMainSpire) {
 				context.chambers.add(chamber);
 			}
@@ -196,12 +191,11 @@ public final class MoundGenerator {
 				ChamberFactory generator = context.random.nextFloat() < 0.8f ? ChamberFactory.ONE_BIG_FOUR_SMALL_ELLIPSOIDS : ChamberFactory.ONE_SPHERE;
 				generator.create(x, y, z, chamberRadius, context.random, filteredConsumer);
 			}
-			default -> { /* do nothing */ }
+			default -> {  }
 		}
 	}
 
 	private static float countCirclesOnCircumference(float radius, float subCircleRadius) {
-		//https://stackoverflow.com/questions/56004326/calculate-the-number-of-circles-that-fit-on-the-circumference-of-another-circle
 		if (subCircleRadius > radius) return 0;
 		return Mth.PI / (float) Math.asin(subCircleRadius / radius);
 	}

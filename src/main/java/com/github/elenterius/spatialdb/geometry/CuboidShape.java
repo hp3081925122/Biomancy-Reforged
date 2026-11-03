@@ -7,9 +7,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
-/**
- * Axis Aligned Box
- */
 public class CuboidShape implements Shape {
 
 	private final Vec3 origin;
@@ -21,7 +18,7 @@ public class CuboidShape implements Shape {
 	}
 
 	public CuboidShape(BlockPos min, BlockPos max) {
-		aabb = new AABB(min, max);
+		aabb = new AABB(Vec3.atLowerCornerOf(min), Vec3.atLowerCornerOf(max));
 		origin = aabb.getCenter();
 	}
 

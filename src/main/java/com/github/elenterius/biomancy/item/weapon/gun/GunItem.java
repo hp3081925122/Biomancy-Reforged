@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.item.weapon.gun;
 
+import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.core.Holder;
 import com.github.elenterius.biomancy.init.ModDataComponents;
 import com.github.elenterius.biomancy.client.util.ClientTextUtil;
@@ -191,6 +192,10 @@ public abstract class GunItem<T extends BaseProjectile> extends ProjectileWeapon
 	@Override
 	public int getDefaultProjectileRange() {
 		return Math.round(gunProperties.horizontalDefaultRange());
+	}
+
+	@Override
+	protected void shootProjectile(LivingEntity shooter, Projectile projectile, int index, float velocity, float inaccuracy, float angle, @Nullable LivingEntity target) {
 	}
 
 	@Override

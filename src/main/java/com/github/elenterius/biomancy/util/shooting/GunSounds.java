@@ -18,8 +18,8 @@ public record GunSounds(@Nullable SoundEvent shoot,
 
 	public static final GunSounds DEFAULT = new GunSounds(
 			SoundEvents.CROSSBOW_SHOOT, SoundEvents.DISPENSER_FAIL,
-			SoundEvents.CROSSBOW_LOADING_START, SoundEvents.CROSSBOW_LOADING_MIDDLE,
-			SoundEvents.CROSSBOW_LOADING_END, SoundEvents.CROSSBOW_LOADING_END, SoundEvents.CROSSBOW_LOADING_END
+			SoundEvents.CROSSBOW_LOADING_START.value(), SoundEvents.CROSSBOW_LOADING_MIDDLE.value(),
+			SoundEvents.CROSSBOW_LOADING_END.value(), SoundEvents.CROSSBOW_LOADING_END.value(), SoundEvents.CROSSBOW_LOADING_END.value()
 	);
 
 	public static void play(Level level, LivingEntity shooter, SoundEvent soundEvent) {

@@ -20,12 +20,10 @@ public class FleshkinChestScreen extends AbstractContainerScreen<FleshkinChestMe
 
 	@Override
 	protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-		//draw no labels
 	}
 
 	@Override
 	public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-		renderBackground(guiGraphics);
 		super.render(guiGraphics, mouseX, mouseY, partialTick);
 		renderTooltip(guiGraphics, mouseX, mouseY);
 	}

@@ -19,12 +19,11 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.recipebook.RecipeCollection;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.searchtree.SearchRegistry;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.stats.RecipeBook;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import org.jspecify.annotations.Nullable;
 
 import java.util.*;
@@ -38,7 +37,7 @@ class BioForgeScreenController {
 		if (a.sortPriority() == b.sortPriority()) return a.enumId().compareTo(b.enumId());
 		return b.sortPriority() - a.sortPriority();
 	};
-	private static RecipeSelection recipeSelection = RecipeSelection.EMPTY; //volatile client cache
+	private static RecipeSelection recipeSelection = RecipeSelection.EMPTY;
 	private final ItemStackCounter itemCounter;
 	private final List<BioForgeTab> tabs;
 	private final Minecraft minecraft;
@@ -55,13 +54,12 @@ class BioForgeScreenController {
 		this.minecraft = minecraft;
 		this.menu = menu;
 
-		tabs = ModBioForgeTabs.REGISTRY.get().getValues().stream().sorted(CATEGORY_COMPARATOR).toList();
+		tabs = ModBioForgeTabs.REGISTRY.stream().sorted(CATEGORY_COMPARATOR).toList();
 
 		playerInvChanges = getPlayer().getInventory().getTimesChanged();
 		itemCounter = new ItemStackCounter();
 		itemCounter.accountStacks(getPlayer().getInventory().items);
 
-		//restore selected recipe from volatile client cache
 		if (recipeSelection != RecipeSelection.EMPTY && menu.getSelectedRecipe() == null && recipeSelection.recipe != null) {
 			ModNetworkHandler.sendBioForgeRecipeToServer(menu.containerId, recipeSelection.recipe);
 		}
@@ -81,11 +79,6 @@ class BioForgeScreenController {
 		startIndex = 0;
 	}
 
-	/**
-	 * pages begin at index 1
-	 *
-	 * @return page number
-	 */
 	public int getCurrentPage() {
 		return startIndex / GRID_SIZE + 1;
 	}
@@ -118,19 +111,18 @@ class BioForgeScreenController {
 		return !shownRecipes.isEmpty();
 	}
 
-	public List<BioForgingRecipe> getOrderedRecipes(RecipeCollection recipeCollection) {
-		List<Recipe<?>> list = recipeCollection.getDisplayRecipes(true);
+	@SuppressWarnings("unchecked")
+	public List<RecipeHolder<BioForgingRecipe>> getOrderedRecipes(RecipeCollection recipeCollection) {
+		List<RecipeHolder<?>> list = recipeCollection.getDisplayRecipes(true);
 		if (!getPlayer().getRecipeBook().isFiltering(ModRecipeBookTypes.BIO_FORGE)) {
 			list.addAll(recipeCollection.getDisplayRecipes(false));
 		}
-		return list.stream().map(BioForgingRecipe.class::cast).toList();
+		return list.stream().map(holder -> (RecipeHolder<BioForgingRecipe>) holder).toList();
 	}
 
-	private BioForgingRecipe getRecipe(int index) {
+	private RecipeHolder<BioForgingRecipe> getRecipe(int index) {
 		if (index >= shownRecipes.size()) throw new IndexOutOfBoundsException(index);
 		return getOrderedRecipes(shownRecipes.get(index)).get(0);
-		// we disregard all other recipes in the RecipeCollection
-		// RecipeCollections for the bio-forge should only contain 1 recipe
 	}
 
 	public RecipeCollection getRecipeCollectionByGrid(int gridIndex) {
@@ -138,7 +130,7 @@ class BioForgeScreenController {
 		return shownRecipes.get(startIndex + gridIndex);
 	}
 
-	public BioForgingRecipe getRecipeByGrid(int gridIndex) {
+	public RecipeHolder<BioForgingRecipe> getRecipeByGrid(int gridIndex) {
 		if (gridIndex >= GRID_SIZE) throw new IndexOutOfBoundsException(gridIndex);
 		return getRecipe(startIndex + gridIndex);
 	}
@@ -155,17 +147,16 @@ class BioForgeScreenController {
 		return Math.min(GRID_SIZE, shownRecipes.size() - startIndex);
 	}
 
-	//TODO: refactor
 	public boolean isSelectedRecipeVisible() {
 		int maxIndex = startIndex + GRID_SIZE;
 		if (recipeSelection.tab == activeTab) {
 			return recipeSelection.index >= startIndex && recipeSelection.index < maxIndex && getGridIndexOfSelectedRecipe() < getMaxRecipesOnGrid();
 		}
 
-		if (recipeSelection.recipe != null && (activeTab == 0 || getCurrentCategory() == recipeSelection.recipe.getTab())) {
+		if (recipeSelection.recipe != null && (activeTab == 0 || getCurrentCategory() == recipeSelection.recipe.value().getTab())) {
 			int maxRecipes = getMaxRecipesOnGrid();
 			for (int gridIndex = 0; gridIndex < maxRecipes; gridIndex++) {
-				if (getRecipe(startIndex + gridIndex).isRecipeEqual(recipeSelection.recipe)) {
+				if (getRecipe(startIndex + gridIndex).id().equals(recipeSelection.recipe.id())) {
 					crossoverGridIndex = startIndex + gridIndex;
 					return true;
 				}
@@ -181,7 +172,7 @@ class BioForgeScreenController {
 			return recipeSelection.index - startIndex;
 		}
 
-		if (recipeSelection.recipe != null && (activeTab == 0 || getCurrentCategory() == recipeSelection.recipe.getTab())) {
+		if (recipeSelection.recipe != null && (activeTab == 0 || getCurrentCategory() == recipeSelection.recipe.value().getTab())) {
 			return crossoverGridIndex - startIndex;
 		}
 
@@ -193,7 +184,12 @@ class BioForgeScreenController {
 	}
 
 	@Nullable
-	public BioForgingRecipe getSelectedRecipe() {
+	public BioForgingRecipe getSelectedRecipeValue() {
+		return recipeSelection.recipe != null ? recipeSelection.recipe.value() : null;
+	}
+
+	@Nullable
+	public RecipeHolder<BioForgingRecipe> getSelectedRecipe() {
 		return recipeSelection.recipe;
 	}
 
@@ -204,7 +200,7 @@ class BioForgeScreenController {
 		}
 
 		int recipeIndex = startIndex + gridIndex;
-		BioForgingRecipe recipe = getRecipe(recipeIndex);
+		RecipeHolder<BioForgingRecipe> recipe = getRecipe(recipeIndex);
 		recipeSelection = new RecipeSelection(recipe, activeTab, recipeIndex);
 
 		ModNetworkHandler.sendBioForgeRecipeToServer(menu.containerId, recipe);
@@ -247,12 +243,12 @@ class BioForgeScreenController {
 
 	private static void canCraftRecipe(RecipeCollection recipeCollection, ItemStackCounter itemCounter, RecipeBook book, boolean isCreativePlayer) {
 		RecipeCollectionAccessor accessor = (RecipeCollectionAccessor) recipeCollection;
-		Set<Recipe<?>> fitDimensions = accessor.biomancy$getFitDimensions();
-		Set<Recipe<?>> craftable = accessor.biomancy$getCraftable();
+		Set<RecipeHolder<?>> fitDimensions = accessor.biomancy$getFitDimensions();
+		Set<RecipeHolder<?>> craftable = accessor.biomancy$getCraftable();
 
-		for (Recipe<?> recipe : recipeCollection.getRecipes()) {
+		for (RecipeHolder<?> recipe : recipeCollection.getRecipes()) {
 			boolean isRecipeKnown = isCreativePlayer || book.contains(recipe);
-			boolean canCraftRecipe = recipe.canCraftInDimensions(0, 0) && isRecipeKnown;
+			boolean canCraftRecipe = recipe.value().canCraftInDimensions(0, 0) && isRecipeKnown;
 
 			if (canCraftRecipe) {
 				fitDimensions.add(recipe);
@@ -261,7 +257,7 @@ class BioForgeScreenController {
 				fitDimensions.remove(recipe);
 			}
 
-			if (recipe instanceof BioForgingRecipe bioForgingRecipe) {
+			if (recipe.value() instanceof BioForgingRecipe bioForgingRecipe) {
 				if (canCraftRecipe && bioForgingRecipe.isCraftable(itemCounter)) {
 					craftable.add(recipe);
 				}
@@ -280,15 +276,16 @@ class BioForgeScreenController {
 		boolean isCreativePlayer = player.isCreative() || !BiomancyConfig.SERVER_SYNCED.doBioForgeRecipeProgression.get();
 
 		ClientRecipeBook recipeBook = player.getRecipeBook();
-		List<RecipeCollection> recipesForCategory = recipeBook.getCollection(ModRecipeBookCategories.getRecipeBookCategories(tabs.get(activeTab)));
+		BioForgeTab currentTab = tabs.get(activeTab);
+		List<RecipeCollection> recipesForCategory = recipeBook.getCollection(ModRecipeBookCategories.BIO_FORGE).stream().filter(recipeCollection -> ModRecipeBookCategories.isInTab(recipeCollection, currentTab)).toList();
 		recipesForCategory.forEach(recipeCollection -> canCraftRecipe(recipeCollection, itemCounter, recipeBook, isCreativePlayer));
 
 		List<RecipeCollection> recipes = Lists.newArrayList(recipesForCategory);
 		if (!isCreativePlayer) recipes.removeIf(recipeCollection -> !recipeCollection.hasKnownRecipes());
 		recipes.removeIf(recipeCollection -> !recipeCollection.hasFitting());
 
-		if (!currentSearchString.isEmpty()) {
-			ObjectSet<RecipeCollection> searchResult = new ObjectLinkedOpenHashSet<>(minecraft.getSearchTree(SearchRegistry.RECIPE_COLLECTIONS).search(currentSearchString));
+		if (!currentSearchString.isEmpty() && minecraft.getConnection() != null) {
+			ObjectSet<RecipeCollection> searchResult = new ObjectLinkedOpenHashSet<>(minecraft.getConnection().searchTrees().recipes().search(currentSearchString));
 			recipes.removeIf(recipeCollection -> !searchResult.contains(recipeCollection));
 		}
 
@@ -334,12 +331,12 @@ class BioForgeScreenController {
 		updateAndSearchRecipes();
 	}
 
-	record RecipeSelection(@Nullable BioForgingRecipe recipe, int tab, int index) {
+	record RecipeSelection(@Nullable RecipeHolder<BioForgingRecipe> recipe, int tab, int index) {
 		public static RecipeSelection EMPTY = new RecipeSelection(null, -1, -1);
 
 		@Nullable
 		public ResourceLocation getRecipeId() {
-			return recipe != null ? recipe.getId() : null;
+			return recipe != null ? recipe.id() : null;
 		}
 	}
 

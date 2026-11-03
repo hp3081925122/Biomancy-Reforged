@@ -3,14 +3,14 @@ package com.github.elenterius.biomancy.styles;
 import com.github.elenterius.biomancy.init.ModRarities;
 import com.github.elenterius.biomancy.item.ItemTooltipStyleProvider;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.client.event.RenderTooltipEvent;
+import net.neoforged.neoforge.client.event.RenderTooltipEvent;
 
 public final class ColorStyles {
 
 	public static final int WHITE_ARGB = 0xFF_FFFFFF;
 	public static final int BLACK_ARGB = 0xFF_000000;
 
-	public static final int TOOLTIP_BACKGROUND_ARGB = 0xF2_040404; // alpha of 242 :)
+	public static final int TOOLTIP_BACKGROUND_ARGB = 0xF2_040404;
 	public static final int TOOLTIP_BORDER_ARGB = 0xFF_903E55;
 
 	public static final int NUTRIENTS_FUEL_BAR = 0x94A856;
@@ -34,7 +34,6 @@ public final class ColorStyles {
 			tooltipEvent.setBorderEnd(rarityColor);
 		}
 		else {
-			//fallback
 			GENERIC_TOOLTIP.applyColorTo(tooltipEvent);
 		}
 	};
@@ -45,11 +44,6 @@ public final class ColorStyles {
 		void applyColorTo(final RenderTooltipEvent.Color tooltipEvent);
 	}
 
-	/**
-	 * @param backgroundColor  ARGB
-	 * @param borderStartColor ARGB
-	 * @param borderEndColor   ARGB
-	 */
 	public record TooltipStyle(int backgroundColor, int borderStartColor, int borderEndColor) implements ITooltipStyle {
 		@Override
 		public void applyColorTo(final RenderTooltipEvent.Color tooltipEvent) {

@@ -5,7 +5,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.material.FlowingFluid;
 import net.minecraft.world.level.material.Fluid;
 import net.neoforged.neoforge.fluids.FluidStack;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.neoforge.registries.DeferredHolder;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
 
@@ -33,7 +33,7 @@ public final class FluidNutrients {
 		FLUIDS.put(key, func);
 	}
 
-	public static void register(RegistryObject<? extends Fluid> fluidHolder, FluidToFuelConversion func) {
+	public static void register(DeferredHolder<Fluid, ? extends Fluid> fluidHolder, FluidToFuelConversion func) {
 		ResourceLocation key = fluidHolder.getId();
 		FLUIDS.put(key, func);
 	}

@@ -7,7 +7,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ClickAction;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.items.ItemHandlerHelper;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.function.Predicate;
@@ -83,7 +82,7 @@ public interface NutrientsContainerItem {
 		int neededAmount = Mth.floor(Math.max(0, maxNutrients - nutrients) / (float) resourceValue);
 		if (neededAmount > 0) {
 			setNutrients(container, nutrients + resourceValue);
-			return ItemHandlerHelper.copyStackWithSize(resource, resource.getCount() - 1);
+			return resource.copyWithCount(resource.getCount() - 1);
 		}
 
 		return resource;

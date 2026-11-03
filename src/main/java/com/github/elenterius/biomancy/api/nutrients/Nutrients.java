@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.api.nutrients;
 
+import net.minecraft.core.component.DataComponents;
 import com.github.elenterius.biomancy.init.ModItems;
 import com.github.elenterius.biomancy.init.tags.ModItemTags;
 import it.unimi.dsi.fastutil.objects.Object2IntArrayMap;
@@ -44,11 +45,11 @@ public final class Nutrients {
 		if (resource.isEmpty()) return false;
 		if (REPAIR_VALUES.containsKey(resource.getItem())) return true;
 
-		if (resource.isEdible()) {
+		if (resource.has(DataComponents.FOOD)) {
 			FoodProperties foodProperties = resource.getFoodProperties(null);
 			if (foodProperties == null) return false;
 
-			return resource.is(ItemTags.MEAT) && resource.is(ModItemTags.FRESH_RAW_MEATS) && foodProperties.getNutrition() > 0;
+			return resource.is(ItemTags.MEAT) && resource.is(ModItemTags.FRESH_RAW_MEATS) && foodProperties.nutrition() > 0;
 		}
 
 		return false;
@@ -70,12 +71,12 @@ public final class Nutrients {
 			return REPAIR_VALUES.getInt(item);
 		}
 
-		if (resource.isEdible()) {
+		if (resource.has(DataComponents.FOOD)) {
 			FoodProperties foodProperties = resource.getFoodProperties(null);
 			if (foodProperties == null) return 0;
 
 			if (resource.is(ItemTags.MEAT) && resource.is(ModItemTags.FRESH_RAW_MEATS)) {
-				return RAW_MEAT_NUTRITION_MODIFIER.applyAsInt(foodProperties.getNutrition()) * 2; //TODO: don't give bonus for rotten meats
+				return RAW_MEAT_NUTRITION_MODIFIER.applyAsInt(foodProperties.nutrition()) * 2;
 			}
 		}
 
@@ -86,9 +87,9 @@ public final class Nutrients {
 		if (resource.isEmpty()) return false;
 		if (FUEL_VALUES.containsKey(resource.getItem())) return true;
 
-		if (resource.isEdible()) {
+		if (resource.has(DataComponents.FOOD)) {
 			FoodProperties foodProperties = resource.getFoodProperties(null);
-			return foodProperties != null && foodProperties.getNutrition() > 0;
+			return foodProperties != null && foodProperties.nutrition() > 0;
 		}
 
 		return false;
@@ -110,11 +111,11 @@ public final class Nutrients {
 			return FUEL_VALUES.getInt(item);
 		}
 
-		if (resource.isEdible()) {
+		if (resource.has(DataComponents.FOOD)) {
 			FoodProperties foodProperties = resource.getFoodProperties(null);
 			if (foodProperties == null) return 0;
 
-			int nutrition = foodProperties.getNutrition();
+			int nutrition = foodProperties.nutrition();
 			if (resource.is(ItemTags.MEAT) && resource.is(ModItemTags.FRESH_RAW_MEATS)) {
 				return RAW_MEAT_NUTRITION_MODIFIER.applyAsInt(nutrition);
 			}

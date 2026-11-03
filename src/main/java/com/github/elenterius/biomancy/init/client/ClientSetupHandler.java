@@ -53,8 +53,18 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.BucketItem;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.neoforge.client.event.*;
-import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
-import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
+import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
+import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
+import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
+import net.neoforged.neoforge.registries.NeoForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
+import com.github.elenterius.biomancy.client.extensions.*;
+import com.github.elenterius.biomancy.fluid.TintedFluidType;
+import com.github.elenterius.biomancy.item.BEWLBlockItem;
+import com.github.elenterius.biomancy.item.weapon.gun.CausticGunbladeItem;
+import com.github.elenterius.biomancy.item.weapon.gun.ImpalerItem;
+import net.minecraft.world.item.Item;
+import net.neoforged.neoforge.fluids.FluidType;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
@@ -174,8 +184,8 @@ public final class ClientSetupHandler {
 
 	private static void registerItemModelProperties() {
 		ItemPropertyFunction isUsingItem = (stack, level, livingEntity, seed) -> livingEntity != null && livingEntity.isUsingItem() && livingEntity.getUseItem() == stack ? 1f : 0f;
-		ItemProperties.register(ModItems.THORN_SHIELD.get(), new ResourceLocation("blocking"), isUsingItem);
-		ItemProperties.register(ModItems.CAUSTIC_GUNBLADE.get(), new ResourceLocation("shooting"), isUsingItem);
+		ItemProperties.register(ModItems.THORN_SHIELD.get(), ResourceLocation.withDefaultNamespace("blocking"), isUsingItem);
+		ItemProperties.register(ModItems.CAUSTIC_GUNBLADE.get(), ResourceLocation.withDefaultNamespace("shooting"), isUsingItem);
 	}
 
 	@SubscribeEvent
@@ -189,7 +199,7 @@ public final class ClientSetupHandler {
 	@SubscribeEvent
 	public static void onItemColorRegistry(final RegisterColorHandlersEvent.Item event) {
 		event.register((stack, tintIndex) -> ModItems.ESSENCE.get().getColor(stack, tintIndex), ModItems.ESSENCE.get());
-		event.register((stack, index) -> index == 1 ? IClientFluidTypeExtensions.of(((BucketItem) stack.getItem()).getFluid()).getTintColor() : 0xFF_FFFFFF, ModItems.ACID_BUCKET.get());
+		event.register((stack, index) -> index == 1 ? IClientFluidTypeExtensions.of(((BucketItem) stack.getItem()).content).getTintColor() : 0xFF_FFFFFF, ModItems.ACID_BUCKET.get());
 		event.register(BiometricMembraneBlock::getTintColor, ModItems.BIOMETRIC_MEMBRANE.get());
 		event.register((stack, tintIndex) -> ModItems.POTION_SERUM.get().getTintColor(stack, tintIndex), ModItems.POTION_SERUM.get());
 	}
@@ -201,14 +211,36 @@ public final class ClientSetupHandler {
 	}
 
 	@SubscribeEvent
-	public static void registerGameOverlays(RegisterGuiOverlaysEvent event) {
-		event.registerAbove(VanillaGuiOverlay.VIGNETTE.id(), "frenzy", ScreenOverlays.FRENZY_OVERLAY);
-		event.registerBelow(VanillaGuiOverlay.VIGNETTE.id(), "inside_block", ScreenOverlays.INSIDE_BLOCK_OVERLAY);
+	public static void registerGameOverlays(RegisterGuiLayersEvent event) {
+		event.registerAbove(VanillaGuiLayers.CAMERA_OVERLAYS, BiomancyMod.rl("frenzy"), ScreenOverlays.FRENZY_OVERLAY);
+		event.registerBelow(VanillaGuiLayers.CAMERA_OVERLAYS, BiomancyMod.rl("inside_block"), ScreenOverlays.INSIDE_BLOCK_OVERLAY);
 
-		event.registerAbove(VanillaGuiOverlay.CROSSHAIR.id(), "injector", ScreenOverlays.INJECTOR_OVERLAY);
-		event.registerAbove(VanillaGuiOverlay.CROSSHAIR.id(), "charge_bar", ScreenOverlays.CHARGE_BAR_OVERLAY);
-		event.registerAbove(VanillaGuiOverlay.CROSSHAIR.id(), "gun", ScreenOverlays.GUN_OVERLAY);
-		event.registerAbove(VanillaGuiOverlay.CROSSHAIR.id(), "knowledge", ScreenOverlays.KNOWLEDGE_OVERLAY);
+		event.registerAbove(VanillaGuiLayers.CROSSHAIR, BiomancyMod.rl("injector"), ScreenOverlays.INJECTOR_OVERLAY);
+		event.registerAbove(VanillaGuiLayers.CROSSHAIR, BiomancyMod.rl("charge_bar"), ScreenOverlays.CHARGE_BAR_OVERLAY);
+		event.registerAbove(VanillaGuiLayers.CROSSHAIR, BiomancyMod.rl("gun"), ScreenOverlays.GUN_OVERLAY);
+		event.registerAbove(VanillaGuiLayers.CROSSHAIR, BiomancyMod.rl("knowledge"), ScreenOverlays.KNOWLEDGE_OVERLAY);
+	}
+
+	@SubscribeEvent
+	public static void registerClientExtensions(final RegisterClientExtensionsEvent event) {
+		event.registerFluidType(new TexturedFluidTypeExtensions("acid"), ModFluids.ACID_TYPE.get());
+		for (FluidType fluidType : NeoForgeRegistries.FLUID_TYPES) {
+			if (fluidType instanceof TintedFluidType tintedFluidType) {
+				event.registerFluidType(new TintedFluidTypeExtensions(tintedFluidType.getTintColor()), tintedFluidType);
+			}
+		}
+
+		for (Item item : BuiltInRegistries.ITEM) {
+			if (item instanceof BEWLBlockItem) {
+				event.registerItem(new BEWLItemExtensions(), item);
+			}
+			else if (item instanceof ImpalerItem) {
+				event.registerItem(new ImpalerItemExtensions(), item);
+			}
+			else if (item instanceof CausticGunbladeItem) {
+				event.registerItem(new CausticGunbladeItemExtensions(), item);
+			}
+		}
 	}
 
 	@SubscribeEvent

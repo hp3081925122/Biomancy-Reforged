@@ -43,16 +43,16 @@ import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.client.extensions.common.IClientItemExtensions;
+import software.bernie.geckolib.animatable.client.GeoRenderProvider;
 import org.joml.Vector3f;
 import org.jspecify.annotations.Nullable;
 import software.bernie.geckolib.animatable.GeoItem;
 import software.bernie.geckolib.constant.DataTickets;
-import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.core.animation.AnimatableManager;
-import software.bernie.geckolib.core.animation.AnimationController;
-import software.bernie.geckolib.core.animation.RawAnimation;
-import software.bernie.geckolib.core.object.PlayState;
+import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.animation.AnimatableManager;
+import software.bernie.geckolib.animation.AnimationController;
+import software.bernie.geckolib.animation.RawAnimation;
+import software.bernie.geckolib.animation.PlayState;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.ArrayList;
@@ -197,63 +197,17 @@ public class ImpalerItem extends LivingGunItem<ImpalerProjectile> implements Ite
 	}
 
 	@Override
-	public void initializeClient(Consumer<IClientItemExtensions> consumer) {
-		super.initializeClient(consumer);
-		consumer.accept(new IClientItemExtensions() {
+	public void createGeoRenderer(Consumer<GeoRenderProvider> consumer) {
+		consumer.accept(new GeoRenderProvider() {
 			private @Nullable ImpalerRenderer renderer = null;
 
-			private static boolean isHandPartOfArm(LocalPlayer player, HumanoidArm arm, InteractionHand hand) {
-				InteractionHand handOfCurrentArm = arm == player.getMainArm() ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND;
-				return hand == handOfCurrentArm;
-			}
-
-			private static void applyArmTransform(PoseStack poseStack, HumanoidArm arm, float progress, float ticks) {
-				float direction = arm == HumanoidArm.RIGHT ? 1f : -1f;
-				float invProgress = 1f - progress;
-				poseStack.mulPose(Axis.YP.rotationDegrees(10f * invProgress + direction * Mth.cos(ticks * 0.09f) * 1f));
-				poseStack.mulPose(Axis.XP.rotationDegrees(-15f * invProgress + direction * Mth.sin(ticks * 0.067f) * 1f));
-				poseStack.translate(0.56f * direction, -0.52f, -0.72f);
-			}
-
 			@Override
-			public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+			public BlockEntityWithoutLevelRenderer getGeoItemRenderer() {
 				if (renderer == null) {
 					renderer = new ImpalerRenderer();
 				}
 				return renderer;
 			}
-
-			@Override
-			public HumanoidModel.ArmPose getArmPose(LivingEntity entityLiving, InteractionHand hand, ItemStack itemStack) {
-				return ModArmPoses.HOLD_AND_AIM_GUN_TWO_HANDED;
-			}
-
-			@Override
-			public boolean applyForgeHandTransform(PoseStack poseStack, LocalPlayer player, HumanoidArm arm, ItemStack itemInHand, float partialTick, float equipProcess, float swingProcess) {
-				if (player.isUsingItem() && player.getUseItemRemainingTicks() > 0 && isHandPartOfArm(player, arm, player.getUsedItemHand())) {
-					float elapsedDuration = (float) itemInHand.getUseDuration(player) - ((float) player.getUseItemRemainingTicks() - partialTick + 1f);
-					float maxChargeDuration = getDelayBetweenShots(itemInHand);
-					float aimProgress = elapsedDuration / maxChargeDuration;
-					if (aimProgress > 1f) {
-						aimProgress = 1f;
-					}
-
-					applyArmTransform(poseStack, arm, aimProgress, player.tickCount + partialTick);
-					return true;
-				}
-
-				if (!player.isAutoSpinAttack() && !player.swinging) {
-					applyArmTransform(poseStack, arm, 0f, player.tickCount + partialTick);
-					return true;
-				}
-
-				return false;
-			}
-
-			public boolean applyCrosshair(PoseStack poseStack, LocalPlayer player, HumanoidArm arm, ItemStack itemInHand, float partialTick, float equipProcess, float swingProcess) {
-				return false;
-			}
-
 		});
 	}
 

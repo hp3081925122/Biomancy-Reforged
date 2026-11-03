@@ -6,7 +6,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ArmorMaterial;
 import net.minecraft.world.item.ItemStack;
-import org.jspecify.annotations.Nullable;
+import net.minecraft.resources.ResourceLocation;
 import software.bernie.geckolib.animatable.GeoItem;
 
 public abstract class LivingArmorGeoItem extends LivingArmorItem implements GeoItem {
@@ -16,8 +16,8 @@ public abstract class LivingArmorGeoItem extends LivingArmorItem implements GeoI
 	}
 
 	@Override
-	public String getArmorTexture(ItemStack stack, Entity entity, EquipmentSlot slot, @Nullable String type) {
-		return MissingTextureAtlasSprite.getLocation().toString();
+	public ResourceLocation getArmorTexture(ItemStack stack, Entity entity, EquipmentSlot slot, ArmorMaterial.Layer layer, boolean innerModel) {
+		return MissingTextureAtlasSprite.getLocation();
 	}
 
 }

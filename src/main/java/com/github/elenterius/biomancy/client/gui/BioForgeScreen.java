@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.client.gui;
 
+import net.minecraft.world.item.crafting.RecipeHolder;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.client.gui.component.CustomEditBox;
 import com.github.elenterius.biomancy.client.gui.tooltip.ScreenNutrientFuelConsumer;
@@ -67,16 +68,12 @@ public class BioForgeScreen extends AbstractContainerScreen<BioForgeMenu> implem
 
 	@Override
 	protected void containerTick() {
-		searchInput.tick();
 		recipeBook.tick();
 	}
 
 	@Override
 	protected void slotClicked(Slot slot, int slotId, int mouseButton, ClickType type) {
 		super.slotClicked(slot, slotId, mouseButton, type);
-		//if (slot != null) {
-		//	recipeBook.trackPlayerInvChanges();
-		//}
 	}
 
 	@Override
@@ -168,7 +165,6 @@ public class BioForgeScreen extends AbstractContainerScreen<BioForgeMenu> implem
 
 	@Override
 	protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-		//don't draw any labels
 	}
 
 	private float time;
@@ -179,7 +175,6 @@ public class BioForgeScreen extends AbstractContainerScreen<BioForgeMenu> implem
 			time += partialTick;
 		}
 
-		renderBackground(guiGraphics);
 		super.render(guiGraphics, mouseX, mouseY, partialTick);
 		renderTooltip(guiGraphics, mouseX, mouseY);
 	}
@@ -198,7 +193,7 @@ public class BioForgeScreen extends AbstractContainerScreen<BioForgeMenu> implem
 	}
 
 	private void renderRecipeResult(GuiGraphics guiGraphics) {
-		BioForgingRecipe selectedRecipe = recipeBook.getSelectedRecipe();
+		BioForgingRecipe selectedRecipe = recipeBook.getSelectedRecipeValue();
 		if (selectedRecipe != null && menu.isResultEmpty()) {
 			ItemStack stack = selectedRecipe.getResultItem(minecraft.level.registryAccess());
 			int x = leftPos + 194 + 2;
@@ -213,19 +208,18 @@ public class BioForgeScreen extends AbstractContainerScreen<BioForgeMenu> implem
 	private void renderRecipeSelectionGrid(GuiGraphics guiGraphics) {
 		if (!recipeBook.hasRecipesOnPage()) return;
 
-		//TODO: refactor - move into the loop below
 		if (recipeBook.hasSelectedRecipe() && recipeBook.isSelectedRecipeVisible()) {
 			int gridIndex = recipeBook.getGridIndexOfSelectedRecipe();
-			BioForgingRecipe recipe = recipeBook.getRecipeByGrid(gridIndex);
+			RecipeHolder<BioForgingRecipe> recipe = recipeBook.getRecipeByGrid(gridIndex);
 			boolean isCraftable = recipeBook.getRecipeCollectionByGrid(gridIndex).isCraftable(recipe);
 			renderTileSelection(guiGraphics, gridIndex, isCraftable);
 		}
 
 		int maxRecipes = recipeBook.getMaxRecipesOnGrid();
 		for (int gridIndex = 0; gridIndex < maxRecipes; gridIndex++) {
-			BioForgingRecipe recipe = recipeBook.getRecipeByGrid(gridIndex);
+			RecipeHolder<BioForgingRecipe> recipe = recipeBook.getRecipeByGrid(gridIndex);
 			boolean isCraftable = recipeBook.getRecipeCollectionByGrid(gridIndex).isCraftable(recipe);
-			renderRecipeTile(guiGraphics, gridIndex, isCraftable, recipe.getResultItem(minecraft.level.registryAccess()));
+			renderRecipeTile(guiGraphics, gridIndex, isCraftable, recipe.value().getResultItem(minecraft.level.registryAccess()));
 		}
 
 		renderPagination(guiGraphics);
@@ -257,7 +251,7 @@ public class BioForgeScreen extends AbstractContainerScreen<BioForgeMenu> implem
 			blit(guiGraphics, x, y, 323, 30, 22, 22);
 			guiGraphics.renderItem(stack, x + 3, y + 3);
 			RenderSystem.depthFunc(GL11.GL_GREATER);
-			guiGraphics.fill(x, y, x + 22, y + 22, 0x40_00_00_00 | ColorStyles.TEXT_ERROR); // 0x40... | color -> prepend alpha to rgb color
+			guiGraphics.fill(x, y, x + 22, y + 22, 0x40_00_00_00 | ColorStyles.TEXT_ERROR);
 			RenderSystem.depthFunc(GL11.GL_LEQUAL);
 		}
 		else {
@@ -277,7 +271,7 @@ public class BioForgeScreen extends AbstractContainerScreen<BioForgeMenu> implem
 		int vHeight = (int) (fuelPct * 36) + (fuelPct > 0 ? 1 : 0);
 		blit(guiGraphics, leftPos + 144, topPos + 13 + 36 - vHeight, 353, 9 + 36 - vHeight, 5, vHeight);
 
-		BioForgingRecipe selectedRecipe = recipeBook.getSelectedRecipe();
+		BioForgingRecipe selectedRecipe = recipeBook.getSelectedRecipeValue();
 		int cost = selectedRecipe != null ? selectedRecipe.getCraftingCostNutrients() : 0;
 		if (cost <= menu.getFuelAmount()) return;
 
@@ -313,7 +307,7 @@ public class BioForgeScreen extends AbstractContainerScreen<BioForgeMenu> implem
 				int x = leftPos + 13 + 25 * (index % BioForgeScreenController.COLS);
 				int y = topPos + 37 + 25 * (index / BioForgeScreenController.COLS);
 				if (GuiUtil.isInRect(x, y, 20, 20, mouseX, mouseY)) {
-					guiGraphics.renderTooltip(font, recipeBook.getRecipeByGrid(index).getResultItem(minecraft.level.registryAccess()), mouseX, mouseY);
+					guiGraphics.renderTooltip(font, recipeBook.getRecipeByGrid(index).value().getResultItem(minecraft.level.registryAccess()), mouseX, mouseY);
 					return true;
 				}
 			}
@@ -327,7 +321,7 @@ public class BioForgeScreen extends AbstractContainerScreen<BioForgeMenu> implem
 		int maxFuel = menu.getMaxFuelAmount();
 		int fuelAmount = menu.getFuelAmount();
 
-		BioForgingRecipe selectedRecipe = recipeBook.getSelectedRecipe();
+		BioForgingRecipe selectedRecipe = recipeBook.getSelectedRecipeValue();
 		int totalFuelCost = selectedRecipe != null ? selectedRecipe.getCraftingCostNutrients() : 0;
 
 		GuiRenderUtil.drawFuelTooltip(font, guiGraphics, mouseX, mouseY, maxFuel, fuelAmount, totalFuelCost);
@@ -341,7 +335,7 @@ public class BioForgeScreen extends AbstractContainerScreen<BioForgeMenu> implem
 
 		@Override
 		public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-			BioForgingRecipe recipe = recipeBook.getSelectedRecipe();
+			BioForgingRecipe recipe = recipeBook.getSelectedRecipeValue();
 			if (recipe == null) return;
 
 			int x = leftPos + X_OFFSET;
@@ -367,7 +361,7 @@ public class BioForgeScreen extends AbstractContainerScreen<BioForgeMenu> implem
 		}
 
 		private boolean renderTooltip(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-			BioForgingRecipe selectedRecipe = recipeBook.getSelectedRecipe();
+			BioForgingRecipe selectedRecipe = recipeBook.getSelectedRecipeValue();
 			if (selectedRecipe == null) return false;
 
 			List<IngredientStack> ingredients = selectedRecipe.getIngredientQuantities();

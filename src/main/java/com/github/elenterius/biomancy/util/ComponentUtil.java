@@ -12,7 +12,6 @@ import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.contents.DataSource;
 import net.minecraft.network.chat.contents.SelectorContents;
 import net.minecraft.world.inventory.tooltip.TooltipComponent;
-import net.minecraftforge.client.ForgeHooksClient;
 import org.jspecify.annotations.Nullable;
 
 import java.text.BreakIterator;
@@ -53,23 +52,14 @@ public final class ComponentUtil {
 		return Component.empty();
 	}
 
-	/**
-	 * whitespace
-	 */
 	public static MutableComponent space() {
 		return Component.literal(" ");
 	}
 
-	/**
-	 * horizontal line in item tooltips
-	 */
 	public static Component horizontalLine(int colorARGB) {
 		return TooltipHacks.wrap(new HrTooltipComponent(colorARGB));
 	}
 
-	/**
-	 * client sided due to KeyMapping
-	 */
 	public static MutableComponent keybind(KeyMapping keyMapping) {
 		return Component.keybind(keyMapping.getName());
 	}
@@ -97,13 +87,6 @@ public final class ComponentUtil {
 	}
 
 	private static final class TooltipHacks {
-
-		/**
-		 * This is a component for {@link CommonComponents#EMPTY}
-		 * <br><br>
-		 * When tooltip text is too wide it is wrapped around by forge ({@link ForgeHooksClient#gatherTooltipComponents}) to the next line and {@link CommonComponents#EMPTY}
-		 * components (empty strings) are discarded by minecraft's {@link net.minecraft.client.StringSplitter#splitLines StringSplitter#splitLines} method.<br>
-		 */
 		static final Component EMPTY_LINE_COMPONENT = wrap(new EmptyLineTooltipComponent());
 
 		private TooltipHacks() {}

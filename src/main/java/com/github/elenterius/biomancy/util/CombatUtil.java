@@ -1,10 +1,10 @@
 package com.github.elenterius.biomancy.util;
 
+import net.minecraft.util.Mth;
 import com.github.elenterius.biomancy.util.EnchantmentUtil;
 import com.github.elenterius.biomancy.init.ModDamageSources;
 import com.github.elenterius.biomancy.init.ModMobEffects;
 import com.github.elenterius.biomancy.item.armor.AcolyteArmorItem;
-import net.minecraft.world.damagesource.CombatRules;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -42,7 +42,7 @@ public final class CombatUtil {
 		}
 
 		int pierceLevel = EnchantmentUtil.getLevel(weapon, Enchantments.PIERCING);
-		float pct = CombatRules.getDamageAfterAbsorb(20f, target.getArmorValue(), (float) target.getAttributeValue(Attributes.ARMOR_TOUGHNESS)) / 20f;
+		float pct = getDamageAfterAbsorb(20f, target.getArmorValue(), (float) target.getAttributeValue(Attributes.ARMOR_TOUGHNESS)) / 20f;
 		return target.getRandom().nextFloat() < pct + 0.075f * pierceLevel + pierceProbability;
 	}
 
@@ -74,12 +74,12 @@ public final class CombatUtil {
 
 	public static void hurtWithAcid(LivingEntity livingEntity, float damage) {
 		livingEntity.hurt(ModDamageSources.acid(livingEntity.level(), null), damage);
-		livingEntity.invulnerableTime = 0; //leave open for next damage
+		livingEntity.invulnerableTime = 0;
 	}
 
 	public static void hurtWithBleed(LivingEntity livingEntity, float damage) {
 		livingEntity.hurt(ModDamageSources.bleed(livingEntity.level(), null), damage);
-		livingEntity.invulnerableTime = 0; //leave open for next damage
+		livingEntity.invulnerableTime = 0;
 	}
 
 	public static void applyBleedEffect(LivingEntity livingEntity, int seconds) {
@@ -92,6 +92,12 @@ public final class CombatUtil {
 			return 0;
 		}
 		return effectInstance.getAmplifier() + 1;
+	}
+
+	private static float getDamageAfterAbsorb(float damage, float armor, float armorToughness) {
+		float toughness = 2f + armorToughness / 4f;
+		float effectiveArmor = Mth.clamp(armor - damage / toughness, armor * 0.2f, 20f);
+		return damage * (1f - effectiveArmor / 25f);
 	}
 
 }
