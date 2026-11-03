@@ -9,10 +9,13 @@ import com.github.elenterius.biomancy.item.armor.LivingArmorItem;
 import com.github.elenterius.biomancy.util.OneShotTaskWorker;
 import com.github.elenterius.biomancy.util.explosion.ExplosionUtil;
 import net.minecraft.tags.DamageTypeTags;
+import net.minecraft.world.damagesource.CombatRules;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.neoforged.neoforge.common.damagesource.DamageContainer;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingKnockBackEvent;
 import net.neoforged.neoforge.event.entity.player.CriticalHitEvent;
@@ -38,8 +41,14 @@ public final class AttackHandler {
 	@SubscribeEvent
 	public static void onHurt(final LivingIncomingDamageEvent event) {
 		LivingEntity livingEntity = event.getEntity();
+		if (livingEntity.level().isClientSide) return;
+		event.getContainer().addModifier(DamageContainer.Reduction.ARMOR, (container, reduction) -> onActuallyHurt(livingEntity, container, reduction));
+	}
 
-		if (!livingEntity.level().isClientSide && event.getAmount() >= 6f && livingEntity.hasEffect(ModMobEffects.VOLATILE)) {
+	private static float onActuallyHurt(LivingEntity livingEntity, DamageContainer container, float armorReduction) {
+		float amount = container.getNewDamage();
+
+		if (amount >= 6f && livingEntity.hasEffect(ModMobEffects.VOLATILE)) {
 			OneShotTaskWorker.onNextTick(livingEntity, living -> {
 				living.removeEffect(ModMobEffects.VOLATILE);
 				float radius = 3f - living.getArmorCoverPercentage() * 1.5f;
@@ -47,10 +56,10 @@ public final class AttackHandler {
 			});
 		}
 
-		DamageSource damageSource = event.getSource();
-		if (damageSource.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) return;
-		if (!damageSource.is(ModDamageTypeTags.C_IS_ACID)) return;
-		if (event.getAmount() <= 0f) return;
+		DamageSource damageSource = container.getSource();
+		if (damageSource.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) return armorReduction;
+		if (!damageSource.is(ModDamageTypeTags.C_IS_ACID)) return armorReduction;
+		if (amount <= 0f) return armorReduction;
 
 		int resistProbability = 0;
 		for (ItemStack itemStack : livingEntity.getArmorSlots()) {
@@ -61,8 +70,15 @@ public final class AttackHandler {
 		}
 
 		if (resistProbability > 0 && livingEntity.getRandom().nextInt(100) <= resistProbability) {
-			event.setAmount(event.getAmount() * (1f - resistProbability / 100f));
+			float reducedAmount = amount * (1f - resistProbability / 100f);
+			float afterArmor = reducedAmount;
+			if (!damageSource.is(DamageTypeTags.BYPASSES_ARMOR)) {
+				afterArmor = CombatRules.getDamageAfterAbsorb(livingEntity, reducedAmount, damageSource, livingEntity.getArmorValue(), (float) livingEntity.getAttributeValue(Attributes.ARMOR_TOUGHNESS));
+			}
+			return amount - afterArmor;
 		}
+
+		return armorReduction;
 	}
 
 	@Deprecated(forRemoval = true)
