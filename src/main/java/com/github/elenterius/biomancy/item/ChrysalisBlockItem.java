@@ -186,8 +186,8 @@ public class ChrysalisBlockItem extends SimpleBlockItem {
 	}
 
 	@Override
-	public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-		super.appendHoverText(stack, level, tooltip, flag);
+	public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
+		super.appendHoverText(stack, context, tooltip, flag);
 
 		CompoundTag compoundTag = BlockItemUtil.getBlockEntityData(stack);
 		if (compoundTag == null || !compoundTag.contains(ENTITY_KEY)) return;

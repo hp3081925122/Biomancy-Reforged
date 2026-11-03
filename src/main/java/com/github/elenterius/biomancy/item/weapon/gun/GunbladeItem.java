@@ -1,12 +1,12 @@
 package com.github.elenterius.biomancy.item.weapon.gun;
 
+import net.minecraft.world.item.component.ItemAttributeModifiers;
+import net.minecraft.world.entity.EquipmentSlotGroup;
 import com.github.elenterius.biomancy.entity.projectile.BaseProjectile;
 import com.github.elenterius.biomancy.init.ModDataComponents;
 import com.github.elenterius.biomancy.item.weapon.BladeProperties;
 import com.github.elenterius.biomancy.util.shooting.GunProperties;
 import com.github.elenterius.biomancy.util.shooting.GunState;
-import com.google.common.collect.ImmutableMultimap;
-import com.google.common.collect.Multimap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BlockTags;
@@ -19,17 +19,16 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Vanishable;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.common.ItemAbility;
 import net.neoforged.neoforge.common.ItemAbilities;
 
-public abstract class GunbladeItem<T extends BaseProjectile> extends GunItem<T> implements Vanishable {
+public abstract class GunbladeItem<T extends BaseProjectile> extends GunItem<T> {
 
-	protected final Multimap<Attribute, AttributeModifier> defaultBladeModifiers;
-	protected final Multimap<Attribute, AttributeModifier> defaultGunModifiers;
+	protected final ItemAttributeModifiers defaultBladeModifiers;
+	protected final ItemAttributeModifiers defaultGunModifiers;
 
 	protected GunbladeItem(Properties itemProperties, BladeProperties bladeProperties, GunProperties<T> gunProperties) {
 		super(itemProperties, gunProperties);
@@ -96,31 +95,28 @@ public abstract class GunbladeItem<T extends BaseProjectile> extends GunItem<T> 
 		}
 	}
 
-	protected Multimap<Attribute, AttributeModifier> createDefaultBladeModifiers(BladeProperties bladeProperties) {
-		ImmutableMultimap.Builder<Attribute, AttributeModifier> builder = ImmutableMultimap.builder();
-		builder.put(Attributes.ATTACK_DAMAGE, new AttributeModifier(BASE_ATTACK_DAMAGE_UUID, "Weapon modifier", bladeProperties.attackDamageModifier(), AttributeModifier.Operation.ADDITION));
-		builder.put(Attributes.ATTACK_SPEED, new AttributeModifier(BASE_ATTACK_SPEED_UUID, "Weapon modifier", bladeProperties.attackSpeedModifier(), AttributeModifier.Operation.ADDITION));
-		return builder.build();
+	protected ItemAttributeModifiers createDefaultBladeModifiers(BladeProperties bladeProperties) {
+		return ItemAttributeModifiers.builder()
+				.add(Attributes.ATTACK_DAMAGE, new AttributeModifier(BASE_ATTACK_DAMAGE_ID, bladeProperties.attackDamageModifier(), AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+				.add(Attributes.ATTACK_SPEED, new AttributeModifier(BASE_ATTACK_SPEED_ID, bladeProperties.attackSpeedModifier(), AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+				.build();
 	}
 
-	protected Multimap<Attribute, AttributeModifier> createDefaultGunModifiers(BladeProperties bladeProperties) {
-		ImmutableMultimap.Builder<Attribute, AttributeModifier> builder = ImmutableMultimap.builder();
-		builder.put(Attributes.ATTACK_DAMAGE, new AttributeModifier(BASE_ATTACK_DAMAGE_UUID, "Weapon modifier", Math.max(bladeProperties.attackDamageModifier() - 2d, 0.5d), AttributeModifier.Operation.ADDITION));
-		builder.put(Attributes.ATTACK_SPEED, new AttributeModifier(BASE_ATTACK_SPEED_UUID, "Weapon modifier", Math.max(bladeProperties.attackSpeedModifier() - 0.2d, -3.8d), AttributeModifier.Operation.ADDITION));
-		return builder.build();
-	}
-
-	@Override
-	public Multimap<Attribute, AttributeModifier> getAttributeModifiers(EquipmentSlot slot, ItemStack stack) {
-		if (slot == EquipmentSlot.MAINHAND) {
-			return GunbladeMode.from(stack).isBlade() ? defaultBladeModifiers : defaultGunModifiers;
-		}
-		return ImmutableMultimap.of();
+	protected ItemAttributeModifiers createDefaultGunModifiers(BladeProperties bladeProperties) {
+		return ItemAttributeModifiers.builder()
+				.add(Attributes.ATTACK_DAMAGE, new AttributeModifier(BASE_ATTACK_DAMAGE_ID, Math.max(bladeProperties.attackDamageModifier() - 2d, 0.5d), AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+				.add(Attributes.ATTACK_SPEED, new AttributeModifier(BASE_ATTACK_SPEED_ID, Math.max(bladeProperties.attackSpeedModifier() - 0.2d, -3.8d), AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+				.build();
 	}
 
 	@Override
-	public boolean canPerformAction(ItemStack stack, ItemAbility ItemAbility) {
-		return GunbladeMode.from(stack).isBlade() && ItemAbility != ItemAbilities.SWORD_SWEEP && ItemAbilities.DEFAULT_SWORD_ACTIONS.contains(ItemAbility);
+	public ItemAttributeModifiers getDefaultAttributeModifiers(ItemStack stack) {
+		return GunbladeMode.from(stack).isBlade() ? defaultBladeModifiers : defaultGunModifiers;
+	}
+
+	@Override
+	public boolean canPerformAction(ItemStack stack, ItemAbility itemAbility) {
+		return GunbladeMode.from(stack).isBlade() && itemAbility != ItemAbilities.SWORD_SWEEP && ItemAbilities.DEFAULT_SWORD_ACTIONS.contains(itemAbility);
 	}
 
 	@Override
@@ -141,21 +137,21 @@ public abstract class GunbladeItem<T extends BaseProjectile> extends GunItem<T> 
 
 	@Override
 	public boolean hurtEnemy(ItemStack stack, LivingEntity target, LivingEntity attacker) {
-		stack.hurtAndBreak(2, attacker, livingEntity -> livingEntity.broadcastBreakEvent(EquipmentSlot.MAINHAND));
+		stack.hurtAndBreak(2, attacker, EquipmentSlot.MAINHAND);
 		return true;
 	}
 
 	@Override
 	public boolean mineBlock(ItemStack stack, Level level, BlockState state, BlockPos pos, LivingEntity miningEntity) {
 		if (state.getDestroySpeed(level, pos) != 0f) {
-			stack.hurtAndBreak(2, miningEntity, livingEntity -> livingEntity.broadcastBreakEvent(EquipmentSlot.MAINHAND));
+			stack.hurtAndBreak(2, miningEntity, EquipmentSlot.MAINHAND);
 		}
 
 		return true;
 	}
 
 	@Override
-	public boolean isCorrectToolForDrops(BlockState state) {
+	public boolean isCorrectToolForDrops(ItemStack stack, BlockState state) {
 		return state.is(Blocks.COBWEB);
 	}
 

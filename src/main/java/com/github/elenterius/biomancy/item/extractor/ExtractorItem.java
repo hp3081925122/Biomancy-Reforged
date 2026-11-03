@@ -85,7 +85,7 @@ public class ExtractorItem extends Item implements KeyPressListener, ItemTooltip
 						if (!player.addItem(essenceStack)) {
 							player.drop(essenceStack, false);
 						}
-						stack.hurtAndBreak(1, player, p -> p.broadcastBreakEvent(EquipmentSlot.MAINHAND));
+						stack.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
 					}
 					else {
 						Containers.dropItemStack(targetEntity.level(), targetEntity.getX(), targetEntity.getY(), targetEntity.getZ(), essenceStack);
@@ -105,7 +105,7 @@ public class ExtractorItem extends Item implements KeyPressListener, ItemTooltip
 						}
 					}
 
-					int baseDuration = 2400; // 120 seconds
+					int baseDuration = 2400;
 					int durationPenalty = lootingLevel + 1;
 					float durationReduction = Mth.lerp((float) surgicalPrecisionLevel / EnchantmentUtil.getMaxLevel(targetEntity.registryAccess(), ModEnchantments.SURGICAL_PRECISION), 1f, 0.5f);
 					int duration = Math.round(baseDuration * durationPenalty * durationReduction);
@@ -116,7 +116,7 @@ public class ExtractorItem extends Item implements KeyPressListener, ItemTooltip
 				}
 			}
 			else if (player != null) {
-				stack.hurtAndBreak(2, player, p -> p.broadcastBreakEvent(EquipmentSlot.MAINHAND));
+				stack.hurtAndBreak(2, player, EquipmentSlot.MAINHAND);
 			}
 		}
 		return false;
@@ -124,10 +124,9 @@ public class ExtractorItem extends Item implements KeyPressListener, ItemTooltip
 
 	@Override
 	public KeyPressResult onClientKeyPress(ItemStack stack, Level level, Player player, EquipmentSlot slot, byte flags) {
-		//TODO: add cooldown?
 		if (!interactWithPlayerSelf(stack, player)) {
 			SoundUtil.Client.playItemSound(level, player, ModSoundEvents.INJECTOR_FAIL.get());
-			return KeyPressResult.fail(); //don't send button press to server
+			return KeyPressResult.fail();
 		}
 		return KeyPressResult.success(flags);
 	}
@@ -140,11 +139,9 @@ public class ExtractorItem extends Item implements KeyPressListener, ItemTooltip
 
 	@Override
 	public InteractionResult interactLivingEntity(ItemStack stack, Player player, LivingEntity interactionTarget, InteractionHand usedHand) {
-		//the device is empty
 		if (interactionTarget.level() instanceof ServerLevel serverLevel && extractEssence(stack, player, interactionTarget)) {
 			SoundUtil.Server.playItemSound(serverLevel, player, ModSoundEvents.INJECTOR_INJECT.get());
 
-			//fix for creative mode (normally the stack is not modified in creative)
 			if (player.isCreative()) player.setItemInHand(usedHand, stack);
 
 			return InteractionResult.SUCCESS;
@@ -157,7 +154,6 @@ public class ExtractorItem extends Item implements KeyPressListener, ItemTooltip
 		if (player.level().isClientSide()) return true;
 
 		if (extractEssence(stack, player, player)) {
-			//fix for creative mode (normally the stack is not modified in creative)
 			if (player.isCreative()) player.setItemInHand(player.getUsedItemHand(), stack);
 			return true;
 		}
@@ -180,7 +176,7 @@ public class ExtractorItem extends Item implements KeyPressListener, ItemTooltip
 	}
 
 	@Override
-	public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag isAdvanced) {
+	public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag isAdvanced) {
 		tooltip.addAll(ClientTextUtil.getItemInfoTooltip(stack));
 		tooltip.add(ClientTextUtil.pressButtonTo(ClientTextUtil.getDefaultKey(), TextComponentUtil.getActionText("self_extract")).withStyle(ChatFormatting.DARK_GRAY));
 
@@ -206,7 +202,7 @@ public class ExtractorItem extends Item implements KeyPressListener, ItemTooltip
 
 			if (state.isCurrentAnimation(Animations.EXTRACT) && state.getController().isPlayingTriggeredAnimation()) return PlayState.CONTINUE;
 
-			boolean isFirstPerson = state.getData(DataTickets.ITEM_RENDER_PERSPECTIVE).firstPerson(); //only animate in first person view to mitigate animation of other items
+			boolean isFirstPerson = state.getData(DataTickets.ITEM_RENDER_PERSPECTIVE).firstPerson();
 			boolean isPlayerLookingAtMob = isFirstPerson && Minecraft.getInstance().crosshairPickEntity instanceof LivingEntity;
 
 			if (isPlayerLookingAtMob) {

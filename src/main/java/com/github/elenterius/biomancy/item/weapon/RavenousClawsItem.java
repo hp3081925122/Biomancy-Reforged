@@ -1,5 +1,7 @@
 package com.github.elenterius.biomancy.item.weapon;
 
+import net.minecraft.world.item.component.ItemAttributeModifiers;
+import net.minecraft.world.entity.EquipmentSlotGroup;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.api.livingtool.LivingToolState;
 import com.github.elenterius.biomancy.client.render.item.ravenousclaws.RavenousClawsRenderer;
@@ -17,8 +19,6 @@ import com.github.elenterius.biomancy.util.CombatUtil;
 import com.github.elenterius.biomancy.util.ComponentUtil;
 import com.github.elenterius.biomancy.util.FormatUtil;
 import com.github.elenterius.biomancy.util.MobUtil;
-import com.google.common.collect.ImmutableMultimap;
-import com.google.common.collect.Multimap;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.network.chat.Component;
@@ -30,7 +30,6 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.SlotAccess;
-import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
@@ -43,7 +42,7 @@ import net.minecraft.world.level.Level;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 import net.neoforged.neoforge.common.ItemAbility;
 import net.neoforged.neoforge.common.ItemAbilities;
-import net.minecraftforge.common.util.Lazy;
+import net.neoforged.neoforge.common.util.Lazy;
 import org.jspecify.annotations.Nullable;
 import software.bernie.geckolib.animatable.GeoItem;
 import software.bernie.geckolib.constant.DataTickets;
@@ -54,20 +53,19 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.text.DecimalFormat;
 import java.util.List;
-import java.util.UUID;
 import java.util.function.Consumer;
 
 public class RavenousClawsItem extends LivingClawsItem implements GeoItem, ItemCharge, MeleeDamageSourceProviderItem, CrosshairProvider {
-	protected static final UUID BASE_ATTACK_KNOCKBACK_UUID = UUID.fromString("6175525b-56dd-4f87-b035-86b892afe7b3");
-	private final Lazy<Multimap<Attribute, AttributeModifier>> brokenAttributes;
-	private final Lazy<Multimap<Attribute, AttributeModifier>> dormantAttributes;
-	private final Lazy<Multimap<Attribute, AttributeModifier>> awakenedAttributes;
+	protected static final ResourceLocation BASE_ATTACK_KNOCKBACK_ID = BiomancyMod.rl("base_attack_knockback");
+	private final Lazy<ItemAttributeModifiers> brokenAttributes;
+	private final Lazy<ItemAttributeModifiers> dormantAttributes;
+	private final Lazy<ItemAttributeModifiers> awakenedAttributes;
 	private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
 	public RavenousClawsItem(Tier tier, float attackDamage, float attackSpeed, int maxNutrients, Properties properties) {
 		super(tier, 0, 0, 0, maxNutrients, properties);
 
-		float attackSpeedModifier = (float) (attackSpeed - Attributes.ATTACK_SPEED.getDefaultValue());
+		float attackSpeedModifier = (float) (attackSpeed - Attributes.ATTACK_SPEED.value().getDefaultValue());
 		brokenAttributes = Lazy.of(() -> createDefaultAttributeModifiers(0, 0, -0.5f).build());
 		dormantAttributes = Lazy.of(() -> createDefaultAttributeModifiers(-1 + attackDamage, attackSpeedModifier, 0).build());
 		awakenedAttributes = Lazy.of(() -> createDefaultAttributeModifiers(-1 + attackDamage + 2.5f, attackSpeedModifier, 0.5f).build());
@@ -93,27 +91,23 @@ public class RavenousClawsItem extends LivingClawsItem implements GeoItem, ItemC
 	}
 
 	@Override
-	protected ImmutableMultimap.Builder<Attribute, AttributeModifier> createDefaultAttributeModifiers(float attackDamageModifier, float attackSpeedModifier, float attackRangeModifier) {
-		ImmutableMultimap.Builder<Attribute, AttributeModifier> builder = super.createDefaultAttributeModifiers(attackDamageModifier, attackSpeedModifier, attackRangeModifier);
-		builder.put(Attributes.ATTACK_KNOCKBACK, new AttributeModifier(BASE_ATTACK_KNOCKBACK_UUID, "Weapon modifier", 0, AttributeModifier.Operation.MULTIPLY_TOTAL));
-		return builder;
+	protected ItemAttributeModifiers.Builder createDefaultAttributeModifiers(float attackDamageModifier, float attackSpeedModifier, float attackRangeModifier) {
+		return super.createDefaultAttributeModifiers(attackDamageModifier, attackSpeedModifier, attackRangeModifier)
+				.add(Attributes.ATTACK_KNOCKBACK, new AttributeModifier(BASE_ATTACK_KNOCKBACK_ID, 0, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL), EquipmentSlotGroup.MAINHAND);
 	}
 
 	@Override
-	public Multimap<Attribute, AttributeModifier> getDefaultAttributeModifiers(EquipmentSlot equipmentSlot) {
-		return equipmentSlot == EquipmentSlot.MAINHAND ? dormantAttributes.get() : ImmutableMultimap.of();
+	public ItemAttributeModifiers getDefaultAttributeModifiers() {
+		return dormantAttributes.get();
 	}
 
 	@Override
-	public Multimap<Attribute, AttributeModifier> getAttributeModifiers(EquipmentSlot slot, ItemStack stack) {
-		if (slot == EquipmentSlot.MAINHAND) {
-			return switch (getLivingToolState(stack)) {
-				case BROKEN -> brokenAttributes.get();
-				case DORMANT -> dormantAttributes.get();
-				case AWAKENED -> awakenedAttributes.get();
-			};
-		}
-		return ImmutableMultimap.of();
+	public ItemAttributeModifiers getDefaultAttributeModifiers(ItemStack stack) {
+		return switch (getLivingToolState(stack)) {
+			case BROKEN -> brokenAttributes.get();
+			case DORMANT -> dormantAttributes.get();
+			case AWAKENED -> awakenedAttributes.get();
+		};
 	}
 
 	@Override
@@ -206,9 +200,9 @@ public class RavenousClawsItem extends LivingClawsItem implements GeoItem, ItemC
 	}
 
 	@Override
-	public boolean canPerformAction(ItemStack stack, ItemAbility ItemAbility) {
-		if (ItemAbility == ItemAbilities.SWORD_SWEEP) return false;
-		return super.canPerformAction(stack, ItemAbility);
+	public boolean canPerformAction(ItemStack stack, ItemAbility itemAbility) {
+		if (itemAbility == ItemAbilities.SWORD_SWEEP) return false;
+		return super.canPerformAction(stack, itemAbility);
 	}
 
 	@Override
@@ -219,7 +213,7 @@ public class RavenousClawsItem extends LivingClawsItem implements GeoItem, ItemC
 			case BROKEN -> null;
 			case DORMANT, AWAKENED -> {
 				DamageSource damageSource = ModDamageSources.slash(attacker.level(), attacker);
-				if (target.isInvulnerableTo(damageSource)) yield null; //use default melee damagesource as fallback
+				if (target.isInvulnerableTo(damageSource)) yield null;
 				yield damageSource;
 			}
 		};
@@ -234,7 +228,7 @@ public class RavenousClawsItem extends LivingClawsItem implements GeoItem, ItemC
 		boolean isNotCreativePlayer = !MobUtil.isCreativePlayer(attacker);
 
 		switch (livingToolState) {
-			case BROKEN -> { /* do nothing */ }
+			case BROKEN -> {  }
 			case DORMANT -> {
 				if (isNotCreativePlayer) {
 					consumeNutrients(stack, 1);
@@ -242,7 +236,7 @@ public class RavenousClawsItem extends LivingClawsItem implements GeoItem, ItemC
 
 				if (isFullAttackStrength) {
 					playClawSwipeFX(attacker);
-					if (attacker.getRandom().nextInt(12) == 0) { //8.3%
+					if (attacker.getRandom().nextInt(12) == 0) {
 						attacker.level().playSound(null, attacker.getX(), attacker.getY(), attacker.getZ(), ModSoundEvents.CLAWS_ATTACK_BLEED_PROC.get(), attacker.getSoundSource(), 1f, 1f);
 
 						CombatUtil.applyBleedEffect(target, 20);
@@ -251,7 +245,7 @@ public class RavenousClawsItem extends LivingClawsItem implements GeoItem, ItemC
 						}
 					}
 
-					target.invulnerableTime = 0; //make victims vulnerable the next attack regardless of the damage amount
+					target.invulnerableTime = 0;
 				}
 
 				if (target.isDeadOrDying()) {
@@ -265,7 +259,7 @@ public class RavenousClawsItem extends LivingClawsItem implements GeoItem, ItemC
 
 				if (isFullAttackStrength) {
 					playClawSwipeFX(attacker);
-					if (attacker.getRandom().nextInt(5) == 0) { //20%
+					if (attacker.getRandom().nextInt(5) == 0) {
 						attacker.level().playSound(null, attacker.getX(), attacker.getY(), attacker.getZ(), ModSoundEvents.CLAWS_ATTACK_BLEED_PROC.get(), attacker.getSoundSource(), 1f, 1f);
 
 						if (CombatUtil.getBleedEffectLevel(target) < 2) {
@@ -283,7 +277,7 @@ public class RavenousClawsItem extends LivingClawsItem implements GeoItem, ItemC
 						}
 					}
 
-					target.invulnerableTime = 0; //make victims vulnerable the next attack regardless of the damage amount
+					target.invulnerableTime = 0;
 				}
 			}
 		}
@@ -292,7 +286,7 @@ public class RavenousClawsItem extends LivingClawsItem implements GeoItem, ItemC
 	}
 
 	@Override
-	public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag isAdvanced) {
+	public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag isAdvanced) {
 		tooltip.addAll(ClientTextUtil.getItemInfoTooltip(stack));
 		tooltip.add(ComponentUtil.EMPTY_LINE);
 
@@ -309,7 +303,6 @@ public class RavenousClawsItem extends LivingClawsItem implements GeoItem, ItemC
 
 		switch (livingToolState) {
 			case BROKEN -> {
-				//do nothing
 			}
 			case DORMANT -> {
 				tooltip.add(TextComponentUtil.getAbilityText("bleed_proc").append(" (8% chance)").withStyle(ChatFormatting.GRAY));
@@ -350,7 +343,7 @@ public class RavenousClawsItem extends LivingClawsItem implements GeoItem, ItemC
 	}
 
 	@Override
-	public int getLivingToolActionCost(ItemStack livingTool, LivingToolState state, ItemAbility ItemAbility) {
+	public int getLivingToolActionCost(ItemStack livingTool, LivingToolState state, ItemAbility itemAbility) {
 		return switch (state) {
 			case AWAKENED, DORMANT -> 1;
 			case BROKEN -> 0;

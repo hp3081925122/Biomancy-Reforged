@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.item.shield;
 
+import net.minecraft.world.entity.LivingEntity;
 import com.github.elenterius.biomancy.item.SimpleItem;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
@@ -22,8 +23,8 @@ public class SimpleShieldItem extends SimpleItem implements Equipable {
 	}
 
 	@Override
-	public boolean canPerformAction(ItemStack stack, ItemAbility ItemAbility) {
-		return ItemAbilities.DEFAULT_SHIELD_ACTIONS.contains(ItemAbility);
+	public boolean canPerformAction(ItemStack stack, ItemAbility itemAbility) {
+		return ItemAbilities.DEFAULT_SHIELD_ACTIONS.contains(itemAbility);
 	}
 
 	@Override
@@ -37,8 +38,8 @@ public class SimpleShieldItem extends SimpleItem implements Equipable {
 	}
 
 	@Override
-	public int getUseDuration(ItemStack stack) {
-		return 72000; // 1 HOUR
+	public int getUseDuration(ItemStack stack, LivingEntity entity) {
+		return 72000;
 	}
 
 	@Override

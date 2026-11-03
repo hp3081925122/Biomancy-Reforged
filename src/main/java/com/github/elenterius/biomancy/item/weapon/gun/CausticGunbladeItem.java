@@ -1,5 +1,7 @@
 package com.github.elenterius.biomancy.item.weapon.gun;
 
+import net.minecraft.world.item.component.ItemAttributeModifiers;
+import net.minecraft.world.entity.EquipmentSlotGroup;
 import net.minecraft.core.Holder;
 import com.github.elenterius.biomancy.component.AcidRefluxState;
 import com.github.elenterius.biomancy.BiomancyMod;
@@ -21,8 +23,6 @@ import com.github.elenterius.biomancy.util.MobUtil;
 import com.github.elenterius.biomancy.util.animation.TriggerableAnimation;
 import com.github.elenterius.biomancy.util.shooting.*;
 import com.github.elenterius.geckolibextras.GLibExtras;
-import com.google.common.collect.ImmutableMultimap;
-import com.google.common.collect.Multimap;
 import net.minecraft.SharedConstants;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
@@ -55,7 +55,6 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
-import net.neoforged.neoforge.common.ItemAbility;
 import net.neoforged.neoforge.common.ItemAbilities;
 import org.joml.Vector3f;
 import org.jspecify.annotations.Nullable;
@@ -82,8 +81,8 @@ public class CausticGunbladeItem extends LivingGunItem<AcidSprayProjectile> impl
 			SoundEvents.TROPICAL_FISH_FLOP, SoundEvents.TROPICAL_FISH_FLOP, ModSoundEvents.FLESHKIN_BURP.get()
 	);
 	protected static final ResourceLocation CROSSHAIR = BiomancyMod.rl("textures/gui/gunblade_crosshair.png");
-	protected final Multimap<Attribute, AttributeModifier> defaultModifiers;
-	protected final Multimap<Attribute, AttributeModifier> disabledModifiers;
+	protected final ItemAttributeModifiers defaultModifiers;
+	protected final ItemAttributeModifiers disabledModifiers;
 
 	private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
@@ -99,7 +98,7 @@ public class CausticGunbladeItem extends LivingGunItem<AcidSprayProjectile> impl
 		);
 
 		defaultModifiers = createDefaultModifiers(BladeProperties.builder().attackDamage(6).attackSpeed(1.2f).build());
-		disabledModifiers = ImmutableMultimap.<Attribute, AttributeModifier>builder().putAll(Attributes.ATTACK_SPEED, defaultModifiers.get(Attributes.ATTACK_SPEED)).build();
+		disabledModifiers = createDisabledModifiers(defaultModifiers);
 
 		SingletonGeoAnimatable.registerSyncedAnimatable(this);
 	}
@@ -113,19 +112,24 @@ public class CausticGunbladeItem extends LivingGunItem<AcidSprayProjectile> impl
 		}
 	}
 
-	protected Multimap<Attribute, AttributeModifier> createDefaultModifiers(BladeProperties bladeProperties) {
-		ImmutableMultimap.Builder<Attribute, AttributeModifier> builder = ImmutableMultimap.builder();
-		builder.put(Attributes.ATTACK_DAMAGE, new AttributeModifier(BASE_ATTACK_DAMAGE_UUID, "Weapon modifier", bladeProperties.attackDamageModifier(), AttributeModifier.Operation.ADDITION));
-		builder.put(Attributes.ATTACK_SPEED, new AttributeModifier(BASE_ATTACK_SPEED_UUID, "Weapon modifier", bladeProperties.attackSpeedModifier(), AttributeModifier.Operation.ADDITION));
+	protected ItemAttributeModifiers createDefaultModifiers(BladeProperties bladeProperties) {
+		return ItemAttributeModifiers.builder()
+				.add(Attributes.ATTACK_DAMAGE, new AttributeModifier(BASE_ATTACK_DAMAGE_ID, bladeProperties.attackDamageModifier(), AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+				.add(Attributes.ATTACK_SPEED, new AttributeModifier(BASE_ATTACK_SPEED_ID, bladeProperties.attackSpeedModifier(), AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+				.build();
+	}
+
+	private static ItemAttributeModifiers createDisabledModifiers(ItemAttributeModifiers modifiers) {
+		ItemAttributeModifiers.Builder builder = ItemAttributeModifiers.builder();
+		for (ItemAttributeModifiers.Entry entry : modifiers.modifiers()) {
+			if (entry.attribute().is(Attributes.ATTACK_SPEED)) builder.add(entry.attribute(), entry.modifier(), entry.slot());
+		}
 		return builder.build();
 	}
 
 	@Override
-	public Multimap<Attribute, AttributeModifier> getAttributeModifiers(EquipmentSlot slot, ItemStack stack) {
-		if (slot == EquipmentSlot.MAINHAND) {
-			return hasNutrients(stack) ? defaultModifiers : disabledModifiers;
-		}
-		return ImmutableMultimap.of();
+	public ItemAttributeModifiers getDefaultAttributeModifiers(ItemStack stack) {
+		return hasNutrients(stack) ? defaultModifiers : disabledModifiers;
 	}
 
 	@Override
@@ -212,9 +216,9 @@ public class CausticGunbladeItem extends LivingGunItem<AcidSprayProjectile> impl
 	}
 
 	@Override
-	public boolean canPerformAction(ItemStack stack, ItemAbility ItemAbility) {
+	public boolean canPerformAction(ItemStack stack, net.neoforged.neoforge.common.ItemAbility itemAbility) {
 		if (!hasNutrients(stack)) return false;
-		return ItemAbility != ItemAbilities.SWORD_SWEEP && ItemAbilities.DEFAULT_SWORD_ACTIONS.contains(ItemAbility);
+		return itemAbility != ItemAbilities.SWORD_SWEEP && ItemAbilities.DEFAULT_SWORD_ACTIONS.contains(itemAbility);
 	}
 
 	@Override
@@ -279,7 +283,7 @@ public class CausticGunbladeItem extends LivingGunItem<AcidSprayProjectile> impl
 	}
 
 	@Override
-	public boolean isCorrectToolForDrops(BlockState state) {
+	public boolean isCorrectToolForDrops(ItemStack stack, BlockState state) {
 		return state.is(Blocks.COBWEB);
 	}
 
@@ -294,7 +298,7 @@ public class CausticGunbladeItem extends LivingGunItem<AcidSprayProjectile> impl
 	}
 
 	@Override
-	public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag isAdvanced) {
+	public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag isAdvanced) {
 		tooltip.addAll(ClientTextUtil.getItemInfoTooltip(stack));
 
 		if (!Screen.hasControlDown()) {

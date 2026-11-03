@@ -107,10 +107,10 @@ public class LivingClawsItem extends SimpleClawsItem implements SpecialLivingToo
 	}
 
 	@Override
-	public int getLivingToolActionCost(ItemStack livingTool, LivingToolState state, ItemAbility ItemAbility) {
+	public int getLivingToolActionCost(ItemStack livingTool, LivingToolState state, ItemAbility itemAbility) {
 		int baseCost = 0;
-		if (ItemAbility == ItemAbilities.SWORD_DIG) baseCost = 2;
-		if (ItemAbility == ItemAbilities.SWORD_SWEEP) baseCost = 1;
+		if (itemAbility == ItemAbilities.SWORD_DIG) baseCost = 2;
+		if (itemAbility == ItemAbilities.SWORD_SWEEP) baseCost = 1;
 
 		return switch (state) {
 			case AWAKENED -> baseCost + 4;
@@ -131,11 +131,6 @@ public class LivingClawsItem extends SimpleClawsItem implements SpecialLivingToo
 
 	@Override
 	public boolean isDamageable(ItemStack stack) {
-		return false;
-	}
-
-	@Override
-	public boolean canBeDepleted() {
 		return false;
 	}
 
@@ -165,8 +160,8 @@ public class LivingClawsItem extends SimpleClawsItem implements SpecialLivingToo
 	}
 
 	@Override
-	public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag isAdvanced) {
-		super.appendHoverText(stack, level, tooltip, isAdvanced);
+	public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag isAdvanced) {
+		super.appendHoverText(stack, context, tooltip, isAdvanced);
 		tooltip.add(ComponentUtil.EMPTY_LINE);
 
 		appendLivingToolTooltip(stack, tooltip);

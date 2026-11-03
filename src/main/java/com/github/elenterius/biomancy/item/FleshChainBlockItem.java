@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.item;
 
+import net.minecraft.core.component.DataComponents;
 import com.github.elenterius.biomancy.block.FleshChainBlock;
 import com.github.elenterius.biomancy.util.ComponentUtil;
 import net.minecraft.ChatFormatting;
@@ -52,7 +53,7 @@ public class FleshChainBlockItem extends SimpleBlockItem {
 	public InteractionResult useOn(UseOnContext context) {
 		InteractionResult placeResult = place(new BlockPlaceContextWrapper(context));
 
-		if (!placeResult.consumesAction() && isEdible() && context.getPlayer() != null) {
+		if (!placeResult.consumesAction() && components().has(DataComponents.FOOD) && context.getPlayer() != null) {
 			InteractionResult result = use(context.getLevel(), context.getPlayer(), context.getHand()).getResult();
 			return result == InteractionResult.CONSUME ? InteractionResult.CONSUME_PARTIAL : result;
 		}

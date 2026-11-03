@@ -110,7 +110,7 @@ public abstract class LivingGunItem<T extends BaseProjectile> extends GunItem<T>
 	}
 
 	@Override
-	public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag isAdvanced) {
+	public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag isAdvanced) {
 		appendGunStats(stack, tooltip);
 
 		tooltip.add(ComponentUtil.EMPTY_LINE);
@@ -173,8 +173,12 @@ public abstract class LivingGunItem<T extends BaseProjectile> extends GunItem<T>
 	}
 
 	@Override
+	public boolean isEnchantable(ItemStack stack) {
+		return stack.getMaxStackSize() == 1 && isDamageable(stack);
+	}
+
+	@Override
 	public void setDamage(ItemStack stack, int damage) {
-		//do nothing
 	}
 
 	@Override
@@ -185,11 +189,6 @@ public abstract class LivingGunItem<T extends BaseProjectile> extends GunItem<T>
 	@Override
 	public int getMaxDamage(ItemStack stack) {
 		return 0;
-	}
-
-	@Override
-	public boolean canBeDepleted() {
-		return false;
 	}
 
 }

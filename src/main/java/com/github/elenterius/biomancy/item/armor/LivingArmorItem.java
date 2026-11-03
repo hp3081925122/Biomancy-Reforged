@@ -1,5 +1,7 @@
 package com.github.elenterius.biomancy.item.armor;
 
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.core.Holder;
 import com.github.elenterius.biomancy.api.livingtool.SimpleLivingTool;
 import com.github.elenterius.biomancy.client.util.ClientTextUtil;
@@ -37,7 +39,7 @@ public class LivingArmorItem extends ArmorItem implements SimpleLivingTool {
 
 	private final int maxNutrients;
 
-	public LivingArmorItem(ArmorMaterial material, Type type, int maxNutrients, Properties properties) {
+	public LivingArmorItem(Holder<ArmorMaterial> material, Type type, int maxNutrients, Properties properties) {
 		super(material, type, properties);
 		this.maxNutrients = maxNutrients;
 	}
@@ -136,7 +138,7 @@ public class LivingArmorItem extends ArmorItem implements SimpleLivingTool {
 	}
 
 	@Override
-	public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag isAdvanced) {
+	public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag isAdvanced) {
 		tooltip.addAll(ClientTextUtil.getItemInfoTooltip(stack));
 		tooltip.add(ComponentUtil.EMPTY_LINE);
 
@@ -153,8 +155,8 @@ public class LivingArmorItem extends ArmorItem implements SimpleLivingTool {
 	}
 
 	@Override
-	public Multimap<Attribute, AttributeModifier> getAttributeModifiers(EquipmentSlot slot, ItemStack stack) {
-		return getNutrients(stack) > 0 ? super.getAttributeModifiers(slot, stack) : ImmutableMultimap.of();
+	public ItemAttributeModifiers getDefaultAttributeModifiers(ItemStack stack) {
+		return getNutrients(stack) > 0 ? super.getDefaultAttributeModifiers(stack) : ItemAttributeModifiers.EMPTY;
 	}
 
 	@Override
@@ -210,13 +212,17 @@ public class LivingArmorItem extends ArmorItem implements SimpleLivingTool {
 	}
 
 	@Override
+	public boolean isEnchantable(ItemStack stack) {
+		return stack.getMaxStackSize() == 1 && isDamageable(stack);
+	}
+
+	@Override
 	public boolean isDamaged(ItemStack stack) {
 		return false;
 	}
 
 	@Override
 	public void setDamage(ItemStack stack, int damage) {
-		//do nothing
 	}
 
 	@Override
@@ -231,12 +237,7 @@ public class LivingArmorItem extends ArmorItem implements SimpleLivingTool {
 	}
 
 	@Override
-	public boolean canBeDepleted() {
-		return false;
-	}
-
-	@Override
-	public <T extends LivingEntity> int damageItem(ItemStack stack, int amount, T entity, Consumer<T> onBroken) {
+	public <T extends LivingEntity> int damageItem(ItemStack stack, int amount, @Nullable T entity, Consumer<Item> onBroken) {
 		decreaseNutrients(stack, amount);
 		return 0;
 	}

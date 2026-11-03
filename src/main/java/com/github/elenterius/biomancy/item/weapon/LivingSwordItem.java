@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.item.weapon;
 
+import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.core.Holder;
 import com.github.elenterius.biomancy.api.livingtool.LivingToolState;
 import com.github.elenterius.biomancy.api.livingtool.SpecialLivingTool;
@@ -37,10 +38,17 @@ import java.util.List;
 public class LivingSwordItem extends SwordItem implements ItemTooltipStyleProvider, SpecialLivingTool, KeyPressListener {
 
 	private final int maxNutrients;
+	private final ItemAttributeModifiers defaultAttributeModifiers;
 
 	public LivingSwordItem(Tier tier, int damageModifier, float attackSpeedModifier, int maxNutrients, Properties properties) {
-		super(tier, damageModifier, attackSpeedModifier, properties);
+		super(tier, properties);
 		this.maxNutrients = maxNutrients;
+		defaultAttributeModifiers = SwordItem.createAttributes(tier, damageModifier, attackSpeedModifier);
+	}
+
+	@Override
+	public ItemAttributeModifiers getDefaultAttributeModifiers() {
+		return defaultAttributeModifiers;
 	}
 
 	@Override
@@ -109,10 +117,10 @@ public class LivingSwordItem extends SwordItem implements ItemTooltipStyleProvid
 	}
 
 	@Override
-	public int getLivingToolActionCost(ItemStack stack, LivingToolState state, ItemAbility ItemAbility) {
+	public int getLivingToolActionCost(ItemStack stack, LivingToolState state, ItemAbility itemAbility) {
 		int baseCost = 0;
-		if (ItemAbility == ItemAbilities.SWORD_DIG) baseCost = 2;
-		if (ItemAbility == ItemAbilities.SWORD_SWEEP) baseCost = 1;
+		if (itemAbility == ItemAbilities.SWORD_DIG) baseCost = 2;
+		if (itemAbility == ItemAbilities.SWORD_SWEEP) baseCost = 1;
 
 		return switch (state) {
 			case AWAKENED -> baseCost + 4;
@@ -133,11 +141,6 @@ public class LivingSwordItem extends SwordItem implements ItemTooltipStyleProvid
 
 	@Override
 	public boolean isDamageable(ItemStack stack) {
-		return false;
-	}
-
-	@Override
-	public boolean canBeDepleted() {
 		return false;
 	}
 
@@ -167,7 +170,7 @@ public class LivingSwordItem extends SwordItem implements ItemTooltipStyleProvid
 	}
 
 	@Override
-	public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag isAdvanced) {
+	public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag isAdvanced) {
 		tooltip.addAll(ClientTextUtil.getItemInfoTooltip(stack));
 		tooltip.add(ComponentUtil.EMPTY_LINE);
 

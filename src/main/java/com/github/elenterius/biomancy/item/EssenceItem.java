@@ -23,7 +23,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.SpawnEggItem;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.common.ForgeSpawnEggItem;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Arrays;
@@ -103,7 +102,7 @@ public class EssenceItem extends Item implements ItemTooltipStyleProvider {
 			return new int[]{0x00AFAF, 0x463AA5};
 		}
 
-		SpawnEggItem spawnEggItem = ForgeSpawnEggItem.fromEntityType(entityType);
+		SpawnEggItem spawnEggItem = SpawnEggItem.byId(entityType);
 		if (spawnEggItem != null) {
 			int background = spawnEggItem.getColor(0);
 			int highlight = spawnEggItem.getColor(1);
@@ -186,7 +185,7 @@ public class EssenceItem extends Item implements ItemTooltipStyleProvider {
 	}
 
 	@Override
-	public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag isAdvanced) {
+	public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag isAdvanced) {
 		tooltip.addAll(ClientTextUtil.getItemInfoTooltip(stack));
 
 		EssenceData essenceData = stack.get(ModDataComponents.ESSENCE);

@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.item.weapon;
 
+import net.minecraft.world.item.component.ItemAttributeModifiers;
 import com.github.elenterius.biomancy.client.util.ClientTextUtil;
 import com.github.elenterius.biomancy.item.ItemTooltipStyleProvider;
 import net.minecraft.network.chat.Component;
@@ -14,12 +15,20 @@ import java.util.List;
 
 public class SimpleSwordItem extends SwordItem implements ItemTooltipStyleProvider {
 
+	private final ItemAttributeModifiers defaultAttributeModifiers;
+
 	public SimpleSwordItem(Tier tier, int attackDamageModifier, float attackSpeedModifier, Properties properties) {
-		super(tier, attackDamageModifier, attackSpeedModifier, properties);
+		super(tier, properties);
+		defaultAttributeModifiers = SwordItem.createAttributes(tier, attackDamageModifier, attackSpeedModifier);
 	}
 
 	@Override
-	public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag isAdvanced) {
+	public ItemAttributeModifiers getDefaultAttributeModifiers() {
+		return defaultAttributeModifiers;
+	}
+
+	@Override
+	public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag isAdvanced) {
 		tooltip.addAll(ClientTextUtil.getItemInfoTooltip(stack));
 	}
 

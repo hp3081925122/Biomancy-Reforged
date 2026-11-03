@@ -1,5 +1,10 @@
 package com.github.elenterius.biomancy.item.armor;
 
+import net.neoforged.neoforge.common.util.Lazy;
+import net.minecraft.world.item.component.ItemAttributeModifiers;
+import net.minecraft.world.entity.EquipmentSlotGroup;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.Holder;
 import com.github.elenterius.biomancy.component.BulletJumpState;
 import com.github.elenterius.biomancy.client.render.item.armor.WarriorArmorRenderer;
 import com.github.elenterius.biomancy.client.util.ClientTextUtil;
@@ -10,7 +15,6 @@ import com.github.elenterius.biomancy.init.client.ModKeyBindings;
 import com.github.elenterius.biomancy.item.ItemTooltipStyleProvider;
 import com.github.elenterius.biomancy.item.KeyPressListener;
 import com.github.elenterius.biomancy.item.KnowledgeReader;
-import com.github.elenterius.biomancy.mixin.accessor.ArmorItemAccessor;
 import com.github.elenterius.biomancy.sounds.ServerSoundHandler;
 import com.github.elenterius.biomancy.styles.TextComponentUtil;
 import com.github.elenterius.biomancy.styles.TextStyles;
@@ -44,7 +48,7 @@ import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
-import net.minecraftforge.event.entity.living.LivingFallEvent;
+import net.neoforged.neoforge.event.entity.living.LivingFallEvent;
 import org.jspecify.annotations.Nullable;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.core.animation.AnimatableManager;
@@ -69,47 +73,50 @@ public class WarriorArmorItem extends LivingArmorGeoItem implements KnowledgeRea
 
 	private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
-	protected final ImmutableMultimap<Attribute, AttributeModifier> brokenAttributeModifiers;
+	protected final Lazy<ItemAttributeModifiers> defaultAttributeModifiers;
+	protected final ItemAttributeModifiers brokenAttributeModifiers;
 
-	public WarriorArmorItem(ArmorMaterial material, Type type, int maxNutrients, Properties properties) {
+	public WarriorArmorItem(Holder<ArmorMaterial> material, Type type, int maxNutrients, Properties properties) {
 		super(material, type, maxNutrients, properties);
 
-		ArmorItemAccessor baseArmor = (ArmorItemAccessor) this;
-		UUID uuid = ArmorItemAccessor.biomancy$ARMOR_MODIFIER_UUID_PER_TYPE().get(type);
+		ResourceLocation id = ResourceLocation.withDefaultNamespace("armor." + type.getName());
+		EquipmentSlotGroup slotGroup = EquipmentSlotGroup.bySlot(type.getSlot());
 
-		ImmutableMultimap.Builder<Attribute, AttributeModifier> defaultBuilder = ImmutableMultimap.builder();
-		defaultBuilder.putAll(baseArmor.biomancy$getDefaultModifiers());
-
-		ImmutableMultimap.Builder<Attribute, AttributeModifier> brokenBuilder = ImmutableMultimap.builder();
-
+		ItemAttributeModifiers.Builder brokenBuilder = ItemAttributeModifiers.builder();
 		if (type == Type.CHESTPLATE) {
-			defaultBuilder.put(Attributes.ATTACK_DAMAGE, new AttributeModifier(uuid, "Armor attack damage bonus", 0.10d, AttributeModifier.Operation.MULTIPLY_BASE));
-			defaultBuilder.put(Attributes.ATTACK_KNOCKBACK, new AttributeModifier(uuid, "Armor attack knockback bonus", 0.5d, AttributeModifier.Operation.ADDITION));
-
-			AttributeModifier attackSpeedPenalty = new AttributeModifier(uuid, "Armor attack speed penalty", -0.1d, AttributeModifier.Operation.MULTIPLY_BASE);
-			defaultBuilder.put(Attributes.ATTACK_SPEED, attackSpeedPenalty);
-			brokenBuilder.put(Attributes.ATTACK_SPEED, attackSpeedPenalty);
-
-			AttributeModifier movementSpeedPenalty = new AttributeModifier(uuid, "Armor movement speed penalty", -0.2d, AttributeModifier.Operation.MULTIPLY_BASE);
-			defaultBuilder.put(Attributes.MOVEMENT_SPEED, movementSpeedPenalty);
-			brokenBuilder.put(Attributes.MOVEMENT_SPEED, movementSpeedPenalty);
+			brokenBuilder.add(Attributes.ATTACK_SPEED, new AttributeModifier(id, -0.1d, AttributeModifier.Operation.ADD_MULTIPLIED_BASE), slotGroup);
+			brokenBuilder.add(Attributes.MOVEMENT_SPEED, new AttributeModifier(id, -0.2d, AttributeModifier.Operation.ADD_MULTIPLIED_BASE), slotGroup);
 		}
-		else if (type == Type.LEGGINGS) {
-			defaultBuilder.put(Attributes.MOVEMENT_SPEED, new AttributeModifier(uuid, "Armor movement speed bonus", 0.2d, AttributeModifier.Operation.MULTIPLY_BASE));
-		}
-
-		baseArmor.biomancy$setDefaultModifiers(defaultBuilder.build());
-
 		brokenAttributeModifiers = brokenBuilder.build();
+
+		defaultAttributeModifiers = Lazy.of(() -> {
+			ItemAttributeModifiers.Builder defaultBuilder = ItemAttributeModifiers.builder();
+			for (ItemAttributeModifiers.Entry entry : WarriorArmorItem.super.getDefaultAttributeModifiers().modifiers()) {
+				defaultBuilder.add(entry.attribute(), entry.modifier(), entry.slot());
+			}
+
+			if (type == Type.CHESTPLATE) {
+				defaultBuilder.add(Attributes.ATTACK_DAMAGE, new AttributeModifier(id, 0.10d, AttributeModifier.Operation.ADD_MULTIPLIED_BASE), slotGroup);
+				defaultBuilder.add(Attributes.ATTACK_KNOCKBACK, new AttributeModifier(id, 0.5d, AttributeModifier.Operation.ADD_VALUE), slotGroup);
+				defaultBuilder.add(Attributes.ATTACK_SPEED, new AttributeModifier(id, -0.1d, AttributeModifier.Operation.ADD_MULTIPLIED_BASE), slotGroup);
+				defaultBuilder.add(Attributes.MOVEMENT_SPEED, new AttributeModifier(id, -0.2d, AttributeModifier.Operation.ADD_MULTIPLIED_BASE), slotGroup);
+			}
+			else if (type == Type.LEGGINGS) {
+				defaultBuilder.add(Attributes.MOVEMENT_SPEED, new AttributeModifier(id, 0.2d, AttributeModifier.Operation.ADD_MULTIPLIED_BASE), slotGroup);
+			}
+
+			return defaultBuilder.build();
+		});
 	}
 
 	@Override
-	public Multimap<Attribute, AttributeModifier> getAttributeModifiers(EquipmentSlot slot, ItemStack stack) {
-		return getNutrients(stack) > 0 ? super.getAttributeModifiers(slot, stack) : getBrokenAttributeModifiers(slot);
+	public ItemAttributeModifiers getDefaultAttributeModifiers() {
+		return defaultAttributeModifiers.get();
 	}
 
-	protected ImmutableMultimap<Attribute, AttributeModifier> getBrokenAttributeModifiers(EquipmentSlot slot) {
-		return slot == type.getSlot() ? brokenAttributeModifiers : ImmutableMultimap.of();
+	@Override
+	public ItemAttributeModifiers getDefaultAttributeModifiers(ItemStack stack) {
+		return getNutrients(stack) > 0 ? super.getDefaultAttributeModifiers(stack) : brokenAttributeModifiers;
 	}
 
 	@Override
@@ -140,7 +147,7 @@ public class WarriorArmorItem extends LivingArmorGeoItem implements KnowledgeRea
 			int range = 256;
 			float volume = range / 16f;
 			level.playSound(null, player, ModSoundEvents.ARMOR_IMPOSING_ROAR.get(), SoundSource.PLAYERS, volume, 0.9f + player.getRandom().nextFloat() * 0.2f);
-			player.gameEvent(GameEvent.ENTITY_ROAR);
+			player.gameEvent(GameEvent.ENTITY_ACTION);
 		}
 	}
 
@@ -263,7 +270,7 @@ public class WarriorArmorItem extends LivingArmorGeoItem implements KnowledgeRea
 					velocity.z + jumpDirection.z * power
 			);
 
-			player.startAutoSpinAttack(20);
+			player.startAutoSpinAttack(20, 8f, ItemStack.EMPTY);
 			if (player.onGround()) {
 				player.move(MoverType.SELF, new Vec3(0d, 1.1999999f, 0d));
 			}
@@ -362,7 +369,7 @@ public class WarriorArmorItem extends LivingArmorGeoItem implements KnowledgeRea
 	}
 
 	@Override
-	public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag isAdvanced) {
+	public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag isAdvanced) {
 		AcolyteArmorUpgrades.appendHoverText(stack, tooltip);
 
 		tooltip.add(ComponentUtil.EMPTY_LINE);

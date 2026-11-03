@@ -108,7 +108,7 @@ public abstract class GunItem<T extends BaseProjectile> extends ProjectileWeapon
 				return;
 			}
 
-			int elapsedTime = getUseDuration(stack) - remainingUseDuration;
+			int elapsedTime = getUseDuration(stack, shooter) - remainingUseDuration;
 			int delayBetweenShots = getDelayBetweenShots(stack);
 
 			if (elapsedTime == 0 && serverLevel.getGameTime() - getShootTimestamp(stack) < delayBetweenShots) {
@@ -132,7 +132,7 @@ public abstract class GunItem<T extends BaseProjectile> extends ProjectileWeapon
 	public void releaseUsing(ItemStack stack, Level level, LivingEntity shooter, int remainingUseDuration) {
 
 		if (level instanceof ServerLevel serverLevel && gunProperties.shootBehavior().isOnRelease()) {
-			int elapsedTime = getUseDuration(stack) - remainingUseDuration;
+			int elapsedTime = getUseDuration(stack, shooter) - remainingUseDuration;
 			int delayBetweenShots = getDelayBetweenShots(stack);
 
 			switch (gunProperties.shootBehavior()) {
@@ -194,14 +194,14 @@ public abstract class GunItem<T extends BaseProjectile> extends ProjectileWeapon
 	}
 
 	@Override
-	public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag isAdvanced) {
+	public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag isAdvanced) {
 		appendGunStats(stack, tooltip);
 		tooltip.add(ComponentUtil.EMPTY_LINE);
 		tooltip.add(ClientTextUtil.pressButtonTo(ClientTextUtil.getDefaultKey(), TextComponentUtil.getActionText("reload")).withStyle(TextStyles.DARK_GRAY));
 	}
 
 	@Override
-	public int getUseDuration(ItemStack stack) {
+	public int getUseDuration(ItemStack stack, LivingEntity entity) {
 		return SharedConstants.TICKS_PER_MINUTE * 60;
 	}
 

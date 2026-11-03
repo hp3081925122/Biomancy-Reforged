@@ -36,8 +36,8 @@ public class LivingShieldItem extends SimpleShieldItem implements SimpleLivingTo
 	}
 
 	@Override
-	public boolean canPerformAction(ItemStack stack, ItemAbility ItemAbility) {
-		return super.canPerformAction(stack, ItemAbility) && hasNutrients(stack);
+	public boolean canPerformAction(ItemStack stack, ItemAbility itemAbility) {
+		return super.canPerformAction(stack, itemAbility) && hasNutrients(stack);
 	}
 
 	@Override
@@ -103,8 +103,8 @@ public class LivingShieldItem extends SimpleShieldItem implements SimpleLivingTo
 	}
 
 	@Override
-	public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag isAdvanced) {
-		super.appendHoverText(stack, level, tooltip, isAdvanced);
+	public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag isAdvanced) {
+		super.appendHoverText(stack, context, tooltip, isAdvanced);
 		tooltip.add(ComponentUtil.EMPTY_LINE);
 
 		appendLivingToolTooltip(stack, tooltip);
@@ -145,11 +145,6 @@ public class LivingShieldItem extends SimpleShieldItem implements SimpleLivingTo
 
 	@Override
 	public boolean isDamageable(ItemStack stack) {
-		return false;
-	}
-
-	@Override
-	public boolean canBeDepleted() {
 		return false;
 	}
 

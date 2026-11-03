@@ -59,7 +59,7 @@ public interface Gun<T extends BaseProjectile> extends CrosshairProvider {
 
 		if (success) {
 			getGunProperties().sounds().playShoot(level, shooter);
-			projectileWeapon.hurtAndBreak(getDurabilityCost(projectileWeapon), shooter, entity -> entity.broadcastBreakEvent(usedHand));
+			projectileWeapon.hurtAndBreak(getDurabilityCost(projectileWeapon), shooter, LivingEntity.getSlotForHand(usedHand));
 			consumeAmmo(shooter, projectileWeapon, getAmmoCost(projectileWeapon));
 		}
 	}

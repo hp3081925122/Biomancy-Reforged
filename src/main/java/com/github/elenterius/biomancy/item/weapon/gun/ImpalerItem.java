@@ -1,5 +1,7 @@
 package com.github.elenterius.biomancy.item.weapon.gun;
 
+import net.minecraft.world.item.component.ItemAttributeModifiers;
+import net.minecraft.world.entity.EquipmentSlotGroup;
 import com.github.elenterius.biomancy.util.EnchantmentUtil;
 import net.minecraft.core.Holder;
 import com.github.elenterius.biomancy.BiomancyMod;
@@ -13,8 +15,6 @@ import com.github.elenterius.biomancy.item.ItemTooltipStyleProvider;
 import com.github.elenterius.biomancy.util.ComponentUtil;
 import com.github.elenterius.biomancy.util.animation.TriggerableAnimation;
 import com.github.elenterius.biomancy.util.shooting.*;
-import com.google.common.collect.ImmutableMultimap;
-import com.google.common.collect.Multimap;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.gui.screens.Screen;
@@ -57,22 +57,21 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import java.util.function.Consumer;
 
 public class ImpalerItem extends LivingGunItem<ImpalerProjectile> implements ItemTooltipStyleProvider, GeoItem {
 
-	public static final float CHARGE_DURATION = 1.79f + 0.17f; //based on animation length of "charging_shot" + "holding_shot"
+	public static final float CHARGE_DURATION = 1.79f + 0.17f;
 
-	protected static final UUID BASE_MOVEMENT_SPEED_UUID = UUID.fromString("efc325ad-c747-4c0e-80c2-f3f0f4261e91");
+	protected static final ResourceLocation BASE_MOVEMENT_SPEED_ID = BiomancyMod.rl("base_movement_speed");
 
 	protected static final ResourceLocation CROSSHAIR = BiomancyMod.rl("textures/gui/impaler_crosshair.png");
 	private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
-	private final Multimap<Attribute, AttributeModifier> defaultModifiers;
+	private final ItemAttributeModifiers defaultModifiers;
 
 	public ImpalerItem(int maxNutrients, Properties properties) {
-		super(maxNutrients, properties,
+		super(maxNutrients, properties.attributes(ItemAttributeModifiers.EMPTY.withTooltip(false)),
 				GunProperties.<ImpalerProjectile>builder()
 						.shootBehavior(ShootBehavior.ON_RELEASE_INSTANT)
 						.timeBetweenShots(Mth.ceil(CHARGE_DURATION * 20f))
@@ -84,17 +83,17 @@ public class ImpalerItem extends LivingGunItem<ImpalerProjectile> implements Ite
 						.build()
 		);
 
-		ImmutableMultimap.Builder<Attribute, AttributeModifier> builder = ImmutableMultimap.builder();
-		builder.put(Attributes.ATTACK_SPEED, new AttributeModifier(BASE_ATTACK_SPEED_UUID, "Weapon modifier", -3.5f, AttributeModifier.Operation.ADDITION));
-		builder.put(Attributes.MOVEMENT_SPEED, new AttributeModifier(BASE_MOVEMENT_SPEED_UUID, "Weapon modifier", -0.125f, AttributeModifier.Operation.MULTIPLY_BASE));
-		defaultModifiers = builder.build();
+		defaultModifiers = ItemAttributeModifiers.builder()
+				.add(Attributes.ATTACK_SPEED, new AttributeModifier(BASE_ATTACK_SPEED_ID, -3.5f, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.HAND)
+				.add(Attributes.MOVEMENT_SPEED, new AttributeModifier(BASE_MOVEMENT_SPEED_ID, -0.125f, AttributeModifier.Operation.ADD_MULTIPLIED_BASE), EquipmentSlotGroup.HAND)
+				.build();
 
 		GeoItem.registerSyncedAnimatable(this);
 	}
 
 	@Override
-	public Multimap<Attribute, AttributeModifier> getDefaultAttributeModifiers(EquipmentSlot slot) {
-		return slot.getType() == EquipmentSlot.Type.HAND ? defaultModifiers : ImmutableMultimap.of();
+	public ItemAttributeModifiers getDefaultAttributeModifiers() {
+		return defaultModifiers;
 	}
 
 	@Override
@@ -114,7 +113,7 @@ public class ImpalerItem extends LivingGunItem<ImpalerProjectile> implements Ite
 		if (level.isClientSide) return;
 		if (getGunState(stack) != GunState.SHOOTING_OR_CHARGING) return;
 
-		int elapsedTime = getUseDuration(stack) - remainingUseDuration;
+		int elapsedTime = getUseDuration(stack, shooter) - remainingUseDuration;
 		int delayBetweenShots = getDelayBetweenShots(stack);
 
 		if (elapsedTime % delayBetweenShots == 0) {
@@ -134,7 +133,7 @@ public class ImpalerItem extends LivingGunItem<ImpalerProjectile> implements Ite
 
 	@Override
 	public void shoot(ServerLevel level, LivingEntity shooter, InteractionHand usedHand, ItemStack projectileWeapon) {
-		float elapsedDuration = (float) projectileWeapon.getUseDuration() - ((float) shooter.getUseItemRemainingTicks());
+		float elapsedDuration = (float) projectileWeapon.getUseDuration(shooter) - ((float) shooter.getUseItemRemainingTicks());
 		float maxChargeDuration = getDelayBetweenShots(projectileWeapon);
 		float chargePercentage = Mth.clamp(elapsedDuration / maxChargeDuration, 0.1f, 1f);
 		float velocity = getProjectileVelocity(projectileWeapon) * chargePercentage;
@@ -156,7 +155,7 @@ public class ImpalerItem extends LivingGunItem<ImpalerProjectile> implements Ite
 		broadcastAnimation(level, shooter, projectileWeapon, Animations.SHOOT);
 		gunProperties.sounds().playShoot(level, shooter, 1.5f, 0.8f + shooter.getRandom().nextFloat() * 0.5f);
 
-		projectileWeapon.hurtAndBreak(1, shooter, entity -> entity.broadcastBreakEvent(usedHand));
+		projectileWeapon.hurtAndBreak(1, shooter, LivingEntity.getSlotForHand(usedHand));
 		consumeAmmo(shooter, projectileWeapon, getAmmoCost(projectileWeapon));
 		consumeNutrients(projectileWeapon, getDurabilityCost(projectileWeapon));
 
@@ -164,19 +163,11 @@ public class ImpalerItem extends LivingGunItem<ImpalerProjectile> implements Ite
 		double reduction = isAnchored ? 0.25d : 0.5d;
 
 		Vec3 recoil = shooter.getLookAngle().normalize().scale(-1d).scale(velocity * reduction);
-		shooter.push(recoil.x, recoil.y, recoil.z); //sets hasImpulse to true
+		shooter.push(recoil.x, recoil.y, recoil.z);
 		shooter.fallDistance = 0f;
 
-		// "self" damage
-		//DamageSource damageSource = level.damageSources().explosion(shooter, shooter);
-		//shooter.hurt(damageSource, velocity * 0.5f);
-
 		if (!shooter.hurtMarked && shooter instanceof ServerPlayer serverPlayer) {
-			// Important:
-			// hasImpulse only broadcasts entity motion to OTHER players that track the entity
-			// instead of using hurtMarked we send the motion packet to the client of the shooter ourselves
 			serverPlayer.connection.send(new ClientboundSetEntityMotionPacket(serverPlayer));
-			//level.getChunkSource().broadcastAndSend(serverPlayer, new ClientboundSetEntityMotionPacket(serverPlayer)); // not necessary because hasImpulse already broadcasts
 		}
 	}
 
@@ -188,21 +179,16 @@ public class ImpalerItem extends LivingGunItem<ImpalerProjectile> implements Ite
 	}
 
 	@Override
-	public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag isAdvanced) {
+	public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag isAdvanced) {
 		tooltip.addAll(ClientTextUtil.getItemInfoTooltip(stack));
 		tooltip.add(ComponentUtil.EMPTY_LINE);
-		super.appendHoverText(stack, level, tooltip, isAdvanced);
+		super.appendHoverText(stack, context, tooltip, isAdvanced);
 	}
 
 	@Override
 	public void appendGunStats(ItemStack stack, List<Component> tooltip) {
 		if (Screen.hasControlDown()) return;
 		super.appendGunStats(stack, tooltip);
-	}
-
-	@Override
-	public int getDefaultTooltipHideFlags(ItemStack stack) {
-		return ItemStack.TooltipPart.MODIFIERS.getMask();
 	}
 
 	@Override
@@ -216,7 +202,6 @@ public class ImpalerItem extends LivingGunItem<ImpalerProjectile> implements Ite
 		consumer.accept(new IClientItemExtensions() {
 			private @Nullable ImpalerRenderer renderer = null;
 
-			/// workaround for forge not providing the interaction hand to the method
 			private static boolean isHandPartOfArm(LocalPlayer player, HumanoidArm arm, InteractionHand hand) {
 				InteractionHand handOfCurrentArm = arm == player.getMainArm() ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND;
 				return hand == handOfCurrentArm;
@@ -225,10 +210,9 @@ public class ImpalerItem extends LivingGunItem<ImpalerProjectile> implements Ite
 			private static void applyArmTransform(PoseStack poseStack, HumanoidArm arm, float progress, float ticks) {
 				float direction = arm == HumanoidArm.RIGHT ? 1f : -1f;
 				float invProgress = 1f - progress;
-				//float yOffset = 0.1f * -0.6f;
 				poseStack.mulPose(Axis.YP.rotationDegrees(10f * invProgress + direction * Mth.cos(ticks * 0.09f) * 1f));
 				poseStack.mulPose(Axis.XP.rotationDegrees(-15f * invProgress + direction * Mth.sin(ticks * 0.067f) * 1f));
-				poseStack.translate(0.56f * direction, -0.52f, -0.72f); //align item to "item holding position of hand" on screen
+				poseStack.translate(0.56f * direction, -0.52f, -0.72f);
 			}
 
 			@Override
@@ -241,14 +225,13 @@ public class ImpalerItem extends LivingGunItem<ImpalerProjectile> implements Ite
 
 			@Override
 			public HumanoidModel.ArmPose getArmPose(LivingEntity entityLiving, InteractionHand hand, ItemStack itemStack) {
-				//	getUseAnimation(ItemStack stack) needs to return NONE or CUSTOM for this method to be called
 				return ModArmPoses.HOLD_AND_AIM_GUN_TWO_HANDED;
 			}
 
 			@Override
 			public boolean applyForgeHandTransform(PoseStack poseStack, LocalPlayer player, HumanoidArm arm, ItemStack itemInHand, float partialTick, float equipProcess, float swingProcess) {
 				if (player.isUsingItem() && player.getUseItemRemainingTicks() > 0 && isHandPartOfArm(player, arm, player.getUsedItemHand())) {
-					float elapsedDuration = (float) itemInHand.getUseDuration() - ((float) player.getUseItemRemainingTicks() - partialTick + 1f);
+					float elapsedDuration = (float) itemInHand.getUseDuration(player) - ((float) player.getUseItemRemainingTicks() - partialTick + 1f);
 					float maxChargeDuration = getDelayBetweenShots(itemInHand);
 					float aimProgress = elapsedDuration / maxChargeDuration;
 					if (aimProgress > 1f) {

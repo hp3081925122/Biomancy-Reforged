@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.item.injector;
 
+import net.minecraft.world.item.Item;
 import com.github.elenterius.biomancy.util.EnchantmentUtil;
 import com.github.elenterius.biomancy.api.serum.Serum;
 import com.github.elenterius.biomancy.component.InjectionSchedule;
@@ -52,8 +53,9 @@ final class InjectionScheduler {
 
 		if (victim instanceof LivingEntity target) {
 			if (!injectionSuccess) {
-				stack.hurtAndBreak(2, player, p -> {});
-				player.broadcastBreakEvent(EquipmentSlot.MAINHAND);
+				Item injectorItem = stack.getItem();
+				stack.hurtAndBreak(2, level, player, item -> {});
+				player.onEquippedItemBroken(injectorItem, EquipmentSlot.MAINHAND);
 				injector.broadcastAnimation(level, player, stack, InjectorItem.InjectorAnimation.REGROW_NEEDLE);
 				player.getCooldowns().addCooldown(stack.getItem(), InjectorItem.COOL_DOWN_TICKS * 2);
 				return;
@@ -81,7 +83,7 @@ final class InjectionScheduler {
 			}
 
 			injector.consumeSerum(stack, player);
-			stack.hurtAndBreak(1, player, p -> p.broadcastBreakEvent(EquipmentSlot.MAINHAND));
+			stack.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
 		}
 	}
 }

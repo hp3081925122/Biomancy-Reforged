@@ -40,7 +40,7 @@ public interface LivingTool extends NutrientsContainerItem {
 		return Nutrients.getRepairValue(resource);
 	}
 
-	int getLivingToolActionCost(ItemStack livingTool, ItemAbility ItemAbility);
+	int getLivingToolActionCost(ItemStack livingTool, ItemAbility itemAbility);
 
 	default void appendLivingToolTooltip(ItemStack stack, List<Component> tooltip) {
 		DecimalFormat df = FormatUtil.getIntegerFormatter();

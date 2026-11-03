@@ -11,7 +11,7 @@ public interface SimpleLivingTool extends LivingTool {
 	default void onNutrientsChanged(ItemStack livingTool, int oldValue, int newValue) {}
 
 	@Override
-	default int getLivingToolActionCost(ItemStack livingTool, ItemAbility ItemAbility) {
+	default int getLivingToolActionCost(ItemStack livingTool, ItemAbility itemAbility) {
 		return 1;
 	}
 

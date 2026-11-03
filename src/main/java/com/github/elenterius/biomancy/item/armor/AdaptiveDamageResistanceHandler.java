@@ -39,7 +39,7 @@ public final class AdaptiveDamageResistanceHandler {
 	}
 
 	public static float absorbDamage(LivingEntity livingEntity, DamageSource damageSource, float damage, ArmorItem armor, ItemStack stack) {
-		List<TagKey<DamageType>> rootDamageTypes = damageSource.typeHolder().getTagKeys()
+		List<TagKey<DamageType>> rootDamageTypes = damageSource.typeHolder().tags()
 				.filter(tagKey -> VALID_NAMESPACES.contains(tagKey.location().getNamespace()) && tagKey.location().getPath().startsWith(TAG_PREFIX))
 				.toList();
 

@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.item.weapon;
 
+import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.core.Holder;
 import com.github.elenterius.biomancy.init.ModEnchantments;
 import com.google.common.collect.ImmutableMultimap;
@@ -36,6 +37,11 @@ public class DespoilingSwordItem extends SimpleSwordItem {
 	}
 
 	@Override
+	public boolean isEnchantable(ItemStack stack) {
+		return stack.getMaxStackSize() == 1 && isDamageable(stack);
+	}
+
+	@Override
 	public int getEnchantmentLevel(ItemStack stack, Holder<Enchantment> enchantment) {
 		if (isBroken(stack)) return 0;
 
@@ -53,7 +59,7 @@ public class DespoilingSwordItem extends SimpleSwordItem {
 		if (isBroken(stack)) return false;
 
 		if (!target.isDeadOrDying()) {
-			stack.hurtAndBreak(2, attacker, a -> a.broadcastBreakEvent(EquipmentSlot.MAINHAND));
+			stack.hurtAndBreak(2, attacker, EquipmentSlot.MAINHAND);
 		}
 		return true;
 	}
@@ -77,15 +83,15 @@ public class DespoilingSwordItem extends SimpleSwordItem {
 	}
 
 	@Override
-	public boolean canPerformAction(ItemStack stack, ItemAbility ItemAbility) {
+	public boolean canPerformAction(ItemStack stack, ItemAbility itemAbility) {
 		if (isBroken(stack)) return false;
-		return super.canPerformAction(stack, ItemAbility);
+		return super.canPerformAction(stack, itemAbility);
 	}
 
 	@Override
-	public Multimap<Attribute, AttributeModifier> getAttributeModifiers(EquipmentSlot slot, ItemStack stack) {
-		if (isBroken(stack)) return ImmutableMultimap.of();
-		return super.getAttributeModifiers(slot, stack);
+	public ItemAttributeModifiers getDefaultAttributeModifiers(ItemStack stack) {
+		if (isBroken(stack)) return ItemAttributeModifiers.EMPTY;
+		return super.getDefaultAttributeModifiers(stack);
 	}
 
 	@Override

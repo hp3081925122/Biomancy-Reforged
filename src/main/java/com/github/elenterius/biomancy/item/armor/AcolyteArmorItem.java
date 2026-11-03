@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.item.armor;
 
+import net.minecraft.core.Holder;
 import com.github.elenterius.biomancy.client.render.item.armor.AcolyteArmorRenderer;
 import com.github.elenterius.biomancy.item.ItemTooltipStyleProvider;
 import com.github.elenterius.biomancy.item.KnowledgeReader;
@@ -29,7 +30,7 @@ public final class AcolyteArmorItem extends LivingArmorGeoItem implements Knowle
 
 	private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
-	public AcolyteArmorItem(ArmorMaterial material, Type type, int maxNutrients, Properties properties) {
+	public AcolyteArmorItem(Holder<ArmorMaterial> material, Type type, int maxNutrients, Properties properties) {
 		super(material, type, maxNutrients, properties);
 	}
 
@@ -71,7 +72,7 @@ public final class AcolyteArmorItem extends LivingArmorGeoItem implements Knowle
 	}
 
 	@Override
-	public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag isAdvanced) {
+	public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag isAdvanced) {
 		AcolyteArmorUpgrades.appendHoverText(stack, tooltip);
 
 		tooltip.add(ComponentUtil.EMPTY_LINE);

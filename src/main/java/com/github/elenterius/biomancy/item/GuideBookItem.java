@@ -15,8 +15,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 import software.bernie.geckolib.animatable.GeoItem;
 import software.bernie.geckolib.constant.DataTickets;
@@ -39,7 +39,7 @@ public class GuideBookItem extends SimpleItem implements GeoItem {
 	@Override
 	public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
 		if (level instanceof ServerLevel serverLevel) {
-			GeoItem.getOrAssignId(stack, serverLevel); //hack to always ensure we have a unique id for the animation
+			GeoItem.getOrAssignId(stack, serverLevel);
 		}
 	}
 
@@ -57,7 +57,7 @@ public class GuideBookItem extends SimpleItem implements GeoItem {
 	@OnlyIn(Dist.CLIENT)
 	private void tryToOpenClientScreen(Player player) {
 		if (player instanceof LocalPlayer localPlayer) {
-			Minecraft.getInstance().setScreen(new AdvancementsScreen(localPlayer.connection.getAdvancements())); //fallback
+			Minecraft.getInstance().setScreen(new AdvancementsScreen(localPlayer.connection.getAdvancements()));
 		}
 	}
 
