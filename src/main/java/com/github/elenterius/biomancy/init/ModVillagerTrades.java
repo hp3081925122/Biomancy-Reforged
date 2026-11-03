@@ -33,6 +33,7 @@ import net.neoforged.neoforge.event.entity.player.TradeWithVillagerEvent;
 import net.neoforged.neoforge.event.village.VillagerTradesEvent;
 import net.neoforged.neoforge.event.village.WandererTradesEvent;
 import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.neoforge.common.ModConfigSpec;
 import net.neoforged.fml.common.EventBusSubscriber;
 import org.jspecify.annotations.Nullable;
 
@@ -54,8 +55,6 @@ public final class ModVillagerTrades {
 
 	@SubscribeEvent
 	public static void onVillagerTrades(final VillagerTradesEvent event) {
-		if (Boolean.FALSE.equals(BiomancyConfig.SERVER_SYNCED.addTradesToVillagers.get())) return;
-
 		if (event.getType() == VillagerProfession.BUTCHER) {
 			addButcherTrades(event.getTrades());
 		}
@@ -106,19 +105,21 @@ public final class ModVillagerTrades {
 
 	@SubscribeEvent
 	public static void onWandererTrades(final WandererTradesEvent event) {
-		if (Boolean.FALSE.equals(BiomancyConfig.SERVER_SYNCED.addTradesToWanderingTrader.get())) return;
-
 		List<VillagerTrades.ItemListing> genericTrades = event.getGenericTrades();
-		genericTrades.add(sellToPlayer(ModItems.ACID_EXTRACT.get(), 4, 2, 16, 1));
-		genericTrades.add(sellToPlayer(ModItems.GELLING_AGENT.get(), 2, 16, 1));
-		genericTrades.add(buyFromPlayer(ModItems.NUTRIENT_BAR.get(), 2, 8, 5));
-		genericTrades.add(sellExplorationMapToPlayer(ModStructureTags.SMALL_WORM, MapDecorationTypes.RED_X, 5, 2, 10));
-		genericTrades.add(sellExplorationMapToPlayer(ModStructureTags.LAB, MapDecorationTypes.RED_X, 5, 2, 10));
+		genericTrades.add(whenEnabled(BiomancyConfig.SERVER_SYNCED.addTradesToWanderingTrader, sellToPlayer(ModItems.ACID_EXTRACT.get(), 4, 2, 16, 1)));
+		genericTrades.add(whenEnabled(BiomancyConfig.SERVER_SYNCED.addTradesToWanderingTrader, sellToPlayer(ModItems.GELLING_AGENT.get(), 2, 16, 1)));
+		genericTrades.add(whenEnabled(BiomancyConfig.SERVER_SYNCED.addTradesToWanderingTrader, buyFromPlayer(ModItems.NUTRIENT_BAR.get(), 2, 8, 5)));
+		genericTrades.add(whenEnabled(BiomancyConfig.SERVER_SYNCED.addTradesToWanderingTrader, sellExplorationMapToPlayer(ModStructureTags.SMALL_WORM, MapDecorationTypes.RED_X, 5, 2, 10)));
+		genericTrades.add(whenEnabled(BiomancyConfig.SERVER_SYNCED.addTradesToWanderingTrader, sellExplorationMapToPlayer(ModStructureTags.LAB, MapDecorationTypes.RED_X, 5, 2, 10)));
 
 		List<VillagerTrades.ItemListing> rareTrades = event.getRareTrades();
-		rareTrades.add(sellToPlayer(ModItems.CLEANSING_SERUM.get(), 10, 8, 20));
-		rareTrades.add(sellExplorationMapToPlayer(ModStructureTags.GIANT_WORM, MapDecorationTypes.RED_X, 10, 2, 20));
-		rareTrades.add(sellExplorationMapToPlayer(ModStructureTags.VAULT, MapDecorationTypes.RED_X, 10, 2, 20));
+		rareTrades.add(whenEnabled(BiomancyConfig.SERVER_SYNCED.addTradesToWanderingTrader, sellToPlayer(ModItems.CLEANSING_SERUM.get(), 10, 8, 20)));
+		rareTrades.add(whenEnabled(BiomancyConfig.SERVER_SYNCED.addTradesToWanderingTrader, sellExplorationMapToPlayer(ModStructureTags.GIANT_WORM, MapDecorationTypes.RED_X, 10, 2, 20)));
+		rareTrades.add(whenEnabled(BiomancyConfig.SERVER_SYNCED.addTradesToWanderingTrader, sellExplorationMapToPlayer(ModStructureTags.VAULT, MapDecorationTypes.RED_X, 10, 2, 20)));
+	}
+
+	private static VillagerTrades.ItemListing whenEnabled(ModConfigSpec.BooleanValue enabled, VillagerTrades.ItemListing listing) {
+		return (trader, random) -> Boolean.FALSE.equals(enabled.get()) ? null : listing.getOffer(trader, random);
 	}
 
 	private static BasicItemListing buyFromPlayer(Item item, int emeralds, int maxTrades, int xp) {
@@ -157,7 +158,9 @@ public final class ModVillagerTrades {
 		}
 
 		void addItemListings(Int2ObjectMap<List<VillagerTrades.ItemListing>> trades, VillagerTrades.ItemListing... listings) {
-			getItemListings(trades).addAll(Arrays.asList(listings));
+			for (VillagerTrades.ItemListing listing : listings) {
+				getItemListings(trades).add(whenEnabled(BiomancyConfig.SERVER_SYNCED.addTradesToVillagers, listing));
+			}
 		}
 
 	}

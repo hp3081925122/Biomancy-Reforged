@@ -5,8 +5,7 @@
       "rolls": 1,
       "entries": [
         {
-          "type": "minecraft:item",
-          "name": "biomancy:incendiary_grenade"
+          "type": "minecraft:empty"
         }
       ]
     }
