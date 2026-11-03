@@ -38,6 +38,7 @@ public class BioBrewingCategory implements IRecipeCategory<BioBrewingRecipe> {
 	private final IDrawable background;
 	private final IDrawable icon;
 
+	private final ItemStackHandler inputInventory;
 	private final RecipeWrapper inputInventoryWrapper;
 
 	public BioBrewingCategory(IGuiHelper guiHelper) {
@@ -45,7 +46,8 @@ public class BioBrewingCategory implements IRecipeCategory<BioBrewingRecipe> {
 		ResourceLocation texture = BiomancyMod.rl("textures/gui/jei/bio_lab_recipe.png");
 		background = guiHelper.drawableBuilder(texture, 0, 0, 134, 54).setTextureSize(134, 54).addPadding(0, 4, 0, 0).build();
 
-		inputInventoryWrapper = new RecipeWrapper(new ItemStackHandler(BioLabBlockEntity.INPUT_SLOTS));
+		inputInventory = new ItemStackHandler(BioLabBlockEntity.INPUT_SLOTS);
+		inputInventoryWrapper = new RecipeWrapper(inputInventory);
 	}
 
 	@Override
@@ -103,7 +105,7 @@ public class BioBrewingCategory implements IRecipeCategory<BioBrewingRecipe> {
 		for (int i = 0; i < slotViews.size(); i++) {
 			IRecipeSlotView slotView = slotViews.get(i);
 			ItemStack itemStack = slotView.getDisplayedItemStack().orElse(ItemStack.EMPTY);
-			inputInventoryWrapper.setItem(i, itemStack);
+			inputInventory.setStackInSlot(i, itemStack);
 		}
 
 		int ticks = recipe.getCraftingTimeTicks(inputInventoryWrapper);

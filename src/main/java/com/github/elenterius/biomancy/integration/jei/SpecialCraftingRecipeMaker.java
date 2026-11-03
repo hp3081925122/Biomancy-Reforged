@@ -23,7 +23,8 @@ import net.minecraft.world.item.crafting.CraftingBookCategory;
 import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.ShapelessRecipe;
-import net.minecraftforge.registries.RegistryObject;
+import net.minecraft.world.item.crafting.RecipeHolder;
+import net.neoforged.neoforge.registries.DeferredHolder;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -37,7 +38,11 @@ public final class SpecialCraftingRecipeMaker {
 
 	private SpecialCraftingRecipeMaker() {}
 
-	public static List<CraftingRecipe> createCradleCleansingRecipes() {
+	private static RecipeHolder<CraftingRecipe> holder(ResourceLocation id, CraftingRecipe recipe) {
+		return new RecipeHolder<>(id, recipe);
+	}
+
+	public static List<RecipeHolder<CraftingRecipe>> createCradleCleansingRecipes() {
 		ItemStack cradle = ModItems.PRIMORDIAL_CRADLE.get().getDefaultInstance();
 		CompoundTag tag = new CompoundTag();
 		CompoundTag tagProcGen = new CompoundTag();
@@ -56,21 +61,21 @@ public final class SpecialCraftingRecipeMaker {
 		ItemStack result = ModItems.PRIMORDIAL_CRADLE.get().getDefaultInstance();
 
 		return List.of(
-				new ShapelessRecipe(recipeId, "", CraftingBookCategory.MISC, result, inputs)
+				holder(recipeId, new ShapelessRecipe("", CraftingBookCategory.MISC, result, inputs))
 		);
 	}
 
-	public static List<CraftingRecipe> createHelmetUpgradeRecipes() {
+	public static List<RecipeHolder<CraftingRecipe>> createHelmetUpgradeRecipes() {
 		return ModItems.findEntries(LivingArmorItem.class).map(SpecialCraftingRecipeMaker::createHelmetUpgradeRecipe).toList();
 	}
 
-	private static <A extends ArmorItem> CraftingRecipe createHelmetUpgradeRecipe(RegistryObject<A> armorItem) {
+	private static <A extends ArmorItem> RecipeHolder<CraftingRecipe> createHelmetUpgradeRecipe(DeferredHolder<Item, A> armorItem) {
 		NonNullList<Ingredient> inputs = NonNullList.of(Ingredient.EMPTY, Ingredient.of(ModItems.PRIMORDIAL_CORE.get()), Ingredient.of(armorItem.get()));
 		ItemStack result = AcolyteArmorUpgrades.addUpgrade(armorItem.get().getDefaultInstance(), AcolyteArmorUpgrades.PRIMORDIAL_SIGHT);
-		return new ShapelessRecipe(BiomancyMod.rl("special_crafting/" + armorItem.getId().getPath() + "_upgrade"), "", CraftingBookCategory.MISC, result, inputs);
+		return holder(BiomancyMod.rl("special_crafting/" + armorItem.getId().getPath() + "_upgrade"), new ShapelessRecipe("", CraftingBookCategory.MISC, result, inputs));
 	}
 
-	public static List<CraftingRecipe> createPlayerHeadRecipes() {
+	public static List<RecipeHolder<CraftingRecipe>> createPlayerHeadRecipes() {
 		NonNullList<Ingredient> inputs = NonNullList.of(Ingredient.EMPTY,
 				Ingredient.of(Items.PLAYER_HEAD),
 				Ingredient.of(ModItems.EXOTIC_DUST.get()),
@@ -79,7 +84,7 @@ public final class SpecialCraftingRecipeMaker {
 		ItemStack result = createPlayerHead("jeb_");
 
 		return List.of(
-				new ShapelessRecipe(BiomancyMod.rl("special_crafting/player_head"), "", CraftingBookCategory.MISC, result, inputs)
+				holder(BiomancyMod.rl("special_crafting/player_head"), new ShapelessRecipe("", CraftingBookCategory.MISC, result, inputs))
 		);
 	}
 
@@ -102,13 +107,13 @@ public final class SpecialCraftingRecipeMaker {
 		return stack;
 	}
 
-	public static List<CraftingRecipe> createBiometricMembraneRecipes() {
+	public static List<RecipeHolder<CraftingRecipe>> createBiometricMembraneRecipes() {
 		UUID pigUUID = UUID.fromString("420faf42-bf42-4b20-af42-c42420e42d42");
 
 		UUID playerUUID = UUID.fromString("853c80ef-3c37-49fd-aa49-938b674adae6");
 		String playerName = "jeb_";
 
-		Stream<CraftingRecipe[]> recipePairs = Stream.of(
+		Stream<RecipeHolder<CraftingRecipe>[]> recipePairs = Stream.of(
 				createRecipePair(EntityType.PIG, false, null),
 				createRecipePair(EntityType.PIG, true, null),
 				createRecipePair(EntityType.PIG, false, pigUUID),
@@ -122,18 +127,19 @@ public final class SpecialCraftingRecipeMaker {
 		return recipePairs.flatMap(Stream::of).toList();
 	}
 
-	private static CraftingRecipe[] createUniquePlayerRecipePair(boolean isInverted, UUID playerUUID, String playerName) {
+	private static RecipeHolder<CraftingRecipe>[] createUniquePlayerRecipePair(boolean isInverted, UUID playerUUID, String playerName) {
 		Ingredient ingredient = Ingredient.of(createUniquePlayerEssence(playerUUID, playerName));
 		return createRecipePair(EntityType.PLAYER, isInverted, playerUUID, 3, ingredient);
 	}
 
-	private static CraftingRecipe[] createRecipePair(EntityType<?> entityType, boolean isInverted, @Nullable UUID entityUUID) {
+	private static RecipeHolder<CraftingRecipe>[] createRecipePair(EntityType<?> entityType, boolean isInverted, @Nullable UUID entityUUID) {
 		int tier = entityUUID != null ? 3 : 0;
 		Ingredient ingredient = Ingredient.of(EssenceItem.fromEntityType(entityType, tier));
 		return createRecipePair(entityType, isInverted, entityUUID, tier, ingredient);
 	}
 
-	private static CraftingRecipe[] createRecipePair(EntityType<?> entityType, boolean isInverted, @Nullable UUID entityUUID, int tier, Ingredient essence) {
+	@SuppressWarnings("unchecked")
+	private static RecipeHolder<CraftingRecipe>[] createRecipePair(EntityType<?> entityType, boolean isInverted, @Nullable UUID entityUUID, int tier, Ingredient essence) {
 		List<Ingredient> ingredients = new ArrayList<>();
 		ingredients.add(essence);
 		ingredients.add(Ingredient.of(ModItems.BIOMETRIC_MEMBRANE.get()));
@@ -153,9 +159,9 @@ public final class SpecialCraftingRecipeMaker {
 		ResourceLocation createRecipeId = BiomancyMod.rl(name + "." + inverted + unique + entityType.getDescriptionId());
 		ResourceLocation resetRecipeId = BiomancyMod.rl(name + ".reset." + inverted + unique + entityType.getDescriptionId());
 
-		return new CraftingRecipe[]{
-				new ShapelessRecipe(createRecipeId, name, CraftingBookCategory.MISC, membraneStack, inputs),
-				new ShapelessRecipe(resetRecipeId, name, CraftingBookCategory.MISC, new ItemStack(ModItems.BIOMETRIC_MEMBRANE.get()), NonNullList.of(Ingredient.EMPTY, Ingredient.of(membraneStack))),
+		return new RecipeHolder[]{
+				holder(createRecipeId, new ShapelessRecipe(name, CraftingBookCategory.MISC, membraneStack, inputs)),
+				holder(resetRecipeId, new ShapelessRecipe(name, CraftingBookCategory.MISC, new ItemStack(ModItems.BIOMETRIC_MEMBRANE.get()), NonNullList.of(Ingredient.EMPTY, Ingredient.of(membraneStack)))),
 		};
 	}
 }

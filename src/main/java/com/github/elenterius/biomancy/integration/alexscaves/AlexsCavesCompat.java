@@ -6,7 +6,7 @@ import com.github.elenterius.biomancy.api.tribute.Tributes;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
 
 import java.util.Objects;
 
@@ -27,13 +27,13 @@ public final class AlexsCavesCompat {
 	}
 
 	private static Block getBlock(String name) {
-		ResourceLocation id = new ResourceLocation("alexscaves", name);
-		return Objects.requireNonNull(ForgeRegistries.BLOCKS.getValue(id));
+		ResourceLocation id = ResourceLocation.fromNamespaceAndPath("alexscaves", name);
+		return Objects.requireNonNull(BuiltInRegistries.BLOCK.get(id));
 	}
 
 	private static Item getItem(String name) {
-		ResourceLocation id = new ResourceLocation("alexscaves", name);
-		return Objects.requireNonNull(ForgeRegistries.ITEMS.getValue(id));
+		ResourceLocation id = ResourceLocation.fromNamespaceAndPath("alexscaves", name);
+		return Objects.requireNonNull(BuiltInRegistries.ITEM.get(id));
 	}
 
 }

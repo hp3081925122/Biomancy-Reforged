@@ -3,9 +3,14 @@ package com.github.elenterius.biomancy.integration.kubejs;
 import com.github.elenterius.biomancy.api.tribute.SacrificeHandler;
 import com.github.elenterius.biomancy.block.cradle.PrimordialCradleBlockEntity;
 import com.github.elenterius.biomancy.block.cradle.PrimordialCradleEvents;
-import dev.latvian.mods.kubejs.event.*;
+import dev.latvian.mods.kubejs.event.EventExit;
+import dev.latvian.mods.kubejs.event.EventGroup;
+import dev.latvian.mods.kubejs.event.EventHandler;
+import dev.latvian.mods.kubejs.event.EventResult;
+import dev.latvian.mods.kubejs.event.KubeEvent;
 import dev.latvian.mods.kubejs.typings.Info;
 import dev.latvian.mods.kubejs.typings.Param;
+import dev.latvian.mods.rhino.Context;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Mob;
@@ -40,7 +45,7 @@ final class BiomancyKJSEvents {
 	@Info("""
 			Allows you to determine if any mob should be spawned or not.
 			Canceling this event will lead to the cradle either doing nothing or attacking anyone nearby.""")
-	static class CanCradleSpawnMobEventKJS extends EventJS {
+	static class CanCradleSpawnMobEventKJS implements KubeEvent {
 		private final PrimordialCradleEvents.CanSpawnMob forgeEvent;
 
 		public CanCradleSpawnMobEventKJS(PrimordialCradleEvents.CanSpawnMob forgeEvent) {
@@ -123,9 +128,9 @@ final class BiomancyKJSEvents {
 		}
 
 		@Info("Cancel the event and force the cradle to attack")
-		public void cancelAndForceAttack() throws EventExit {
+		public void cancelAndForceAttack(Context cx) throws EventExit {
 			forgeEvent.getSacrificeHandler().setHostile(100);
-			cancel();
+			cancel(cx);
 		}
 
 	}
@@ -137,7 +142,7 @@ final class BiomancyKJSEvents {
 			Placement and rotation of the mob is handled by the cradle.
 			
 			Canceling this event won't stop the cradle from spawning a Flesh Blob. Use the CanCradleSpawnMob event for that.""")
-	static class OnCradleSpawnMobEventKJS extends EventJS {
+	static class OnCradleSpawnMobEventKJS implements KubeEvent {
 
 		private final PrimordialCradleEvents.OnSpawnMob forgeEvent;
 

@@ -1,6 +1,5 @@
 package com.github.elenterius.biomancy.integration.jei;
 
-import net.minecraft.core.registries.BuiltInRegistries;
 import com.github.elenterius.biomancy.block.digester.DigesterBlockEntity;
 import com.github.elenterius.biomancy.crafting.recipe.DigestingRecipe;
 import com.github.elenterius.biomancy.crafting.recipe.FoodDigestingRecipe;
@@ -9,6 +8,7 @@ import com.github.elenterius.biomancy.init.ModRecipes;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.neoforged.neoforge.items.ItemStackHandler;
 import net.neoforged.neoforge.items.wrapper.RecipeWrapper;
 
@@ -20,17 +20,16 @@ public final class DigestingRecipes {
 	private DigestingRecipes() {}
 
 	public static List<DigestingRecipe> getRecipes(ClientLevel level) {
-		List<DigestingRecipe> allRecipes = level.getRecipeManager().getAllRecipesFor(ModRecipes.DIGESTING_RECIPE_TYPE.get());
+		List<RecipeHolder<DigestingRecipe>> allRecipes = level.getRecipeManager().getAllRecipesFor(ModRecipes.DIGESTING_RECIPE_TYPE.get());
 
 		List<DigestingRecipe> resolvedRecipes = new ArrayList<>();
 
-		for (DigestingRecipe recipe : allRecipes) {
-			if (recipe instanceof FoodDigestingRecipe dynamicRecipe) {
-				List<DigestingRecipe> staticRecipes = convertToStaticRecipes(level, dynamicRecipe);
-				resolvedRecipes.addAll(staticRecipes);
+		for (RecipeHolder<DigestingRecipe> holder : allRecipes) {
+			if (holder.value() instanceof FoodDigestingRecipe dynamicRecipe) {
+				resolvedRecipes.addAll(convertToStaticRecipes(level, dynamicRecipe));
 			}
 			else {
-				resolvedRecipes.add(recipe);
+				resolvedRecipes.add(holder.value());
 			}
 		}
 
@@ -40,20 +39,18 @@ public final class DigestingRecipes {
 	private static List<DigestingRecipe> convertToStaticRecipes(ClientLevel level, FoodDigestingRecipe dynamicRecipe) {
 		List<DigestingRecipe> staticRecipes = new ArrayList<>();
 
-		RecipeWrapper inputInventory = new RecipeWrapper(new ItemStackHandler(DigesterBlockEntity.INPUT_SLOTS));
+		ItemStackHandler inventory = new ItemStackHandler(DigesterBlockEntity.INPUT_SLOTS);
+		RecipeWrapper inputInventory = new RecipeWrapper(inventory);
 
 		for (ItemStack ingredientItem : dynamicRecipe.getIngredient().getItems()) {
-			inputInventory.setItem(0, ingredientItem);
+			inventory.setStackInSlot(0, ingredientItem);
 
 			ItemStack result = dynamicRecipe.assemble(inputInventory, level.registryAccess());
 			int craftingTimeTicks = dynamicRecipe.getCraftingTimeTicks(inputInventory);
 			int craftingCostNutrients = dynamicRecipe.getCraftingCostNutrients(inputInventory);
 			Ingredient ingredient = Ingredient.of(ingredientItem);
 
-			String suffix = BuiltInRegistries.ITEM.getKey(ingredientItem.getItem()).toLanguageKey();
-			StaticDigestingRecipe recipe = new StaticDigestingRecipe(dynamicRecipe.getId().withSuffix("_jei_" + suffix), result, craftingTimeTicks, craftingCostNutrients, ingredient);
-
-			staticRecipes.add(recipe);
+			staticRecipes.add(new StaticDigestingRecipe(result, craftingTimeTicks, craftingCostNutrients, ingredient));
 		}
 
 		return staticRecipes;

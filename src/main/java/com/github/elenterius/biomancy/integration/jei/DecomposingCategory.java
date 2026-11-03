@@ -41,13 +41,15 @@ public class DecomposingCategory implements IRecipeCategory<DecomposingRecipe> {
 	private final IDrawable background;
 	private final IDrawable icon;
 
+	private final ItemStackHandler inputInventory;
 	private final RecipeWrapper inputInventoryWrapper;
 
 	public DecomposingCategory(IGuiHelper guiHelper) {
 		icon = guiHelper.createDrawableIngredient(VanillaTypes.ITEM_STACK, new ItemStack(ModBlocks.DECOMPOSER.get()));
 		background = guiHelper.drawableBuilder(BiomancyMod.rl("textures/gui/jei/decomposer_recipe.png"), 0, 0, 132, 64).setTextureSize(132, 64).build();
 
-		inputInventoryWrapper = new RecipeWrapper(new ItemStackHandler(DigesterBlockEntity.INPUT_SLOTS));
+		inputInventory = new ItemStackHandler(DigesterBlockEntity.INPUT_SLOTS);
+		inputInventoryWrapper = new RecipeWrapper(inputInventory);
 	}
 
 	@Override
@@ -138,7 +140,7 @@ public class DecomposingCategory implements IRecipeCategory<DecomposingRecipe> {
 
 		IRecipeSlotView slotView = recipeSlotsView.getSlotViews(RecipeIngredientRole.INPUT).get(0);
 		ItemStack itemStack = slotView.getDisplayedItemStack().orElse(ItemStack.EMPTY);
-		inputInventoryWrapper.setItem(0, itemStack);
+		inputInventory.setStackInSlot(0, itemStack);
 
 		int ticks = recipe.getCraftingTimeTicks(inputInventoryWrapper);
 		int seconds = ticks > 0 ? ticks / 20 : 0;

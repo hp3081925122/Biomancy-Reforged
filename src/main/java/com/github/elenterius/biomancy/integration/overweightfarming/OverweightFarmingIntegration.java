@@ -13,8 +13,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.feature.DripstoneUtils;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.orcinus.overweightfarming.blocks.CropFullBlock;
 import net.orcinus.overweightfarming.init.OFBlocks;
 import net.orcinus.overweightfarming.util.OverweightGrowthManager;
@@ -46,13 +45,13 @@ public final class OverweightFarmingIntegration {
 	}
 
 	private static Block getBlock(String name) {
-		ResourceLocation id = new ResourceLocation("overweight_farming", name);
-		return Objects.requireNonNull(ForgeRegistries.BLOCKS.getValue(id));
+		ResourceLocation id = ResourceLocation.fromNamespaceAndPath("overweight_farming", name);
+		return Objects.requireNonNull(BuiltInRegistries.BLOCK.get(id));
 	}
 
 	private static Item getItem(String name) {
-		ResourceLocation id = new ResourceLocation("overweight_farming", name);
-		return Objects.requireNonNull(ForgeRegistries.ITEMS.getValue(id));
+		ResourceLocation id = ResourceLocation.fromNamespaceAndPath("overweight_farming", name);
+		return Objects.requireNonNull(BuiltInRegistries.ITEM.get(id));
 	}
 
 	static final class OverweightFarmingHelperImpl implements OverweightFarmingHelper {
@@ -65,7 +64,7 @@ public final class OverweightFarmingIntegration {
 		public boolean isOverweightBlock(Block block) {
 			if (overweightCrops == null) {
 				overweightCrops = OFBlocks.BLOCKS.getEntries().stream()
-						.map(RegistryObject::get)
+						.map(holder -> (Block) holder.get())
 						.filter(CropFullBlock.class::isInstance)
 						.collect(Collectors.toSet());
 			}

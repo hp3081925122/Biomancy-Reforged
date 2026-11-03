@@ -38,6 +38,7 @@ public class DigestingCategory implements IRecipeCategory<DigestingRecipe> {
 	private final IDrawable background;
 	private final IDrawable icon;
 
+	private final ItemStackHandler inputInventory;
 	private final RecipeWrapper inputInventoryWrapper;
 
 	public DigestingCategory(IGuiHelper guiHelper) {
@@ -45,7 +46,8 @@ public class DigestingCategory implements IRecipeCategory<DigestingRecipe> {
 		ResourceLocation texture = BiomancyMod.rl("textures/gui/jei/digester_recipe.png");
 		background = guiHelper.drawableBuilder(texture, 0, 0, 80, 47).setTextureSize(80, 47).addPadding(0, 4, 0, 0).build();
 
-		inputInventoryWrapper = new RecipeWrapper(new ItemStackHandler(DigesterBlockEntity.INPUT_SLOTS));
+		inputInventory = new ItemStackHandler(DigesterBlockEntity.INPUT_SLOTS);
+		inputInventoryWrapper = new RecipeWrapper(inputInventory);
 	}
 
 	@Override
@@ -80,7 +82,7 @@ public class DigestingCategory implements IRecipeCategory<DigestingRecipe> {
 
 			List<ItemStack> possibleOutputs = new ArrayList<>();
 			for (ItemStack ingredientItem : ingredient.getItems()) {
-				inputInventoryWrapper.setItem(0, ingredientItem);
+				inputInventory.setStackInSlot(0, ingredientItem);
 				ItemStack result = recipe.assemble(inputInventoryWrapper, level.registryAccess());
 				possibleOutputs.add(result);
 			}
@@ -99,7 +101,7 @@ public class DigestingCategory implements IRecipeCategory<DigestingRecipe> {
 
 		IRecipeSlotView slotView = recipeSlotsView.getSlotViews(RecipeIngredientRole.INPUT).get(0);
 		ItemStack itemStack = slotView.getDisplayedItemStack().orElse(ItemStack.EMPTY);
-		inputInventoryWrapper.setItem(0, itemStack);
+		inputInventory.setStackInSlot(0, itemStack);
 
 		int ticks = recipe.getCraftingTimeTicks(inputInventoryWrapper);
 		int seconds = ticks > 0 ? ticks / 20 : 0;

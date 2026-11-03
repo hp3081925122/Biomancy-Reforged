@@ -8,23 +8,19 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import virtuoel.pehkui.api.*;
 
-import java.util.UUID;
+import net.minecraft.resources.ResourceLocation;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
 public final class PehkuiIntegration {
 
-	private static final UUID HEALTH_MODIFIER_UUID = UUID.fromString("e345db7b-2296-401e-aeb4-546de2c7651f");
+	private static final ResourceLocation HEALTH_MODIFIER_ID = BiomancyMod.rl("scaled_mob_health");
 	private static final float DEFAULT_SCALE = 1f;
 
 	private PehkuiIntegration() {}
 
 	public static void init(Consumer<PehkuiHelper> helperSetter) {
-		//ScaleTypes.BASE.getDefaultBaseValueModifiers().add(SCALE_MODIFIER);
-		//we don't use the BASE type because its affects drops, explosions and projectiles
-
-		//base values
 		ScaleTypes.WIDTH.getDefaultBaseValueModifiers().add(SCALE_MODIFIER);
 		ScaleTypes.HEIGHT.getDefaultBaseValueModifiers().add(SCALE_MODIFIER);
 		ScaleTypes.MOTION.getDefaultBaseValueModifiers().add(SCALE_MODIFIER);
@@ -32,13 +28,9 @@ public final class PehkuiIntegration {
 		ScaleTypes.REACH.getDefaultBaseValueModifiers().add(SCALE_MODIFIER);
 		ScaleTypes.EXPLOSIONS.getDefaultBaseValueModifiers().add(SCALE_MODIFIER);
 
-		// additional values
 		ScaleTypes.ATTACK.getDefaultBaseValueModifiers().add(SCALE_MODIFIER);
 		ScaleTypes.DEFENSE.getDefaultBaseValueModifiers().add(SCALE_MODIFIER);
 		ScaleTypes.KNOCKBACK.getDefaultBaseValueModifiers().add(SCALE_MODIFIER);
-
-		//ScaleTypes.HEALTH.getDefaultBaseValueModifiers().add(SCALE_MODIFIER);
-		//we don't use health because the hearts don't render correctly, instead we do it manually via vanilla attribute modifiers
 
 		PehkuiIntegration.SCALE_TYPE.getScaleChangedEvent().add(scaleData -> {
 			if (scaleData.getEntity() instanceof LivingEntity livingEntity && !livingEntity.level().isClientSide()) {
@@ -53,12 +45,6 @@ public final class PehkuiIntegration {
 		helperSetter.accept(new PehkuiHelperImpl());
 	}
 
-	/**
-	 * called when the target scale is reached <br>
-	 * or <br>
-	 * called when a mob is loaded from chunk <br>
-	 * (useful for applying/restoring transient modifiers on chunk/level load)
-	 */
 	private static void onScaleChangeCompleted(LivingEntity livingEntity, float targetScale) {
 		updateMaxHealth(livingEntity, targetScale);
 	}
@@ -66,15 +52,15 @@ public final class PehkuiIntegration {
 	private static void updateMaxHealth(LivingEntity livingEntity, float targetScale) {
 		AttributeInstance healthAttribute = livingEntity.getAttribute(Attributes.MAX_HEALTH);
 		if (healthAttribute != null) {
-			healthAttribute.removeModifier(HEALTH_MODIFIER_UUID);
+			healthAttribute.removeModifier(HEALTH_MODIFIER_ID);
 
 			float modifierAmount = targetScale - DEFAULT_SCALE;
 			if (modifierAmount != 0f) {
-				healthAttribute.addTransientModifier(new AttributeModifier(HEALTH_MODIFIER_UUID, "biomancy_scaled_mob", modifierAmount, AttributeModifier.Operation.MULTIPLY_BASE));
+				healthAttribute.addTransientModifier(new AttributeModifier(HEALTH_MODIFIER_ID, modifierAmount, AttributeModifier.Operation.ADD_MULTIPLIED_BASE));
 
 				float maxHealth = livingEntity.getMaxHealth();
 				if (livingEntity.getHealth() > maxHealth) {
-					livingEntity.setHealth(maxHealth); //TODO: remove in Minecraft 1.21
+					livingEntity.setHealth(maxHealth);
 				}
 			}
 		}

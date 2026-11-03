@@ -50,7 +50,7 @@ public class SerumItemBuilder extends ItemBuilder {
 		@Override
 		public Serum getSerum(ItemStack stack) {
 			if (serum == null) {
-				serum = ModSerums.REGISTRY.get().getValue(serumId);
+				serum = ModSerums.REGISTRY.get(serumId);
 			}
 
 			if (serum == null) {

@@ -24,9 +24,13 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeManager;
 import org.jspecify.annotations.Nullable;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 
 @JeiPlugin
@@ -57,12 +61,12 @@ public class BiomancyJeiPlugin implements IModPlugin {
 		ClientLevel level = Objects.requireNonNull(Minecraft.getInstance().level);
 		RecipeManager recipeManager = level.getRecipeManager();
 
-		registration.addRecipes(DecomposingCategory.RECIPE_TYPE, recipeManager.getAllRecipesFor(ModRecipes.DECOMPOSING_RECIPE_TYPE.get()));
-		registration.addRecipes(BioBrewingCategory.RECIPE_TYPE, recipeManager.getAllRecipesFor(ModRecipes.BIO_BREWING_RECIPE_TYPE.get()));
-		registration.addRecipes(BioBrewingCategory.RECIPE_TYPE, PotionSerumRecipes.getRecipes(level));
+		registration.addRecipes(DecomposingCategory.RECIPE_TYPE, values(recipeManager.getAllRecipesFor(ModRecipes.DECOMPOSING_RECIPE_TYPE.get())));
+		registration.addRecipes(BioBrewingCategory.RECIPE_TYPE, values(recipeManager.getAllRecipesFor(ModRecipes.BIO_BREWING_RECIPE_TYPE.get())));
+		registration.addRecipes(BioBrewingCategory.RECIPE_TYPE, values(PotionSerumRecipes.getRecipes(level)));
 
 		registration.addRecipes(DigestingCategory.RECIPE_TYPE, DigestingRecipes.getRecipes(level));
-		registration.addRecipes(BioForgingCategory.RECIPE_TYPE, recipeManager.getAllRecipesFor(ModRecipes.BIO_FORGING_RECIPE_TYPE.get()));
+		registration.addRecipes(BioForgingCategory.RECIPE_TYPE, values(recipeManager.getAllRecipesFor(ModRecipes.BIO_FORGING_RECIPE_TYPE.get())));
 
 		registration.addRecipes(RecipeTypes.CRAFTING, SpecialCraftingRecipeMaker.createBiometricMembraneRecipes());
 		registration.addRecipes(RecipeTypes.CRAFTING, SpecialCraftingRecipeMaker.createCradleCleansingRecipes());
@@ -91,6 +95,10 @@ public class BiomancyJeiPlugin implements IModPlugin {
 		registerInputSlots(registration, ModMenuTypes.DECOMPOSER.get(), DecomposerMenu.class, DecomposingCategory.RECIPE_TYPE, DecomposerMenu.SlotZone.INPUT_ZONE);
 		registerInputSlots(registration, ModMenuTypes.BIO_LAB.get(), BioLabMenu.class, BioBrewingCategory.RECIPE_TYPE, BioLabMenu.SlotZone.INPUT_ZONE);
 		registerInputSlots(registration, ModMenuTypes.DIGESTER.get(), DigesterMenu.class, DigestingCategory.RECIPE_TYPE, DigesterMenu.SlotZone.INPUT_ZONE);
+	}
+
+	private static <R extends Recipe<?>> List<R> values(Collection<RecipeHolder<R>> holders) {
+		return holders.stream().map(RecipeHolder::value).toList();
 	}
 
 	private <C extends AbstractContainerMenu, R> void registerInputSlots(IRecipeTransferRegistration registration, @Nullable MenuType<C> menuType, Class<? extends C> containerClass, RecipeType<R> recipeType, ISlotZone slotZone) {
