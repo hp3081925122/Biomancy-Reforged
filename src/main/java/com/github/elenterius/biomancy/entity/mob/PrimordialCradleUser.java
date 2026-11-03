@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.entity.mob;
 
+import net.minecraft.tags.ItemTags;
 import com.github.elenterius.biomancy.entity.mob.ai.goal.FindItemGoal;
 import com.github.elenterius.biomancy.init.ModItems;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -20,7 +21,7 @@ public interface PrimordialCradleUser {
 
 		ItemStack stack = itemEntity.getItem();
 		if (SPECIAL_ITEMS_TO_HOLD.contains(stack.getItem())) return true;
-		return stack.isEdible() && Optional.ofNullable(stack.getFoodProperties(null)).map(FoodProperties::isMeat).orElse(false);
+		return stack.getFoodProperties(null) != null && stack.is(ItemTags.MEAT);
 	};
 
 	ItemStack getTributeItemForCradle();

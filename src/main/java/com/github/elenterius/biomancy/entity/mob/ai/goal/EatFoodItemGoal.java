@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.entity.mob.ai.goal;
 
+import net.minecraft.tags.ItemTags;
 import com.github.elenterius.biomancy.entity.mob.FoodEater;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.goal.Goal;
@@ -32,7 +33,7 @@ public class EatFoodItemGoal<T extends PathfinderMob & FoodEater> extends Goal {
 	}
 
 	protected boolean hasEdibleFood() {
-		return mob.getFoodItem().isEdible();
+		return mob.getFoodItem().getFoodProperties(mob) != null;
 	}
 
 	@Override
@@ -42,7 +43,7 @@ public class EatFoodItemGoal<T extends PathfinderMob & FoodEater> extends Goal {
 
 	@Override
 	public void start() {
-		eatTimer = adjustedTickDelay(mob.getFoodItem().getUseDuration() * 2);
+		eatTimer = adjustedTickDelay(mob.getFoodItem().getUseDuration(mob) * 2);
 		mob.getNavigation().stop();
 		mob.setEating(true);
 	}
@@ -61,11 +62,12 @@ public class EatFoodItemGoal<T extends PathfinderMob & FoodEater> extends Goal {
 			if (hasEdibleFood()) {
 				ItemStack stack = mob.getFoodItem();
 				FoodProperties food = stack.getFoodProperties(mob);
+				boolean isMeat = stack.is(ItemTags.MEAT);
 				ItemStack eatenStack = stack.finishUsingItem(mob.level(), mob);
 				if (!eatenStack.isEmpty()) {
 					mob.setFoodItem(eatenStack);
 				}
-				mob.ate(food);
+				mob.ate(food, isMeat);
 			}
 			mob.setEating(false);
 		}

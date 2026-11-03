@@ -1,5 +1,7 @@
 package com.github.elenterius.biomancy.entity.mob;
 
+import org.jspecify.annotations.Nullable;
+import net.minecraft.world.scores.PlayerTeam;
 import com.github.elenterius.biomancy.util.ownable.OwnableMob;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -16,7 +18,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
-import net.minecraft.world.scores.Team;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -30,9 +31,9 @@ public abstract class OwnableMonster extends Monster implements OwnableMob {
 	}
 
 	@Override
-	protected void defineSynchedData() {
-		super.defineSynchedData();
-		entityData.define(OWNER_UNIQUE_ID, Optional.empty());
+	protected void defineSynchedData(SynchedEntityData.Builder builder) {
+		super.defineSynchedData(builder);
+		builder.define(OWNER_UNIQUE_ID, Optional.empty());
 	}
 
 	@Override
@@ -91,7 +92,7 @@ public abstract class OwnableMonster extends Monster implements OwnableMob {
 	}
 
 	@Override
-	public Team getTeam() {
+	public @Nullable PlayerTeam getTeam() {
 		Optional<Player> optional = getOwnerAsPlayer();
 		if (optional.isPresent()) {
 			return optional.get().getTeam();
@@ -121,7 +122,11 @@ public abstract class OwnableMonster extends Monster implements OwnableMob {
 	}
 
 	@Override
-	public boolean canBeLeashed(Player player) {
+	public boolean canBeLeashed() {
+		return true;
+	}
+
+	public boolean canBeLeashedBy(Player player) {
 		return !isLeashed() && player == getOwnerAsPlayer().orElse(null);
 	}
 

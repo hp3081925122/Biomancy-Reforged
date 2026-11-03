@@ -5,7 +5,7 @@ import net.minecraft.world.item.ItemStack;
 import org.jspecify.annotations.Nullable;
 
 public interface FoodEater {
-	void ate(@Nullable FoodProperties food);
+	void ate(@Nullable FoodProperties food, boolean isMeat);
 
 	boolean isEating();
 

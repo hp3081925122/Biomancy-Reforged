@@ -59,7 +59,7 @@ public class AcidSprayProjectile extends BaseProjectile {
 		}
 
 		if (owner instanceof LivingEntity shooter) {
-			doEnchantDamageEffects(shooter, victim);
+			doPostAttackEffects(shooter, victim, acidDamageSource);
 		}
 	}
 
@@ -80,7 +80,6 @@ public class AcidSprayProjectile extends BaseProjectile {
 
 	@Override
 	protected void spawnParticle(double x, double y, double z) {
-		//do nothing
 	}
 
 	public Vec3[] getTrailPositions() {

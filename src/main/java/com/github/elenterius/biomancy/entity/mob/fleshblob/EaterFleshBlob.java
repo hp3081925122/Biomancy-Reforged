@@ -33,7 +33,7 @@ import java.util.function.Predicate;
 
 public abstract class EaterFleshBlob extends FleshBlob implements FoodEater {
 
-	public static final Predicate<ItemEntity> ITEM_ENTITY_FILTER = itemEntity -> FindItemGoal.ITEM_ENTITY_FILTER.test(itemEntity) && itemEntity.getItem().isEdible();
+	public static final Predicate<ItemEntity> ITEM_ENTITY_FILTER = itemEntity -> FindItemGoal.ITEM_ENTITY_FILTER.test(itemEntity) && itemEntity.getItem().getFoodProperties(null) != null;
 	protected static final EntityDataAccessor<Boolean> IS_EATING = SynchedEntityData.defineId(EaterFleshBlob.class, EntityDataSerializers.BOOLEAN);
 
 	protected EaterFleshBlob(EntityType<? extends EaterFleshBlob> entityType, Level level) {
@@ -52,19 +52,23 @@ public abstract class EaterFleshBlob extends FleshBlob implements FoodEater {
 	}
 
 	@Override
-	protected void defineSynchedData() {
-		super.defineSynchedData();
-		entityData.define(IS_EATING, false);
+	protected void defineSynchedData(SynchedEntityData.Builder builder) {
+		super.defineSynchedData(builder);
+		builder.define(IS_EATING, false);
 	}
 
-	protected float getFoodHealAmount(@Nullable FoodProperties food) {
+	protected float getFoodHealAmount(@Nullable FoodProperties food, boolean isMeat) {
 		if (food == null) return 0.5f;
-		return food.getNutrition() * (food.isMeat() ? 1.25f : 0.75f);
+		return food.nutrition() * (isMeat ? 1.25f : 0.75f);
 	}
 
-	protected float getGrowChance(@Nullable FoodProperties food) {
+	protected float getGrowChance(@Nullable FoodProperties food, boolean isMeat) {
 		if (food == null) return 0.4f;
-		return 0.4f + (food.getNutrition() * (food.isMeat() ? 0.5f : 0.25f)) / MAX_SIZE;
+		return 0.4f + (food.nutrition() * (isMeat ? 0.5f : 0.25f)) / MAX_SIZE;
+	}
+
+	private static boolean isEdible(ItemStack stack) {
+		return stack.getFoodProperties(null) != null;
 	}
 
 	@Override
@@ -72,12 +76,12 @@ public abstract class EaterFleshBlob extends FleshBlob implements FoodEater {
 		if (tickCount < 20 * 5) return false;
 
 		ItemStack heldStack = getFoodItem();
-		return (heldStack.isEmpty() || !heldStack.getItem().isEdible()) && super.canPickUpLoot();
+		return (heldStack.isEmpty() || !isEdible(heldStack)) && super.canPickUpLoot();
 	}
 
 	@Override
 	public boolean canTakeItem(ItemStack stack) {
-		if (stack.getItem().isEdible()) {
+		if (isEdible(stack)) {
 			return getFoodItem().isEmpty() && canPickUpLoot();
 		}
 		return super.canTakeItem(stack);
@@ -86,7 +90,7 @@ public abstract class EaterFleshBlob extends FleshBlob implements FoodEater {
 	@Override
 	public boolean canHoldItem(ItemStack stack) {
 		ItemStack heldStack = getFoodItem();
-		return stack.isEdible() && (heldStack.isEmpty() || !heldStack.getItem().isEdible());
+		return isEdible(stack) && (heldStack.isEmpty() || !isEdible(heldStack));
 	}
 
 	@Override
@@ -142,14 +146,14 @@ public abstract class EaterFleshBlob extends FleshBlob implements FoodEater {
 	}
 
 	@Override
-	public void ate(@Nullable FoodProperties food) {
+	public void ate(@Nullable FoodProperties food, boolean isMeat) {
 		float health = getHealth();
 		if (health < getMaxHealth()) {
-			heal(getFoodHealAmount(food));
+			heal(getFoodHealAmount(food, isMeat));
 		}
 		else {
 			byte blobSize = getBlobSize();
-			if (blobSize < MAX_SIZE && random.nextFloat() < getGrowChance(food)) {
+			if (blobSize < MAX_SIZE && random.nextFloat() < getGrowChance(food, isMeat)) {
 				setBlobSize((byte) (blobSize + 1), true);
 			}
 		}
@@ -170,7 +174,7 @@ public abstract class EaterFleshBlob extends FleshBlob implements FoodEater {
 		float pitch = -getXRot() * Mth.DEG_TO_RAD;
 		float yaw = -getYRot() * Mth.DEG_TO_RAD;
 
-		double radius = getDimensions(getPose()).width / 2d;
+		double radius = getDimensions(getPose()).width() / 2d;
 		double x = getX() + getLookAngle().x * radius;
 		double y = getY();
 		double z = getZ() + getLookAngle().z * radius;

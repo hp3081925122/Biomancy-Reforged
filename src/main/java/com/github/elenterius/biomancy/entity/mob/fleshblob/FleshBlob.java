@@ -1,5 +1,8 @@
 package com.github.elenterius.biomancy.entity.mob.fleshblob;
 
+import net.minecraft.world.level.storage.loot.LootTable;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.core.Holder;
 import com.github.elenterius.biomancy.entity.mob.Fleshkin;
 import com.github.elenterius.biomancy.entity.mob.JukeboxDancer;
 import com.github.elenterius.biomancy.entity.mob.JumpMoveHelper;
@@ -62,13 +65,13 @@ public abstract class FleshBlob extends PathfinderMob implements Fleshkin, JumpM
 
 	protected FleshBlob(EntityType<? extends FleshBlob> entityType, Level level) {
 		super(entityType, level);
-		dynamicJukeboxListener = new DynamicGameEventListener<>(new JukeboxListener(new EntityPositionSource(this, getEyeHeight()), GameEvent.JUKEBOX_PLAY.getNotificationRadius()));
-		fixupDimensions(); //refreshes mob dimensions. fixes issues with wrong bounding box size
+		dynamicJukeboxListener = new DynamicGameEventListener<>(new JukeboxListener(new EntityPositionSource(this, getEyeHeight()), GameEvent.JUKEBOX_PLAY.value().notificationRadius()));
+		fixupDimensions();
 	}
 
 	@Nullable
 	@Override
-	public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType reason, @Nullable SpawnGroupData spawnData, @Nullable CompoundTag dataTag) {
+	public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType reason, @Nullable SpawnGroupData spawnData) {
 		if (spawnData instanceof FleshBlobSpawnData data) {
 			setTumorFlags(data.tumorFlags());
 		}
@@ -82,15 +85,15 @@ public abstract class FleshBlob extends PathfinderMob implements Fleshkin, JumpM
 			xpReward = 0;
 		}
 
-		return super.finalizeSpawn(level, difficulty, reason, spawnData, dataTag);
+		return super.finalizeSpawn(level, difficulty, reason, spawnData);
 	}
 
 	@Override
-	protected void defineSynchedData() {
-		super.defineSynchedData();
-		entityData.define(BLOB_SIZE, (byte) 1);
-		entityData.define(TUMORS, (byte) 0);
-		entityData.define(IS_DANCING, false);
+	protected void defineSynchedData(SynchedEntityData.Builder builder) {
+		super.defineSynchedData(builder);
+		builder.define(BLOB_SIZE, (byte) 1);
+		builder.define(TUMORS, (byte) 0);
+		builder.define(IS_DANCING, false);
 	}
 
 	@Override
@@ -114,8 +117,9 @@ public abstract class FleshBlob extends PathfinderMob implements Fleshkin, JumpM
 	}
 
 	@Override
-	public EntityDimensions getDimensions(Pose pose) {
-		return getType().getDimensions().scale(getScale());
+	protected EntityDimensions getDefaultDimensions(Pose pose) {
+		EntityDimensions dimensions = getType().getDimensions();
+		return dimensions.withEyeHeight(dimensions.height() * 0.5f);
 	}
 
 	@Override
@@ -130,11 +134,6 @@ public abstract class FleshBlob extends PathfinderMob implements Fleshkin, JumpM
 	@Override
 	public int getMaxHeadXRot() {
 		return 0;
-	}
-
-	@Override
-	protected float getStandingEyeHeight(Pose pose, EntityDimensions size) {
-		return size.height * 0.5f;
 	}
 
 	public static byte clamp(byte v, byte min, byte max) {
@@ -214,7 +213,7 @@ public abstract class FleshBlob extends PathfinderMob implements Fleshkin, JumpM
 	}
 
 	@Override
-	protected ResourceLocation getDefaultLootTable() {
+	protected ResourceKey<LootTable> getDefaultLootTable() {
 		return switch (getBlobSize()) {
 			case 2 -> ModLoot.Entity.FLESH_BLOB_SIZE_2;
 			case 3 -> ModLoot.Entity.FLESH_BLOB_SIZE_3;
@@ -230,7 +229,7 @@ public abstract class FleshBlob extends PathfinderMob implements Fleshkin, JumpM
 	}
 
 	@Override
-	protected void jumpFromGround() {
+	public void jumpFromGround() {
 		super.jumpFromGround();
 		jumpMoveHelper.onJumpFromGround();
 	}
@@ -254,7 +253,7 @@ public abstract class FleshBlob extends PathfinderMob implements Fleshkin, JumpM
 		boolean wasHurt = lastHurtByPlayer != null || getLastHurtByMob() != null;
 		if (wasHurt) return true;
 
-		return jukeboxPos == null || !jukeboxPos.closerToCenterThan(position(), GameEvent.JUKEBOX_PLAY.getNotificationRadius()) || !level().getBlockState(jukeboxPos).is(Blocks.JUKEBOX);
+		return jukeboxPos == null || !jukeboxPos.closerToCenterThan(position(), GameEvent.JUKEBOX_PLAY.value().notificationRadius()) || !level().getBlockState(jukeboxPos).is(Blocks.JUKEBOX);
 	}
 
 	@Override
@@ -418,12 +417,12 @@ public abstract class FleshBlob extends PathfinderMob implements Fleshkin, JumpM
 		}
 
 		@Override
-		public boolean handleGameEvent(ServerLevel level, GameEvent gameEvent, GameEvent.Context context, Vec3 pos) {
-			if (gameEvent == GameEvent.JUKEBOX_PLAY) {
+		public boolean handleGameEvent(ServerLevel level, Holder<GameEvent> gameEvent, GameEvent.Context context, Vec3 pos) {
+			if (gameEvent.is(GameEvent.JUKEBOX_PLAY)) {
 				setJukeboxPlaying(BlockPos.containing(pos), true);
 				return true;
 			}
-			else if (gameEvent == GameEvent.JUKEBOX_STOP_PLAY) {
+			else if (gameEvent.is(GameEvent.JUKEBOX_STOP_PLAY)) {
 				setJukeboxPlaying(BlockPos.containing(pos), false);
 				return true;
 			}

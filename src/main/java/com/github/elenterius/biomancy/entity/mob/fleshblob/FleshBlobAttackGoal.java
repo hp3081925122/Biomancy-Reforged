@@ -15,9 +15,13 @@ class FleshBlobAttackGoal extends MeleeAttackGoal {
 	}
 
 	@Override
-	protected double getAttackReachSqr(LivingEntity attackTarget) {
-		double actualAttackReach = Mth.lerp(getSizePct(), 0.25d, 0.75d); //measured from the faces of the AABB and not the origin/positon of the mob
-		double inflatedHalfWidth = (mob.getBbWidth() + attackTarget.getBbWidth()) * 0.5d; //similar to minkowski sum and testing if the target position is inside the inflated AABB
+	protected boolean canPerformAttack(LivingEntity attackTarget) {
+		return isTimeToAttack() && mob.distanceToSqr(attackTarget) <= getAttackReachSqr(attackTarget);
+	}
+
+	private double getAttackReachSqr(LivingEntity attackTarget) {
+		double actualAttackReach = Mth.lerp(getSizePct(), 0.25d, 0.75d);
+		double inflatedHalfWidth = (mob.getBbWidth() + attackTarget.getBbWidth()) * 0.5d;
 		double radius = inflatedHalfWidth + actualAttackReach;
 		return radius * radius + 1e-7d;
 	}

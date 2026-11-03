@@ -1,5 +1,11 @@
 package com.github.elenterius.biomancy.init;
 
+import java.util.Optional;
+import net.minecraft.world.level.saveddata.maps.MapDecorationTypes;
+import net.minecraft.world.level.saveddata.maps.MapDecorationType;
+import net.minecraft.world.item.trading.ItemCost;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.Holder;
 import com.github.elenterius.biomancy.BiomancyConfig;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.init.tags.ModStructureTags;
@@ -21,21 +27,20 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.MapItem;
 import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.level.levelgen.structure.Structure;
-import net.minecraft.world.level.saveddata.maps.MapDecoration;
 import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
-import net.minecraftforge.common.BasicItemListing;
-import net.minecraftforge.event.entity.player.TradeWithVillagerEvent;
-import net.minecraftforge.event.village.VillagerTradesEvent;
-import net.minecraftforge.event.village.WandererTradesEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.neoforge.common.BasicItemListing;
+import net.neoforged.neoforge.event.entity.player.TradeWithVillagerEvent;
+import net.neoforged.neoforge.event.village.VillagerTradesEvent;
+import net.neoforged.neoforge.event.village.WandererTradesEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
-@Mod.EventBusSubscriber(modid = BiomancyMod.MOD_ID)
+@EventBusSubscriber(modid = BiomancyMod.MOD_ID)
 public final class ModVillagerTrades {
 
 	private ModVillagerTrades() {}
@@ -107,13 +112,13 @@ public final class ModVillagerTrades {
 		genericTrades.add(sellToPlayer(ModItems.ACID_EXTRACT.get(), 4, 2, 16, 1));
 		genericTrades.add(sellToPlayer(ModItems.GELLING_AGENT.get(), 2, 16, 1));
 		genericTrades.add(buyFromPlayer(ModItems.NUTRIENT_BAR.get(), 2, 8, 5));
-		genericTrades.add(sellExplorationMapToPlayer(ModStructureTags.SMALL_WORM, MapDecoration.Type.RED_X, 5, 2, 10));
-		genericTrades.add(sellExplorationMapToPlayer(ModStructureTags.LAB, MapDecoration.Type.RED_X, 5, 2, 10));
+		genericTrades.add(sellExplorationMapToPlayer(ModStructureTags.SMALL_WORM, MapDecorationTypes.RED_X, 5, 2, 10));
+		genericTrades.add(sellExplorationMapToPlayer(ModStructureTags.LAB, MapDecorationTypes.RED_X, 5, 2, 10));
 
 		List<VillagerTrades.ItemListing> rareTrades = event.getRareTrades();
 		rareTrades.add(sellToPlayer(ModItems.CLEANSING_SERUM.get(), 10, 8, 20));
-		rareTrades.add(sellExplorationMapToPlayer(ModStructureTags.GIANT_WORM, MapDecoration.Type.RED_X, 10, 2, 20));
-		rareTrades.add(sellExplorationMapToPlayer(ModStructureTags.VAULT, MapDecoration.Type.RED_X, 10, 2, 20));
+		rareTrades.add(sellExplorationMapToPlayer(ModStructureTags.GIANT_WORM, MapDecorationTypes.RED_X, 10, 2, 20));
+		rareTrades.add(sellExplorationMapToPlayer(ModStructureTags.VAULT, MapDecorationTypes.RED_X, 10, 2, 20));
 	}
 
 	private static BasicItemListing buyFromPlayer(Item item, int emeralds, int maxTrades, int xp) {
@@ -140,7 +145,7 @@ public final class ModVillagerTrades {
 		return new BasicItemListing(emeralds, new ItemStack(item, amount), maxTrades, xp, 0.05F);
 	}
 
-	private static VillagerTrades.ItemListing sellExplorationMapToPlayer(TagKey<Structure> destination, MapDecoration.Type destinationType, int emeralds, int maxTrades, int xp) {
+	private static VillagerTrades.ItemListing sellExplorationMapToPlayer(TagKey<Structure> destination, Holder<MapDecorationType> destinationType, int emeralds, int maxTrades, int xp) {
 		return new ExplorerMapListing(emeralds, destination, BiomancyMod.translationKey("filled_map", destination.location().getPath()), destinationType, maxTrades, xp);
 	}
 
@@ -161,12 +166,7 @@ public final class ModVillagerTrades {
 
 		public static final Set<Item> ORGANS = Set.of(ModItems.GENERIC_MOB_GLAND.get(), ModItems.VOLATILE_GLAND.get(), ModItems.TOXIN_GLAND.get());
 
-		/**
-		 * tracks all trades that somehow involves organs
-		 */
 		private static void trackTrade(ServerPlayer player, AbstractVillager villager, MerchantOffer merchantOffer) {
-			//minecraft only tracks trade results, so we need to check the other involved items
-
 			if (ORGANS.contains(merchantOffer.getBaseCostA().getItem())) {
 				CriteriaTriggers.TRADE.trigger(player, villager, merchantOffer.getBaseCostA());
 			}
@@ -182,11 +182,11 @@ public final class ModVillagerTrades {
 		private final int emeralds;
 		private final TagKey<Structure> destination;
 		private final String displayName;
-		private final MapDecoration.Type destinationType;
+		private final Holder<MapDecorationType> destinationType;
 		private final int maxTrades;
 		private final int xp;
 
-		public ExplorerMapListing(int emeralds, TagKey<Structure> destination, String displayName, MapDecoration.Type destinationType, int maxTrades, int xp) {
+		public ExplorerMapListing(int emeralds, TagKey<Structure> destination, String displayName, Holder<MapDecorationType> destinationType, int maxTrades, int xp) {
 			this.emeralds = emeralds;
 			this.destination = destination;
 			this.displayName = displayName;
@@ -204,8 +204,8 @@ public final class ModVillagerTrades {
 					ItemStack stack = MapItem.create(serverLevel, blockpos.getX(), blockpos.getZ(), (byte) 2, true, true);
 					MapItem.renderBiomePreviewMap(serverLevel, stack);
 					MapItemSavedData.addTargetDecoration(stack, blockpos, "+", destinationType);
-					stack.setHoverName(Component.translatable(displayName));
-					return new MerchantOffer(new ItemStack(Items.EMERALD, emeralds), new ItemStack(Items.COMPASS), stack, maxTrades, xp, 0.2f);
+					stack.set(DataComponents.ITEM_NAME, Component.translatable(displayName));
+					return new MerchantOffer(new ItemCost(Items.EMERALD, emeralds), Optional.of(new ItemCost(Items.COMPASS)), stack, maxTrades, xp, 0.2f);
 				}
 			}
 

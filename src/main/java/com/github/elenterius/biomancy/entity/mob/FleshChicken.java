@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.entity.mob;
 
+import net.minecraft.tags.EntityTypeTags;
 import com.github.elenterius.biomancy.entity.projectile.AcidSpitProjectile;
 import com.github.elenterius.biomancy.init.ModBlocks;
 import com.github.elenterius.biomancy.init.ModEntityTypes;
@@ -38,7 +39,7 @@ import java.util.function.Predicate;
 
 public class FleshChicken extends Chicken implements RangedAttackMob, GeoEntity {
 
-	public static final Predicate<LivingEntity> TARGET_SELECTOR = livingEntity -> livingEntity.getMobType() == MobType.UNDEAD;
+	public static final Predicate<LivingEntity> TARGET_SELECTOR = livingEntity -> livingEntity.getType().is(EntityTypeTags.UNDEAD);
 	public static final ConfiguredProjectile<AcidSpitProjectile> GASTRIC_SPIT = new ConfiguredProjectile<>(1.5f, 1, 0, 0.8f, ModSoundEvents.ACID_SPIT.get(), ModEntityTypes.ACID_SPIT_PROJECTILE);
 
 	protected final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
@@ -70,8 +71,6 @@ public class FleshChicken extends Chicken implements RangedAttackMob, GeoEntity 
 
 	@Override
 	public void performRangedAttack(LivingEntity target, float velocity) {
-
-		//TODO: add local offset handling for ProjectileUtil#shoot method variant with origin and target pos
 		double x = getX() - getBbWidth() * Mth.sin(yBodyRot * Mth.DEG_TO_RAD);
 		double y = getEyeY() + 0.25d;
 		double z = getZ() + getBbWidth() * Mth.cos(yBodyRot * Mth.DEG_TO_RAD);

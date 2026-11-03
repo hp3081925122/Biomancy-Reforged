@@ -26,19 +26,6 @@ public class AcidSpitProjectile extends BaseProjectile {
 
 	@Override
 	public boolean hurt(DamageSource source, float amount) {
-		//		if (isInvulnerableTo(source)) return false;
-
-		//		markHurt();
-		//		Entity attacker = source.getEntity();
-		//		if (attacker != null) {
-		//			if (!level.isClientSide) {
-		//				setDeltaMovement(attacker.getLookAngle());
-		//				setOwner(attacker);
-		//			}
-		//			return true;
-		//		}
-
-		//TODO: explode into AOE cloud when damage is physical
 		return false;
 	}
 
@@ -63,7 +50,7 @@ public class AcidSpitProjectile extends BaseProjectile {
 			}
 
 			if (owner instanceof LivingEntity shooter) {
-				doEnchantDamageEffects(shooter, victim);
+				doPostAttackEffects(shooter, victim, acidDamageSource);
 			}
 
 		}

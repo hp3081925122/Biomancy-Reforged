@@ -4,21 +4,23 @@ import com.github.elenterius.biomancy.util.shooting.ProjectileEntityType;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.entity.IEntityAdditionalSpawnData;
-import net.minecraftforge.event.ForgeEventFactory;
-import net.minecraftforge.network.NetworkHooks;
+import net.neoforged.neoforge.entity.IEntityWithComplexSpawn;
+import net.neoforged.neoforge.event.EventHooks;
 
-public abstract class BaseProjectile extends Projectile implements IEntityAdditionalSpawnData {
+public abstract class BaseProjectile extends Projectile implements IEntityWithComplexSpawn {
 
 	public static final float DEFAULT_DAMAGE = 1f;
 
@@ -42,15 +44,10 @@ public abstract class BaseProjectile extends Projectile implements IEntityAdditi
 	}
 
 	@Override
-	protected void defineSynchedData() {}
+	protected void defineSynchedData(SynchedEntityData.Builder builder) {}
 
 	@Override
-	public Packet<ClientGamePacketListener> getAddEntityPacket() {
-		return NetworkHooks.getEntitySpawningPacket(this);
-	}
-
-	@Override
-	public void writeSpawnData(FriendlyByteBuf buffer) {
+	public void writeSpawnData(RegistryFriendlyByteBuf buffer) {
 		Entity shooter = getOwner();
 		buffer.writeVarInt(shooter == null ? 0 : shooter.getId());
 		buffer.writeFloat(damage);
@@ -58,7 +55,7 @@ public abstract class BaseProjectile extends Projectile implements IEntityAdditi
 	}
 
 	@Override
-	public void readSpawnData(FriendlyByteBuf buffer) {
+	public void readSpawnData(RegistryFriendlyByteBuf buffer) {
 		Entity shooter = level().getEntity(buffer.readVarInt());
 		setOwner(shooter);
 		damage = buffer.readFloat();
@@ -108,8 +105,19 @@ public abstract class BaseProjectile extends Projectile implements IEntityAdditi
 		return noPhysics ? 0f : baseWaterDrag;
 	}
 
-	public float getGravity() {
-		return isNoGravity() ? 0f : baseGravity;
+	@Override
+	protected double getDefaultGravity() {
+		return baseGravity;
+	}
+
+	protected double getProjectileGravity() {
+		return getGravity();
+	}
+
+	protected void doPostAttackEffects(LivingEntity shooter, Entity victim, DamageSource damageSource) {
+		if (level() instanceof ServerLevel serverLevel) {
+			EnchantmentHelper.doPostAttackEffectsWithItemSource(serverLevel, victim, damageSource, shooter.getMainHandItem());
+		}
 	}
 
 	@Override
@@ -120,7 +128,7 @@ public abstract class BaseProjectile extends Projectile implements IEntityAdditi
 
 			if (isInWaterOrRain()) clearFire();
 			HitResult hitResult = ProjectileUtil.getHitResultOnMoveVector(this, this::canHitEntity);
-			if (hitResult.getType() != HitResult.Type.MISS && !ForgeEventFactory.onProjectileImpact(this, hitResult)) {
+			if (hitResult.getType() != HitResult.Type.MISS && !EventHooks.onProjectileImpact(this, hitResult)) {
 				onHit(hitResult);
 			}
 			checkInsideBlocks();
@@ -139,8 +147,8 @@ public abstract class BaseProjectile extends Projectile implements IEntityAdditi
 				linearDrag = getWaterDrag();
 			}
 
-			Vec3 dragForce = motion.scale(-linearDrag); //stokes drag
-			double gravity = getGravity();
+			Vec3 dragForce = motion.scale(-linearDrag);
+			double gravity = getProjectileGravity();
 			setDeltaMovement(motion.add(dragForce.x, dragForce.y - gravity, dragForce.z));
 
 			spawnParticle(posX, posY, posZ);
@@ -153,7 +161,7 @@ public abstract class BaseProjectile extends Projectile implements IEntityAdditi
 
 	@Override
 	public void onHit(HitResult result) {
-		super.onHit(result); //call onEntityHit and onBlockHit before removing the projectile
+		super.onHit(result);
 		if (!level().isClientSide) discard();
 	}
 

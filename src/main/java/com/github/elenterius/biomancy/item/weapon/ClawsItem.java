@@ -24,7 +24,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.ForgeMod;
-import net.minecraftforge.common.IForgeShearable;
+import net.neoforged.neoforge.common.IShearable;
 import net.neoforged.neoforge.common.ItemAbility;
 import net.neoforged.neoforge.common.ItemAbilities;
 import net.minecraftforge.common.util.Lazy;
@@ -58,7 +58,7 @@ public class ClawsItem extends TieredItem implements Vanishable {
 
 	@Override
 	public boolean canPerformAction(ItemStack stack, ItemAbility ItemAbility) {
-		return ItemAbilities.DEFAULT_SWORD_ACTIONS.contains(ItemAbility); //use sword actions
+		return ItemAbilities.DEFAULT_SWORD_ACTIONS.contains(ItemAbility);
 	}
 
 	@Override
@@ -101,15 +101,15 @@ public class ClawsItem extends TieredItem implements Vanishable {
 		if (state.is(Blocks.COBWEB)) return 15f;
 		if (state.is(BlockTags.LEAVES)) return 15f;
 		if (state.is(BlockTags.WOOL)) return 5f;
-		return state.is(BlockTags.SWORD_EFFICIENT) ? 1.5F : 1f; //TODO: replace with claws specific tag
+		return state.is(BlockTags.SWORD_EFFICIENT) ? 1.5F : 1f;
 	}
 
 	protected boolean shearInteractionTarget(ItemStack stack, Player player, LivingEntity targetEntity, InteractionHand usedHand) {
-		if (targetEntity instanceof IForgeShearable shearingTarget) {
+		if (targetEntity instanceof IShearable shearingTarget) {
 			BlockPos pos = targetEntity.blockPosition();
 
-			if (shearingTarget.isShearable(stack, targetEntity.level(), pos)) {
-				List<ItemStack> drops = shearingTarget.onSheared(player, stack, targetEntity.level(), pos, EnchantmentHelper.getItemEnchantmentLevel(Enchantments.BLOCK_FORTUNE, stack));
+			if (shearingTarget.isShearable(player, stack, targetEntity.level(), pos)) {
+				List<ItemStack> drops = shearingTarget.onSheared(player, stack, targetEntity.level(), pos);
 				RandomSource rand = player.getRandom();
 				drops.forEach(lootStack -> {
 					ItemEntity itemEntity = targetEntity.spawnAtLocation(lootStack, 1f);
@@ -117,7 +117,7 @@ public class ClawsItem extends TieredItem implements Vanishable {
 						itemEntity.setDeltaMovement(itemEntity.getDeltaMovement().add((rand.nextFloat() - rand.nextFloat()) * 0.1f, rand.nextFloat() * 0.05f, (rand.nextFloat() - rand.nextFloat()) * 0.1f));
 					}
 				});
-				stack.hurtAndBreak(1, targetEntity, entity -> entity.broadcastBreakEvent(usedHand));
+				stack.hurtAndBreak(1, targetEntity, LivingEntity.getSlotForHand(usedHand));
 			}
 			return true;
 		}

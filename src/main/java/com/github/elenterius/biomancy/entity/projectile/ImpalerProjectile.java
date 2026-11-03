@@ -38,10 +38,7 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 
 public class ImpalerProjectile extends BaseProjectile implements GeoEntity {
 
-	//	private static final double IMPALE_FORCE_THRESHOLD = 3d;
-	//	private static final double ARMOR_THRESHOLD = 12d;
 	private static final int MAX_IMPALED_MOBS = 3;
-	//	private static final float IMPACT_DAMAGE = 8f;
 
 	private static final EntityDataAccessor<Byte> PIERCE_LEVEL = SynchedEntityData.defineId(ImpalerProjectile.class, EntityDataSerializers.BYTE);
 
@@ -55,12 +52,11 @@ public class ImpalerProjectile extends BaseProjectile implements GeoEntity {
 		super(entityType, level);
 	}
 
-	protected void defineSynchedData() {
-		entityData.define(PIERCE_LEVEL, (byte) 0);
+	protected void defineSynchedData(SynchedEntityData.Builder builder) {
+		builder.define(PIERCE_LEVEL, (byte) 0);
 	}
 
 	private boolean canImpaleToBlock(BlockState blockState, BlockPos pos) {
-		// we can't impale to very weak blocks, air, liquid, or replaceable blocks
 		return !blockState.isAir() && !blockState.liquid() && !blockState.is(BlockTags.REPLACEABLE) && blockState.getDestroySpeed(level(), pos) >= 3f;
 	}
 
@@ -71,7 +67,6 @@ public class ImpalerProjectile extends BaseProjectile implements GeoEntity {
 
 		setDeltaMovement(Vec3.ZERO);
 		setNoGravity(true);
-		//setNoPhysics(true);
 	}
 
 	private boolean tryToDestroyBlock(BlockState blockState, BlockPos pos) {
@@ -80,7 +75,7 @@ public class ImpalerProjectile extends BaseProjectile implements GeoEntity {
 		boolean hasResistance = !(blockState.is(BlockTags.REPLACEABLE) || blockState.is(BlockTags.LEAVES));
 		float destroySpeed = hasResistance ? blockState.getDestroySpeed(level(), pos) : 0f;
 
-		if (destroySpeed < 0f) return false; // the block is indestructible (bedrock)
+		if (destroySpeed < 0f) return false;
 
 		byte pierceLevel = getPierceLevel();
 
@@ -89,7 +84,7 @@ public class ImpalerProjectile extends BaseProjectile implements GeoEntity {
 		Vec3 movement = getDeltaMovement();
 		double moveSpeed = movement.length();
 
-		if (moveSpeed < 0.1d) return false; // 0.1 blocks per tick = 2 blocks per second
+		if (moveSpeed < 0.1d) return false;
 
 		if (moveSpeed * 2.5f >= destroySpeed) {
 			if (!level().isClientSide) {
@@ -97,8 +92,6 @@ public class ImpalerProjectile extends BaseProjectile implements GeoEntity {
 			}
 
 			if (hasResistance) {
-				// deep slate destroy speed is 4.5
-				//				float min = Mth.clamp(pierceLevel / 4f, 0.25f, 0.9f);
 				float friction = Mth.clamp((1f - destroySpeed / 4.5f), 0.25f, 0.95f);
 
 				setDeltaMovement(movement.scale(friction));
@@ -133,8 +126,7 @@ public class ImpalerProjectile extends BaseProjectile implements GeoEntity {
 		return getPassengers().size() < 3;
 	}
 
-	@Override
-	public double getPassengersRidingOffset() {
+	private double getRidingOffset() {
 		return getBbHeight() * 0.5d;
 	}
 
@@ -146,13 +138,13 @@ public class ImpalerProjectile extends BaseProjectile implements GeoEntity {
 			double offset = 0.5d + (i * 0.75d);
 			Vec3 pos = position().add(getDeltaMovement().normalize().scale(-offset));
 
-			double yOffset = getPassengersRidingOffset() - (passenger.getBbHeight() * 0.5f);
+			double yOffset = getRidingOffset() - (passenger.getBbHeight() * 0.5f);
 			mover.accept(passenger, pos.x, pos.y + yOffset, pos.z);
 		}
 	}
 
 	@Override
-	public float getGravity() {
+	protected double getProjectileGravity() {
 		double speed = getDeltaMovement().length();
 		return Math.max(speed < 1d ? 0.05f : baseGravity, getPassengers().size() * 0.02f);
 	}
@@ -213,31 +205,9 @@ public class ImpalerProjectile extends BaseProjectile implements GeoEntity {
 		BlockState blockState = level().getBlockState(result.getBlockPos());
 		BlockPos blockPos = result.getBlockPos();
 
-		//		if (!impaledEntities.isEmpty() && !isImpaled) {
-		//			if (canImpaleToBlock(hitBlockState, hitBlockPos)) {
-		//				impaleToBlock(result);
-		//			}
-		//			else {
-		//				if (!tryToDestroyBlock(hitBlockPos)) {
-		//					impaleToBlock(result);
-		//				}
-		//			}
-		//		}
-		//		else if (impaledEntities.isEmpty() && !isImpaled) {
-		//			if (!canImpaleToBlock(hitBlockState, hitBlockPos) || hitBlockState.is(BlockTags.LEAVES)) {
-		//				tryToDestroyBlock(hitBlockPos);
-		//			}
-		//			else {
-		//				impaleToBlock(result);
-		//			}
-		//		}
-
-		/////////////
-
 		if (!tryToDestroyBlock(blockState, blockPos)) {
 			blockState.onProjectileHit(level(), blockState, result, this);
 
-			//playSound(blockState.getSoundType().getHitSound(), 2f, 1.2f / (random.nextFloat() * 0.2f + 0.9f));
 			playSound(ModSoundEvents.IMPALER_IMPACT.get(), 1f, 0.8f + random.nextFloat() * 0.3f);
 			Vec3 vec = result.getLocation();
 			level().addParticle(ParticleTypes.EXPLOSION, vec.x, vec.y, vec.z, 1d, 0d, 0d);
@@ -263,35 +233,15 @@ public class ImpalerProjectile extends BaseProjectile implements GeoEntity {
 			livingEntity.setLastHurtMob(victim);
 		}
 
-		//		double armorValue = livingTarget.getArmorValue();
-		//		double toughness = livingTarget.getAttributeValue(Attributes.ARMOR_TOUGHNESS);
-		//		boolean hasHighArmor = armorValue + toughness >= ARMOR_THRESHOLD;
-		//
-		// Calculate entity mass factor (approximation based on health and size)
 		double mass = livingTarget.getMaxHealth() * (livingTarget.getBbWidth() * livingTarget.getBbHeight());
-		//		double speed = getDeltaMovement().length();
-		//		double impactForce = speed * getDamage();
-		//
 		boolean hurtSuccess;
-		//
-		//		if (hasHighArmor || impactForce < IMPALE_FORCE_THRESHOLD) {
-		//			hurtSuccess = livingTarget.hurt(ModDamageSources.impalerProjectile(level(), this, getOwner()), IMPACT_DAMAGE);
-		//
-		//			double knockbackStrength = (getKnockback() / Math.max(1d, mass / 10d)) * Math.max(0d, 1d - livingTarget.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE));
-		//			Vec3 motion = getDeltaMovement().normalize().scale(knockbackStrength);
-		//			if (motion.lengthSqr() > 0d) livingTarget.push(motion.x, Math.max(motion.y, 0.1d), motion.z);
-		//
-		//			addConcussionEffect(livingTarget);
-		//		}
-		//		else {
 		float damage = getDamage();
-		hurtSuccess = livingTarget.hurt(ModDamageSources.impalerProjectile(level(), this, getOwner()), damage);
-		//		livingTarget.startRiding(this, true);
-		//		}
+		DamageSource damageSource = ModDamageSources.impalerProjectile(level(), this, getOwner());
+		hurtSuccess = livingTarget.hurt(damageSource, damage);
 
 		if (hurtSuccess && !level().isClientSide) {
 			if (shooter instanceof LivingEntity livingEntity) {
-				doEnchantDamageEffects(livingEntity, victim); //thorn & arthropod damage
+				doPostAttackEffects(livingEntity, victim, damageSource);
 			}
 
 			if (damage >= 2f && victim instanceof LivingEntity livingEntity) {
@@ -304,14 +254,13 @@ public class ImpalerProjectile extends BaseProjectile implements GeoEntity {
 		}
 
 		if (!isImpaled) {
-			// Reduce velocity slightly for each hit entity based on its mass
 			double slowdownFactor = Math.max(0.7d, 1d - (mass / 100d));
-			double gravity = Math.max(MobUtil.getGravity(livingTarget), 0); //we ignore upwards gravity
+			double gravity = Math.max(MobUtil.getGravity(livingTarget), 0);
 
 			setDeltaMovement(
 					getDeltaMovement()
 							.scale(slowdownFactor)
-							.add(0d, gravity + 0.1d, 0d) //give slight upwards motion
+							.add(0d, gravity + 0.1d, 0d)
 			);
 
 			byte pierceLevel = getPierceLevel();
@@ -353,7 +302,6 @@ public class ImpalerProjectile extends BaseProjectile implements GeoEntity {
 
 	@Override
 	public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-		//do nothing
 	}
 
 	@Override

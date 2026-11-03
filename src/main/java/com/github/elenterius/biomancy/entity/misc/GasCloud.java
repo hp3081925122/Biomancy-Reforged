@@ -1,5 +1,7 @@
 package com.github.elenterius.biomancy.entity.misc;
 
+import net.minecraft.nbt.NbtOps;
+import net.minecraft.core.particles.ParticleTypes;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.init.ModEntityTypes;
 import com.github.elenterius.biomancy.init.ModParticleTypes;
@@ -7,8 +9,6 @@ import com.github.elenterius.biomancy.mixin.accessor.EntityAccessor;
 import com.github.elenterius.biomancy.util.debug.DebugInfo;
 import com.github.elenterius.biomancy.world.DynamicGasVolume;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.brigadier.StringReader;
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
@@ -18,7 +18,6 @@ import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
-import net.minecraft.commands.arguments.ParticleArgument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.SimpleParticleType;
@@ -94,30 +93,27 @@ public class GasCloud extends Entity implements TraceableEntity, DebugInfo.Entit
 		setPos(x, y, z);
 	}
 
-	protected static @Nullable ParticleOptions readParticleData(CompoundTag data, String key) {
-		if (data.contains(key, Tag.TAG_STRING)) {
-			String rawString = data.getString(key);
-			try {
-				return ParticleArgument.readParticle(new StringReader(rawString), BuiltInRegistries.PARTICLE_TYPE.asLookup());
-			}
-			catch (CommandSyntaxException e) {
-				BiomancyMod.LOGGER.warn("Couldn't load custom particle {}", rawString, e);
-			}
+	protected @Nullable ParticleOptions readParticleData(CompoundTag data, String key) {
+		if (data.contains(key)) {
+			return ParticleTypes.CODEC.parse(registryAccess().createSerializationContext(NbtOps.INSTANCE), data.get(key))
+					.resultOrPartial(error -> BiomancyMod.LOGGER.warn("Couldn't load custom particle: {}", error))
+					.orElse(null);
 		}
 
 		return null;
 	}
 
-	protected static void writeParticleData(CompoundTag data, String key, ParticleOptions particleOptions) {
-		data.putString(key, particleOptions.writeToString());
+	protected void writeParticleData(CompoundTag data, String key, ParticleOptions particleOptions) {
+		ParticleTypes.CODEC.encodeStart(registryAccess().createSerializationContext(NbtOps.INSTANCE), particleOptions)
+				.ifSuccess(tag -> data.put(key, tag));
 	}
 
 	@Override
-	protected void defineSynchedData() {
-		getEntityData().define(RADIUS_DATA, DEFAULT_RADIUS);
-		getEntityData().define(PROPAGATION_DURATION_DATA, DEFAULT_PROPAGATION_DURATION);
-		getEntityData().define(IS_IDLE_DATA, true);
-		getEntityData().define(PARTICLE_DATA, DEFAULT_PARTICLE);
+	protected void defineSynchedData(SynchedEntityData.Builder builder) {
+		builder.define(RADIUS_DATA, DEFAULT_RADIUS);
+		builder.define(PROPAGATION_DURATION_DATA, DEFAULT_PROPAGATION_DURATION);
+		builder.define(IS_IDLE_DATA, true);
+		builder.define(PARTICLE_DATA, DEFAULT_PARTICLE);
 	}
 
 	public float getRadius() {
@@ -186,7 +182,7 @@ public class GasCloud extends Entity implements TraceableEntity, DebugInfo.Entit
 
 	@Override
 	public void tick() {
-		final boolean isFirstTick = firstTick; //get firstTick before it gets modified
+		final boolean isFirstTick = firstTick;
 
 		super.tick();
 
@@ -215,7 +211,6 @@ public class GasCloud extends Entity implements TraceableEntity, DebugInfo.Entit
 			return;
 		}
 
-		//wait a tiny bit before applying effects
 		if (tickCount < Math.min(propagationDurationTicks, 20)) return;
 
 		float radius = getRadius();
@@ -320,13 +315,13 @@ public class GasCloud extends Entity implements TraceableEntity, DebugInfo.Entit
 		if (!isEstimatedChunkAreaLoaded(radius * 1.33f)) return;
 
 		if (dynamicGasVolume == null) {
-			long seed = uuid.getMostSignificantBits(); //use the same seed on server and client side
+			long seed = uuid.getMostSignificantBits();
 			dynamicGasVolume = new DynamicGasVolume(RandomSource.create(seed));
 		}
 
 		if (tickCount < propagationDuration) {
 			float t = Mth.clamp(tickCount / (float) propagationDuration, 0f, 1f);
-			t = t < 0.5f ? 2f * t * t : 1f - (float) Math.pow(-2f * t + 2f, 2f) / 2f; //easeInOutQuad
+			t = t < 0.5f ? 2f * t * t : 1f - (float) Math.pow(-2f * t + 2f, 2f) / 2f;
 			dynamicGasVolume.update(level(), blockPosition(), radius, t);
 		}
 		else {
@@ -353,17 +348,12 @@ public class GasCloud extends Entity implements TraceableEntity, DebugInfo.Entit
 	}
 
 	@Override
-	protected float getEyeHeight(Pose pose, EntityDimensions dimensions) {
-		return dimensions.height * 0f + 0.5f;
-	}
-
-	@Override
 	public void refreshDimensions() {
 		EntityDimensions dimensions = getDimensions(Pose.STANDING);
 
 		EntityAccessor accessor = (EntityAccessor) this;
 		accessor.biomancy$setDimensions(dimensions);
-		accessor.biomancy$setEyeHeight(getEyeHeight(Pose.STANDING, dimensions));
+		accessor.biomancy$setEyeHeight(dimensions.eyeHeight());
 
 		reapplyPosition();
 	}
@@ -379,7 +369,7 @@ public class GasCloud extends Entity implements TraceableEntity, DebugInfo.Entit
 
 	@Override
 	public EntityDimensions getDimensions(Pose pose) {
-		return EntityDimensions.scalable(getRadius() * 2f, getRadius() * 2f);
+		return EntityDimensions.scalable(getRadius() * 2f, getRadius() * 2f).withEyeHeight(0.5f);
 	}
 
 	@Override
@@ -453,7 +443,7 @@ public class GasCloud extends Entity implements TraceableEntity, DebugInfo.Entit
 		if (!effects.isEmpty()) {
 			ListTag list = new ListTag();
 			for (MobEffectInstance effectInstance : effects) {
-				list.add(effectInstance.save(new CompoundTag()));
+				list.add(effectInstance.save());
 			}
 
 			data.put("effects", list);
@@ -467,8 +457,6 @@ public class GasCloud extends Entity implements TraceableEntity, DebugInfo.Entit
 	@Override
 	public void renderDebugInfo(EntityRenderDispatcher renderDispatcher, PoseStack poseStack, MultiBufferSource multiBuffer, int packedLight, float partialTicks) {
 		if (dynamicGasVolume == null || dynamicGasVolume.getPackedPositions().isEmpty()) return;
-
-		//		LongSet volume = new LongOpenHashSet(dynamicGasVolume.getPackedPositions());
 
 		double distanceSqr = renderDispatcher.distanceToSqr(this);
 		if (distanceSqr >= 64 * 64) return;
@@ -487,24 +475,11 @@ public class GasCloud extends Entity implements TraceableEntity, DebugInfo.Entit
 		renderLabel(renderDispatcher, poseStack, multiBuffer, packedLight, "%d / %d".formatted(actualVolume, desiredVolume), 0.25f, 0x00FFFF, false);
 		poseStack.popPose();
 
-		//		for (DynamicGasVolume.Voxel voxel : dynamicGasVolume.getVoxels()) {
-		//			poseStack.pushPose();
-		//			double x = xOffset + voxel.x() + 0.5d;
-		//			double y = yOffset + voxel.y() + 0.5d;
-		//			double z = zOffset + voxel.z() + 0.5d;
-		//			poseStack.translate(x, y, z);
-		//			renderLabel(renderDispatcher, poseStack, multiBuffer, packedLight, "%.2f".formatted(voxel.cost()), 0.25f, 0xFFFF00, false);
-		//			renderLabel(renderDispatcher, poseStack, multiBuffer, packedLight, "%d".formatted(voxel.depth()), -0.25f, 0xffffff, false);
-		//			poseStack.popPose();
-		//		}
-
 		for (long packedPos : dynamicGasVolume.getPackedPositions()) {
 			int x = BlockPos.getX(packedPos);
 			int y = BlockPos.getY(packedPos);
 			int z = BlockPos.getZ(packedPos);
 
-			// float green = 0.5f + 0.5f * Mth.clamp((1 - voxel.cost()) / radius * radius, 0f, 1f);
-			// float red = voxel.cost() > 1f ? Math.min(1f, 0.125f * voxel.cost()) : 0.125f;
 			float red = 0.25f;
 			float green = 1f;
 

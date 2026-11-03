@@ -25,7 +25,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
-import net.minecraftforge.network.NetworkHooks;
 
 public class GrenadeProjectile extends ThrowableItemProjectile {
 
@@ -45,9 +44,9 @@ public class GrenadeProjectile extends ThrowableItemProjectile {
 	}
 
 	@Override
-	protected void defineSynchedData() {
-		super.defineSynchedData();
-		entityData.define(DELAY_DATA, 0);
+	protected void defineSynchedData(SynchedEntityData.Builder builder) {
+		super.defineSynchedData(builder);
+		builder.define(DELAY_DATA, 0);
 	}
 
 	public int getExplodeDelayTicks() {
@@ -56,11 +55,6 @@ public class GrenadeProjectile extends ThrowableItemProjectile {
 
 	public void setExplodeDelay(int ticks) {
 		entityData.set(DELAY_DATA, ticks);
-	}
-
-	@Override
-	public Packet<ClientGamePacketListener> getAddEntityPacket() {
-		return NetworkHooks.getEntitySpawningPacket(this);
 	}
 
 	@Override

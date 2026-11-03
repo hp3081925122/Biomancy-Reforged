@@ -140,10 +140,8 @@ public class FleshPig extends Animal implements Enemy, GeoEntity {
 	}
 
 	protected int getFoodNutrition(ItemStack stack) {
-		if (!stack.isEdible()) return 0;
-
 		FoodProperties foodProperties = stack.getFoodProperties(this);
-		return foodProperties == null ? 0 : foodProperties.getNutrition();
+		return foodProperties == null ? 0 : foodProperties.nutrition();
 	}
 
 	public void setInLove(@Nullable Player player) {

@@ -18,7 +18,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.common.util.Lazy;
+import net.neoforged.neoforge.common.util.Lazy;
 
 public class ToothProjectile extends BaseProjectile implements ItemSupplier {
 
@@ -35,7 +35,8 @@ public class ToothProjectile extends BaseProjectile implements ItemSupplier {
 			livingEntity.setLastHurtMob(victim);
 		}
 
-		boolean success = victim.hurt(ModDamageSources.toothProjectile(level(), this, shooter), getDamage());
+		DamageSource damageSource = ModDamageSources.toothProjectile(level(), this, shooter);
+		boolean success = victim.hurt(damageSource, getDamage());
 		if (success && victim instanceof LivingEntity && !level().isClientSide) {
 			if (getKnockback() > 0) {
 				Vec3 vector3d = getDeltaMovement().multiply(1, 0, 1).normalize().scale(getKnockback() * 0.6d);
@@ -45,7 +46,7 @@ public class ToothProjectile extends BaseProjectile implements ItemSupplier {
 			}
 
 			if (shooter instanceof LivingEntity livingEntity) {
-				doEnchantDamageEffects(livingEntity, victim); //thorn & arthropod damage
+				doPostAttackEffects(livingEntity, victim, damageSource);
 			}
 
 			if (!isSilent() && victim != shooter && victim instanceof Player && shooter instanceof ServerPlayer serverPlayer) {
