@@ -10,7 +10,7 @@ import com.github.elenterius.biomancy.crafting.recipe.FoodDigestingRecipe;
 import com.github.elenterius.biomancy.datagen.recipes.builder.DigestingRecipeBuilder;
 import com.github.elenterius.biomancy.init.ModItems;
 import net.minecraft.data.PackOutput;
-import net.minecraft.data.recipes.FinishedRecipe;
+import com.github.elenterius.biomancy.datagen.recipes.builder.FinishedRecipe;
 import net.minecraft.data.recipes.RecipeProvider;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.ItemTags;
@@ -19,9 +19,9 @@ import net.minecraft.world.food.Foods;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ItemLike;
-import net.minecraftforge.common.Tags;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.neoforge.common.Tags;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.neoforged.neoforge.registries.DeferredHolder;
 import net.orcinus.overweightfarming.OverweightFarming;
 import net.orcinus.overweightfarming.init.OFBlocks;
 import net.orcinus.overweightfarming.init.OFItems;
@@ -38,7 +38,7 @@ public class DigestingRecipeProvider extends RecipeProvider {
 	}
 
 	protected static String getItemName(ItemLike itemLike) {
-		ResourceLocation key = ForgeRegistries.ITEMS.getKey(itemLike.asItem());
+		ResourceLocation key = BuiltInRegistries.ITEM.getKey(itemLike.asItem());
 		return key != null ? key.getPath() : "unknown";
 	}
 
@@ -276,18 +276,18 @@ public class DigestingRecipeProvider extends RecipeProvider {
 		iceAndFireRecipe(4, IafItemRegistry.MYRMEX_DESERT_EGG.get()).setCraftingCost(3).save(consumer);
 		iceAndFireRecipe(4, IafItemRegistry.MYRMEX_JUNGLE_EGG.get()).setCraftingCost(3).save(consumer);
 
-		List<RegistryObject<Item>> dragonEggs = List.of(
+		List<DeferredHolder<Item, Item>> dragonEggs = List.of(
 				IafItemRegistry.DRAGONEGG_ELECTRIC,
 				IafItemRegistry.DRAGONEGG_BRONZE, IafItemRegistry.DRAGONEGG_SILVER, IafItemRegistry.DRAGONEGG_COPPER,
 				IafItemRegistry.DRAGONEGG_AMYTHEST, IafItemRegistry.DRAGONEGG_SAPPHIRE,
 				IafItemRegistry.DRAGONEGG_RED, IafItemRegistry.DRAGONEGG_GREEN, IafItemRegistry.DRAGONEGG_BLUE, IafItemRegistry.DRAGONEGG_BLACK, IafItemRegistry.DRAGONEGG_GRAY, IafItemRegistry.DRAGONEGG_WHITE
 		);
-		for (RegistryObject<Item> dragonEgg : dragonEggs) {
+		for (DeferredHolder<Item, Item> dragonEgg : dragonEggs) {
 			iceAndFireRecipe(5, dragonEgg.get()).setCraftingCost(3).save(consumer);
 		}
 
-		List<RegistryObject<Item>> hearts = List.of(IafItemRegistry.ICE_DRAGON_HEART, IafItemRegistry.FIRE_DRAGON_HEART, IafItemRegistry.LIGHTNING_DRAGON_HEART, IafItemRegistry.HYDRA_HEART);
-		for (RegistryObject<Item> heart : hearts) {
+		List<DeferredHolder<Item, Item>> hearts = List.of(IafItemRegistry.ICE_DRAGON_HEART, IafItemRegistry.FIRE_DRAGON_HEART, IafItemRegistry.LIGHTNING_DRAGON_HEART, IafItemRegistry.HYDRA_HEART);
+		for (DeferredHolder<Item, Item> heart : hearts) {
 			iceAndFireRecipe(8, heart.get()).addCraftingCostModifier(1).save(consumer);
 		}
 	}

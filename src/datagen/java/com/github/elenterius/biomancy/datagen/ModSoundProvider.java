@@ -6,10 +6,10 @@ import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
-import net.minecraftforge.common.data.ExistingFileHelper;
-import net.minecraftforge.common.data.SoundDefinition;
-import net.minecraftforge.common.data.SoundDefinitionsProvider;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.neoforge.common.data.ExistingFileHelper;
+import net.neoforged.neoforge.common.data.SoundDefinition;
+import net.neoforged.neoforge.common.data.SoundDefinitionsProvider;
+import net.neoforged.neoforge.registries.DeferredHolder;
 
 import java.util.Arrays;
 
@@ -132,19 +132,19 @@ public class ModSoundProvider extends SoundDefinitionsProvider {
 		addSimpleRedirect(ModSoundEvents.FLESH_CHICKEN_DEATH, SoundEvents.CHICKEN_DEATH, 1f, 0.25f);
 	}
 
-	public String translationKey(RegistryObject<SoundEvent> soundHolder) {
+	public String translationKey(DeferredHolder<SoundEvent, SoundEvent> soundHolder) {
 		return "sounds.biomancy." + soundHolder.getId().getPath();
 	}
 
 	public ResourceLocation extend(ResourceLocation rl, String suffix) {
-		return new ResourceLocation(rl.getNamespace(), rl.getPath() + "_" + suffix);
+		return ResourceLocation.fromNamespaceAndPath(rl.getNamespace(), rl.getPath() + "_" + suffix);
 	}
 
 	public ResourceLocation extend(ResourceLocation rl, int variant) {
-		return new ResourceLocation(rl.getNamespace(), rl.getPath() + variant);
+		return ResourceLocation.fromNamespaceAndPath(rl.getNamespace(), rl.getPath() + variant);
 	}
 
-	protected void addSimpleSounds(RegistryObject<SoundEvent> soundHolder, int variants) {
+	protected void addSimpleSounds(DeferredHolder<SoundEvent, SoundEvent> soundHolder, int variants) {
 		SoundDefinition soundDefinition = definition().subtitle(translationKey(soundHolder));
 		for (int i = 1; i <= variants; i++) {
 			soundDefinition.with(SoundDefinitionsProvider.sound(extend(soundHolder.getId(), i)));
@@ -152,7 +152,7 @@ public class ModSoundProvider extends SoundDefinitionsProvider {
 		add(soundHolder, soundDefinition);
 	}
 
-	protected void addSimpleSounds(RegistryObject<SoundEvent> soundHolder, int variants, float volume, float pitch) {
+	protected void addSimpleSounds(DeferredHolder<SoundEvent, SoundEvent> soundHolder, int variants, float volume, float pitch) {
 		SoundDefinition soundDefinition = definition().subtitle(translationKey(soundHolder));
 		for (int i = 1; i <= variants; i++) {
 			soundDefinition.with(SoundDefinitionsProvider.sound(extend(soundHolder.getId(), i)).volume(volume).pitch(pitch));
@@ -160,7 +160,7 @@ public class ModSoundProvider extends SoundDefinitionsProvider {
 		add(soundHolder, soundDefinition);
 	}
 
-	protected void addSimpleSounds(RegistryObject<SoundEvent> soundHolder, String... suffixes) {
+	protected void addSimpleSounds(DeferredHolder<SoundEvent, SoundEvent> soundHolder, String... suffixes) {
 		SoundDefinition soundDefinition = definition().subtitle(translationKey(soundHolder));
 		Arrays.stream(suffixes)
 				.map(suffix -> extend(soundHolder.getId(), suffix))
@@ -170,49 +170,49 @@ public class ModSoundProvider extends SoundDefinitionsProvider {
 		add(soundHolder, soundDefinition);
 	}
 
-	protected void addSimpleSound(RegistryObject<SoundEvent> soundHolder) {
+	protected void addSimpleSound(DeferredHolder<SoundEvent, SoundEvent> soundHolder) {
 		add(soundHolder, definition()
 				.subtitle(translationKey(soundHolder))
 				.with(sound(soundHolder.getId()))
 		);
 	}
 
-	protected void addSimpleSound(RegistryObject<SoundEvent> soundHolder, float volume, float pitch) {
+	protected void addSimpleSound(DeferredHolder<SoundEvent, SoundEvent> soundHolder, float volume, float pitch) {
 		add(soundHolder, definition()
 				.subtitle(translationKey(soundHolder))
 				.with(sound(soundHolder.getId()).volume(volume).pitch(pitch))
 		);
 	}
 
-	protected void addSimpleRedirect(RegistryObject<SoundEvent> soundHolder, SoundEvent redirectTarget) {
+	protected void addSimpleRedirect(DeferredHolder<SoundEvent, SoundEvent> soundHolder, SoundEvent redirectTarget) {
 		add(soundHolder, definition()
 				.subtitle(translationKey(soundHolder))
 				.with(sound(redirectTarget.getLocation(), SoundDefinition.SoundType.EVENT))
 		);
 	}
 
-	protected void addSimpleRedirect(RegistryObject<SoundEvent> soundHolder, RegistryObject<SoundEvent> redirectTarget) {
+	protected void addSimpleRedirect(DeferredHolder<SoundEvent, SoundEvent> soundHolder, DeferredHolder<SoundEvent, SoundEvent> redirectTarget) {
 		add(soundHolder, definition()
 				.subtitle(translationKey(soundHolder))
 				.with(sound(redirectTarget.getId(), SoundDefinition.SoundType.EVENT))
 		);
 	}
 
-	protected void addSimpleRedirect(RegistryObject<SoundEvent> soundHolder, SoundEvent redirectTarget, float volume, float pitch) {
+	protected void addSimpleRedirect(DeferredHolder<SoundEvent, SoundEvent> soundHolder, SoundEvent redirectTarget, float volume, float pitch) {
 		add(soundHolder, definition()
 				.subtitle(translationKey(soundHolder))
 				.with(sound(redirectTarget.getLocation(), SoundDefinition.SoundType.EVENT).volume(volume).pitch(pitch))
 		);
 	}
 
-	protected void addSimpleRedirect(RegistryObject<SoundEvent> soundHolder, RegistryObject<SoundEvent> redirectTarget, float volume, float pitch) {
+	protected void addSimpleRedirect(DeferredHolder<SoundEvent, SoundEvent> soundHolder, DeferredHolder<SoundEvent, SoundEvent> redirectTarget, float volume, float pitch) {
 		add(soundHolder, definition()
 				.subtitle(translationKey(soundHolder))
 				.with(sound(redirectTarget.getId(), SoundDefinition.SoundType.EVENT).volume(volume).pitch(pitch))
 		);
 	}
 
-	protected void addSimpleRedirects(RegistryObject<SoundEvent> soundHolder, SoundEvent... redirectTargets) {
+	protected void addSimpleRedirects(DeferredHolder<SoundEvent, SoundEvent> soundHolder, SoundEvent... redirectTargets) {
 		SoundDefinition soundDefinition = definition().subtitle(translationKey(soundHolder));
 
 		for (SoundEvent redirectTarget : redirectTargets) {

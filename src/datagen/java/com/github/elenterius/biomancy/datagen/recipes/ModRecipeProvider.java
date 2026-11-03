@@ -1,7 +1,7 @@
 package com.github.elenterius.biomancy.datagen.recipes;
 
 import net.minecraft.data.PackOutput;
-import net.minecraft.data.recipes.FinishedRecipe;
+import com.github.elenterius.biomancy.datagen.recipes.builder.FinishedRecipe;
 import net.minecraft.data.recipes.RecipeProvider;
 
 import java.util.function.Consumer;

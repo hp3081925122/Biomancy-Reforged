@@ -24,15 +24,15 @@ import com.ncpbails.alexsdelight.AlexsDelight;
 import net.mcreator.sonsofsins.SonsOfSinsMod;
 import net.mcreator.sonsofsins.init.SonsOfSinsModItems;
 import net.minecraft.data.PackOutput;
-import net.minecraft.data.recipes.FinishedRecipe;
+import com.github.elenterius.biomancy.datagen.recipes.builder.FinishedRecipe;
 import net.minecraft.data.recipes.RecipeProvider;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
-import net.minecraftforge.common.Tags;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.neoforge.common.Tags;
+import net.neoforged.neoforge.registries.DeferredHolder;
 import net.orcinus.overweightfarming.OverweightFarming;
 import net.orcinus.overweightfarming.init.OFBlocks;
 import net.orcinus.overweightfarming.init.OFItems;
@@ -315,7 +315,7 @@ public class DecomposingRecipeProvider extends RecipeProvider {
 				.addRecyclingOutput(ModItems.BONE_FRAGMENTS.get(), blockCost / 2)
 				.unlockedBy(ModItems.FLESH_PILLAR.get()).save(consumer);
 
-		ModBlocks.BLOCKS.getEntries().stream().map(RegistryObject::get).filter(Membrane.class::isInstance).forEach(
+		ModBlocks.BLOCKS.getEntries().stream().map(DeferredHolder::get).filter(Membrane.class::isInstance).forEach(
 				block -> DecomposingRecipeBuilder.create().setIngredient(block).addOutput(ModItems.BILE.get(), 0, 2).unlockedBy(block).save(consumer)
 		);
 
@@ -1243,11 +1243,11 @@ public class DecomposingRecipeProvider extends RecipeProvider {
 				.addOutput(ModItems.EXOTIC_DUST.get(), 70, 85)
 				.unlockedBy(IafItemRegistry.LIGHTNING_DRAGON_HEART).save(consumer);
 
-		List<RegistryObject<Item>> dragonScales = List.of(
+		List<DeferredHolder<Item, Item>> dragonScales = List.of(
 				IafItemRegistry.DRAGONSCALES_BLACK, IafItemRegistry.DRAGONSCALES_BLUE, IafItemRegistry.DRAGONSCALES_BRONZE, IafItemRegistry.DRAGONSCALES_COPPER, IafItemRegistry.DRAGONSCALES_ELECTRIC,
 				IafItemRegistry.DRAGONSCALES_GRAY, IafItemRegistry.DRAGONSCALES_GREEN, IafItemRegistry.DRAGONSCALES_RED, IafItemRegistry.DRAGONSCALES_SILVER, IafItemRegistry.DRAGONSCALES_WHITE
 		);
-		for (RegistryObject<Item> dragonScale : dragonScales) {
+		for (DeferredHolder<Item, Item> dragonScale : dragonScales) {
 			iceAndFireRecipe()
 					.setIngredient(dragonScale).addExtraCraftingCost(4)
 					.addOutput(ModItems.TOUGH_FIBERS.get(), 15, 25)
@@ -1311,7 +1311,7 @@ public class DecomposingRecipeProvider extends RecipeProvider {
 				.addOutput(ModItems.TOXIN_EXTRACT.get(), 3, 7)
 				.unlockedBy(IafItemRegistry.MYRMEX_STINGER).save(consumer);
 
-		TagKey<Item> dragonSkulls = ItemTags.create(new ResourceLocation(IceAndFire.MODID, "dragon_skulls"));
+		TagKey<Item> dragonSkulls = ItemTags.create(ResourceLocation.fromNamespaceAndPath(IceAndFire.MODID, "dragon_skulls"));
 		iceAndFireRecipe().setIngredient(dragonSkulls).addExtraCraftingCost(4)
 				.addOutput(ModItems.MINERAL_FRAGMENT.get(), 4, 7)
 				.addOutput(ModItems.BONE_FRAGMENTS.get(), 28, 48)
@@ -1329,11 +1329,11 @@ public class DecomposingRecipeProvider extends RecipeProvider {
 				.addOutput(ModItems.BONE_FRAGMENTS.get(), 5, 8)
 				.unlockedBy(IafItemRegistry.DRAGON_BONE).save(consumer);
 
-		List<RegistryObject<Item>> chitins = List.of(
+		List<DeferredHolder<Item, Item>> chitins = List.of(
 				IafItemRegistry.MYRMEX_DESERT_CHITIN, IafItemRegistry.MYRMEX_JUNGLE_CHITIN,
 				IafItemRegistry.DEATH_WORM_CHITIN_RED, IafItemRegistry.DEATH_WORM_CHITIN_WHITE, IafItemRegistry.DEATH_WORM_CHITIN_YELLOW
 		);
-		for (RegistryObject<Item> chitin : chitins) {
+		for (DeferredHolder<Item, Item> chitin : chitins) {
 			iceAndFireRecipe()
 					.setIngredient(chitin)
 					.addOutput(ModItems.TOUGH_FIBERS.get(), 7, 12)
@@ -1373,10 +1373,10 @@ public class DecomposingRecipeProvider extends RecipeProvider {
 				.addOutput(ModItems.ORGANIC_MATTER.get(), 0, 1)
 				.unlockedBy(IafBlockRegistry.MYRMEX_JUNGLE_BIOLIGHT.get()).save(consumer);
 
-		List<RegistryObject<Item>> eggs = List.of(
+		List<DeferredHolder<Item, Item>> eggs = List.of(
 				IafItemRegistry.DEATHWORM_EGG, IafItemRegistry.MYRMEX_DESERT_EGG, IafItemRegistry.MYRMEX_JUNGLE_EGG, IafItemRegistry.HIPPOGRYPH_EGG
 		);
-		for (RegistryObject<Item> egg : eggs) {
+		for (DeferredHolder<Item, Item> egg : eggs) {
 			iceAndFireRecipe()
 					.setIngredient(egg)
 					.addOutput(ModItems.STONE_POWDER.get(), 4, 8)
@@ -1460,12 +1460,12 @@ public class DecomposingRecipeProvider extends RecipeProvider {
 	}
 
 	private void buildIceAndFireDragonEggRecipes(Consumer<FinishedRecipe> consumer) {
-		List<RegistryObject<Item>> colorDragonEggs = List.of(
+		List<DeferredHolder<Item, Item>> colorDragonEggs = List.of(
 				IafItemRegistry.DRAGONEGG_ELECTRIC,
 				IafItemRegistry.DRAGONEGG_RED, IafItemRegistry.DRAGONEGG_GREEN, IafItemRegistry.DRAGONEGG_BLUE, IafItemRegistry.DRAGONEGG_BLACK, IafItemRegistry.DRAGONEGG_GRAY, IafItemRegistry.DRAGONEGG_WHITE
 		);
 
-		for (RegistryObject<Item> dragonEgg : colorDragonEggs) {
+		for (DeferredHolder<Item, Item> dragonEgg : colorDragonEggs) {
 			DragonType dragonType = DragonType.FIRE;
 			if (dragonEgg.get() instanceof ItemDragonEgg egg) {
 				dragonType = egg.type.dragonType;
@@ -1487,9 +1487,9 @@ public class DecomposingRecipeProvider extends RecipeProvider {
 			builder.unlockedBy(dragonEgg).save(consumer);
 		}
 
-		List<RegistryObject<Item>> metalDragonEggs = List.of(IafItemRegistry.DRAGONEGG_BRONZE, IafItemRegistry.DRAGONEGG_SILVER, IafItemRegistry.DRAGONEGG_COPPER);
+		List<DeferredHolder<Item, Item>> metalDragonEggs = List.of(IafItemRegistry.DRAGONEGG_BRONZE, IafItemRegistry.DRAGONEGG_SILVER, IafItemRegistry.DRAGONEGG_COPPER);
 
-		for (RegistryObject<Item> dragonEgg : metalDragonEggs) {
+		for (DeferredHolder<Item, Item> dragonEgg : metalDragonEggs) {
 			DragonType dragonType = DragonType.FIRE;
 			if (dragonEgg.get() instanceof ItemDragonEgg egg) {
 				dragonType = egg.type.dragonType;
@@ -1512,9 +1512,9 @@ public class DecomposingRecipeProvider extends RecipeProvider {
 			builder.unlockedBy(dragonEgg).save(consumer);
 		}
 
-		List<RegistryObject<Item>> gemDragonEggs = List.of(IafItemRegistry.DRAGONEGG_AMYTHEST, IafItemRegistry.DRAGONEGG_SAPPHIRE);
+		List<DeferredHolder<Item, Item>> gemDragonEggs = List.of(IafItemRegistry.DRAGONEGG_AMYTHEST, IafItemRegistry.DRAGONEGG_SAPPHIRE);
 
-		for (RegistryObject<Item> dragonEgg : gemDragonEggs) {
+		for (DeferredHolder<Item, Item> dragonEgg : gemDragonEggs) {
 			DragonType dragonType = DragonType.FIRE;
 			if (dragonEgg.get() instanceof ItemDragonEgg egg) {
 				dragonType = egg.type.dragonType;

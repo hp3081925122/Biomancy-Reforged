@@ -25,7 +25,7 @@ import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BannerPattern;
 import net.minecraftforge.fluids.FluidType;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.neoforge.registries.DeferredHolder;
 import org.apache.commons.lang3.text.WordUtils;
 
 import java.io.ByteArrayOutputStream;
@@ -196,7 +196,7 @@ public abstract class AbstractLangProvider implements DataProvider, LangProvider
 		add(translatableContents.getKey(), translation);
 	}
 
-	public void addPainting(RegistryObject<PaintingVariant> supplier, String title, String author) {
+	public void addPainting(DeferredHolder<PaintingVariant, PaintingVariant> supplier, String title, String author) {
 		ResourceLocation id = supplier.getId();
 		assert id != null;
 		add(id.toLanguageKey("painting", "title"), title);
@@ -204,8 +204,8 @@ public abstract class AbstractLangProvider implements DataProvider, LangProvider
 	}
 
 	@SuppressWarnings("deprecation")
-	public void addBannerPattern(RegistryObject<BannerPattern> supplier, String name) {
-		ResourceLocation rl = new ResourceLocation(supplier.getId().toShortLanguageKey());
+	public void addBannerPattern(DeferredHolder<BannerPattern, BannerPattern> supplier, String name) {
+		ResourceLocation rl = ResourceLocation.parse(supplier.getId().toShortLanguageKey());
 		for (DyeColor dyeColor : DyeColor.values()) {
 			String dyeColorName = WordUtils.capitalize(dyeColor.getName().replace("_", " "));
 			add("block.%s.banner.%s.%s".formatted(rl.getNamespace(), rl.getPath(), dyeColor.getName()), dyeColorName + " " + name);

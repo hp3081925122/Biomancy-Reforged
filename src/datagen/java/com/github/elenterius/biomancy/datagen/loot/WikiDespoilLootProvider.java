@@ -7,7 +7,7 @@ import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.ItemLike;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -88,7 +88,7 @@ public class WikiDespoilLootProvider implements DataProvider {
 	}
 
 	protected String baseFileName(ItemLike itemLike) {
-		ResourceLocation key = ForgeRegistries.ITEMS.getKey(itemLike.asItem());
+		ResourceLocation key = BuiltInRegistries.ITEM.getKey(itemLike.asItem());
 		if (key != null) return key.getPath();
 		throw new RuntimeException("Item key is missing for: " + itemLike);
 	}
@@ -98,7 +98,7 @@ public class WikiDespoilLootProvider implements DataProvider {
 	}
 
 	protected ResourceLocation key(EntityType<?> entityType) {
-		return Objects.requireNonNull(ForgeRegistries.ENTITY_TYPES.getKey(entityType));
+		return Objects.requireNonNull(BuiltInRegistries.ENTITY_TYPE.getKey(entityType));
 	}
 
 	protected List<CompletableFuture<?>> renderTemplate(Set<String> baseNames, Path sourceRoot, Path targetRoot, Function<String, Map<String, String>> tokenResolver) {

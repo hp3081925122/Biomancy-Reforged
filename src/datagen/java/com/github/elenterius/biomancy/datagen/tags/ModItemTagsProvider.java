@@ -19,9 +19,9 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.ShulkerBoxBlock;
-import net.minecraftforge.common.Tags;
-import net.minecraftforge.common.data.ExistingFileHelper;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.common.Tags;
+import net.neoforged.neoforge.common.data.ExistingFileHelper;
+import net.minecraft.core.registries.BuiltInRegistries;
 import org.apache.commons.lang3.StringUtils;
 import org.jspecify.annotations.Nullable;
 
@@ -39,11 +39,11 @@ public class ModItemTagsProvider extends ItemTagsProvider {
 	}
 
 	private static TagKey<Item> forgeTag(String path) {
-		return ItemTags.create(new ResourceLocation("forge", path));
+		return ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", path));
 	}
 
 	private static TagKey<Item> conventionalTag(String path) {
-		return ItemTags.create(new ResourceLocation("c", path));
+		return ItemTags.create(ResourceLocation.fromNamespaceAndPath("c", path));
 	}
 
 	private static TagKey<Item> biomancyTag(String path) {
@@ -51,7 +51,7 @@ public class ModItemTagsProvider extends ItemTagsProvider {
 	}
 
 	protected EnhancedTagAppender<Item> createTag(TagKey<Item> tag) {
-		return new EnhancedTagAppender<>(tag(tag), ForgeRegistries.ITEMS);
+		return new EnhancedTagAppender<>(tag(tag), BuiltInRegistries.ITEM);
 	}
 
 	@Override
@@ -257,7 +257,7 @@ public class ModItemTagsProvider extends ItemTagsProvider {
 		createTag(Tags.Items.CHESTS).add(ModItems.FLESHKIN_CHEST.get());
 
 		EnhancedTagAppender<Item> shulkerBoxes = createTag(forgeTag("shulker_boxes"));
-		for (Item item : ForgeRegistries.ITEMS) {
+		for (Item item : BuiltInRegistries.ITEM) {
 			if (item instanceof BlockItem blockItem && blockItem.getBlock() instanceof ShulkerBoxBlock) {
 				shulkerBoxes.add(item);
 			}

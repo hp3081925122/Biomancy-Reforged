@@ -15,9 +15,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.EntityTypeTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.EntityType;
-import net.minecraftforge.common.Tags;
-import net.minecraftforge.common.data.ExistingFileHelper;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.common.Tags;
+import net.neoforged.neoforge.common.data.ExistingFileHelper;
+import net.minecraft.core.registries.BuiltInRegistries;
 import org.apache.commons.lang3.StringUtils;
 import org.jspecify.annotations.Nullable;
 
@@ -30,15 +30,15 @@ public class ModEntityTypeTagsProvider extends EntityTypeTagsProvider {
 	}
 
 	private static TagKey<EntityType<?>> forgeTag(String path) {
-		return TagKey.create(Registries.ENTITY_TYPE, new ResourceLocation("forge", path));
+		return TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath("forge", path));
 	}
 
 	private static TagKey<EntityType<?>> conventionalTag(String path) {
-		return TagKey.create(Registries.ENTITY_TYPE, new ResourceLocation("c", path));
+		return TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath("c", path));
 	}
 
 	protected EnhancedTagAppender<EntityType<?>> createTag(TagKey<EntityType<?>> tag) {
-		return new EnhancedTagAppender<>(tag(tag), ForgeRegistries.ENTITY_TYPES);
+		return new EnhancedTagAppender<>(tag(tag), BuiltInRegistries.ENTITY_TYPE);
 	}
 
 	@Override

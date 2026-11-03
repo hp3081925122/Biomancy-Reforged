@@ -10,9 +10,9 @@ import net.minecraft.data.DataProvider;
 import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.PackType;
-import net.minecraftforge.common.data.ExistingFileHelper;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.neoforge.common.data.ExistingFileHelper;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.neoforged.neoforge.registries.DeferredHolder;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -37,7 +37,7 @@ public abstract class ParticleSpriteProvider implements DataProvider {
 	}
 
 	private static <O extends ParticleOptions> ResourceLocation getId(ParticleType<O> particleType) {
-		ResourceLocation key = ForgeRegistries.PARTICLE_TYPES.getKey(particleType);
+		ResourceLocation key = BuiltInRegistries.PARTICLE_TYPE.getKey(particleType);
 		if (key == null) {
 			throw new IllegalStateException("No registry key found for the particle type: " + particleType);
 		}
@@ -79,27 +79,27 @@ public abstract class ParticleSpriteProvider implements DataProvider {
 
 	public abstract void registerParticles();
 
-	protected <O extends ParticleOptions, T extends ParticleType<O>> void addParticle(final RegistryObject<T> registryObject) {
+	protected <O extends ParticleOptions, T extends ParticleType<O>> void addParticle(final DeferredHolder<T, T> registryObject) {
 		ResourceLocation id = registryObject.getId();
 		addParticle(id, ParticleSprite.create(id));
 	}
 
-	protected <O extends ParticleOptions, T extends ParticleType<O>> void addParticle(final RegistryObject<T> registryObject, String texture) {
+	protected <O extends ParticleOptions, T extends ParticleType<O>> void addParticle(final DeferredHolder<T, T> registryObject, String texture) {
 		ResourceLocation id = registryObject.getId();
 		addParticle(id, ParticleSprite.create(texture));
 	}
 
-	protected <O extends ParticleOptions, T extends ParticleType<O>> void addParticle(final RegistryObject<T> registryObject, ResourceLocation texture) {
+	protected <O extends ParticleOptions, T extends ParticleType<O>> void addParticle(final DeferredHolder<T, T> registryObject, ResourceLocation texture) {
 		ResourceLocation id = registryObject.getId();
 		addParticle(id, ParticleSprite.create(texture));
 	}
 
-	protected <O extends ParticleOptions, T extends ParticleType<O>> void addParticle(final RegistryObject<T> registryObject, int frameCount, int frameStartNumber) {
+	protected <O extends ParticleOptions, T extends ParticleType<O>> void addParticle(final DeferredHolder<T, T> registryObject, int frameCount, int frameStartNumber) {
 		ResourceLocation id = registryObject.getId();
 		addParticle(id, ParticleSprite.create(id, frameCount, frameStartNumber));
 	}
 
-	protected <O extends ParticleOptions, T extends ParticleType<O>> void addParticle(final RegistryObject<T> registryObject, int frameCount) {
+	protected <O extends ParticleOptions, T extends ParticleType<O>> void addParticle(final DeferredHolder<T, T> registryObject, int frameCount) {
 		ResourceLocation id = registryObject.getId();
 		addParticle(id, ParticleSprite.create(id, frameCount));
 	}
@@ -130,7 +130,7 @@ public abstract class ParticleSpriteProvider implements DataProvider {
 	private boolean validate(final ResourceLocation particleId, final ParticleSprite particleSprite) {
 		boolean isValid = true;
 		for (String sprite : particleSprite.spriteFrames) {
-			ResourceLocation spriteResource = new ResourceLocation(sprite);
+			ResourceLocation spriteResource = ResourceLocation.parse(sprite);
 			boolean valid = fileHelper.exists(spriteResource, PackType.CLIENT_RESOURCES, ".png", "textures/particle");
 			if (!valid) {
 				final String path = "%s:textures/particle/%s.png".formatted(spriteResource.getNamespace(), spriteResource.getPath());
@@ -145,7 +145,7 @@ public abstract class ParticleSpriteProvider implements DataProvider {
 	protected record ParticleSprite(ResourceLocation texture, int frameCount, String[] spriteFrames) {
 
 		public static ParticleSprite create(String texture) {
-			ResourceLocation rl = new ResourceLocation(texture);
+			ResourceLocation rl = ResourceLocation.parse(texture);
 			return new ParticleSprite(rl, 1, new String[]{rl.toString()});
 		}
 

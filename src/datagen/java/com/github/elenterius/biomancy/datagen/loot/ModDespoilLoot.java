@@ -27,7 +27,7 @@ import net.minecraft.world.level.storage.loot.functions.SetItemCountFunction;
 import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
 import net.minecraft.world.level.storage.loot.providers.number.NumberProvider;
 import net.minecraft.world.level.storage.loot.providers.number.UniformGenerator;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -156,12 +156,12 @@ public class ModDespoilLoot extends DespoilLootProvider {
 	@Override
 	public void generate() {
 		Set<String> validNamespaces = Set.of("minecraft", BiomancyMod.MOD_ID, AlexsMobs.MODID, AlexsCaves.MODID, IceAndFire.MODID, SonsOfSinsMod.MODID);
-		Predicate<EntityType<?>> allowedNamespace = entityType -> validNamespaces.contains(Objects.requireNonNull(ForgeRegistries.ENTITY_TYPES.getKey(entityType)).getNamespace());
+		Predicate<EntityType<?>> allowedNamespace = entityType -> validNamespaces.contains(Objects.requireNonNull(BuiltInRegistries.ENTITY_TYPE.getKey(entityType)).getNamespace());
 
 		Predicate<EntityType<?>> validEntityType = entityType -> entityType.getCategory() != MobCategory.MISC; //excludes Players & Villagers as well
 		Predicate<EntityType<?>> ignoreEntityType = entityType -> entityType != EntityType.WARDEN;
 
-		ForgeRegistries.ENTITY_TYPES.getValues().stream()
+		BuiltInRegistries.ENTITY_TYPE.getValues().stream()
 				.filter(allowedNamespace)
 				.filter(validEntityType)
 				.filter(ignoreEntityType)

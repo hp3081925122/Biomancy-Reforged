@@ -6,9 +6,9 @@ import com.github.elenterius.biomancy.loot.CatMorningGiftLootModifier;
 import com.github.elenterius.biomancy.loot.DespoilLootModifier;
 import com.mojang.serialization.Codec;
 import net.minecraft.data.PackOutput;
-import net.minecraftforge.common.data.GlobalLootModifierProvider;
-import net.minecraftforge.common.loot.IGlobalLootModifier;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.neoforge.common.data.GlobalLootModifierProvider;
+import net.neoforged.neoforge.common.loot.IGlobalLootModifier;
+import net.neoforged.neoforge.registries.DeferredHolder;
 
 public class ModGlobalLootModifierProvider extends GlobalLootModifierProvider {
 

@@ -6,7 +6,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagBuilder;
 import net.minecraft.tags.TagKey;
 import net.minecraftforge.registries.IForgeRegistry;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.neoforge.registries.DeferredHolder;
 
 import java.util.Collection;
 import java.util.Objects;
@@ -94,7 +94,7 @@ public record EnhancedTagAppender<T>(IntrinsicHolderTagsProvider.IntrinsicTagApp
 
 	public EnhancedTagAppender<T> addOptional(String... resourceLocations) {
 		for (String resourceLocation : resourceLocations) {
-			delegate.addOptional(new ResourceLocation(resourceLocation));
+			delegate.addOptional(ResourceLocation.parse(resourceLocation));
 		}
 		return this;
 	}
@@ -120,7 +120,7 @@ public record EnhancedTagAppender<T>(IntrinsicHolderTagsProvider.IntrinsicTagApp
 
 	public EnhancedTagAppender<T> addOptionalTag(String... resourceLocations) {
 		for (String resourceLocation : resourceLocations) {
-			delegate.addOptionalTag(new ResourceLocation(resourceLocation));
+			delegate.addOptionalTag(ResourceLocation.parse(resourceLocation));
 		}
 		return this;
 	}
