@@ -7,25 +7,24 @@ import com.github.elenterius.biomancy.item.extractor.ExtractorItem;
 import com.github.elenterius.biomancy.item.injector.InjectorItem;
 import com.github.elenterius.biomancy.network.ModNetworkHandler;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.BlockSource;
+import net.minecraft.core.Direction;
 import net.minecraft.core.Position;
-import net.minecraft.core.dispenser.AbstractProjectileDispenseBehavior;
+import net.minecraft.core.dispenser.BlockSource;
 import net.minecraft.core.dispenser.DefaultDispenseItemBehavior;
 import net.minecraft.core.dispenser.DispenseItemBehavior;
 import net.minecraft.core.dispenser.OptionalDispenseItemBehavior;
-import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.DispensibleContainerItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.DispenserBlock;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegisterEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.neoforge.event.brewing.RegisterBrewingRecipesEvent;
 
-@Mod.EventBusSubscriber(modid = BiomancyMod.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = BiomancyMod.MOD_ID)
 public final class CommonSetupHandler {
 
 	private CommonSetupHandler() {}
@@ -35,37 +34,28 @@ public final class CommonSetupHandler {
 		ModNetworkHandler.register();
 		ModRecipeBookTypes.init();
 
-		// if not thread safe do it after the common setup event on a single thread
 		event.enqueueWork(() -> {
-			ModTriggers.register();
-			ModPredicates.registerItemPredicates();
-
 			registerDispenserBehaviors();
-			ModRecipes.registerComposterRecipes();
-
 			AcidInteractions.register();
 		});
 
 		ModFluids.registerInteractions();
-		ModRecipes.registerBrewingRecipes();
 		ModsCompatHandler.onBiomancyCommonSetup(event);
 	}
 
 	@SubscribeEvent
-	public static void registerRecipeSerializers(RegisterEvent event) {
-		if (event.getRegistryKey().equals(ForgeRegistries.Keys.RECIPE_SERIALIZERS)) {
-			ModRecipes.registerIngredientSerializers();
-		}
+	public static void onRegisterBrewingRecipes(final RegisterBrewingRecipesEvent event) {
+		ModRecipes.registerBrewingRecipes(event.getBuilder());
 	}
 
 	private static void registerDispenserBehaviors() {
 		DispenserBlock.registerBehavior(ModItems.ESSENCE_EXTRACTOR.get(), new OptionalDispenseItemBehavior() {
 			@Override
 			protected ItemStack execute(BlockSource source, ItemStack stack) {
-				BlockPos pos = source.getPos().relative(source.getBlockState().getValue(DispenserBlock.FACING));
-				setSuccess(ExtractorItem.tryExtractEssence(source.getLevel(), pos, stack));
-				if (isSuccess() && stack.hurt(1, source.getLevel().getRandom(), null)) {
-					stack.setCount(0);
+				BlockPos pos = source.pos().relative(source.state().getValue(DispenserBlock.FACING));
+				setSuccess(ExtractorItem.tryExtractEssence(source.level(), pos, stack));
+				if (isSuccess()) {
+					stack.hurtAndBreak(1, source.level(), (ServerPlayer) null, item -> {});
 				}
 				return stack;
 			}
@@ -74,10 +64,10 @@ public final class CommonSetupHandler {
 		DispenserBlock.registerBehavior(ModItems.INJECTOR.get(), new OptionalDispenseItemBehavior() {
 			@Override
 			protected ItemStack execute(BlockSource source, ItemStack stack) {
-				BlockPos pos = source.getPos().relative(source.getBlockState().getValue(DispenserBlock.FACING));
-				setSuccess(InjectorItem.tryInjectLivingEntity(source.getLevel(), pos, stack));
-				if (isSuccess() && stack.hurt(1, source.getLevel().getRandom(), null)) {
-					stack.setCount(0);
+				BlockPos pos = source.pos().relative(source.state().getValue(DispenserBlock.FACING));
+				setSuccess(InjectorItem.tryInjectLivingEntity(source.level(), pos, stack));
+				if (isSuccess()) {
+					stack.hurtAndBreak(1, source.level(), (ServerPlayer) null, item -> {});
 				}
 				return stack;
 			}
@@ -86,9 +76,10 @@ public final class CommonSetupHandler {
 		DispenserBlock.registerBehavior(ModItems.ACID_BUCKET.get(), new DefaultDispenseItemBehavior() {
 			private final DefaultDispenseItemBehavior defaultDispenseItemBehavior = new DefaultDispenseItemBehavior();
 
+			@Override
 			public ItemStack execute(BlockSource source, ItemStack stack) {
-				BlockPos pos = source.getPos().relative(source.getBlockState().getValue(DispenserBlock.FACING));
-				Level level = source.getLevel();
+				BlockPos pos = source.pos().relative(source.state().getValue(DispenserBlock.FACING));
+				ServerLevel level = source.level();
 
 				DispensibleContainerItem containerItem = (DispensibleContainerItem) stack.getItem();
 				if (containerItem.emptyContents(null, level, pos, null, stack)) {
@@ -101,27 +92,26 @@ public final class CommonSetupHandler {
 			}
 		});
 
-		DispenseItemBehavior grenadeDispenseBehavior = new DispenseItemBehavior() {
-			private final AbstractProjectileDispenseBehavior behavior = new AbstractProjectileDispenseBehavior() {
+		DispenseItemBehavior grenadeDispenseBehavior = new DefaultDispenseItemBehavior() {
+			private static final float UNCERTAINTY = 6f * 0.5f;
+			private static final float POWER = 1.1f * 1.25f;
 
-				protected Projectile getProjectile(Level level, Position position, ItemStack stack) {
-					GrenadeProjectile grenade = new GrenadeProjectile(level, position.x(), position.y(), position.z());
-					grenade.setItem(stack);
-					return grenade;
-				}
+			@Override
+			public ItemStack execute(BlockSource source, ItemStack stack) {
+				ServerLevel level = source.level();
+				Position position = DispenserBlock.getDispensePosition(source);
+				Direction direction = source.state().getValue(DispenserBlock.FACING);
+				GrenadeProjectile grenade = new GrenadeProjectile(level, position.x(), position.y(), position.z());
+				grenade.setItem(stack);
+				grenade.shoot(direction.getStepX(), direction.getStepY() + 0.1f, direction.getStepZ(), POWER, UNCERTAINTY);
+				level.addFreshEntity(grenade);
+				stack.shrink(1);
+				return stack;
+			}
 
-				protected float getUncertainty() {
-					return super.getUncertainty() * 0.5F;
-				}
-
-				protected float getPower() {
-					return super.getPower() * 1.25F;
-				}
-
-			};
-
-			public ItemStack dispense(BlockSource source, ItemStack itemStack) {
-				return behavior.dispense(source, itemStack);
+			@Override
+			protected void playSound(BlockSource source) {
+				source.level().levelEvent(1002, source.pos(), 0);
 			}
 		};
 

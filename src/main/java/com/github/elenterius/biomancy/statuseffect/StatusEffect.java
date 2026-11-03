@@ -1,5 +1,7 @@
 package com.github.elenterius.biomancy.statuseffect;
 
+import com.github.elenterius.biomancy.BiomancyMod;
+import net.minecraft.core.Holder;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.entity.Entity;
@@ -25,9 +27,9 @@ public class StatusEffect extends MobEffect {
 		this.isCurable = isCurable;
 	}
 
-	public <E extends StatusEffect> E addModifier(Attribute attribute, String uuid, double amount, AttributeModifier.Operation operation) {
+	public <E extends StatusEffect> E addModifier(Holder<Attribute> attribute, String id, double amount, AttributeModifier.Operation operation) {
 		//noinspection unchecked
-		return (E) addAttributeModifier(attribute, uuid, amount, operation);
+		return (E) addAttributeModifier(attribute, BiomancyMod.rl(id), amount, operation);
 	}
 
 	@Override

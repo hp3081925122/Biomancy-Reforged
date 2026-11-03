@@ -17,7 +17,6 @@ public final class ItemComments {
 	private static final Map<Item, List<Component>> COMMENTS = new IdentityHashMap<>();
 
 	static {
-		//		createItemComment(ModItems.PRIMORDIAL_CRADLE.get(), "Basically, at the very bottom of life, which seduces us all, there is only absurdity, and more absurdity. And maybe that's what gives us our joy for living, because the only thing that can defeat absurdity is lucidity.\n- Albert Camus");
 		createItemComment(ModItems.PRIMORDIAL_CORE.get(), "I have come for your meat\n- Karth Kalbi");
 		createItemComment(ModItems.DIGESTER.get(), "Digest her? I barely know her...\n- spicynips");
 		createItemComment(ModItems.ORNATE_FLESH_BLOCK.get(), "Birthplace of Crembo and Jarky\n- Jerry");

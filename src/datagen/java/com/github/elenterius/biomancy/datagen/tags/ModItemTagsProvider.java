@@ -229,7 +229,7 @@ public class ModItemTagsProvider extends ItemTagsProvider {
 		createTag(Tags.Items.STRING)
 				.add(ModItems.MOB_SINEW.get());
 
-		//		tag(ModItemTags.FORGE_TOOLS_KNIVES);
+		//		tag(ModItemTags.C_TOOLS_KNIFE);
 
 		TagKey<Item> clawsTag = forgeTag("tools/claws");
 		createTag(clawsTag)

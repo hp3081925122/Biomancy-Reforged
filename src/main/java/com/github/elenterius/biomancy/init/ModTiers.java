@@ -6,16 +6,16 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraftforge.common.ForgeTier;
-import net.minecraftforge.common.Tags;
+import net.neoforged.neoforge.common.SimpleTier;
+import net.neoforged.neoforge.common.Tags;
 
 import java.util.stream.Stream;
 
 public final class ModTiers {
 
-	public static final ForgeTier PRIMAL_FLESH = new ForgeTier(2, 500, 4.5f, 1f, 14, BlockTags.NEEDS_IRON_TOOL, () -> Ingredient.of(ModItems.LIVING_FLESH.get()));
-	public static final ForgeTier BONE = new ForgeTier(1, 142, 4.5f, 1f, 7, BlockTags.NEEDS_STONE_TOOL, ModTiers::buildBoneIngredients);
-	public static final ForgeTier BIOFLESH = new ForgeTier(4, 2031, 9f, 4f, 15, Tags.Blocks.NEEDS_NETHERITE_TOOL, () -> Ingredient.of(ModItemTags.FRESH_RAW_MEATS));
+	public static final SimpleTier PRIMAL_FLESH = new SimpleTier(BlockTags.INCORRECT_FOR_IRON_TOOL, 500, 4.5f, 1f, 14, () -> Ingredient.of(ModItems.LIVING_FLESH.get()));
+	public static final SimpleTier BONE = new SimpleTier(BlockTags.INCORRECT_FOR_STONE_TOOL, 142, 4.5f, 1f, 7, ModTiers::buildBoneIngredients);
+	public static final SimpleTier BIOFLESH = new SimpleTier(BlockTags.INCORRECT_FOR_NETHERITE_TOOL, 2031, 9f, 4f, 15, () -> Ingredient.of(ModItemTags.FRESH_RAW_MEATS));
 
 	private ModTiers() {}
 

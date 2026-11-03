@@ -6,13 +6,11 @@ import com.github.elenterius.biomancy.util.ComponentUtil;
 import com.github.elenterius.biomancy.util.EventCalendar;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.fml.ModLoadingContext;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.common.Mod;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import software.bernie.geckolib.GeckoLib;
 
 import java.util.Random;
 
@@ -27,16 +25,12 @@ public final class BiomancyMod {
 
 	public static final String DEV_MODE_PROPERTY_KEY = "biomancy.dev_mode";
 
-	public BiomancyMod() {
-		GeckoLib.initialize();
-
-		IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
-		ModLoadingContext modLoadingContext = ModLoadingContext.get();
-
-		ModBannerPatterns.BANNERS.register(modEventBus);
+	public BiomancyMod(IEventBus modEventBus, ModContainer modContainer) {
+		MigrationHandler.registerAliases();
 
 		ModBlocks.BLOCKS.register(modEventBus);
 		ModItems.ITEMS.register(modEventBus);
+		ModArmorMaterials.ARMOR_MATERIALS.register(modEventBus);
 		ModBlockEntities.BLOCK_ENTITIES.register(modEventBus);
 		ModCreativeModeTabs.CREATIVE_TABS.register(modEventBus);
 
@@ -50,24 +44,25 @@ public final class BiomancyMod {
 
 		ModEntityTypes.ENTITIES.register(modEventBus);
 		ModAttributes.ATTRIBUTES.register(modEventBus);
-		ModEnchantments.ENCHANTMENTS.register(modEventBus);
 		ModMobEffects.EFFECTS.register(modEventBus);
 		ModSerums.SERUMS.register(modEventBus);
 		ModPotions.POTIONS.register(modEventBus);
-		ModPaintings.PAINTINGS.register(modEventBus);
 
 		ModMenuTypes.MENUS.register(modEventBus);
 
 		ModRecipes.RECIPE_TYPES.register(modEventBus);
 		ModRecipes.RECIPE_SERIALIZERS.register(modEventBus);
+		ModRecipes.INGREDIENT_TYPES.register(modEventBus);
 		ModBioForgeTabs.BIO_FORGE_TABS.register(modEventBus);
 
 		ModLoot.GLOBAL_MODIFIERS.register(modEventBus);
+		ModTriggers.TRIGGERS.register(modEventBus);
+		ModPredicates.ITEM_SUB_PREDICATES.register(modEventBus);
 
 		ModSoundEvents.SOUND_EVENTS.register(modEventBus);
 		ModParticleTypes.PARTICLE_TYPES.register(modEventBus);
 
-		BiomancyConfig.register(modLoadingContext);
+		BiomancyConfig.register(modContainer);
 		ModsCompatHandler.onBiomancyInit(modEventBus);
 	}
 
@@ -76,7 +71,7 @@ public final class BiomancyMod {
 	}
 
 	public static ResourceLocation rl(String path) {
-		return new ResourceLocation(MOD_ID, path);
+		return ResourceLocation.fromNamespaceAndPath(MOD_ID, path);
 	}
 
 	public static String rlStr(String path) {

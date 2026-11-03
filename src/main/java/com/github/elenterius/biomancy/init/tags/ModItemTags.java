@@ -13,7 +13,7 @@ public final class ModItemTags {
 	public static final TagKey<Item> C_WITHER_BONES = conventionalTag("bones/wither");
 	public static final TagKey<Item> C_RAW_PORK = conventionalTag("foods/raw_pork");
 
-	public static final TagKey<Item> FORGE_TOOLS_KNIVES = forgeTag("tools/knives");
+	public static final TagKey<Item> C_TOOLS_KNIFE = conventionalTag("tools/knife");
 
 	public static final TagKey<Item> FRESH_RAW_MEATS = tag("raw_meats");
 	public static final TagKey<Item> COOKED_MEATS = tag("cooked_meats");
@@ -28,13 +28,8 @@ public final class ModItemTags {
 		return ItemTags.create(BiomancyMod.rl(name));
 	}
 
-	private static TagKey<Item> forgeTag(String path) {
-		return ItemTags.create(new ResourceLocation("forge", path));
-	}
-
-	/// conventional tags introduced in neo-forge/fabric for minecraft 1.21+
 	private static TagKey<Item> conventionalTag(String path) {
-		return ItemTags.create(new ResourceLocation("c", path));
+		return ItemTags.create(ResourceLocation.fromNamespaceAndPath("c", path));
 	}
 
 }

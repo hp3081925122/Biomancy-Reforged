@@ -1,11 +1,11 @@
 package com.github.elenterius.biomancy.init;
 
-import net.minecraftforge.common.PlantType;
+import com.github.elenterius.biomancy.block.PlantType;
 
 public final class ModPlantTypes {
 
-	public static final PlantType FLESH = PlantType.get("flesh");
-	public static final PlantType PRIMAL_FLESH = PlantType.get("primal_flesh");
+	public static final PlantType FLESH = new PlantType("flesh");
+	public static final PlantType PRIMAL_FLESH = new PlantType("primal_flesh");
 
 	private ModPlantTypes() {}
 

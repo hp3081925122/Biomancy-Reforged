@@ -1,0 +1,55 @@
+{
+  "entries": [
+    {
+      "enum": "net/minecraft/world/item/Rarity",
+      "name": "BIOMANCY_COMMON",
+      "constructor": "(ILjava/lang/String;Ljava/util/function/UnaryOperator;)V",
+      "parameters": {
+        "class": "com/github/elenterius/biomancy/init/ModRarities$Proxies",
+        "field": "COMMON"
+      }
+    },
+    {
+      "enum": "net/minecraft/world/item/Rarity",
+      "name": "BIOMANCY_UNCOMMON",
+      "constructor": "(ILjava/lang/String;Ljava/util/function/UnaryOperator;)V",
+      "parameters": {
+        "class": "com/github/elenterius/biomancy/init/ModRarities$Proxies",
+        "field": "UNCOMMON"
+      }
+    },
+    {
+      "enum": "net/minecraft/world/item/Rarity",
+      "name": "BIOMANCY_RARE",
+      "constructor": "(ILjava/lang/String;Ljava/util/function/UnaryOperator;)V",
+      "parameters": {
+        "class": "com/github/elenterius/biomancy/init/ModRarities$Proxies",
+        "field": "RARE"
+      }
+    },
+    {
+      "enum": "net/minecraft/world/item/Rarity",
+      "name": "BIOMANCY_VERY_RARE",
+      "constructor": "(ILjava/lang/String;Ljava/util/function/UnaryOperator;)V",
+      "parameters": {
+        "class": "com/github/elenterius/biomancy/init/ModRarities$Proxies",
+        "field": "VERY_RARE"
+      }
+    },
+    {
+      "enum": "net/minecraft/world/item/Rarity",
+      "name": "BIOMANCY_ULTRA_RARE",
+      "constructor": "(ILjava/lang/String;Ljava/util/function/UnaryOperator;)V",
+      "parameters": {
+        "class": "com/github/elenterius/biomancy/init/ModRarities$Proxies",
+        "field": "ULTRA_RARE"
+      }
+    },
+    {
+      "enum": "net/minecraft/world/inventory/RecipeBookType",
+      "name": "BIOMANCY_BIO_FORGE",
+      "constructor": "()V",
+      "parameters": []
+    }
+  ]
+}

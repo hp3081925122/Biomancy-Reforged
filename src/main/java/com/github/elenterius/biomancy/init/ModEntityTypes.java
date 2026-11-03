@@ -9,6 +9,7 @@ import com.github.elenterius.biomancy.entity.mob.fleshblob.PrimordialEaterFleshB
 import com.github.elenterius.biomancy.entity.mob.fleshblob.PrimordialHangryEaterFleshBlob;
 import com.github.elenterius.biomancy.entity.projectile.*;
 import com.github.elenterius.biomancy.util.shooting.ProjectileEntityType;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
@@ -17,71 +18,58 @@ import net.minecraft.world.entity.animal.Cow;
 import net.minecraft.world.entity.animal.Sheep;
 import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
 import net.minecraft.world.entity.projectile.ThrowableProjectile;
-import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
+import net.neoforged.neoforge.registries.DeferredHolder;
+import net.neoforged.neoforge.registries.DeferredRegister;
 
 import java.util.function.UnaryOperator;
 
-@Mod.EventBusSubscriber(modid = BiomancyMod.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = BiomancyMod.MOD_ID)
 public final class ModEntityTypes {
 
-	public static final DeferredRegister<EntityType<?>> ENTITIES = DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, BiomancyMod.MOD_ID);
-
-	//# Flesh Blobs
-	public static final RegistryObject<EntityType<AdulteratedEaterFleshBlob>> FLESH_BLOB = register("flesh_blob", EntityType.Builder.of(AdulteratedEaterFleshBlob::new, MobCategory.CREATURE).sized(1f, 1f));
-	public static final RegistryObject<EntityType<AdulteratedEaterFleshBlob>> LEGACY_FLESH_BLOB = register("legacy_flesh_blob", EntityType.Builder.of(AdulteratedEaterFleshBlob::new, MobCategory.CREATURE).sized(1f, 1f));
-	public static final RegistryObject<EntityType<AdulteratedHangryEaterFleshBlob>> HUNGRY_FLESH_BLOB = register("hungry_flesh_blob", EntityType.Builder.of(AdulteratedHangryEaterFleshBlob::new, MobCategory.CREATURE).sized(1f, 1f));
-	public static final RegistryObject<EntityType<PrimordialEaterFleshBlob>> PRIMORDIAL_FLESH_BLOB = register("primordial_flesh_blob", EntityType.Builder.of(PrimordialEaterFleshBlob::new, MobCategory.MONSTER).sized(1f, 1f));
-	public static final RegistryObject<EntityType<PrimordialHangryEaterFleshBlob>> PRIMORDIAL_HUNGRY_FLESH_BLOB = register("primordial_hungry_flesh_blob", EntityType.Builder.of(PrimordialHangryEaterFleshBlob::new, MobCategory.MONSTER).sized(1f, 1f));
-
-	//# Aberrations
-	public static final RegistryObject<EntityType<FleshCow>> FLESH_COW = register("flesh_cow", EntityType.Builder.of(FleshCow::new, MobCategory.CREATURE).sized(0.9f, 1.4f).clientTrackingRange(10));
-	public static final RegistryObject<EntityType<FleshSheep>> FLESH_SHEEP = register("flesh_sheep", EntityType.Builder.of(FleshSheep::new, MobCategory.CREATURE).sized(0.9f, 1.3f).clientTrackingRange(10));
-	public static final RegistryObject<EntityType<FleshPig>> FLESH_PIG = register("flesh_pig", EntityType.Builder.of(FleshPig::new, MobCategory.CREATURE).sized(0.9f, 0.9f).clientTrackingRange(10));
-	public static final RegistryObject<EntityType<FleshChicken>> FLESH_CHICKEN = register("flesh_chicken", EntityType.Builder.of(FleshChicken::new, MobCategory.CREATURE).sized(0.4f, 0.7f).clientTrackingRange(10));
-
-	//# Genetic Mutations
-	public static final RegistryObject<EntityType<ChromaSheep>> CHROMA_SHEEP = register("chroma_sheep", EntityType.Builder.of(ChromaSheep::new, MobCategory.CREATURE).sized(0.9f, 1.3f).clientTrackingRange(10));
-	public static final RegistryObject<EntityType<ThickFurSheep>> THICK_FUR_SHEEP = register("thick_fur_sheep", EntityType.Builder.of(ThickFurSheep::new, MobCategory.CREATURE).sized(0.9f, 1.3f).clientTrackingRange(10));
-
-	//Base Projectiles
-	public static final RegistryObject<ProjectileEntityType<ToothProjectile>> TOOTH_PROJECTILE = registerProjectile("tooth_projectile", ToothProjectile::new, builder -> builder.gravity(0.01f).sized(0.25f, 0.25f));
-	public static final RegistryObject<ProjectileEntityType<ImpalerProjectile>> IMPALER_PROJECTILE = registerFastProjectile("impaler_projectile", ImpalerProjectile::new, builder -> builder.airDrag(0.001f).gravity(0.001f).sized(3f / 16f, 3f / 16f));
-	public static final RegistryObject<ProjectileEntityType<BloomberryProjectile>> BLOOMBERRY_PROJECTILE = registerProjectile("bloomberry_projectile", BloomberryProjectile::new, builder -> builder.airDrag(ProjectileEntityType.DEFAULT_AIR_DRAG * 2f).gravity(ProjectileEntityType.DEFAULT_GRAVITY / 2f).sized(8f / 16f, 8f / 16f));
-	public static final RegistryObject<ProjectileEntityType<AcidSpitProjectile>> ACID_SPIT_PROJECTILE = registerProjectile("acid_spit_projectile", AcidSpitProjectile::new, builder -> builder.gravity(ProjectileEntityType.DEFAULT_GRAVITY / 2f).sized(0.25f, 0.25f));
-	public static final RegistryObject<ProjectileEntityType<AcidBlobProjectile>> ACID_BLOB_PROJECTILE = registerProjectile("acid_blob_projectile", AcidBlobProjectile::new, builder -> builder.sized(6f / 16f, 6f / 16f));
-	public static final RegistryObject<ProjectileEntityType<AcidSprayProjectile>> ACID_SPRAY_PROJECTILE = registerProjectile("acid_spray_projectile", AcidSprayProjectile::new, builder -> builder.gravity(ProjectileEntityType.DEFAULT_GRAVITY / 2f).sized(4f / 16f, 4f / 16f));
-
-	//Misc "Vanilla" Projectiles
-	public static final RegistryObject<EntityType<GrenadeProjectile>> GRENADE_PROJECTILE = registerGrenade("grenade_projectile", GrenadeProjectile::new, builder -> builder.sized(0.6f, 0.6f));
-	public static final RegistryObject<EntityType<ThrownAcidicEgg>> ACIDIC_EGG_PROJECTILE = registerThrowableItem("acidic_egg_projectile", ThrownAcidicEgg::new, builder -> builder.sized(0.25f, 0.25f));
-
-	//Misc
-	public static final RegistryObject<EntityType<GasCloud>> GAS_CLOUD = register("gas_cloud", EntityType.Builder.<GasCloud>of(GasCloud::new, MobCategory.MISC).fireImmune().sized(GasCloud.DEFAULT_RADIUS * 2f, GasCloud.DEFAULT_RADIUS * 2f).clientTrackingRange(10).updateInterval(Integer.MAX_VALUE));
+	public static final DeferredRegister<EntityType<?>> ENTITIES = DeferredRegister.create(Registries.ENTITY_TYPE, BiomancyMod.MOD_ID);
+	public static final DeferredHolder<EntityType<?>, EntityType<AdulteratedEaterFleshBlob>> FLESH_BLOB = register("flesh_blob", EntityType.Builder.of(AdulteratedEaterFleshBlob::new, MobCategory.CREATURE).sized(1f, 1f));
+	public static final DeferredHolder<EntityType<?>, EntityType<AdulteratedEaterFleshBlob>> LEGACY_FLESH_BLOB = register("legacy_flesh_blob", EntityType.Builder.of(AdulteratedEaterFleshBlob::new, MobCategory.CREATURE).sized(1f, 1f));
+	public static final DeferredHolder<EntityType<?>, EntityType<AdulteratedHangryEaterFleshBlob>> HUNGRY_FLESH_BLOB = register("hungry_flesh_blob", EntityType.Builder.of(AdulteratedHangryEaterFleshBlob::new, MobCategory.CREATURE).sized(1f, 1f));
+	public static final DeferredHolder<EntityType<?>, EntityType<PrimordialEaterFleshBlob>> PRIMORDIAL_FLESH_BLOB = register("primordial_flesh_blob", EntityType.Builder.of(PrimordialEaterFleshBlob::new, MobCategory.MONSTER).sized(1f, 1f));
+	public static final DeferredHolder<EntityType<?>, EntityType<PrimordialHangryEaterFleshBlob>> PRIMORDIAL_HUNGRY_FLESH_BLOB = register("primordial_hungry_flesh_blob", EntityType.Builder.of(PrimordialHangryEaterFleshBlob::new, MobCategory.MONSTER).sized(1f, 1f));
+	public static final DeferredHolder<EntityType<?>, EntityType<FleshCow>> FLESH_COW = register("flesh_cow", EntityType.Builder.of(FleshCow::new, MobCategory.CREATURE).sized(0.9f, 1.4f).clientTrackingRange(10));
+	public static final DeferredHolder<EntityType<?>, EntityType<FleshSheep>> FLESH_SHEEP = register("flesh_sheep", EntityType.Builder.of(FleshSheep::new, MobCategory.CREATURE).sized(0.9f, 1.3f).clientTrackingRange(10));
+	public static final DeferredHolder<EntityType<?>, EntityType<FleshPig>> FLESH_PIG = register("flesh_pig", EntityType.Builder.of(FleshPig::new, MobCategory.CREATURE).sized(0.9f, 0.9f).clientTrackingRange(10));
+	public static final DeferredHolder<EntityType<?>, EntityType<FleshChicken>> FLESH_CHICKEN = register("flesh_chicken", EntityType.Builder.of(FleshChicken::new, MobCategory.CREATURE).sized(0.4f, 0.7f).clientTrackingRange(10));
+	public static final DeferredHolder<EntityType<?>, EntityType<ChromaSheep>> CHROMA_SHEEP = register("chroma_sheep", EntityType.Builder.of(ChromaSheep::new, MobCategory.CREATURE).sized(0.9f, 1.3f).clientTrackingRange(10));
+	public static final DeferredHolder<EntityType<?>, EntityType<ThickFurSheep>> THICK_FUR_SHEEP = register("thick_fur_sheep", EntityType.Builder.of(ThickFurSheep::new, MobCategory.CREATURE).sized(0.9f, 1.3f).clientTrackingRange(10));
+	public static final DeferredHolder<EntityType<?>, ProjectileEntityType<ToothProjectile>> TOOTH_PROJECTILE = registerProjectile("tooth_projectile", ToothProjectile::new, builder -> builder.gravity(0.01f).sized(0.25f, 0.25f));
+	public static final DeferredHolder<EntityType<?>, ProjectileEntityType<ImpalerProjectile>> IMPALER_PROJECTILE = registerFastProjectile("impaler_projectile", ImpalerProjectile::new, builder -> builder.airDrag(0.001f).gravity(0.001f).sized(3f / 16f, 3f / 16f));
+	public static final DeferredHolder<EntityType<?>, ProjectileEntityType<BloomberryProjectile>> BLOOMBERRY_PROJECTILE = registerProjectile("bloomberry_projectile", BloomberryProjectile::new, builder -> builder.airDrag(ProjectileEntityType.DEFAULT_AIR_DRAG * 2f).gravity(ProjectileEntityType.DEFAULT_GRAVITY / 2f).sized(8f / 16f, 8f / 16f));
+	public static final DeferredHolder<EntityType<?>, ProjectileEntityType<AcidSpitProjectile>> ACID_SPIT_PROJECTILE = registerProjectile("acid_spit_projectile", AcidSpitProjectile::new, builder -> builder.gravity(ProjectileEntityType.DEFAULT_GRAVITY / 2f).sized(0.25f, 0.25f));
+	public static final DeferredHolder<EntityType<?>, ProjectileEntityType<AcidBlobProjectile>> ACID_BLOB_PROJECTILE = registerProjectile("acid_blob_projectile", AcidBlobProjectile::new, builder -> builder.sized(6f / 16f, 6f / 16f));
+	public static final DeferredHolder<EntityType<?>, ProjectileEntityType<AcidSprayProjectile>> ACID_SPRAY_PROJECTILE = registerProjectile("acid_spray_projectile", AcidSprayProjectile::new, builder -> builder.gravity(ProjectileEntityType.DEFAULT_GRAVITY / 2f).sized(4f / 16f, 4f / 16f));
+	public static final DeferredHolder<EntityType<?>, EntityType<GrenadeProjectile>> GRENADE_PROJECTILE = registerGrenade("grenade_projectile", GrenadeProjectile::new, builder -> builder.sized(0.6f, 0.6f));
+	public static final DeferredHolder<EntityType<?>, EntityType<ThrownAcidicEgg>> ACIDIC_EGG_PROJECTILE = registerThrowableItem("acidic_egg_projectile", ThrownAcidicEgg::new, builder -> builder.sized(0.25f, 0.25f));
+	public static final DeferredHolder<EntityType<?>, EntityType<GasCloud>> GAS_CLOUD = register("gas_cloud", EntityType.Builder.<GasCloud>of(GasCloud::new, MobCategory.MISC).fireImmune().sized(GasCloud.DEFAULT_RADIUS * 2f, GasCloud.DEFAULT_RADIUS * 2f).clientTrackingRange(10).updateInterval(Integer.MAX_VALUE));
 
 	private ModEntityTypes() {}
 
-	private static <T extends Entity> RegistryObject<EntityType<T>> register(String name, EntityType.Builder<T> builder) {
+	private static <T extends Entity> DeferredHolder<EntityType<?>, EntityType<T>> register(String name, EntityType.Builder<T> builder) {
 		return ENTITIES.register(name, () -> builder.build(BiomancyMod.rlStr(name)));
 	}
 
-	private static <T extends BaseProjectile> RegistryObject<ProjectileEntityType<T>> registerProjectile(String name, ProjectileEntityType.Factory<T> factory, UnaryOperator<ProjectileEntityType.Builder<T>> builder) {
+	private static <T extends BaseProjectile> DeferredHolder<EntityType<?>, ProjectileEntityType<T>> registerProjectile(String name, ProjectileEntityType.Factory<T> factory, UnaryOperator<ProjectileEntityType.Builder<T>> builder) {
 		return ENTITIES.register(name, () -> builder.apply(ProjectileEntityType.Builder.of(factory)).updateInterval(10).build(BiomancyMod.rlStr(name)));
 	}
 
-	private static <T extends BaseProjectile> RegistryObject<ProjectileEntityType<T>> registerFastProjectile(String name, ProjectileEntityType.Factory<T> factory, UnaryOperator<ProjectileEntityType.Builder<T>> builder) {
+	private static <T extends BaseProjectile> DeferredHolder<EntityType<?>, ProjectileEntityType<T>> registerFastProjectile(String name, ProjectileEntityType.Factory<T> factory, UnaryOperator<ProjectileEntityType.Builder<T>> builder) {
 		return ENTITIES.register(name, () -> builder.apply(ProjectileEntityType.Builder.of(factory)).shouldReceiveVelocityUpdates(true).updateInterval(1).build(BiomancyMod.rlStr(name)));
 	}
 
-	private static <T extends ThrowableProjectile> RegistryObject<EntityType<T>> registerGrenade(String name, EntityType.EntityFactory<T> factory, UnaryOperator<EntityType.Builder<T>> builder) {
+	private static <T extends ThrowableProjectile> DeferredHolder<EntityType<?>, EntityType<T>> registerGrenade(String name, EntityType.EntityFactory<T> factory, UnaryOperator<EntityType.Builder<T>> builder) {
 		return ENTITIES.register(name, () -> builder.apply(EntityType.Builder.of(factory, MobCategory.MISC)).setShouldReceiveVelocityUpdates(true).updateInterval(1).build(BiomancyMod.rlStr(name)));
 	}
 
-	private static <T extends ThrowableItemProjectile> RegistryObject<EntityType<T>> registerThrowableItem(String name, EntityType.EntityFactory<T> factory, UnaryOperator<EntityType.Builder<T>> builder) {
+	private static <T extends ThrowableItemProjectile> DeferredHolder<EntityType<?>, EntityType<T>> registerThrowableItem(String name, EntityType.EntityFactory<T> factory, UnaryOperator<EntityType.Builder<T>> builder) {
 		return ENTITIES.register(name, () -> builder.apply(EntityType.Builder.of(factory, MobCategory.MISC)).clientTrackingRange(4).updateInterval(10).build(BiomancyMod.rlStr(name)));
 	}
 

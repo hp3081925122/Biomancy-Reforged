@@ -18,9 +18,9 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraftforge.event.ForgeEventFactory;
-import net.minecraftforge.fluids.ForgeFlowingFluid;
+import net.neoforged.neoforge.fluids.BaseFlowingFluid;
 
-public abstract class AcidFluid extends ForgeFlowingFluid {
+public abstract class AcidFluid extends BaseFlowingFluid {
 
 	protected AcidFluid(Properties properties) {
 		super(properties);

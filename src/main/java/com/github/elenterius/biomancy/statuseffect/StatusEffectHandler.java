@@ -104,7 +104,7 @@ public final class StatusEffectHandler {
 
 	public static boolean canApplySplashEffectIfAllowed(MobEffect effect, LivingEntity target, BiConsumer<LivingArmorItem, ItemStack> nutrientsConsumer) {
 
-		if (ModMobEffectTags.forgeIsAcid(effect)) {
+		if (ModMobEffectTags.isAcid(effect)) {
 			return canApplyAcidEffect(target, nutrientsConsumer);
 		}
 
@@ -152,7 +152,7 @@ public final class StatusEffectHandler {
 
 	public static boolean hasAcidEffect(LivingEntity livingEntity) {
 		for (MobEffect effect : livingEntity.getActiveEffectsMap().keySet()) {
-			if (ModMobEffectTags.forgeIsAcid(effect)) return true;
+			if (ModMobEffectTags.isAcid(effect)) return true;
 		}
 		return false;
 	}

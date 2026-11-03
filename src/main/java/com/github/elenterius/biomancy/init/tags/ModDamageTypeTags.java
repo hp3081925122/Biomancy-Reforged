@@ -5,11 +5,12 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.damagesource.DamageType;
+import net.neoforged.neoforge.common.Tags;
 
 public final class ModDamageTypeTags {
 
-	public static final TagKey<DamageType> FORGE_IS_ACID = forgeTag("is_acid");
-	public static final TagKey<DamageType> FORGE_IS_POISON = forgeTag("is_poison");
+	public static final TagKey<DamageType> C_IS_ACID = conventionalTag("is_acid");
+	public static final TagKey<DamageType> NEOFORGE_IS_POISON = Tags.DamageTypes.IS_POISON;
 
 	/*
 	public static final TagKey<DamageType> IS_CORROSIVE = tag("is_corrosive");
@@ -30,8 +31,8 @@ public final class ModDamageTypeTags {
 		return TagKey.create(Registries.DAMAGE_TYPE, BiomancyMod.rl(name));
 	}
 
-	private static TagKey<DamageType> forgeTag(String name) {
-		return TagKey.create(Registries.DAMAGE_TYPE, new ResourceLocation("forge", name));
+	private static TagKey<DamageType> conventionalTag(String name) {
+		return TagKey.create(Registries.DAMAGE_TYPE, ResourceLocation.fromNamespaceAndPath("c", name));
 	}
 
 }

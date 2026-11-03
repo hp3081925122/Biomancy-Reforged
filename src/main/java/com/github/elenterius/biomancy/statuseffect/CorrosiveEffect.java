@@ -31,7 +31,7 @@ public class CorrosiveEffect extends StatusEffect {
 
 		if (livingEntity.level() instanceof ServerLevel serverLevel && livingEntity.level().random.nextFloat() < conversionProbability) {
 			DamageSource lastDamageSource = livingEntity.getLastDamageSource();
-			if (lastDamageSource != null && lastDamageSource.is(ModDamageTypeTags.FORGE_IS_ACID)) {
+			if (lastDamageSource != null && lastDamageSource.is(ModDamageTypeTags.C_IS_ACID)) {
 				convertZombieToSkeleton(serverLevel, livingEntity);
 			}
 		}

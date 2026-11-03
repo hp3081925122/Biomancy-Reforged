@@ -39,7 +39,7 @@ public class ModMobEffectTagsProvider extends IntrinsicHolderTagsProvider<MobEff
 
 		tag(forgeTag("is_poison")).add(ModMobEffects.TOXIN.get());
 
-		tag(ModMobEffectTags.FORGE_IS_ACID).add(
+		tag(ModMobEffectTags.C_IS_ACID).add(
 				ModMobEffects.CORROSIVE.get()
 		);
 	}

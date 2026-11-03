@@ -3,7 +3,7 @@ package com.github.elenterius.biomancy.init;
 import com.github.elenterius.biomancy.BiomancyMod;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.data.worldgen.BootstapContext;
+import net.minecraft.data.worldgen.BootstrapContext;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.damagesource.DamageEffects;
 import net.minecraft.world.damagesource.DamageScaling;
@@ -33,7 +33,7 @@ public final class ModDamageTypes {
 		return level.registryAccess().registryOrThrow(Registries.DAMAGE_TYPE).getHolderOrThrow(key);
 	}
 
-	public static void bootstrap(BootstapContext<DamageType> ctx) {
+	public static void bootstrap(BootstrapContext<DamageType> ctx) {
 		bootstrap(ctx, IMPALER_PROJECTILE, DamageScaling.NEVER, 0.5f);
 		bootstrap(ctx, TOOTH_PROJECTILE);
 		bootstrap(ctx, PRIMORDIAL_SPIKES, DamageScaling.ALWAYS, 0);
@@ -46,23 +46,23 @@ public final class ModDamageTypes {
 		bootstrap(ctx, IMPALED_BY_SPIKE);
 	}
 
-	private static void bootstrap(BootstapContext<DamageType> ctx, ResourceKey<DamageType> key) {
+	private static void bootstrap(BootstrapContext<DamageType> ctx, ResourceKey<DamageType> key) {
 		ctx.register(key, new DamageType(key.location().toLanguageKey(), 0));
 	}
 
-	private static void bootstrap(BootstapContext<DamageType> ctx, ResourceKey<DamageType> key, float exhaustion) {
+	private static void bootstrap(BootstrapContext<DamageType> ctx, ResourceKey<DamageType> key, float exhaustion) {
 		ctx.register(key, new DamageType(key.location().toLanguageKey(), exhaustion));
 	}
 
-	private static void bootstrap(BootstapContext<DamageType> ctx, ResourceKey<DamageType> key, float exhaustion, DamageEffects effects) {
+	private static void bootstrap(BootstrapContext<DamageType> ctx, ResourceKey<DamageType> key, float exhaustion, DamageEffects effects) {
 		ctx.register(key, new DamageType(key.location().toLanguageKey(), exhaustion, effects));
 	}
 
-	private static void bootstrap(BootstapContext<DamageType> ctx, ResourceKey<DamageType> key, DamageScaling scaling, float exhaustion) {
+	private static void bootstrap(BootstrapContext<DamageType> ctx, ResourceKey<DamageType> key, DamageScaling scaling, float exhaustion) {
 		ctx.register(key, new DamageType(key.location().toLanguageKey(), scaling, exhaustion));
 	}
 
-	private static void bootstrap(BootstapContext<DamageType> ctx, ResourceKey<DamageType> key, DamageScaling scaling, float exhaustion, DamageEffects effects) {
+	private static void bootstrap(BootstrapContext<DamageType> ctx, ResourceKey<DamageType> key, DamageScaling scaling, float exhaustion, DamageEffects effects) {
 		ctx.register(key, new DamageType(key.location().toLanguageKey(), scaling, exhaustion, effects));
 	}
 }
