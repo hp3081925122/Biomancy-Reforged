@@ -1,15 +1,17 @@
 package com.github.elenterius.biomancy.datagen.recipes;
 
+import com.github.elenterius.biomancy.datagen.recipes.builder.FinishedRecipe;
 import com.github.elenterius.biomancy.datagen.recipes.builder.WikiRecipe;
 import com.google.common.collect.Sets;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.mojang.serialization.DynamicOps;
+import com.mojang.serialization.JsonOps;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.data.CachedOutput;
 import net.minecraft.data.DataProvider;
 import net.minecraft.data.PackOutput;
-import com.github.elenterius.biomancy.datagen.recipes.builder.FinishedRecipe;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.GsonHelper;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 
@@ -28,10 +30,12 @@ public class WikiRecipesProvider implements DataProvider {
 	);
 
 	private final ModRecipeProvider recipeProvider;
+	private final CompletableFuture<HolderLookup.Provider> registries;
 	private final Path basePath;
 
-	public WikiRecipesProvider(PackOutput output, ModRecipeProvider recipeProvider) {
+	public WikiRecipesProvider(PackOutput output, ModRecipeProvider recipeProvider, CompletableFuture<HolderLookup.Provider> registries) {
 		this.recipeProvider = recipeProvider;
+		this.registries = registries;
 		basePath = output.getOutputFolder().resolve(".wiki_data");
 	}
 
@@ -41,28 +45,30 @@ public class WikiRecipesProvider implements DataProvider {
 
 	@Override
 	public CompletableFuture<?> run(CachedOutput output) {
-		Set<ResourceLocation> set = Sets.newHashSet();
-		List<CompletableFuture<?>> list = new ArrayList<>();
+		return registries.thenCompose(lookup -> {
+			DynamicOps<JsonElement> ops = lookup.createSerializationContext(JsonOps.INSTANCE);
+			Set<ResourceLocation> set = Sets.newHashSet();
+			List<CompletableFuture<?>> list = new ArrayList<>();
 
-		recipeProvider.buildRecipes(finishedRecipe -> {
-			if (!set.add(finishedRecipe.getId())) {
-				throw new IllegalStateException("Duplicate recipe " + finishedRecipe.getId());
-			}
-			else {
+			recipeProvider.buildRecipes(finishedRecipe -> {
+				if (!set.add(finishedRecipe.getId())) {
+					throw new IllegalStateException("Duplicate recipe " + finishedRecipe.getId());
+				}
+
 				if (finishedRecipe instanceof WikiRecipe wikiRecipe) {
-					list.add(DataProvider.saveStable(output, wikiRecipe.serializeWikiRecipe(), resolveJsonPath(finishedRecipe.getId())));
+					list.add(DataProvider.saveStable(output, wikiRecipe.serializeWikiRecipe(ops), resolveJsonPath(finishedRecipe.getId())));
 				}
 				else if (SUPPORTED_VANILLA_RECIPES.contains(finishedRecipe.getType())) {
-					list.add(DataProvider.saveStable(output, serializeTransformVanilla(finishedRecipe), resolveJsonPath(finishedRecipe.getId())));
+					list.add(DataProvider.saveStable(output, serializeTransformVanilla(finishedRecipe, ops), resolveJsonPath(finishedRecipe.getId())));
 				}
-			}
-		});
+			});
 
-		return CompletableFuture.allOf(list.toArray(CompletableFuture[]::new));
+			return CompletableFuture.allOf(list.toArray(CompletableFuture[]::new));
+		});
 	}
 
-	private JsonObject serializeTransformVanilla(FinishedRecipe finishedRecipe) {
-		JsonObject json = finishedRecipe.serializeRecipe();
+	private JsonObject serializeTransformVanilla(FinishedRecipe finishedRecipe, DynamicOps<JsonElement> ops) {
+		JsonObject json = finishedRecipe.serializeRecipe(ops);
 
 		RecipeSerializer<?> type = finishedRecipe.getType();
 
@@ -74,28 +80,8 @@ public class WikiRecipesProvider implements DataProvider {
 				}
 			}
 
-//			if (json.has("ingredients")) {
-//				JsonArray ingredients = GsonHelper.getAsJsonArray(json, "ingredients");
-//				for (int i = 0; i < ingredients.size(); i++) {
-//					JsonElement jsonElement = ingredients.get(i);
-//					WikiRecipe.transform(jsonElement);
-////					if (WikiRecipe.transform(jsonElement) instanceof JsonObject obj) {
-////						String id = GsonHelper.getAsString(obj, "id");
-////						ingredients.set(i, new JsonPrimitive(id));
-////					}
-//				}
-//			}
-
 			if (json.has("result")) {
-				JsonElement result = json.get("result");
-				if (result instanceof JsonObject) {
-					WikiRecipe.transform(result);
-				}
-				else {
-					JsonObject resultOverride = new JsonObject();
-					resultOverride.addProperty("id", GsonHelper.getAsString(json, "result"));
-					json.add("result", resultOverride);
-				}
+				WikiRecipe.transform(json.get("result"));
 			}
 		}
 

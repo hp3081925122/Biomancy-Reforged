@@ -34,8 +34,8 @@ public class ModSoundProvider extends SoundDefinitionsProvider {
 		addSimpleSound(ModSoundEvents.IMPALER_CHARGE);
 		addSimpleSound(ModSoundEvents.ARMOR_BULLET_JUMP);
 		addSimpleSound(ModSoundEvents.ARMOR_IMPOSING_ROAR);
-		addSimpleRedirect(ModSoundEvents.ARMOR_EQUIP_BIO_ALCHEMIST, SoundEvents.ARMOR_EQUIP_TURTLE);
-		addSimpleRedirect(ModSoundEvents.ARMOR_EQUIP_WARRIOR, SoundEvents.ARMOR_EQUIP_TURTLE);
+		addSimpleRedirect(ModSoundEvents.ARMOR_EQUIP_BIO_ALCHEMIST, SoundEvents.ARMOR_EQUIP_TURTLE.value());
+		addSimpleRedirect(ModSoundEvents.ARMOR_EQUIP_WARRIOR, SoundEvents.ARMOR_EQUIP_TURTLE.value());
 		addSimpleRedirect(ModSoundEvents.CHRYSALIS_INSERT, SoundEvents.FROG_EAT);
 		addSimpleRedirect(ModSoundEvents.CHRYSALIS_REMOVE, SoundEvents.FROG_LAY_SPAWN);
 		addSimpleSound(ModSoundEvents.CAUSTIC_GUNBLADE_SHOOT_LOOP);
@@ -86,7 +86,7 @@ public class ModSoundProvider extends SoundDefinitionsProvider {
 		addSimpleRedirect(ModSoundEvents.CRADLE_EAT, SoundEvents.GOAT_SCREAMING_EAT, 1f, 0.25f);
 		addSimpleRedirect(ModSoundEvents.CRADLE_NO, SoundEvents.VILLAGER_NO, 0.75f, 0.3f);
 
-		addSimpleRedirect(ModSoundEvents.UI_BUTTON_CLICK, SoundEvents.UI_BUTTON_CLICK.get());
+		addSimpleRedirect(ModSoundEvents.UI_BUTTON_CLICK, SoundEvents.UI_BUTTON_CLICK.value());
 		addSimpleSound(ModSoundEvents.UI_MENU_OPEN);
 		addSimpleRedirect(ModSoundEvents.UI_RADIAL_MENU_OPEN, SoundEvents.SHULKER_BOX_OPEN, 0.5f, 1f);
 

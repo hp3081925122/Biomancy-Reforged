@@ -1,6 +1,5 @@
 package com.github.elenterius.biomancy.datagen.tags;
 
-import com.github.alexmodguy.alexscaves.server.misc.ACDamageTypes;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.init.ModDamageTypes;
 import com.github.elenterius.biomancy.init.tags.ModDamageTypeTags;
@@ -42,7 +41,6 @@ public class ModDamageTypeTagsProvider extends DamageTypeTagsProvider {
 				ModDamageTypes.BLEED
 		);
 
-		//damage that ignores Invincibility-Frames
 		tag(DamageTypeTags.BYPASSES_COOLDOWN).add(
 				ModDamageTypes.BLEED,
 				ModDamageTypes.CORROSIVE_ACID,
@@ -88,13 +86,9 @@ public class ModDamageTypeTagsProvider extends DamageTypeTagsProvider {
 				ModDamageTypes.IMPALER_PROJECTILE
 		);
 
-		tag(ModDamageTypeTags.C_IS_ACID)
-				.add(
-						ModDamageTypes.CORROSIVE_ACID
-				)
-				.addOptionalTag(
-						ACDamageTypes.ACID.location()
-				);
+		tag(ModDamageTypeTags.C_IS_ACID).add(
+				ModDamageTypes.CORROSIVE_ACID
+		);
 
 		tag(ModDamageTypeTags.NEOFORGE_IS_POISON).add(
 				ModDamageTypes.TOXIN

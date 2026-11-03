@@ -4,16 +4,18 @@ import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.init.ModLoot;
 import com.github.elenterius.biomancy.loot.CatMorningGiftLootModifier;
 import com.github.elenterius.biomancy.loot.DespoilLootModifier;
-import com.mojang.serialization.Codec;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
 import net.neoforged.neoforge.common.data.GlobalLootModifierProvider;
 import net.neoforged.neoforge.common.loot.IGlobalLootModifier;
 import net.neoforged.neoforge.registries.DeferredHolder;
 
+import java.util.concurrent.CompletableFuture;
+
 public class ModGlobalLootModifierProvider extends GlobalLootModifierProvider {
 
-	public ModGlobalLootModifierProvider(PackOutput packOutput) {
-		super(packOutput, BiomancyMod.MOD_ID);
+	public ModGlobalLootModifierProvider(PackOutput packOutput, CompletableFuture<HolderLookup.Provider> registries) {
+		super(packOutput, registries, BiomancyMod.MOD_ID);
 	}
 
 	@Override
@@ -22,7 +24,7 @@ public class ModGlobalLootModifierProvider extends GlobalLootModifierProvider {
 		addLootModifier(ModLoot.CAT_MORNING_GIFT_SERIALIZER, new CatMorningGiftLootModifier());
 	}
 
-	protected <T extends IGlobalLootModifier> void addLootModifier(RegistryObject<Codec<? extends T>> codecSupplier, T lootModifier) {
+	protected <T extends IGlobalLootModifier> void addLootModifier(DeferredHolder<?, ?> codecSupplier, T lootModifier) {
 		add(codecSupplier.getId().getPath(), lootModifier);
 	}
 

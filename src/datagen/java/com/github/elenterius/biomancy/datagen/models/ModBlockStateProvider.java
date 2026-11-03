@@ -33,7 +33,7 @@ import net.minecraft.world.level.block.state.properties.Property;
 import net.neoforged.neoforge.client.model.generators.*;
 import net.neoforged.neoforge.common.data.ExistingFileHelper;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.neoforged.neoforge.registries.DeferredHolder;
+import net.neoforged.neoforge.registries.DeferredBlock;
 import org.joml.Vector3f;
 import org.jspecify.annotations.Nullable;
 
@@ -57,8 +57,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
 		return registryKey(block).getPath();
 	}
 
-	protected <T extends Block> ResourceLocation blockAsset(DeferredHolder<T, T> registryObject) {
-		//noinspection DataFlowIssue
+	protected <T extends Block> ResourceLocation blockAsset(DeferredBlock<T> registryObject) {
 		return blockAsset(registryObject.getId());
 	}
 
@@ -151,7 +150,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
 		directionalBlockWithItem(ModBlocks.ONEWAY_MEMBRANE);
 
 		existingBlockWithItem(ModBlocks.MODULAR_LARYNX);
-		//horizontalBlockWithItem(ModBlocks.NEURAL_INTERCEPTOR);
 
 		bioLantern(ModBlocks.YELLOW_BIO_LANTERN);
 		bioLantern(ModBlocks.BLUE_BIO_LANTERN);
@@ -184,7 +182,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
 		existingBlockWithItem(ModBlocks.WATER_GEL_BLOCK);
 	}
 
-	public <T extends LayeredCauldronBlock> void layeredCauldron(DeferredHolder<T, T> registryObject, ResourceLocation fluidTexture) {
+	public <T extends LayeredCauldronBlock> void layeredCauldron(DeferredBlock<T> registryObject, ResourceLocation fluidTexture) {
 		T block = registryObject.get();
 		String path = path(block);
 
@@ -209,7 +207,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
 		return modelBuilder;
 	}
 
-	public <T extends Block> void particleOnly(DeferredHolder<T, T> block, ResourceLocation particleTexture) {
+	public <T extends Block> void particleOnly(DeferredBlock<T> block, ResourceLocation particleTexture) {
 		particleOnly(block.get(), particleTexture);
 	}
 
@@ -218,19 +216,19 @@ public class ModBlockStateProvider extends BlockStateProvider {
 		simpleBlock(block, models().getBuilder(path).texture("particle", particleTexture));
 	}
 
-	public <T extends Block> void translucentBlockWithItem(DeferredHolder<T, T> block) {
+	public <T extends Block> void translucentBlockWithItem(DeferredBlock<T> block) {
 		translucentBlockWithItem(block.get());
 	}
 
-	public <T extends FleshChainBlock> void tendonChain(DeferredHolder<T, T> block) {
+	public <T extends FleshChainBlock> void tendonChain(DeferredBlock<T> block) {
 		tendonChain(block.get());
 	}
 
-	public <T extends FleshLanternBlock> void bioLantern(DeferredHolder<T, T> block) {
+	public <T extends FleshLanternBlock> void bioLantern(DeferredBlock<T> block) {
 		bioLantern(block.get());
 	}
 
-	public void stairsBlockWithItem(DeferredHolder<StairBlock, StairBlock> block, DeferredHolder<FleshBlock, FleshBlock> textureBlock) {
+	public void stairsBlockWithItem(DeferredBlock<StairBlock> block, DeferredBlock<FleshBlock> textureBlock) {
 		stairsBlockWithItem(block.get(), textureBlock.get());
 	}
 
@@ -239,7 +237,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
 		simpleBlockItem(block);
 	}
 
-	public <T extends RotatedPillarBlock> void axisBlockWithItem(DeferredHolder<T, T> block) {
+	public <T extends RotatedPillarBlock> void axisBlockWithItem(DeferredBlock<T> block) {
 		axisBlockWithItem(block.get());
 	}
 
@@ -273,7 +271,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
 		itemModels().getBuilder(path(block)).parent(frameModel);
 	}
 
-	public <T extends OwnablePressurePlateBlock> void fleshkinPressurePlate(DeferredHolder<T, T> pressurePlate) {
+	public <T extends OwnablePressurePlateBlock> void fleshkinPressurePlate(DeferredBlock<T> pressurePlate) {
 		fleshkinPressurePlate(pressurePlate.get());
 	}
 
@@ -316,7 +314,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
 		itemModels().getBuilder(path).parent(models().getBuilder(path));
 	}
 
-	public <W extends WallBlock, B extends Block> void wallBlockWithItem(DeferredHolder<W, W> wallBlock, DeferredHolder<B, B> textureBlock) {
+	public <W extends WallBlock, B extends Block> void wallBlockWithItem(DeferredBlock<W> wallBlock, DeferredBlock<B> textureBlock) {
 		wallBlockWithItem(wallBlock.get(), textureBlock.get());
 	}
 
@@ -333,7 +331,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
 				.texture("wall", texture);
 	}
 
-	public <W extends WallBlock, B extends Block> void wallBlock(DeferredHolder<W, W> wallBlock, DeferredHolder<B, B> textureBlock) {
+	public <W extends WallBlock, B extends Block> void wallBlock(DeferredBlock<W> wallBlock, DeferredBlock<B> textureBlock) {
 		wallBlock(wallBlock.get(), textureBlock.get());
 	}
 
@@ -342,7 +340,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
 		wallBlock(block, texture);
 	}
 
-	public <T extends Block> void simpleBlockWithItem(DeferredHolder<T, T> block) {
+	public <T extends Block> void simpleBlockWithItem(DeferredBlock<T> block) {
 		simpleBlockWithItem(block.get());
 	}
 
@@ -360,7 +358,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
 		simpleBlockItem(block, modelBuilder);
 	}
 
-	public <T extends Block> void simpleVariantBlockWithItem(DeferredHolder<T, T> block, int variants) {
+	public <T extends Block> void simpleVariantBlockWithItem(DeferredBlock<T> block, int variants) {
 		simpleVariantBlockWithItem(block.get(), variants);
 	}
 
@@ -371,7 +369,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
 		ModelFile mainModel = models().cubeAll(path, texture);
 		simpleBlockItem(block, mainModel);
 
-		ConfiguredModel.Builder<?> builder = ConfiguredModel.builder().modelFile(mainModel).weight(2); //make main model more frequent than the variants
+		ConfiguredModel.Builder<?> builder = ConfiguredModel.builder().modelFile(mainModel).weight(2);
 
 		for (int i = 1; i < variants; i++) {
 			String suffix = "_" + i;
@@ -391,7 +389,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
 		simpleBlock(block, modelFile);
 	}
 
-	public <T extends Block> void existingBlockWithItem(DeferredHolder<T, T> block) {
+	public <T extends Block> void existingBlockWithItem(DeferredBlock<T> block) {
 		existingBlockWithItem(block.get());
 	}
 
@@ -401,7 +399,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
 		simpleBlockItem(block, existingModel);
 	}
 
-	public <T extends Block> void horizontalBlockWithItem(DeferredHolder<T, T> block) {
+	public <T extends Block> void horizontalBlockWithItem(DeferredBlock<T> block) {
 		horizontalBlockWithItem(block.get());
 	}
 
@@ -411,7 +409,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
 		simpleBlockItem(block, existingModel);
 	}
 
-	public <T extends Block> void directionalBlockWithItem(DeferredHolder<T, T> block) {
+	public <T extends Block> void directionalBlockWithItem(DeferredBlock<T> block) {
 		directionalBlockWithItem(block.get());
 	}
 
@@ -441,7 +439,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
 				}, ignored);
 	}
 
-	public <T extends OrificeBlock> void orifice(DeferredHolder<T, T> block) {
+	public <T extends OrificeBlock> void orifice(DeferredBlock<T> block) {
 		orifice(block.get());
 	}
 
@@ -469,7 +467,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
 		simpleBlockItem(block, models[0]);
 	}
 
-	public <T extends BloomBlock> void malignantBloom(DeferredHolder<T, T> block) {
+	public <T extends BloomBlock> void malignantBloom(DeferredBlock<T> block) {
 		malignantBloom(block.get());
 	}
 
@@ -501,7 +499,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
 		itemModels().basicItem(block.asItem());
 	}
 
-	public <T extends Block> void storageSac(DeferredHolder<T, T> block) {
+	public <T extends Block> void storageSac(DeferredBlock<T> block) {
 		storageSac(block.get());
 	}
 
@@ -511,7 +509,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
 		simpleBlockItem(block, existingModel);
 	}
 
-	public <T extends Block> void geoBlockItem(DeferredHolder<T, T> block, Vector3f modelBounds) {
+	public <T extends Block> void geoBlockItem(DeferredBlock<T> block, Vector3f modelBounds) {
 		geoBlockItem(block.get(), modelBounds);
 	}
 
@@ -546,7 +544,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
 				.transform(ItemDisplayContext.HEAD).translation(0, -8 * yPct, 0).scale(scaleHead * scaleMultiplier).end();
 	}
 
-	public <T extends Block> void geckolibModel(DeferredHolder<T, T> geoBlock, ResourceLocation particleTexture) {
+	public <T extends Block> void geckolibModel(DeferredBlock<T> geoBlock, ResourceLocation particleTexture) {
 		geckolibModel(geoBlock.get(), particleTexture);
 	}
 
@@ -555,7 +553,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
 		simpleBlock(block, models().getBuilder(path).texture("particle", particleTexture));
 	}
 
-	public <S extends DirectionalSlabBlock, B extends Block> void directionalSlabBlockWithItem(DeferredHolder<S, S> slab, DeferredHolder<B, B> fullBlock) {
+	public <S extends DirectionalSlabBlock, B extends Block> void directionalSlabBlockWithItem(DeferredBlock<S> slab, DeferredBlock<B> fullBlock) {
 		directionalSlabBlockWithItem(slab.get(), fullBlock.get());
 	}
 
@@ -600,7 +598,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
 				);
 	}
 
-	public <S extends DirectionalSlabBlock, B extends Block> void directionalSlabBlockWithItemAndVariants(DeferredHolder<S, S> slab, DeferredHolder<B, B> fullBlock, int variants) {
+	public <S extends DirectionalSlabBlock, B extends Block> void directionalSlabBlockWithItemAndVariants(DeferredBlock<S> slab, DeferredBlock<B> fullBlock, int variants) {
 		directionalSlabBlockWithItemAndVariants(slab.get(), fullBlock.get(), variants);
 	}
 
@@ -630,7 +628,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
 								ConfiguredModel.Builder<?> builder = ConfiguredModel.builder().modelFile(halfMain)
 										.rotationX(xRotation).rotationY(yRotation)
-										.weight(2); //make main model more frequent than the variants
+										.weight(2);
 
 								for (int i = 1; i < variants; i++) {
 									String suffix = "_" + i;
@@ -642,7 +640,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
 								return builder.build();
 							}
 
-							ConfiguredModel.Builder<?> builder = ConfiguredModel.builder().modelFile(full).weight(2); //make main model more frequent than the variants
+							ConfiguredModel.Builder<?> builder = ConfiguredModel.builder().modelFile(full).weight(2);
 
 							for (int i = 1; i < variants; i++) {
 								String suffix = "_" + i;
@@ -656,7 +654,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
 				);
 	}
 
-	public <S extends DirectionalPillarSlabBlock, B extends RotatedPillarBlock> void directionalPillarSlabBlockWithItem(DeferredHolder<S, S> slab, DeferredHolder<B, B> pillarBlock) {
+	public <S extends DirectionalPillarSlabBlock, B extends RotatedPillarBlock> void directionalPillarSlabBlockWithItem(DeferredBlock<S> slab, DeferredBlock<B> pillarBlock) {
 		directionalPillarSlabBlockWithItem(slab.get(), pillarBlock.get());
 	}
 
@@ -681,33 +679,22 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
 	public void directionalPillarSlabBlock(DirectionalPillarSlabBlock block, ModelFile slab, ModelFile vertical, ModelFile horizontal) {
 		getVariantBuilder(block)
-
-				//slab
 				.partialState().with(DirectionalSlabBlock.TYPE, DirectionalSlabType.HALF_DOWN)
 				.modelForState().modelFile(slab).rotationX(180).addModel()
-
 				.partialState().with(DirectionalSlabBlock.TYPE, DirectionalSlabType.HALF_EAST)
 				.modelForState().modelFile(slab).rotationX(90).rotationY(90).addModel()
-
 				.partialState().with(DirectionalSlabBlock.TYPE, DirectionalSlabType.HALF_NORTH)
 				.modelForState().modelFile(slab).rotationX(90).addModel()
-
 				.partialState().with(DirectionalSlabBlock.TYPE, DirectionalSlabType.HALF_SOUTH)
 				.modelForState().modelFile(slab).rotationX(90).rotationY(180).addModel()
-
 				.partialState().with(DirectionalSlabBlock.TYPE, DirectionalSlabType.HALF_UP)
 				.modelForState().modelFile(slab).addModel()
-
 				.partialState().with(DirectionalSlabBlock.TYPE, DirectionalSlabType.HALF_WEST)
 				.modelForState().modelFile(slab).rotationX(90).rotationY(270).addModel()
-
-				//pillar
 				.partialState().with(DirectionalSlabBlock.TYPE, DirectionalSlabType.FULL).with(RotatedPillarBlock.AXIS, Direction.Axis.Y)
 				.modelForState().modelFile(vertical).addModel()
-
 				.partialState().with(DirectionalSlabBlock.TYPE, DirectionalSlabType.FULL).with(RotatedPillarBlock.AXIS, Direction.Axis.Z)
 				.modelForState().modelFile(horizontal).rotationX(90).addModel()
-
 				.partialState().with(DirectionalSlabBlock.TYPE, DirectionalSlabType.FULL).with(RotatedPillarBlock.AXIS, Direction.Axis.X)
 				.modelForState().modelFile(horizontal).rotationX(90).rotationY(90).addModel();
 	}
@@ -744,7 +731,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
 		simpleBlockItem(block, hangingModel);
 	}
 
-	public <T extends FleshVeinsBlock> void veinsBlock(DeferredHolder<T, T> block) {
+	public <T extends FleshVeinsBlock> void veinsBlock(DeferredBlock<T> block) {
 		veinsBlock(block.get());
 	}
 
@@ -755,7 +742,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
 		multifaceBlock(block, model);
 	}
 
-	public <T extends JumpPadBlock> void jumpPad(DeferredHolder<T, T> block) {
+	public <T extends JumpPadBlock> void jumpPad(DeferredBlock<T> block) {
 		ResourceLocation templateModel = BiomancyMod.rl("block/template/jump_pad");
 		multifaceBlockWithPropertyVariants(block.get(), JumpPadBlock.ENABLED, bool -> bool == true ? "enabled" : "disabled", templateModel, "solid",
 				(direction, propertyValue, model) -> {
@@ -766,7 +753,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
 		);
 	}
 
-	public <T extends Block> void existingMultifaceBlockWithItem(DeferredHolder<T, T> block) {
+	public <T extends Block> void existingMultifaceBlockWithItem(DeferredBlock<T> block) {
 		ModelFile model = models().getExistingFile(blockAsset(block));
 		multifaceBlock(block.get(), model);
 		simpleBlockItem(block.get(), model);
@@ -843,7 +830,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
 		});
 	}
 
-	public <T extends PaneBlock, S extends MembraneBlock> void membranePaneWithItem(DeferredHolder<T, T> block, DeferredHolder<S, S> parentBlock) {
+	public <T extends PaneBlock, S extends MembraneBlock> void membranePaneWithItem(DeferredBlock<T> block, DeferredBlock<S> parentBlock) {
 		membranePaneWithItem(block.get(), parentBlock.get());
 	}
 
@@ -898,7 +885,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
 								.build();
 					}
 
-					//z axis
 					return ConfiguredModel.builder()
 							.modelFile(model)
 							.rotationY(orientation.isPositive() ? 180 : 0)
@@ -943,7 +929,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
 								.build();
 					}
 
-					//z axis
 					return ConfiguredModel.builder()
 							.modelFile(model)
 							.rotationY(orientation.isPositive() ? 180 : 0)
@@ -993,28 +978,26 @@ public class ModBlockStateProvider extends BlockStateProvider {
 								.build();
 					}
 
-					//z axis
 					return ConfiguredModel.builder()
 							.modelFile(model)
 							.rotationY(orientation.isPositive() ? 180 : 0)
 							.build();
-
 				}, FleshDoorBlock.POWERED, FleshDoorBlock.HINGE, FleshDoorBlock.FACING);
 	}
 
-	public <T extends FleshSpikeBlock> void fleshSpikes(DeferredHolder<T, T> block) {
+	public <T extends FleshSpikeBlock> void fleshSpikes(DeferredBlock<T> block) {
 		fleshSpikes(block.get());
 	}
 
-	public <T extends FleshDoorBlock> void fleshDoor(DeferredHolder<T, T> block) {
+	public <T extends FleshDoorBlock> void fleshDoor(DeferredBlock<T> block) {
 		fleshDoor(block.get());
 	}
 
-	public <T extends IrisDoorBlock> void irisDoor(DeferredHolder<T, T> block, boolean simpleBlockItem) {
+	public <T extends IrisDoorBlock> void irisDoor(DeferredBlock<T> block, boolean simpleBlockItem) {
 		irisDoor(block.get(), simpleBlockItem);
 	}
 
-	public <T extends VialHolderBlock> void vialHolder(DeferredHolder<T, T> block) {
+	public <T extends VialHolderBlock> void vialHolder(DeferredBlock<T> block) {
 		vialHolder(block.get());
 	}
 

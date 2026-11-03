@@ -2,8 +2,15 @@ package com.github.elenterius.biomancy.datagen.advancements;
 
 import com.github.elenterius.biomancy.datagen.lang.LangProvider;
 import com.github.elenterius.biomancy.util.ComponentUtil;
-import net.minecraft.advancements.*;
+import net.minecraft.advancements.Advancement;
+import net.minecraft.advancements.AdvancementHolder;
+import net.minecraft.advancements.AdvancementRequirements;
+import net.minecraft.advancements.AdvancementRewards;
+import net.minecraft.advancements.AdvancementType;
+import net.minecraft.advancements.Criterion;
+import net.minecraft.advancements.CriteriaTriggers;
 import net.minecraft.advancements.critereon.ImpossibleTrigger;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.recipes.RecipeBuilder;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
@@ -11,7 +18,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ItemLike;
 import net.neoforged.neoforge.common.data.ExistingFileHelper;
-import net.minecraft.core.registries.BuiltInRegistries;
 
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -30,7 +36,7 @@ public class AdvancementBuilder {
 
 	private ItemStack icon = ItemStack.EMPTY;
 	private ResourceLocation background = null;
-	private FrameType frameType = FrameType.TASK;
+	private AdvancementType frameType = AdvancementType.TASK;
 	private boolean showToast = false;
 	private boolean announceToChat = false;
 	private boolean hidden = false;
@@ -49,7 +55,7 @@ public class AdvancementBuilder {
 		return new AdvancementBuilder(modId, id, lang);
 	}
 
-	public AdvancementBuilder parent(Advancement advancement) {
+	public AdvancementBuilder parent(AdvancementHolder advancement) {
 		internalBuilder.parent(advancement);
 		return this;
 	}
@@ -83,7 +89,7 @@ public class AdvancementBuilder {
 		return background(createRL(texture));
 	}
 
-	public AdvancementBuilder frameType(FrameType type) {
+	public AdvancementBuilder frameType(AdvancementType type) {
 		frameType = type;
 		return this;
 	}
@@ -111,11 +117,11 @@ public class AdvancementBuilder {
 	}
 
 	public AdvancementBuilder impossible() {
-		return addCriterion("impossible", new ImpossibleTrigger.TriggerInstance());
+		return addCriterion("impossible", new Criterion<>(CriteriaTriggers.IMPOSSIBLE, new ImpossibleTrigger.TriggerInstance()));
 	}
 
-	public AdvancementBuilder addCriterion(String key, CriterionTriggerInstance triggerInstance) {
-		internalBuilder.addCriterion(key, triggerInstance);
+	public AdvancementBuilder addCriterion(String key, Criterion<?> criterion) {
+		internalBuilder.addCriterion(key, criterion);
 		return this;
 	}
 
@@ -131,7 +137,7 @@ public class AdvancementBuilder {
 		return this;
 	}
 
-	public AdvancementBuilder requirements(RequirementsStrategy strategy) {
+	public AdvancementBuilder requirements(AdvancementRequirements.Strategy strategy) {
 		internalBuilder.requirements(strategy);
 		return this;
 	}
@@ -156,11 +162,11 @@ public class AdvancementBuilder {
 		return this;
 	}
 
-	public Advancement save(Consumer<Advancement> consumer, ExistingFileHelper fileHelper) throws IllegalStateException {
+	public AdvancementHolder save(Consumer<AdvancementHolder> consumer, ExistingFileHelper fileHelper) throws IllegalStateException {
 		return save(consumer, fileHelper, modId);
 	}
 
-	public Advancement save(Consumer<Advancement> consumer, ExistingFileHelper fileHelper, String category) throws IllegalStateException {
+	public AdvancementHolder save(Consumer<AdvancementHolder> consumer, ExistingFileHelper fileHelper, String category) throws IllegalStateException {
 		if (empty) {
 			internalBuilder.display(icon, ComponentUtil.EMPTY, ComponentUtil.EMPTY, background, frameType, showToast, announceToChat, hidden);
 			return internalBuilder.save(consumer, createRL(category + "/" + id), fileHelper);

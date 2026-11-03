@@ -1,9 +1,5 @@
 package com.github.elenterius.biomancy.datagen.tags;
 
-import com.github.alexmodguy.alexscaves.server.block.ACBlockRegistry;
-import com.github.alexmodguy.alexscaves.server.item.ACItemRegistry;
-import com.github.alexthe666.alexsmobs.item.AMItemRegistry;
-import com.github.alexthe666.iceandfire.item.IafItemRegistry;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.init.ModItems;
 import com.github.elenterius.biomancy.init.tags.ModItemTags;
@@ -38,10 +34,6 @@ public class ModItemTagsProvider extends ItemTagsProvider {
 		super(output, lookupProvider, blockTagLookupProvider, BiomancyMod.MOD_ID, existingFileHelper);
 	}
 
-	private static TagKey<Item> forgeTag(String path) {
-		return ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", path));
-	}
-
 	private static TagKey<Item> conventionalTag(String path) {
 		return ItemTags.create(ResourceLocation.fromNamespaceAndPath("c", path));
 	}
@@ -63,7 +55,7 @@ public class ModItemTagsProvider extends ItemTagsProvider {
 	}
 
 	private void addBiomancyTags() {
-		class FarmersDelightItems extends vectorwing.farmersdelight.common.registry.ModItems {} //alias workaround
+		class FarmersDelightItems extends vectorwing.farmersdelight.common.registry.ModItems {}
 
 		createTag(ModItemTags.SUGARS)
 				.addTag(conventionalTag("foods/cookie"), conventionalTag("foods/candy"))
@@ -86,11 +78,11 @@ public class ModItemTagsProvider extends ItemTagsProvider {
 		createTag(ModItemTags.CANNOT_BE_EATEN_BY_CRADLE)
 				.add(DRAGON_EGG, SPAWNER, HEART_OF_THE_SEA)
 				.add(NAME_TAG, BUNDLE)
-				.addTag(ItemTags.MUSIC_DISCS)
+				.addTag(Tags.Items.MUSIC_DISCS)
 				.add(ELYTRA)
 				.addTag(Tags.Items.ARMORS, Tags.Items.TOOLS)
 				.addTag(Tags.Items.ORES_NETHERITE_SCRAP, Tags.Items.INGOTS_NETHERITE, Tags.Items.STORAGE_BLOCKS_NETHERITE)
-				.addTag(forgeTag("shulker_boxes"));
+				.addTag(Tags.Items.SHULKER_BOXES);
 
 		createTag(ModItemTags.CANNOT_BE_DIGESTED_IN_ACID)
 				.add(ModItems.NUTRIENT_PASTE.get())
@@ -216,32 +208,31 @@ public class ModItemTagsProvider extends ItemTagsProvider {
 	}
 
 	private void addMinecraftTags() {
-		//		tag(ItemTags.FENCES).getInternalBuilder().addTag(ModTags.Blocks.FLESHY_FENCES.getName(), BiomancyMod.MOD_ID);
-
 		createTag(ItemTags.DOORS)
 				.add(ModItems.FLESH_DOOR.get(), ModItems.FULL_FLESH_DOOR.get());
 
 		createTag(ItemTags.TRAPDOORS)
 				.add(ModItems.FLESH_IRIS_DOOR.get());
+
+		createTag(ItemTags.MEAT)
+				.add(ModItems.VOLATILE_GLAND.get(), ModItems.TOXIN_GLAND.get(), ModItems.GENERIC_MOB_GLAND.get(), ModItems.LIVING_FLESH.get());
 	}
 
 	private void addForgeTags() {
-		createTag(Tags.Items.STRING)
+		createTag(Tags.Items.STRINGS)
 				.add(ModItems.MOB_SINEW.get());
 
-		//		tag(ModItemTags.C_TOOLS_KNIFE);
-
-		TagKey<Item> clawsTag = forgeTag("tools/claws");
+		TagKey<Item> clawsTag = conventionalTag("tools/claws");
 		createTag(clawsTag)
 				.add(ModItems.RAVENOUS_CLAWS.get());
 
-		TagKey<Item> swordsTag = forgeTag("tools/swords");
+		TagKey<Item> swordsTag = conventionalTag("tools/swords");
 		createTag(swordsTag)
 				.add(ModItems.DESPOIL_SICKLE.get());
 		createTag(ItemTags.SWORDS)
 				.add(ModItems.DESPOIL_SICKLE.get());
 
-		createTag(Tags.Items.TOOLS_SHIELDS)
+		createTag(Tags.Items.TOOLS_SHIELD)
 				.add(ModItems.THORN_SHIELD.get());
 
 		createTag(Tags.Items.TOOLS)
@@ -249,14 +240,14 @@ public class ModItemTagsProvider extends ItemTagsProvider {
 				.addTag(swordsTag)
 				.add(ModItems.INJECTOR.get(), ModItems.ESSENCE_EXTRACTOR.get());
 
-		createTag(Tags.Items.ARMORS_HELMETS).add(ModItems.stream().filter(item -> item instanceof ArmorItem armor && armor.getType() == ArmorItem.Type.HELMET));
-		createTag(Tags.Items.ARMORS_CHESTPLATES).add(ModItems.stream().filter(item -> item instanceof ArmorItem armor && armor.getType() == ArmorItem.Type.CHESTPLATE));
-		createTag(Tags.Items.ARMORS_LEGGINGS).add(ModItems.stream().filter(item -> item instanceof ArmorItem armor && armor.getType() == ArmorItem.Type.LEGGINGS));
-		createTag(Tags.Items.ARMORS_BOOTS).add(ModItems.stream().filter(item -> item instanceof ArmorItem armor && armor.getType() == ArmorItem.Type.BOOTS));
+		createTag(conventionalTag("armors/helmets")).add(ModItems.stream().filter(item -> item instanceof ArmorItem armor && armor.getType() == ArmorItem.Type.HELMET));
+		createTag(conventionalTag("armors/chestplates")).add(ModItems.stream().filter(item -> item instanceof ArmorItem armor && armor.getType() == ArmorItem.Type.CHESTPLATE));
+		createTag(conventionalTag("armors/leggings")).add(ModItems.stream().filter(item -> item instanceof ArmorItem armor && armor.getType() == ArmorItem.Type.LEGGINGS));
+		createTag(conventionalTag("armors/boots")).add(ModItems.stream().filter(item -> item instanceof ArmorItem armor && armor.getType() == ArmorItem.Type.BOOTS));
 
 		createTag(Tags.Items.CHESTS).add(ModItems.FLESHKIN_CHEST.get());
 
-		EnhancedTagAppender<Item> shulkerBoxes = createTag(forgeTag("shulker_boxes"));
+		EnhancedTagAppender<Item> shulkerBoxes = createTag(Tags.Items.SHULKER_BOXES);
 		for (Item item : BuiltInRegistries.ITEM) {
 			if (item instanceof BlockItem blockItem && blockItem.getBlock() instanceof ShulkerBoxBlock) {
 				shulkerBoxes.add(item);
@@ -264,99 +255,52 @@ public class ModItemTagsProvider extends ItemTagsProvider {
 		}
 	}
 
-	/// uses conventional tags introduced in neo-forge/fabric for minecraft 1.21+
-	///
-	/// @see <a href="https://github.com/neoforged/NeoForge/tree/1.21.x/src/generated/resources/data/c/tags/item">NeoForge Repo</a>
 	private void addConventionalTags() {
-		class FarmersDelightItems extends vectorwing.farmersdelight.common.registry.ModItems {} //alias workaround
-		class AlexsDelightItems extends com.ncpbails.alexsdelight.item.ModItems {} //alias workaround
-
-		createTag(ModItemTags.C_WITHER_BONES)
-				.addOptionalTag("forge:bones/wither");
+		class FarmersDelightItems extends vectorwing.farmersdelight.common.registry.ModItems {}
 
 		createTag(ModItemTags.C_CLAWS)
-				.addOptionalTag("forge:claws")
-				.add(ModItems.MOB_CLAW.get())
-				.add(AMItemRegistry.DROPBEAR_CLAW.get())
-				.add(IafItemRegistry.HIPPOGRYPH_TALON.get());
+				.add(ModItems.MOB_CLAW.get());
 
 		createTag(ModItemTags.C_FANGS)
-				.addOptionalTag("forge:fangs")
-				.add(ModItems.MOB_FANG.get())
-				.add(AMItemRegistry.BONE_SERPENT_TOOTH.get())
-				.add(IafItemRegistry.SERPENT_FANG.get(), IafItemRegistry.HYDRA_FANG.get());
+				.add(ModItems.MOB_FANG.get());
 
 		createTag(conventionalTag("foods/candy"))
-				.addOptionalTag("c:foods/candies", "forge:candies", "forge:candy");
+				.addOptionalTag("c:foods/candies", "c:candies", "c:candy");
 
 		createTag(conventionalTag("foods/cookie"))
-				.addOptionalTag("c:foods/cookies", "forge:cookies", "forge:cookie")
+				.addOptionalTag("c:foods/cookies", "c:cookies", "c:cookie")
 				.add(COOKIE)
 				.add(FarmersDelightItems.SWEET_BERRY_COOKIE.get(), FarmersDelightItems.HONEY_COOKIE.get());
 
 		createTag(ModItemTags.C_RAW_PORK)
-				.addTag(forgeTag("raw_pork"))
+				.addOptionalTag("c:raw_pork")
 				.add(FarmersDelightItems.HAM.get());
 
 		createTag(conventionalTag("foods/raw_meat"))
-				.addOptionalTag("c:foods/raw_meats", "forge:raw_meats", "forge:raw_meat")
-				.addOptionalTag("forge:raw_bacon", "forge:raw_beef", "forge:raw_chicken", "forge:raw_pork", "forge:raw_mutton")
+				.addOptionalTag("c:foods/raw_meats", "c:raw_meats", "c:raw_meat")
+				.addOptionalTag("c:raw_bacon", "c:raw_beef", "c:raw_chicken", "c:raw_pork", "c:raw_mutton")
 				.addTag(ModItemTags.C_RAW_PORK)
 				.add(BEEF, PORKCHOP, CHICKEN, RABBIT, MUTTON)
 				.add(FarmersDelightItems.HAM.get())
-				.add(AMItemRegistry.MOOSE_RIBS.get(), AMItemRegistry.KANGAROO_MEAT.get(), AMItemRegistry.MAGGOT.get())
-				.add(
-						AlexsDelightItems.RAW_BISON.get(), AlexsDelightItems.BISON_MINCE.get(), AlexsDelightItems.KANGAROO_SHANK.get(), AlexsDelightItems.LOOSE_MOOSE_RIB.get(),
-						AlexsDelightItems.RAW_BUNFUNGUS.get(), AlexsDelightItems.RAW_BUNFUNGUS_DRUMSTICK.get()
-				)
-				.add(ACBlockRegistry.DINOSAUR_CHOP.get().asItem())
-				.add(IafItemRegistry.ICE_DRAGON_FLESH.get(), IafItemRegistry.FIRE_DRAGON_FLESH.get(), IafItemRegistry.LIGHTNING_DRAGON_FLESH.get())
 				.addOptional("createfa:ground_chicken", "createfa:ground_beef")
 				.addOptional("rats:raw_rat")
 				.addOptional("circus:clown")
-				.addOptional("evilcraft:flesh_humanoid", "evilcraft:flesh_werewolf")
-		;
+				.addOptional("evilcraft:flesh_humanoid", "evilcraft:flesh_werewolf");
 
 		createTag(conventionalTag("foods/cooked_meat"))
-				.addOptionalTag("c:foods/cooked_meats", "forge:cooked_meat", "forge:cooked_meats")
+				.addOptionalTag("c:foods/cooked_meats", "c:cooked_meat", "c:cooked_meats")
 				.add(COOKED_BEEF, COOKED_PORKCHOP, COOKED_CHICKEN, COOKED_RABBIT, COOKED_MUTTON)
 				.add(FarmersDelightItems.SMOKED_HAM.get())
-				.add(AMItemRegistry.COOKED_MOOSE_RIBS.get(), AMItemRegistry.COOKED_KANGAROO_MEAT.get())
-				.add(
-						AlexsDelightItems.COOKED_BISON.get(), AlexsDelightItems.BISON_PATTY.get(), AlexsDelightItems.COOKED_KANGAROO_SHANK.get(),
-						AlexsDelightItems.COOKED_LOOSE_MOOSE_RIB.get(), AlexsDelightItems.COOKED_BUNFUNGUS.get(),
-						AlexsDelightItems.COOKED_BUNFUNGUS_DRUMSTICK.get(), AlexsDelightItems.COOKED_CENTIPEDE_LEG.get()
-				)
-				.add(ACBlockRegistry.COOKED_DINOSAUR_CHOP.get().asItem())
 				.addOptional("createfa:schnitzel", "createfa:meatballs", "createfa:chicken_nuggets")
-				.addOptional("rats:cooked_rat")
-		;
+				.addOptional("rats:cooked_rat");
 
 		createTag(conventionalTag("foods/raw_fish"))
-				.addOptionalTag("c:foods/raw_fishes", "forge:raw_fishes", "forge:raw_fish")
-				.add(COD, SALMON, TROPICAL_FISH, PUFFERFISH)
-				.add(
-						AMItemRegistry.FLYING_FISH.get(), AMItemRegistry.RAW_CATFISH.get(), AMItemRegistry.BLOBFISH.get(),
-						AMItemRegistry.LOBSTER_TAIL.get()
-				)
-				.add(
-						ACItemRegistry.TRILOCARIS_TAIL.get(), ACItemRegistry.LANTERNFISH.get(), ACItemRegistry.TRIPODFISH.get(),
-						ACItemRegistry.RADGILL.get(),
-						ACItemRegistry.DEEP_SEA_SUSHI_ROLL.get()
-				)
-				.add(AlexsDelightItems.RAW_CATFISH_SLICE.get())
-		;
+				.addOptionalTag("c:foods/raw_fishes", "c:raw_fishes", "c:raw_fish")
+				.add(COD, SALMON, TROPICAL_FISH, PUFFERFISH);
 
 		createTag(conventionalTag("foods/cooked_fish"))
-				.addOptionalTag("c:foods/cooked_fishes", "forge:cooked_fishes", "forge:cooked_fish")
-				.add(COOKED_COD, COOKED_SALMON)
-				.add(AMItemRegistry.COOKED_CATFISH.get(), AMItemRegistry.COOKED_LOBSTER_TAIL.get())
-				.add(AlexsDelightItems.COOKED_CATFISH_SLICE.get())
-				.add(
-						ACItemRegistry.COOKED_TRILOCARIS_TAIL.get(), ACItemRegistry.COOKED_LANTERNFISH.get(), ACItemRegistry.COOKED_TRIPODFISH.get(),
-						ACItemRegistry.COOKED_RADGILL.get()
-				)
-		;
+				.addOptionalTag("c:foods/cooked_fishes", "c:cooked_fishes", "c:cooked_fish")
+				.add(COOKED_COD, COOKED_SALMON);
 	}
 
 	@Override

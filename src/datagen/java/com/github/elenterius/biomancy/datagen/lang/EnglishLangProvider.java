@@ -16,9 +16,11 @@ import com.github.elenterius.biomancy.styles.TextComponentUtil;
 import net.minecraft.data.CachedOutput;
 import net.minecraft.data.PackOutput;
 import net.minecraft.world.item.*;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.level.block.Block;
 import net.neoforged.neoforge.registries.DeferredHolder;
+import net.neoforged.neoforge.registries.DeferredItem;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
@@ -84,7 +86,7 @@ public class EnglishLangProvider extends AbstractLangProvider {
 		add(tab.translationKey(), name);
 	}
 
-	private void addBannerPatternItem(DeferredHolder<MaykerBannerPatternItem, MaykerBannerPatternItem> supplier, String name, String description) {
+	private void addBannerPatternItem(DeferredItem<MaykerBannerPatternItem> supplier, String name, String description) {
 		MaykerBannerPatternItem item = supplier.get();
 		add(item.getDescriptionId(), name);
 		add(item.getDisplayName(), description);
@@ -142,10 +144,9 @@ public class EnglishLangProvider extends AbstractLangProvider {
 		itemsToTranslate.remove(item);
 	}
 
-	private <T extends Enchantment> void addEnchantment(Supplier<T> supplier, String name, String tooltip) {
-		T enchantment = supplier.get();
-		add(enchantment.getDescriptionId(), name);
-		add(enchantment.getDescriptionId() + ".desc", tooltip);
+	private void addEnchantment(ResourceKey<Enchantment> key, String name, String tooltip) {
+		addEnchantment(key, name);
+		add(key.location().toLanguageKey("enchantment") + ".desc", tooltip);
 	}
 
 	@Override
@@ -271,7 +272,6 @@ public class EnglishLangProvider extends AbstractLangProvider {
 		add(LivingToolState.AWAKENED.getTranslationKey(), "Awakened");
 
 		addHudMessage("not_sleepy", "You don't feel sleepy...");
-		//addHudMessage("set_behavior_command", "%1$s will now execute the %2$s command");
 		addHudMessage("not_enough_ammo", "Not enough Ammo");
 		addHudMessage("not_enough_nutrients", "Not enough Nutrients");
 		addHudMessage("not_enough_blood_charge", "Not enough Blood Charge");
@@ -466,7 +466,6 @@ public class EnglishLangProvider extends AbstractLangProvider {
 	}
 
 	private void addSerumTranslations() {
-		//serums that are not tied to a specific item
 		add(Serum.EMPTY, "ERROR: INVALID SERUM");
 	}
 
@@ -659,8 +658,6 @@ public class EnglishLangProvider extends AbstractLangProvider {
 				
 				You can add new Users by applying Tier 3 Essence to the block.
 				""");
-		//		addBlock(ModBlocks.FLESHKIN_DOOR, "[WIP] Fleshkin Door", EMPTY_STRING);
-		//		addBlock(ModBlocks.FLESHKIN_TRAPDOOR, "[WIP] Fleshkin Trap Door", EMPTY_STRING);
 		addBlock(ModBlocks.FLESHKIN_PRESSURE_PLATE, "Fleshkin Pressure Sensor", """
 				Fleshkin pancake. Yummy...
 				It has two behaviors, either it only activates for its owner or it only works for everyone else.
@@ -743,8 +740,6 @@ public class EnglishLangProvider extends AbstractLangProvider {
 		add(TextComponentUtil.getItemTooltipKey(ModBlocks.MODULAR_LARYNX.get()) + ".4", "Use Hurt Sound");
 		add(TextComponentUtil.getItemTooltipKey(ModBlocks.MODULAR_LARYNX.get()) + ".5", "When Placed on Other:");
 		add(TextComponentUtil.getItemTooltipKey(ModBlocks.MODULAR_LARYNX.get()) + ".6", "Use Ambient Sound");
-
-		//addBlock(ModBlocks.NEURAL_INTERCEPTOR, "Neural Interceptor", "A psychic node that prevents natural mob spawning in a 48 block radius.");
 
 		addBlock(ModBlocks.PRIMAL_FLESH, "Primal Flesh Block", "Primitive and pure, you better not touch this with your dirty mitts.");
 		addBlock(ModBlocks.PRIMAL_FLESH_SLAB, "Primal Flesh Slab", "Primitive and pure, you better not touch this with your dirty mitts.");

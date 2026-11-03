@@ -18,6 +18,7 @@ import net.neoforged.neoforge.client.model.generators.loaders.ItemLayerModelBuil
 import net.neoforged.neoforge.common.data.ExistingFileHelper;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.neoforged.neoforge.registries.DeferredHolder;
+import net.neoforged.neoforge.registries.DeferredItem;
 
 import java.util.Objects;
 
@@ -123,11 +124,10 @@ public class ModItemModelProvider extends ItemModelProvider {
 		weaponItem(ModItems.DECAY_GRENADE);
 		weaponItem(ModItems.VOLATILE_GRENADE);
 
-		//generate models for all eggs
 		ModItems.ITEMS.getEntries().stream().map(DeferredHolder::get).filter(SpawnEggItem.class::isInstance).forEach(this::spawnEggItem);
 	}
 
-	public <T extends Item> void emissiveItem(DeferredHolder<T, T> registryObject) {
+	public <T extends Item> void emissiveItem(DeferredItem<T> registryObject) {
 		emissiveItem(registryObject.getId());
 	}
 
@@ -139,7 +139,7 @@ public class ModItemModelProvider extends ItemModelProvider {
 				.texture(LAYER_1_TEXTURE, ResourceLocation.fromNamespaceAndPath(registryKey.getNamespace(), ITEM_FOLDER + "/" + registryKey.getPath() + "_emissive"));
 	}
 
-	public <T extends DespoilingSwordItem> void fleshPlunderer(DeferredHolder<T, T> registryObject) {
+	public <T extends DespoilingSwordItem> void fleshPlunderer(DeferredItem<T> registryObject) {
 		ResourceLocation registryKey = registryObject.getId();
 		getBuilder(registryKey.toString())
 				.parent(new ModelFile.UncheckedModelFile("item/handheld"))
@@ -148,7 +148,7 @@ public class ModItemModelProvider extends ItemModelProvider {
 				.texture(LAYER_1_TEXTURE, ResourceLocation.fromNamespaceAndPath(registryKey.getNamespace(), ITEM_FOLDER + "/weapon/" + registryKey.getPath() + "_emissive"));
 	}
 
-	public <T extends Item> ItemModelBuilder basicItem(DeferredHolder<T, T> registryObject) {
+	public <T extends Item> ItemModelBuilder basicItem(DeferredItem<T> registryObject) {
 		return basicItem(registryObject.getId());
 	}
 
@@ -160,7 +160,7 @@ public class ModItemModelProvider extends ItemModelProvider {
 		return getBuilder(registryKey.toString()).parent(new ModelFile.UncheckedModelFile("item/template_spawn_egg"));
 	}
 
-	public <T extends Item> ItemModelBuilder lootItem(DeferredHolder<T, T> registryObject) {
+	public <T extends Item> ItemModelBuilder lootItem(DeferredItem<T> registryObject) {
 		return basicItem(registryObject.getId(), "loot");
 	}
 
@@ -168,7 +168,7 @@ public class ModItemModelProvider extends ItemModelProvider {
 		return basicItem(registryKey(item), "loot");
 	}
 
-	public <T extends Item> ItemModelBuilder componentItem(DeferredHolder<T, T> registryObject) {
+	public <T extends Item> ItemModelBuilder componentItem(DeferredItem<T> registryObject) {
 		return basicItem(registryObject.getId(), "component");
 	}
 
@@ -176,7 +176,7 @@ public class ModItemModelProvider extends ItemModelProvider {
 		return basicItem(registryKey(item), "component");
 	}
 
-	public <T extends Item> ItemModelBuilder serumItem(DeferredHolder<T, T> registryObject) {
+	public <T extends Item> ItemModelBuilder serumItem(DeferredItem<T> registryObject) {
 		return basicItem(registryObject.getId(), "serum");
 	}
 
@@ -184,15 +184,15 @@ public class ModItemModelProvider extends ItemModelProvider {
 		return basicItem(registryKey(item), "serum");
 	}
 
-	public <T extends Item> ItemModelBuilder serumOverlayItem(DeferredHolder<T, T> registryObject) {
+	public <T extends Item> ItemModelBuilder serumOverlayItem(DeferredItem<T> registryObject) {
 		return overlayItem(registryObject.getId(), "serum");
 	}
 
-	public <T extends Item> ItemModelBuilder armorItem(DeferredHolder<T, T> registryObject) {
+	public <T extends Item> ItemModelBuilder armorItem(DeferredItem<T> registryObject) {
 		return basicItem(registryObject.getId(), "armor");
 	}
 
-	public <T extends Item> ItemModelBuilder weaponItem(DeferredHolder<T, T> registryObject) {
+	public <T extends Item> ItemModelBuilder weaponItem(DeferredItem<T> registryObject) {
 		return basicItem(registryObject.getId(), "weapon");
 	}
 
@@ -204,7 +204,7 @@ public class ModItemModelProvider extends ItemModelProvider {
 		return handheldItem(registryKey(item), "weapon");
 	}
 
-	public <T extends Item> ItemModelBuilder handheldWeaponItem(DeferredHolder<T, T> registryObject) {
+	public <T extends Item> ItemModelBuilder handheldWeaponItem(DeferredItem<T> registryObject) {
 		return handheldItem(registryObject.getId(), "weapon");
 	}
 
@@ -222,7 +222,7 @@ public class ModItemModelProvider extends ItemModelProvider {
 		return overlayItem(registryKey(item));
 	}
 
-	public <T extends Item> ItemModelBuilder overlayItem(DeferredHolder<T, T> registryObject) {
+	public <T extends Item> ItemModelBuilder overlayItem(DeferredItem<T> registryObject) {
 		return overlayItem(registryObject.getId());
 	}
 
@@ -240,7 +240,7 @@ public class ModItemModelProvider extends ItemModelProvider {
 		return handheldItem(registryKey(item));
 	}
 
-	public <T extends Item> ItemModelBuilder handheldItem(DeferredHolder<T, T> registryObject) {
+	public <T extends Item> ItemModelBuilder handheldItem(DeferredItem<T> registryObject) {
 		return handheldItem(registryObject.getId());
 	}
 
@@ -256,7 +256,7 @@ public class ModItemModelProvider extends ItemModelProvider {
 				.texture(LAYER_0_TEXTURE, ResourceLocation.fromNamespaceAndPath(registryKey.getNamespace(), ITEM_FOLDER + "/" + subfolder + "/" + registryKey.getPath()));
 	}
 
-	public <T extends BlockItem> ItemModelBuilder flatBlockItem(DeferredHolder<T, T> registryObject) {
+	public <T extends BlockItem> ItemModelBuilder flatBlockItem(DeferredItem<T> registryObject) {
 		return flatBlockItem(registryObject.getId());
 	}
 
@@ -270,7 +270,7 @@ public class ModItemModelProvider extends ItemModelProvider {
 				.texture(LAYER_0_TEXTURE, ResourceLocation.fromNamespaceAndPath(registryKey.getNamespace(), BLOCK_FOLDER + "/" + registryKey.getPath()));
 	}
 
-	public <T extends BlockItem> ItemModelBuilder flatBlockItem(DeferredHolder<T, T> registryObject, String suffix) {
+	public <T extends BlockItem> ItemModelBuilder flatBlockItem(DeferredItem<T> registryObject, String suffix) {
 		return flatBlockItem(registryObject.getId(), suffix);
 	}
 
@@ -286,13 +286,13 @@ public class ModItemModelProvider extends ItemModelProvider {
 
 	public ItemModelBuilder dynamicBucket(BucketItem item) {
 		ResourceLocation itemKey = registryKey(item);
-		ResourceLocation fluidKey = Objects.requireNonNull(BuiltInRegistries.FLUID.getKey(item.getFluid()));
-		ResourceLocation loaderKey = ResourceLocation.fromNamespaceAndPath("forge", "fluid_container");
-		ResourceLocation bucketModelKey = ResourceLocation.fromNamespaceAndPath("forge", "item/bucket");
+		ResourceLocation fluidKey = Objects.requireNonNull(BuiltInRegistries.FLUID.getKey(item.content));
+		ResourceLocation loaderKey = ResourceLocation.fromNamespaceAndPath("neoforge", "fluid_container");
+		ResourceLocation bucketModelKey = ResourceLocation.fromNamespaceAndPath("neoforge", "item/bucket");
 
 		return getBuilder(itemKey.toString())
 				.parent(getExistingFile(bucketModelKey))
-				.customLoader((builder, existingFileHelper) -> new CustomLoaderBuilder<ItemModelBuilder>(loaderKey, builder, existingFileHelper) {
+				.customLoader((builder, existingFileHelper) -> new CustomLoaderBuilder<ItemModelBuilder>(loaderKey, builder, existingFileHelper, false) {
 					@Override
 					public JsonObject toJson(JsonObject json) {
 						JsonObject json1 = super.toJson(json);

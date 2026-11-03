@@ -3,7 +3,6 @@ package com.github.elenterius.biomancy.datagen;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.datagen.advancements.ModAdvancementProvider;
 import com.github.elenterius.biomancy.datagen.lang.EnglishLangProvider;
-import com.github.elenterius.biomancy.datagen.loot.ModDespoilLoot;
 import com.github.elenterius.biomancy.datagen.loot.ModGlobalLootModifierProvider;
 import com.github.elenterius.biomancy.datagen.loot.ModLootTableProvider;
 import com.github.elenterius.biomancy.datagen.loot.WikiDespoilLootProvider;
@@ -42,7 +41,6 @@ public final class DataGenerators {
 		lookupProvider = datapackEntriesProvider.getRegistryProvider();
 		generator.addProvider(includeServer, datapackEntriesProvider);
 
-		//tags
 		ModBlockTagsProvider blockTagsProvider = new ModBlockTagsProvider(packOutput, lookupProvider, existingFileHelper);
 		generator.addProvider(includeServer, blockTagsProvider);
 		generator.addProvider(includeServer, new ModItemTagsProvider(packOutput, lookupProvider, blockTagsProvider.contentsGetter(), existingFileHelper));
@@ -52,30 +50,25 @@ public final class DataGenerators {
 		generator.addProvider(includeServer, new ModMobEffectTagsProvider(packOutput, lookupProvider, existingFileHelper));
 		generator.addProvider(includeServer, new ModPaintingTagsProvider(packOutput, lookupProvider, existingFileHelper));
 
-		//recipes
-		ModRecipeProvider recipeProvider = new ModRecipeProvider(packOutput);
+		ModRecipeProvider recipeProvider = new ModRecipeProvider(packOutput, lookupProvider);
 		generator.addProvider(includeServer, recipeProvider);
-		generator.addProvider(includeServer, new WikiRecipesProvider(packOutput, recipeProvider));
+		generator.addProvider(includeServer, new WikiRecipesProvider(packOutput, recipeProvider, lookupProvider));
 
-		//loot
-		generator.addProvider(includeServer, new ModLootTableProvider(packOutput));
-		generator.addProvider(includeServer, new ModGlobalLootModifierProvider(packOutput));
-		generator.addProvider(includeServer, new WikiDespoilLootProvider(packOutput, new ModDespoilLoot()));
+		generator.addProvider(includeServer, new ModLootTableProvider(packOutput, lookupProvider));
+		generator.addProvider(includeServer, new ModGlobalLootModifierProvider(packOutput, lookupProvider));
+		if (System.getProperty("wiki.docs") != null) {
+			generator.addProvider(includeServer, new WikiDespoilLootProvider(packOutput, lookupProvider));
+		}
 
-		//models & block states
 		generator.addProvider(includeServer, new ModBlockStateProvider(packOutput, existingFileHelper));
 		generator.addProvider(includeServer, new ModItemModelProvider(packOutput, existingFileHelper));
 
-		//sounds
 		generator.addProvider(includeClient, new ModSoundProvider(packOutput, existingFileHelper));
 
-		//particles
 		generator.addProvider(includeServer, new ModParticleSpriteProvider(packOutput, existingFileHelper));
 
-		//translations
 		EnglishLangProvider enLanguage = new EnglishLangProvider(packOutput);
 
-		//advancements
 		generator.addProvider(includeServer, new ModAdvancementProvider(packOutput, lookupProvider, existingFileHelper, enLanguage));
 
 		generator.addProvider(includeServer, enLanguage);

@@ -6,9 +6,7 @@ import com.github.elenterius.biomancy.datagen.recipes.builder.BioForgingRecipeBu
 import com.github.elenterius.biomancy.datagen.recipes.builder.ItemData;
 import com.github.elenterius.biomancy.init.ModBioForgeTabs;
 import com.github.elenterius.biomancy.init.ModItems;
-import net.minecraft.data.PackOutput;
 import com.github.elenterius.biomancy.datagen.recipes.builder.FinishedRecipe;
-import net.minecraft.data.recipes.RecipeProvider;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -16,16 +14,12 @@ import net.minecraft.world.item.Items;
 
 import java.util.function.Consumer;
 
-public class BioForgingRecipeProvider extends RecipeProvider {
+public class BioForgingRecipeProvider {
 
 	static final int blockCost = 4;
 	static final int slabCost = blockCost / 2;
 	static final int stairsCost = blockCost - 1;
 	static final int wallCost = blockCost;
-
-	protected BioForgingRecipeProvider(PackOutput output) {
-		super(output);
-	}
 
 	private static <T extends Item & NutrientsContainerItem> ItemStack withMaxNutrients(T item) {
 		ItemStack itemStack = item.getDefaultInstance();
@@ -33,7 +27,6 @@ public class BioForgingRecipeProvider extends RecipeProvider {
 		return itemStack;
 	}
 
-	@Override
 	protected void buildRecipes(Consumer<FinishedRecipe> consumer) {
 		buildMachineRecipes(consumer);
 		buildBlockRecipes(consumer);
@@ -78,14 +71,6 @@ public class BioForgingRecipeProvider extends RecipeProvider {
 				.addIngredient(ModItems.EXOTIC_DUST.get(), 2)
 				.setCategory(ModBioForgeTabs.MACHINES)
 				.unlockedBy(ModItems.LIVING_FLESH.get()).save(consumer);
-
-		//		BioForgeRecipeBuilder.create(ModItems.PRIMORDIAL_CRADLE.get())
-		//				.addIngredient(ModItems.PRIMORDIAL_CORE.get())
-		//				.addIngredient(ModItems.FLESH_BITS.get(), 5)
-		//				.addIngredient(ModItems.BONE_FRAGMENTS.get(), 8)
-		//				.addIngredient(ModItems.ELASTIC_FIBERS.get(), 4)
-		//				.setCategory(ModBioForgeTabs.MACHINES)
-		//				.unlockedBy(ModItems.LIVING_FLESH.get()).save(consumer);
 
 		BioForgingRecipeBuilder.create(ModItems.TONGUE.get())
 				.addIngredient(ModItems.LIVING_FLESH.get())
@@ -385,13 +370,13 @@ public class BioForgingRecipeProvider extends RecipeProvider {
 				.setCategory(ModBioForgeTabs.COMPONENTS)
 				.unlockedBy(Items.STRING).save(consumer);
 
-		BioForgingRecipeBuilder.create(Items.SCUTE)
+		BioForgingRecipeBuilder.create("scute", new ItemData(Items.TURTLE_SCUTE))
 				.addIngredient(EssenceIngredient.of(EntityType.TURTLE))
 				.addIngredient(ModItems.TOUGH_FIBERS.get(), 10)
 				.addIngredient(ModItems.MINERAL_FRAGMENT.get(), 6)
 				.addIngredient(ModItems.STONE_POWDER.get(), 1)
 				.setCategory(ModBioForgeTabs.COMPONENTS)
-				.unlockedBy(Items.SCUTE).save(consumer);
+				.unlockedBy(Items.TURTLE_SCUTE).save(consumer);
 
 		BioForgingRecipeBuilder.create(Items.PHANTOM_MEMBRANE)
 				.addIngredient(EssenceIngredient.of(EntityType.PHANTOM))
@@ -440,10 +425,6 @@ public class BioForgingRecipeProvider extends RecipeProvider {
 				.addIngredient(ModItems.ELASTIC_FIBERS.get(), 12 + 6)
 				.setCategory(ModBioForgeTabs.COMPONENTS)
 				.unlockedBy(Items.SKELETON_SKULL).save(consumer);
-
-		//		DecomposerRecipeBuilder.create().setIngredient(Items.ZOMBIE_HEAD).addOutput(ModItems.FLESH_BITS.get(), 14, 24).addOutput(ModItems.ELASTIC_FIBERS.get(), 5, 9).addOutput(Items.SKELETON_SKULL, 1).unlockedBy(Items.ZOMBIE_HEAD).save(consumer);
-		//		DecomposerRecipeBuilder.create().setIngredient(Items.CREEPER_HEAD).addOutput(ModItems.FLESH_BITS.get(), 19, 32).addOutput(ModItems.ELASTIC_FIBERS.get(), 5, 9).addOutput(Items.SKELETON_SKULL, 1).unlockedBy(Items.CREEPER_HEAD).save(consumer);
-		//		DecomposerRecipeBuilder.create().setIngredient(Items.DRAGON_HEAD).addOutput(ModItems.FLESH_BITS.get(), 50).addOutput(ModItems.EXOTIC_DUST.get(), 50).addOutput(ModItems.TOUGH_FIBERS.get(), 25).addOutput(ModItems.MINERAL_FRAGMENT.get(), 20).addOutput(ModItems.BONE_FRAGMENTS.get(), 50).unlockedBy(Items.DRAGON_HEAD).save(consumer);
 
 		BioForgingRecipeBuilder.create(Items.SLIME_BALL)
 				.addIngredient(ModItems.REGENERATIVE_FLUID.get(), 4)

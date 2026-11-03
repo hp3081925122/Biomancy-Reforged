@@ -58,6 +58,7 @@ public final class BiomancyMod {
 		ModBioForgeTabs.BIO_FORGE_TABS.register(modEventBus);
 
 		ModLoot.GLOBAL_MODIFIERS.register(modEventBus);
+		ModLoot.LOOT_FUNCTIONS.register(modEventBus);
 		ModTriggers.TRIGGERS.register(modEventBus);
 		ModPredicates.ITEM_SUB_PREDICATES.register(modEventBus);
 

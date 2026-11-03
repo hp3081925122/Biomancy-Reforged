@@ -1,23 +1,17 @@
 package com.github.elenterius.biomancy.datagen.tags;
 
-import com.github.alexmodguy.alexscaves.server.entity.ACEntityRegistry;
-import com.github.alexmodguy.alexscaves.server.misc.ACTagRegistry;
-import com.github.alexthe666.alexsmobs.entity.AMEntityRegistry;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.init.ModEntityTypes;
 import com.github.elenterius.biomancy.init.tags.ModEntityTags;
 import net.mcreator.sonsofsins.SonsOfSinsMod;
 import net.minecraft.core.HolderLookup;
-import net.minecraft.core.registries.Registries;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.PackOutput;
 import net.minecraft.data.tags.EntityTypeTagsProvider;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.EntityTypeTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.EntityType;
-import net.neoforged.neoforge.common.Tags;
 import net.neoforged.neoforge.common.data.ExistingFileHelper;
-import net.minecraft.core.registries.BuiltInRegistries;
 import org.apache.commons.lang3.StringUtils;
 import org.jspecify.annotations.Nullable;
 
@@ -27,14 +21,6 @@ public class ModEntityTypeTagsProvider extends EntityTypeTagsProvider {
 
 	public ModEntityTypeTagsProvider(PackOutput output, CompletableFuture<HolderLookup.Provider> lookupProvider, @Nullable ExistingFileHelper existingFileHelper) {
 		super(output, lookupProvider, BiomancyMod.MOD_ID, existingFileHelper);
-	}
-
-	private static TagKey<EntityType<?>> forgeTag(String path) {
-		return TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath("forge", path));
-	}
-
-	private static TagKey<EntityType<?>> conventionalTag(String path) {
-		return TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath("c", path));
 	}
 
 	protected EnhancedTagAppender<EntityType<?>> createTag(TagKey<EntityType<?>> tag) {
@@ -56,9 +42,7 @@ public class ModEntityTypeTagsProvider extends EntityTypeTagsProvider {
 
 		createTag(ModEntityTags.CAPTURING_BY_CHRYSALIS_NOT_ALLOWED)
 				.addTag(ModEntityTags.C_BOSSES)
-				.add(EntityType.WARDEN, EntityType.ELDER_GUARDIAN, EntityType.GIANT)
-				.addOptional(ACEntityRegistry.GUM_WORM, ACEntityRegistry.TREMORZILLA, ACEntityRegistry.HULLBREAKER, ACEntityRegistry.FORSAKEN)
-				.addOptional(AMEntityRegistry.VOID_WORM);
+				.add(EntityType.WARDEN, EntityType.ELDER_GUARDIAN, EntityType.GIANT);
 
 		createTag(ModEntityTags.RESIZING_NOT_ALLOWED);
 
@@ -81,11 +65,6 @@ public class ModEntityTypeTagsProvider extends EntityTypeTagsProvider {
 		tag(EntityTypeTags.DISMOUNTS_UNDERWATER).add(
 				ModEntityTypes.FLESH_CHICKEN.get()
 		);
-
-		tag(ACTagRegistry.RESISTS_ACID).add(
-				ModEntityTypes.PRIMORDIAL_FLESH_BLOB.get(), ModEntityTypes.PRIMORDIAL_HUNGRY_FLESH_BLOB.get(),
-				ModEntityTypes.FLESH_CHICKEN.get()
-		);
 	}
 
 	private void addMinecraftTags() {
@@ -97,15 +76,10 @@ public class ModEntityTypeTagsProvider extends EntityTypeTagsProvider {
 	}
 
 	private void addConventionalTags() {
-		tag(ModEntityTags.C_CAPTURING_NOT_SUPPORTED)
-				.addOptionalTag(forgeTag("capturing_not_supported"));
-
 		createTag(ModEntityTags.C_BOSSES)
-				.addTag(Tags.EntityTypes.BOSSES)
-				.add(EntityType.WITHER, EntityType.ENDER_DRAGON); //TODO: remove this line when porting to minecraft 1.21+
+				.add(EntityType.WITHER, EntityType.ENDER_DRAGON);
 
 		createTag(ModEntityTags.C_GOLEMS)
-				.addTag(forgeTag("golems"))
 				.add(EntityType.IRON_GOLEM, EntityType.SNOW_GOLEM)
 				.addOptional("strawgolem:strawgolem", "strawgolem:strawnggolem");
 	}

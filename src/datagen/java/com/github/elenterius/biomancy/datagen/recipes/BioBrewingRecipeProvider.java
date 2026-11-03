@@ -2,21 +2,14 @@ package com.github.elenterius.biomancy.datagen.recipes;
 
 import com.github.elenterius.biomancy.datagen.recipes.builder.BioBrewingRecipeBuilder;
 import com.github.elenterius.biomancy.init.ModItems;
-import net.minecraft.data.PackOutput;
 import com.github.elenterius.biomancy.datagen.recipes.builder.FinishedRecipe;
-import net.minecraft.data.recipes.RecipeProvider;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.Items;
 
 import java.util.function.Consumer;
 
-public class BioBrewingRecipeProvider extends RecipeProvider {
+public class BioBrewingRecipeProvider {
 
-	protected BioBrewingRecipeProvider(PackOutput output) {
-		super(output);
-	}
-
-	@Override
 	protected void buildRecipes(Consumer<FinishedRecipe> consumer) {
 		buildCompoundRecipes(consumer);
 		buildAdditiveRecipes(consumer);

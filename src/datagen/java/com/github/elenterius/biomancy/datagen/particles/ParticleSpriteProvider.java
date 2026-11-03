@@ -79,27 +79,27 @@ public abstract class ParticleSpriteProvider implements DataProvider {
 
 	public abstract void registerParticles();
 
-	protected <O extends ParticleOptions, T extends ParticleType<O>> void addParticle(final DeferredHolder<T, T> registryObject) {
+	protected void addParticle(final DeferredHolder<ParticleType<?>, ? extends ParticleType<?>> registryObject) {
 		ResourceLocation id = registryObject.getId();
 		addParticle(id, ParticleSprite.create(id));
 	}
 
-	protected <O extends ParticleOptions, T extends ParticleType<O>> void addParticle(final DeferredHolder<T, T> registryObject, String texture) {
+	protected void addParticle(final DeferredHolder<ParticleType<?>, ? extends ParticleType<?>> registryObject, String texture) {
 		ResourceLocation id = registryObject.getId();
 		addParticle(id, ParticleSprite.create(texture));
 	}
 
-	protected <O extends ParticleOptions, T extends ParticleType<O>> void addParticle(final DeferredHolder<T, T> registryObject, ResourceLocation texture) {
+	protected void addParticle(final DeferredHolder<ParticleType<?>, ? extends ParticleType<?>> registryObject, ResourceLocation texture) {
 		ResourceLocation id = registryObject.getId();
 		addParticle(id, ParticleSprite.create(texture));
 	}
 
-	protected <O extends ParticleOptions, T extends ParticleType<O>> void addParticle(final DeferredHolder<T, T> registryObject, int frameCount, int frameStartNumber) {
+	protected void addParticle(final DeferredHolder<ParticleType<?>, ? extends ParticleType<?>> registryObject, int frameCount, int frameStartNumber) {
 		ResourceLocation id = registryObject.getId();
 		addParticle(id, ParticleSprite.create(id, frameCount, frameStartNumber));
 	}
 
-	protected <O extends ParticleOptions, T extends ParticleType<O>> void addParticle(final DeferredHolder<T, T> registryObject, int frameCount) {
+	protected void addParticle(final DeferredHolder<ParticleType<?>, ? extends ParticleType<?>> registryObject, int frameCount) {
 		ResourceLocation id = registryObject.getId();
 		addParticle(id, ParticleSprite.create(id, frameCount));
 	}

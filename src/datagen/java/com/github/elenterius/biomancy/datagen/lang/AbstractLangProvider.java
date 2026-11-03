@@ -5,6 +5,7 @@ import com.google.common.hash.HashingOutputStream;
 import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonWriter;
 import net.minecraft.Util;
+import net.minecraft.core.Holder;
 import net.minecraft.data.CachedOutput;
 import net.minecraft.data.DataProvider;
 import net.minecraft.data.PackOutput;
@@ -24,8 +25,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BannerPattern;
-import net.minecraftforge.fluids.FluidType;
-import net.neoforged.neoforge.registries.DeferredHolder;
+import net.neoforged.neoforge.fluids.FluidType;
 import org.apache.commons.lang3.text.WordUtils;
 
 import java.io.ByteArrayOutputStream;
@@ -38,9 +38,8 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
-/**
- * Note: The translations are maintained in the order they were added.
- */
+import static com.github.elenterius.biomancy.BiomancyMod.LOGGER;
+
 public abstract class AbstractLangProvider implements DataProvider, LangProvider {
 
 	private final Map<String, String> translations = new LinkedHashMap<>();
@@ -62,16 +61,14 @@ public abstract class AbstractLangProvider implements DataProvider, LangProvider
 	@Override
 	public CompletableFuture<?> run(CachedOutput cache) {
 
-		//move pre-added translations (modnomicon, etc.) to the end of the translation file
 		LinkedHashMap<String, String> preAdded = null;
 		if (!translations.isEmpty()) {
 			preAdded = new LinkedHashMap<>(translations);
 			translations.clear();
 		}
 
-		addTranslations(); //adds the main translations
+		addTranslations();
 
-		//append pre-added translations
 		if (preAdded != null && !preAdded.isEmpty()) {
 			translations.putAll(preAdded);
 		}
@@ -82,7 +79,6 @@ public abstract class AbstractLangProvider implements DataProvider, LangProvider
 
 			if (hasMissingTranslations()) {
 				LOGGER.error("Has Missing Translations!");
-				//				return CompletableFuture.allOf();
 			}
 
 			Path path = packOutput.getOutputFolder().resolve("assets/%s/lang/%s.json".formatted(modId, languageLocale));
@@ -96,7 +92,7 @@ public abstract class AbstractLangProvider implements DataProvider, LangProvider
 					jsonWriter.setIndent("  ");
 
 					try {
-						GsonHelper.writeValue(jsonWriter, json, null); //no comparator is used to maintain the order of how the translations were added
+						GsonHelper.writeValue(jsonWriter, json, null);
 					}
 					catch (IOException e) {
 						try {
@@ -156,16 +152,12 @@ public abstract class AbstractLangProvider implements DataProvider, LangProvider
 		add(stack.getDescriptionId(), name);
 	}
 
-	public void addEnchantment(Supplier<? extends Enchantment> supplier, String name) {
-		add(supplier.get(), name);
+	public void addEnchantment(ResourceKey<Enchantment> key, String name) {
+		add(key.location().toLanguageKey("enchantment"), name);
 	}
 
-	public void add(Enchantment enchantment, String name) {
-		add(enchantment.getDescriptionId(), name);
-	}
-
-	public void addEffect(Supplier<? extends MobEffect> supplier, String name) {
-		add(supplier.get(), name);
+	public void addEffect(Holder<? extends MobEffect> holder, String name) {
+		add(holder.value(), name);
 	}
 
 	public void add(MobEffect effect, String name) {
@@ -196,16 +188,15 @@ public abstract class AbstractLangProvider implements DataProvider, LangProvider
 		add(translatableContents.getKey(), translation);
 	}
 
-	public void addPainting(DeferredHolder<PaintingVariant, PaintingVariant> supplier, String title, String author) {
-		ResourceLocation id = supplier.getId();
-		assert id != null;
+	public void addPainting(ResourceKey<PaintingVariant> key, String title, String author) {
+		ResourceLocation id = key.location();
 		add(id.toLanguageKey("painting", "title"), title);
 		add(id.toLanguageKey("painting", "author"), author);
 	}
 
 	@SuppressWarnings("deprecation")
-	public void addBannerPattern(DeferredHolder<BannerPattern, BannerPattern> supplier, String name) {
-		ResourceLocation rl = ResourceLocation.parse(supplier.getId().toShortLanguageKey());
+	public void addBannerPattern(ResourceKey<BannerPattern> key, String name) {
+		ResourceLocation rl = ResourceLocation.parse(key.location().toShortLanguageKey());
 		for (DyeColor dyeColor : DyeColor.values()) {
 			String dyeColorName = WordUtils.capitalize(dyeColor.getName().replace("_", " "));
 			add("block.%s.banner.%s.%s".formatted(rl.getNamespace(), rl.getPath(), dyeColor.getName()), dyeColorName + " " + name);

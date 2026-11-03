@@ -1,18 +1,18 @@
 package com.github.elenterius.biomancy.datagen.tags;
 
+import net.minecraft.core.Registry;
 import net.minecraft.data.tags.IntrinsicHolderTagsProvider;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagBuilder;
 import net.minecraft.tags.TagKey;
-import net.minecraftforge.registries.IForgeRegistry;
 import net.neoforged.neoforge.registries.DeferredHolder;
 
 import java.util.Collection;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-public record EnhancedTagAppender<T>(IntrinsicHolderTagsProvider.IntrinsicTagAppender<T> delegate, IForgeRegistry<T> forgeRegistry) {
+public record EnhancedTagAppender<T>(IntrinsicHolderTagsProvider.IntrinsicTagAppender<T> delegate, Registry<T> registry) {
 
 	public EnhancedTagAppender<T> addTag(TagKey<T> tagKey) {
 		if (isValidNamespace(tagKey.location().getNamespace())) {
@@ -53,7 +53,7 @@ public record EnhancedTagAppender<T>(IntrinsicHolderTagsProvider.IntrinsicTagApp
 	}
 
 	public EnhancedTagAppender<T> add(T entry) {
-		ResourceLocation registryName = Objects.requireNonNull(forgeRegistry.getKey(entry));
+		ResourceLocation registryName = Objects.requireNonNull(registry.getKey(entry));
 		if (isValidNamespace(registryName.getNamespace())) {
 			delegate.add(entry);
 		}
@@ -64,7 +64,7 @@ public record EnhancedTagAppender<T>(IntrinsicHolderTagsProvider.IntrinsicTagApp
 	}
 
 	private boolean isValidNamespace(String namespace) {
-		return  "c".equals(namespace) || "minecraft".equals(namespace) || delegate.getModID().equals(namespace);
+		return "c".equals(namespace) || "minecraft".equals(namespace) || delegate.getModID().equals(namespace);
 	}
 
 	@SafeVarargs
@@ -99,9 +99,9 @@ public record EnhancedTagAppender<T>(IntrinsicHolderTagsProvider.IntrinsicTagApp
 		return this;
 	}
 
-	public EnhancedTagAppender<T> addOptional(RegistryObject<?>... entries) {
-		for (RegistryObject<?> registryObject : entries) {
-			delegate.addOptional(registryObject.getId());
+	public EnhancedTagAppender<T> addOptional(DeferredHolder<?, ?>... entries) {
+		for (DeferredHolder<?, ?> deferredHolder : entries) {
+			delegate.addOptional(deferredHolder.getId());
 		}
 		return this;
 	}

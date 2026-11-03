@@ -2,8 +2,11 @@ package com.github.elenterius.biomancy.datagen.loot;
 
 import com.github.elenterius.biomancy.loot.DespoilLootModifier;
 import com.google.common.collect.Sets;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.data.loot.LootTableSubProvider;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
@@ -17,7 +20,12 @@ import java.util.function.BiConsumer;
 
 public abstract class DespoilLootProvider implements LootTableSubProvider {
 
+	protected final HolderLookup.Provider registries;
 	private final Map<ResourceLocation, LootTableBuilder> mobToDespoilLootMap = new HashMap<>();
+
+	protected DespoilLootProvider(HolderLookup.Provider registries) {
+		this.registries = registries;
+	}
 
 	protected boolean canHaveLootTable(EntityType<?> entityType) {
 		return entityType == EntityType.PLAYER || entityType == EntityType.VILLAGER || entityType.getCategory() != MobCategory.MISC;
@@ -48,7 +56,7 @@ public abstract class DespoilLootProvider implements LootTableSubProvider {
 	public abstract void generate();
 
 	@Override
-	public void generate(BiConsumer<ResourceLocation, LootTable.Builder> output) {
+	public void generate(BiConsumer<ResourceKey<LootTable>, LootTable.Builder> output) {
 		generate();
 
 		Set<ResourceLocation> uniqueLootTables = Sets.newHashSet();
@@ -61,7 +69,7 @@ public abstract class DespoilLootProvider implements LootTableSubProvider {
 					throw new IllegalStateException(String.format(Locale.ROOT, "Duplicate despoil loottable '%s' for '%s'", lootTableBuilder.id, entityTypeId));
 				}
 				else {
-					output.accept(lootTableBuilder.id, lootTableBuilder.builder);
+					output.accept(ResourceKey.create(Registries.LOOT_TABLE, lootTableBuilder.id), lootTableBuilder.builder);
 				}
 			}
 		}

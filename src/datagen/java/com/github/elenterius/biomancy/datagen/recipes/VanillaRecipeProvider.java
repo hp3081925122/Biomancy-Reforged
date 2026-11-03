@@ -1,34 +1,44 @@
 package com.github.elenterius.biomancy.datagen.recipes;
 
 import com.github.elenterius.biomancy.BiomancyMod;
+import com.github.elenterius.biomancy.crafting.recipe.AcolyteHelmetUpgradeRecipe;
+import com.github.elenterius.biomancy.crafting.recipe.BiometricMembraneRecipe;
+import com.github.elenterius.biomancy.crafting.recipe.CradleCleansingRecipe;
+import com.github.elenterius.biomancy.crafting.recipe.PlayerHeadRecipe;
+import com.github.elenterius.biomancy.datagen.recipes.builder.FinishedRecipe;
+import com.github.elenterius.biomancy.datagen.recipes.builder.FinishedRecipeOutput;
 import com.github.elenterius.biomancy.datagen.recipes.builder.WorkbenchRecipeBuilder;
 import com.github.elenterius.biomancy.init.ModItems;
-import com.github.elenterius.biomancy.init.ModRecipes;
 import com.github.elenterius.biomancy.init.tags.ModItemTags;
 import com.github.elenterius.biomancy.item.SimpleBlockItem;
-import net.minecraft.data.PackOutput;
-import net.minecraft.data.recipes.*;
+import net.minecraft.advancements.Criterion;
+import net.minecraft.advancements.critereon.InventoryChangeTrigger;
+import net.minecraft.data.recipes.RecipeCategory;
+import net.minecraft.data.recipes.SimpleCookingRecipeBuilder;
+import net.minecraft.data.recipes.SingleItemRecipeBuilder;
+import net.minecraft.data.recipes.SpecialRecipeBuilder;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.crafting.CraftingRecipe;
+import net.minecraft.world.item.crafting.CraftingBookCategory;
 import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraft.world.item.crafting.RecipeSerializer;
+import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.level.ItemLike;
 import net.neoforged.neoforge.common.Tags;
 import net.minecraft.core.registries.BuiltInRegistries;
 
 import java.util.function.Consumer;
+import java.util.function.Function;
 
-public class VanillaRecipeProvider extends RecipeProvider {
-
-	protected VanillaRecipeProvider(PackOutput output) {
-		super(output);
-	}
+public class VanillaRecipeProvider {
 
 	protected static String hasName(ItemLike itemLike) {
 		return "has_" + getItemName(itemLike);
+	}
+
+	protected static Criterion<InventoryChangeTrigger.TriggerInstance> has(ItemLike itemLike) {
+		return InventoryChangeTrigger.TriggerInstance.hasItems(itemLike);
 	}
 
 	protected static String getItemName(ItemLike itemLike) {
@@ -36,7 +46,6 @@ public class VanillaRecipeProvider extends RecipeProvider {
 		return key != null ? key.getPath() : "unknown";
 	}
 
-	@Override
 	protected void buildRecipes(Consumer<FinishedRecipe> consumer) {
 		buildPrimaryRecipes(consumer);
 		buildFleshBlockRecipes(consumer);
@@ -44,10 +53,10 @@ public class VanillaRecipeProvider extends RecipeProvider {
 		buildFoodRecipes(consumer);
 		buildMiscRecipes(consumer);
 
-		special(consumer, ModItems.BIOMETRIC_MEMBRANE.get(), ModRecipes.BIOMETRIC_MEMBRANE_CRAFTING_SERIALIZER.get());
-		special(consumer, Items.PLAYER_HEAD, ModRecipes.PLAYER_HEAD_SERIALIZER.get());
-		special(consumer, ModItems.PRIMORDIAL_CRADLE.get(), ModRecipes.CRADLE_CLEANSING_SERIALIZER.get());
-		special(consumer, ModItems.ACOLYTE_ARMOR_HELMET.get(), ModRecipes.ACOLYTE_HELMET_UPGRADE_SERIALIZER.get());
+		special(consumer, ModItems.BIOMETRIC_MEMBRANE.get(), BiometricMembraneRecipe::new);
+		special(consumer, Items.PLAYER_HEAD, PlayerHeadRecipe::new);
+		special(consumer, ModItems.PRIMORDIAL_CRADLE.get(), CradleCleansingRecipe::new);
+		special(consumer, ModItems.ACOLYTE_ARMOR_HELMET.get(), AcolyteHelmetUpgradeRecipe::new);
 	}
 
 	private void buildPrimaryRecipes(Consumer<FinishedRecipe> consumer) {
@@ -71,16 +80,6 @@ public class VanillaRecipeProvider extends RecipeProvider {
 				.pattern(" MB")
 				.pattern(" BM")
 				.unlockedBy(ModItems.PRIMORDIAL_CORE.get()).save(consumer);
-
-		//		WorkbenchRecipeBuilder.shapeless(ModItems.GUIDE_BOOK.get())
-		//				.requires(ModItems.MOB_SINEW.get())
-		//				.requires(Items.BOOK)
-		//				.requires(ModTags.Items.RAW_MEATS)
-		//				.requires(ModItems.PRIMORDIAL_LIVING_OCULUS.get())
-		//				.requires(ModItems.MOB_FANG.get())
-		//				.unlockedBy(hasName(ModItems.PRIMORDIAL_LIVING_FLESH.get()), has(ModItems.PRIMORDIAL_LIVING_FLESH.get())).save(consumer);
-
-		// machines ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 		WorkbenchRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.PRIMORDIAL_CRADLE.get())
 				.define('E', ModItems.PRIMORDIAL_CORE.get())
@@ -111,7 +110,6 @@ public class VanillaRecipeProvider extends RecipeProvider {
 				.pattern("MEM")
 				.unlockedBy(ModItems.LIVING_FLESH.get()).save(consumer);
 
-		// A recipe for converting between two versions of Flesh Door.
 		WorkbenchRecipeBuilder.shapeless(RecipeCategory.MISC, ModItems.FLESH_DOOR.get())
 				.requires(ModItems.FULL_FLESH_DOOR.get())
 				.unlockedBy(ModItems.FULL_FLESH_DOOR.get())
@@ -194,7 +192,7 @@ public class VanillaRecipeProvider extends RecipeProvider {
 
 	private void buildMiscRecipes(Consumer<FinishedRecipe> consumer) {
 		SimpleCookingRecipeBuilder.blasting(Ingredient.of(ModItems.STONE_POWDER.get()), RecipeCategory.BUILDING_BLOCKS, Items.GLASS_PANE, 0.01f, 100)
-				.unlockedBy(hasName(ModItems.STONE_POWDER.get()), has(ModItems.STONE_POWDER.get())).save(consumer, getBlastingRecipeId(Items.GLASS_PANE));
+				.unlockedBy(hasName(ModItems.STONE_POWDER.get()), has(ModItems.STONE_POWDER.get())).save(FinishedRecipeOutput.of(consumer), getBlastingRecipeId(Items.GLASS_PANE));
 
 		WorkbenchRecipeBuilder.shapeless(RecipeCategory.BUILDING_BLOCKS, Items.DIORITE)
 				.requires(Items.COBBLESTONE)
@@ -411,8 +409,8 @@ public class VanillaRecipeProvider extends RecipeProvider {
 		return BiomancyMod.rl("blasting/" + getItemName(itemLike));
 	}
 
-	protected void special(Consumer<FinishedRecipe> consumer, ItemLike result, RecipeSerializer<? extends CraftingRecipe> serializer) {
-		SpecialRecipeBuilder.special(serializer).save(consumer, getSpecialCraftingRecipeId(result).toString());
+	protected void special(Consumer<FinishedRecipe> consumer, ItemLike result, Function<CraftingBookCategory, Recipe<?>> factory) {
+		SpecialRecipeBuilder.special(factory).save(FinishedRecipeOutput.of(consumer), getSpecialCraftingRecipeId(result));
 	}
 
 	protected void polished(Consumer<FinishedRecipe> consumer, ItemLike result, ItemLike ingredient) {
@@ -436,9 +434,9 @@ public class VanillaRecipeProvider extends RecipeProvider {
 	}
 
 	protected void stonecutting(Consumer<FinishedRecipe> consumer, ItemLike result, ItemLike ingredient, int count) {
-		SingleItemRecipeBuilder builder = SingleItemRecipeBuilder.stonecutting(Ingredient.of(ingredient), RecipeCategory.BUILDING_BLOCKS, result, count).unlockedBy(getHasName(ingredient), has(ingredient));
+		SingleItemRecipeBuilder builder = SingleItemRecipeBuilder.stonecutting(Ingredient.of(ingredient), RecipeCategory.BUILDING_BLOCKS, result, count).unlockedBy(hasName(ingredient), has(ingredient));
 		ResourceLocation recipeName = getStoneCuttingRecipeId(result, ingredient);
-		builder.save(consumer, recipeName);
+		builder.save(FinishedRecipeOutput.of(consumer), recipeName);
 	}
 
 	protected void blockFromSlabs(Consumer<FinishedRecipe> consumer, Item result, Item slab) {

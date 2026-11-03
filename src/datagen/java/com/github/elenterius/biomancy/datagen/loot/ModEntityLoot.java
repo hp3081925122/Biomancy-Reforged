@@ -3,6 +3,9 @@ package com.github.elenterius.biomancy.datagen.loot;
 import com.github.elenterius.biomancy.init.ModEntityTypes;
 import com.github.elenterius.biomancy.init.ModItems;
 import com.github.elenterius.biomancy.init.ModLoot;
+import net.minecraft.advancements.critereon.EntityFlagsPredicate;
+import net.minecraft.advancements.critereon.EntityPredicate;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.data.loot.EntityLootSubProvider;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.flag.FeatureFlags;
@@ -11,10 +14,11 @@ import net.minecraft.world.level.storage.loot.LootContext;
 import net.minecraft.world.level.storage.loot.LootPool;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.storage.loot.entries.LootItem;
-import net.minecraft.world.level.storage.loot.entries.LootTableReference;
-import net.minecraft.world.level.storage.loot.functions.LootingEnchantFunction;
+import net.minecraft.world.level.storage.loot.entries.NestedLootTable;
+import net.minecraft.world.level.storage.loot.functions.EnchantedCountIncreaseFunction;
 import net.minecraft.world.level.storage.loot.functions.SetItemCountFunction;
 import net.minecraft.world.level.storage.loot.functions.SmeltItemFunction;
+import net.minecraft.world.level.storage.loot.predicates.LootItemCondition;
 import net.minecraft.world.level.storage.loot.predicates.LootItemEntityPropertyCondition;
 import net.minecraft.world.level.storage.loot.predicates.LootItemKilledByPlayerCondition;
 import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
@@ -27,23 +31,27 @@ import static com.github.elenterius.biomancy.BiomancyMod.LOGGER;
 
 public class ModEntityLoot extends EntityLootSubProvider {
 
-	protected ModEntityLoot() {
-		super(FeatureFlags.REGISTRY.allFlags());
+	protected ModEntityLoot(HolderLookup.Provider registries) {
+		super(FeatureFlags.REGISTRY.allFlags(), registries);
+	}
+
+	private static LootItemCondition.Builder entityOnFire() {
+		return LootItemEntityPropertyCondition.hasProperties(LootContext.EntityTarget.THIS, EntityPredicate.Builder.entity().flags(EntityFlagsPredicate.Builder.flags().setOnFire(true)));
 	}
 
 	private LootTable.Builder fleshBlobLootTableBuilderWithDrop(int rolls) {
 		return LootTable.lootTable()
 				.withPool(LootPool.lootPool().setRolls(ConstantValue.exactly(rolls)).add(LootItem.lootTableItem(ModItems.LIVING_FLESH.get())))
-				.withPool(LootPool.lootPool().setRolls(ConstantValue.exactly(1)).add(LootTableReference.lootTableReference(ModEntityTypes.FLESH_BLOB.get().getDefaultLootTable())));
+				.withPool(LootPool.lootPool().setRolls(ConstantValue.exactly(1)).add(NestedLootTable.lootTableReference(ModEntityTypes.FLESH_BLOB.get().getDefaultLootTable())));
 	}
 
 	private LootTable.Builder fleshBlobLootTable() {
 		return LootTable.lootTable()
 				.withPool(LootPool.lootPool().setRolls(ConstantValue.exactly(1)).add(LootItem.lootTableItem(ModItems.LIVING_FLESH.get())
-						.apply(SetItemCountFunction.setCount(ConstantValue.exactly(1))).apply(LootingEnchantFunction.lootingMultiplier(UniformGenerator.between(0f, 1f)))))
+						.apply(SetItemCountFunction.setCount(ConstantValue.exactly(1))).apply(EnchantedCountIncreaseFunction.lootingMultiplier(registries, UniformGenerator.between(0f, 1f)))))
 				.withPool(LootPool.lootPool().setRolls(ConstantValue.exactly(1))
 						.add(LootItem.lootTableItem(ModItems.LIVING_FLESH.get()).apply(SetItemCountFunction.setCount(UniformGenerator.between(-4f, 1f)))
-								.apply(LootingEnchantFunction.lootingMultiplier(UniformGenerator.between(0f, 1f))))
+								.apply(EnchantedCountIncreaseFunction.lootingMultiplier(registries, UniformGenerator.between(0f, 1f))))
 						.when(LootItemKilledByPlayerCondition.killedByPlayer()));
 	}
 
@@ -51,8 +59,8 @@ public class ModEntityLoot extends EntityLootSubProvider {
 		return LootTable.lootTable()
 				.withPool(LootPool.lootPool().setRolls(ConstantValue.exactly(1)).add(LootItem.lootTableItem(Items.BEEF)
 						.apply(SetItemCountFunction.setCount(UniformGenerator.between(2, 4)))
-						.apply(SmeltItemFunction.smelted().when(LootItemEntityPropertyCondition.hasProperties(LootContext.EntityTarget.THIS, ENTITY_ON_FIRE)))
-						.apply(LootingEnchantFunction.lootingMultiplier(UniformGenerator.between(0, 1))))
+						.apply(SmeltItemFunction.smelted().when(entityOnFire()))
+						.apply(EnchantedCountIncreaseFunction.lootingMultiplier(registries, UniformGenerator.between(0, 1))))
 				);
 	}
 
@@ -60,8 +68,8 @@ public class ModEntityLoot extends EntityLootSubProvider {
 		return LootTable.lootTable()
 				.withPool(LootPool.lootPool().setRolls(ConstantValue.exactly(1)).add(LootItem.lootTableItem(Items.MUTTON)
 						.apply(SetItemCountFunction.setCount(UniformGenerator.between(2, 4)))
-						.apply(SmeltItemFunction.smelted().when(LootItemEntityPropertyCondition.hasProperties(LootContext.EntityTarget.THIS, ENTITY_ON_FIRE)))
-						.apply(LootingEnchantFunction.lootingMultiplier(UniformGenerator.between(0, 1))))
+						.apply(SmeltItemFunction.smelted().when(entityOnFire()))
+						.apply(EnchantedCountIncreaseFunction.lootingMultiplier(registries, UniformGenerator.between(0, 1))))
 				);
 	}
 
@@ -71,30 +79,30 @@ public class ModEntityLoot extends EntityLootSubProvider {
 						.apply(SetItemCountFunction.setCount(UniformGenerator.between(0, 2)))))
 				.withPool(LootPool.lootPool().setRolls(ConstantValue.exactly(1)).add(LootItem.lootTableItem(Items.STRING)
 						.apply(SetItemCountFunction.setCount(UniformGenerator.between(0, 2)))))
-				.withPool(LootPool.lootPool().setRolls(ConstantValue.exactly(1)).add(LootTableReference.lootTableReference(ModEntityTypes.FLESH_SHEEP.get().getDefaultLootTable())));
+				.withPool(LootPool.lootPool().setRolls(ConstantValue.exactly(1)).add(NestedLootTable.lootTableReference(ModEntityTypes.FLESH_SHEEP.get().getDefaultLootTable())));
 	}
 
 	private LootTable.Builder sheepLootTable() {
 		return LootTable.lootTable()
 				.withPool(LootPool.lootPool().setRolls(ConstantValue.exactly(1)).add(LootItem.lootTableItem(Items.MUTTON)
 						.apply(SetItemCountFunction.setCount(UniformGenerator.between(1, 2)))
-						.apply(SmeltItemFunction.smelted().when(LootItemEntityPropertyCondition.hasProperties(LootContext.EntityTarget.THIS, ENTITY_ON_FIRE)))
-						.apply(LootingEnchantFunction.lootingMultiplier(UniformGenerator.between(0, 1)))));
+						.apply(SmeltItemFunction.smelted().when(entityOnFire()))
+						.apply(EnchantedCountIncreaseFunction.lootingMultiplier(registries, UniformGenerator.between(0, 1)))));
 	}
 
 	private LootTable.Builder pigLootTable() {
 		return LootTable.lootTable()
 				.withPool(LootPool.lootPool().setRolls(ConstantValue.exactly(1)).add(LootItem.lootTableItem(Items.PORKCHOP)
 						.apply(SetItemCountFunction.setCount(UniformGenerator.between(3, 6)))
-						.apply(SmeltItemFunction.smelted().when(LootItemEntityPropertyCondition.hasProperties(LootContext.EntityTarget.THIS, ENTITY_ON_FIRE)))
-						.apply(LootingEnchantFunction.lootingMultiplier(UniformGenerator.between(0, 1))))
+						.apply(SmeltItemFunction.smelted().when(entityOnFire()))
+						.apply(EnchantedCountIncreaseFunction.lootingMultiplier(registries, UniformGenerator.between(0, 1))))
 				);
 	}
 
 	private LootTable.Builder chickenLootTable() {
 		return LootTable.lootTable().withPool(LootPool.lootPool().setRolls(ConstantValue.exactly(1)).add(LootItem.lootTableItem(Items.CHICKEN)
-				.apply(SmeltItemFunction.smelted().when(LootItemEntityPropertyCondition.hasProperties(LootContext.EntityTarget.THIS, ENTITY_ON_FIRE)))
-				.apply(LootingEnchantFunction.lootingMultiplier(UniformGenerator.between(0, 1))))
+				.apply(SmeltItemFunction.smelted().when(entityOnFire()))
+				.apply(EnchantedCountIncreaseFunction.lootingMultiplier(registries, UniformGenerator.between(0, 1))))
 		);
 	}
 

@@ -8,10 +8,14 @@ import com.github.elenterius.biomancy.block.membrane.BiometricMembraneBlockEntit
 import com.github.elenterius.biomancy.block.property.DirectionalSlabType;
 import com.github.elenterius.biomancy.init.ModBlocks;
 import net.minecraft.advancements.critereon.EnchantmentPredicate;
+import net.minecraft.advancements.critereon.ItemEnchantmentsPredicate;
 import net.minecraft.advancements.critereon.ItemPredicate;
+import net.minecraft.advancements.critereon.ItemSubPredicates;
 import net.minecraft.advancements.critereon.MinMaxBounds;
 import net.minecraft.advancements.critereon.StatePropertiesPredicate;
 import net.minecraft.core.Direction;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.data.loot.BlockLootSubProvider;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.item.Item;
@@ -25,13 +29,14 @@ import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.level.storage.loot.LootPool;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.storage.loot.entries.LootItem;
+import com.github.elenterius.biomancy.loot.CopyBlockEntityDataFunction;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.level.storage.loot.functions.CopyComponentsFunction;
 import net.minecraft.world.level.storage.loot.functions.CopyNameFunction;
-import net.minecraft.world.level.storage.loot.functions.CopyNbtFunction;
 import net.minecraft.world.level.storage.loot.functions.SetItemCountFunction;
 import net.minecraft.world.level.storage.loot.predicates.LootItemBlockStatePropertyCondition;
 import net.minecraft.world.level.storage.loot.predicates.LootItemCondition;
 import net.minecraft.world.level.storage.loot.predicates.MatchTool;
-import net.minecraft.world.level.storage.loot.providers.nbt.ContextNbtProvider;
 import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import org.apache.logging.log4j.Marker;
@@ -47,41 +52,46 @@ public class ModBlockLoot extends BlockLootSubProvider {
 
 	protected static final Marker LOG_MARKER = ModLootTableProvider.LOG_MARKER;
 
-	protected static final LootItemCondition.Builder HAS_SILK_TOUCH = MatchTool.toolMatches(ItemPredicate.Builder.item().hasEnchantment(new EnchantmentPredicate(Enchantments.SILK_TOUCH, MinMaxBounds.Ints.atLeast(1))));
-	protected static final LootItemCondition.Builder HAS_SHEARS = MatchTool.toolMatches(ItemPredicate.Builder.item().of(Items.SHEARS));
-	protected static final LootItemCondition.Builder HAS_SHEARS_OR_SILK_TOUCH = HAS_SHEARS.or(HAS_SILK_TOUCH);
+	protected final LootItemCondition.Builder hasSilkTouch;
+	protected final LootItemCondition.Builder hasShears;
+	protected final LootItemCondition.Builder hasShearsOrSilkTouch;
 
 	private static final Set<Item> EXPLOSION_RESISTANT = Set.of();
 
-	public ModBlockLoot() {
-		super(EXPLOSION_RESISTANT, FeatureFlags.REGISTRY.allFlags());
+	public ModBlockLoot(HolderLookup.Provider registries) {
+		super(EXPLOSION_RESISTANT, FeatureFlags.REGISTRY.allFlags(), registries);
+
+		hasSilkTouch = MatchTool.toolMatches(ItemPredicate.Builder.item().withSubPredicate(ItemSubPredicates.ENCHANTMENTS,
+				ItemEnchantmentsPredicate.enchantments(List.of(new EnchantmentPredicate(registries.lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantments.SILK_TOUCH), MinMaxBounds.Ints.atLeast(1))))));
+		hasShears = MatchTool.toolMatches(ItemPredicate.Builder.item().of(Items.SHEARS));
+		hasShearsOrSilkTouch = hasShears.or(hasSilkTouch);
 	}
 
 	@Override
 	protected Iterable<Block> getKnownBlocks() {
-		List<Block> blocks = ModBlocks.BLOCKS.getEntries().stream().map(DeferredHolder::get).toList();
+		List<Block> blocks = ModBlocks.BLOCKS.getEntries().stream().<Block>map(DeferredHolder::get).toList();
 		LOGGER.info(LOG_MARKER, "generating loot tables for {} blocks...", blocks.size());
 		return blocks;
 	}
 
 	protected LootTable.Builder createShearsOrSilkTouchOnlyDrop(ItemLike item) {
-		return LootTable.lootTable().withPool(LootPool.lootPool().setRolls(ConstantValue.exactly(1)).when(HAS_SHEARS_OR_SILK_TOUCH).add(LootItem.lootTableItem(item)));
+		return LootTable.lootTable().withPool(LootPool.lootPool().setRolls(ConstantValue.exactly(1)).when(hasShearsOrSilkTouch).add(LootItem.lootTableItem(item)));
 	}
 
 	protected LootTable.Builder createNameableBioMachineTable(Block block) {
 		return LootTable.lootTable().withPool(applyExplosionCondition(block, LootPool.lootPool().setRolls(ConstantValue.exactly(1))
 				.add(LootItem.lootTableItem(block)
 						.apply(CopyNameFunction.copyName(CopyNameFunction.NameSource.BLOCK_ENTITY))
-						.apply(CopyNbtFunction.copyData(ContextNbtProvider.BLOCK_ENTITY).copy("Fuel", "BlockEntityTag.Fuel"))
+						.apply(CopyBlockEntityDataFunction.copy("Fuel"))
 				)));
 	}
 
 	protected LootTable.Builder createPrimordialCradleTable(Block block) {
 		return LootTable.lootTable().withPool(applyExplosionCondition(block, LootPool.lootPool().setRolls(ConstantValue.exactly(1))
 				.add(LootItem.lootTableItem(block)
-						.apply(CopyNbtFunction.copyData(ContextNbtProvider.BLOCK_ENTITY).copy("PrimalEnergy", "BlockEntityTag.PrimalEnergy"))
-						.apply(CopyNbtFunction.copyData(ContextNbtProvider.BLOCK_ENTITY).copy("ProcGenValues", "BlockEntityTag.ProcGenValues"))
-						.apply(CopyNbtFunction.copyData(ContextNbtProvider.BLOCK_ENTITY).copy("SacrificeHandler", "BlockEntityTag.SacrificeHandler"))
+						.apply(CopyBlockEntityDataFunction.copy("PrimalEnergy"))
+						.apply(CopyBlockEntityDataFunction.copy("ProcGenValues"))
+						.apply(CopyBlockEntityDataFunction.copy("SacrificeHandler"))
 				)));
 	}
 
@@ -89,7 +99,7 @@ public class ModBlockLoot extends BlockLootSubProvider {
 		return LootTable.lootTable().withPool(applyExplosionCondition(block, LootPool.lootPool().setRolls(ConstantValue.exactly(1))
 				.add(LootItem.lootTableItem(block)
 						.apply(CopyNameFunction.copyName(CopyNameFunction.NameSource.BLOCK_ENTITY))
-						.apply(CopyNbtFunction.copyData(ContextNbtProvider.BLOCK_ENTITY).copy("Inventory", "BlockEntityTag.Inventory"))
+						.apply(CopyComponentsFunction.copyComponents(CopyComponentsFunction.Source.BLOCK_ENTITY).include(DataComponents.CONTAINER))
 				)));
 	}
 
@@ -97,14 +107,14 @@ public class ModBlockLoot extends BlockLootSubProvider {
 		return LootTable.lootTable().withPool(applyExplosionCondition(block, LootPool.lootPool().setRolls(ConstantValue.exactly(1))
 				.add(LootItem.lootTableItem(block)
 						.apply(CopyNameFunction.copyName(CopyNameFunction.NameSource.BLOCK_ENTITY))
-						.apply(CopyNbtFunction.copyData(ContextNbtProvider.BLOCK_ENTITY).copy(Chrysalis.ENTITY_KEY, "BlockEntityTag." + Chrysalis.ENTITY_KEY))
+						.apply(CopyBlockEntityDataFunction.copy(Chrysalis.ENTITY_KEY))
 				)));
 	}
 
 	protected LootTable.Builder dropMembraneSettings(Block block) {
 		return LootTable.lootTable().withPool(applyExplosionCondition(block, LootPool.lootPool().setRolls(ConstantValue.exactly(1))
 				.add(LootItem.lootTableItem(block)
-						.apply(CopyNbtFunction.copyData(ContextNbtProvider.BLOCK_ENTITY).copy(BiometricMembraneBlockEntity.MEMBRANE_KEY, "BlockEntityTag." + BiometricMembraneBlockEntity.MEMBRANE_KEY))
+						.apply(CopyBlockEntityDataFunction.copy(BiometricMembraneBlockEntity.MEMBRANE_KEY))
 				)));
 	}
 
@@ -112,17 +122,17 @@ public class ModBlockLoot extends BlockLootSubProvider {
 		return LootTable.lootTable().withPool(applyExplosionCondition(block, LootPool.lootPool().setRolls(ConstantValue.exactly(1))
 				.add(LootItem.lootTableItem(block)
 						.apply(CopyNameFunction.copyName(CopyNameFunction.NameSource.BLOCK_ENTITY))
-						.apply(CopyNbtFunction.copyData(ContextNbtProvider.BLOCK_ENTITY).copy("Inventory", "BlockEntityTag.Inventory"))
-						.apply(CopyNbtFunction.copyData(ContextNbtProvider.BLOCK_ENTITY).copy("OwnerUUID", "BlockEntityTag.OwnerUUID"))
-						.apply(CopyNbtFunction.copyData(ContextNbtProvider.BLOCK_ENTITY).copy("UserList", "BlockEntityTag.UserList"))
+						.apply(CopyBlockEntityDataFunction.copy("Inventory"))
+						.apply(CopyBlockEntityDataFunction.copy("OwnerUUID"))
+						.apply(CopyBlockEntityDataFunction.copy("UserList"))
 				)));
 	}
 
 	protected LootTable.Builder dropWithOwnableData(Block container) {
 		return LootTable.lootTable().withPool(applyExplosionCondition(container, LootPool.lootPool().setRolls(ConstantValue.exactly(1))
 				.add(LootItem.lootTableItem(container)
-						.apply(CopyNbtFunction.copyData(ContextNbtProvider.BLOCK_ENTITY).copy("OwnerUUID", "BlockEntityTag.OwnerUUID"))
-						.apply(CopyNbtFunction.copyData(ContextNbtProvider.BLOCK_ENTITY).copy("UserList", "BlockEntityTag.UserList"))
+						.apply(CopyBlockEntityDataFunction.copy("OwnerUUID"))
+						.apply(CopyBlockEntityDataFunction.copy("UserList"))
 				)));
 	}
 
@@ -246,7 +256,7 @@ public class ModBlockLoot extends BlockLootSubProvider {
 		add(ModBlocks.MALIGNANT_FLESH_SLAB.get(), this::createDirectionalSlabTable);
 		dropSelf(ModBlocks.MALIGNANT_FLESH_STAIRS.get());
 		dropSelf(ModBlocks.MALIGNANT_FLESH_WALL.get());
-		add(ModBlocks.MALIGNANT_FLESH_VEINS.get(), block -> createMultifaceBlockDrops(block, HAS_SHEARS_OR_SILK_TOUCH));
+		add(ModBlocks.MALIGNANT_FLESH_VEINS.get(), block -> createMultifaceBlockDrops(block, hasShearsOrSilkTouch));
 		add(ModBlocks.PRIMAL_BLOOM.get(), this::createShearsOrSilkTouchOnlyDrop);
 		dropSelf(ModBlocks.PRIMAL_ORIFICE.get());
 		dropSelf(ModBlocks.PRIMAL_BONE.get());
@@ -265,7 +275,6 @@ public class ModBlockLoot extends BlockLootSubProvider {
 		dropSelf(ModBlocks.ONEWAY_MEMBRANE.get());
 
 		dropSelf(ModBlocks.MODULAR_LARYNX.get());
-		//dropSelf(ModBlocks.NEURAL_INTERCEPTOR.get());
 
 		dropSelf(ModBlocks.FLESH_IRIS_DOOR.get());
 		dropSelf(ModBlocks.FLESH_FENCE.get());
