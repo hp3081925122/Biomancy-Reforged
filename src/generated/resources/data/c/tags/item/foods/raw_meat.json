@@ -1,0 +1,70 @@
+{
+  "values": [
+    {
+      "id": "#c:foods/raw_meats",
+      "required": false
+    },
+    {
+      "id": "#c:raw_meats",
+      "required": false
+    },
+    {
+      "id": "#c:raw_meat",
+      "required": false
+    },
+    {
+      "id": "#c:raw_bacon",
+      "required": false
+    },
+    {
+      "id": "#c:raw_beef",
+      "required": false
+    },
+    {
+      "id": "#c:raw_chicken",
+      "required": false
+    },
+    {
+      "id": "#c:raw_pork",
+      "required": false
+    },
+    {
+      "id": "#c:raw_mutton",
+      "required": false
+    },
+    "#c:foods/raw_pork",
+    "minecraft:beef",
+    "minecraft:porkchop",
+    "minecraft:chicken",
+    "minecraft:rabbit",
+    "minecraft:mutton",
+    {
+      "id": "farmersdelight:ham",
+      "required": false
+    },
+    {
+      "id": "createfa:ground_chicken",
+      "required": false
+    },
+    {
+      "id": "createfa:ground_beef",
+      "required": false
+    },
+    {
+      "id": "rats:raw_rat",
+      "required": false
+    },
+    {
+      "id": "circus:clown",
+      "required": false
+    },
+    {
+      "id": "evilcraft:flesh_humanoid",
+      "required": false
+    },
+    {
+      "id": "evilcraft:flesh_werewolf",
+      "required": false
+    }
+  ]
+}

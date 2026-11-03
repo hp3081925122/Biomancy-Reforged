@@ -16,6 +16,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ItemLike;
 import net.neoforged.neoforge.common.data.ExistingFileHelper;
 
@@ -168,7 +169,7 @@ public class AdvancementBuilder {
 
 	public AdvancementHolder save(Consumer<AdvancementHolder> consumer, ExistingFileHelper fileHelper, String category) throws IllegalStateException {
 		if (empty) {
-			internalBuilder.display(icon, ComponentUtil.EMPTY, ComponentUtil.EMPTY, background, frameType, showToast, announceToChat, hidden);
+			internalBuilder.display(icon.isEmpty() ? new ItemStack(Items.STRUCTURE_VOID) : icon, ComponentUtil.EMPTY, ComponentUtil.EMPTY, background, frameType, showToast, announceToChat, hidden);
 			return internalBuilder.save(consumer, createRL(category + "/" + id), fileHelper);
 		}
 

@@ -87,13 +87,11 @@ public final class ClientSoundHandler {
 		}
 	}
 
-	@SubscribeEvent
 	public void onEntityLeaveLevel(final EntityLeaveLevelEvent event) {
 		if (!event.getLevel().isClientSide) return;
 		removeSoundLayers(event.getEntity(), true);
 	}
 
-	@SubscribeEvent
 	public void onLevelUnload(final LevelEvent.Unload event) {
 		if (!event.getLevel().isClientSide()) return;
 		removeAllSoundLayers(true);

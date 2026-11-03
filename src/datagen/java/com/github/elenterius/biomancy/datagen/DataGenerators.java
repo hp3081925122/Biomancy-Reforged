@@ -54,6 +54,7 @@ public final class DataGenerators {
 		generator.addProvider(includeServer, recipeProvider);
 		generator.addProvider(includeServer, new WikiRecipesProvider(packOutput, recipeProvider, lookupProvider));
 
+		generator.addProvider(includeServer, new ModDataMapProvider(packOutput, lookupProvider));
 		generator.addProvider(includeServer, new ModLootTableProvider(packOutput, lookupProvider));
 		generator.addProvider(includeServer, new ModGlobalLootModifierProvider(packOutput, lookupProvider));
 		if (System.getProperty("wiki.docs") != null) {

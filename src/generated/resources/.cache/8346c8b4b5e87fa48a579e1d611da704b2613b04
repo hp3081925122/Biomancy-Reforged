@@ -1,0 +1,15 @@
+// 1.21.1	2026-11-04T00:24:25.8253151	Tags for minecraft:damage_type mod id biomancy
+762a178af79f6f3f6c9e220b2ce72c233056747c data/c/tags/damage_type/is_acid.json
+a469bff2e6de9842fa1a757f15f2b6e751e890d7 data/minecraft/tags/damage_type/always_hurts_ender_dragons.json
+07aacd2bcda2f87a8171d64f09346de2e0ea8dea data/minecraft/tags/damage_type/always_triggers_silverfish.json
+eed7a55ef483107572d4f616dde80287bf60dfc6 data/minecraft/tags/damage_type/avoids_guardian_thorns.json
+30ce974a664a72460b19c63c90f4de2877a3c7a4 data/minecraft/tags/damage_type/bypasses_armor.json
+9b8fe94772efeab9cfa51f163cd0a06b4d3f8e9f data/minecraft/tags/damage_type/bypasses_cooldown.json
+b625c39c9f80969ac4140966895d5b5c0c97848f data/minecraft/tags/damage_type/bypasses_effects.json
+b625c39c9f80969ac4140966895d5b5c0c97848f data/minecraft/tags/damage_type/bypasses_enchantments.json
+b625c39c9f80969ac4140966895d5b5c0c97848f data/minecraft/tags/damage_type/bypasses_resistance.json
+858fa673f37217ba7e8f2f2c14ac306ea8c7aa75 data/minecraft/tags/damage_type/is_fall.json
+cde009b574e9980fb38c7f3d3b08f83f87738cdf data/minecraft/tags/damage_type/is_projectile.json
+6a0604a9bea9bfa473d8d0af83a496fa5c79ca9a data/minecraft/tags/damage_type/no_impact.json
+823197c5b89c94a4ad60c9e37dd1690b136692e5 data/minecraft/tags/damage_type/witch_resistant_to.json
+823197c5b89c94a4ad60c9e37dd1690b136692e5 data/neoforge/tags/damage_type/is_poison.json

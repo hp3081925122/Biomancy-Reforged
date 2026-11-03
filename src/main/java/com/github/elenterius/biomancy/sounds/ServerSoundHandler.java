@@ -29,7 +29,6 @@ public class ServerSoundHandler {
 		return BuiltInRegistries.SOUND_EVENT.get(key);
 	}
 
-	@SubscribeEvent
 	public void onStartTrackingEntity(final PlayerEvent.StartTracking event) {
 		CompoundTag soundLayers = event.getTarget().getPersistentData().getCompound(SOUND_LAYERS_KEY);
 

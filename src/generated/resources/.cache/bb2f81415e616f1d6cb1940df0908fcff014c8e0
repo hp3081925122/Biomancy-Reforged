@@ -1,0 +1,10 @@
+// 1.21.1	2026-11-04T00:24:25.8073642	Biomancy Tags for minecraft:entity_type mod id biomancy
+2d4288ab3891bd9d2f2a10cb2be71dae3059faad data/biomancy/tags/entity_type/capturing_by_chrysalis_not_allowed.json
+6f79928b0be67daa1a3f54f1b598e568f96741e6 data/biomancy/tags/entity_type/fleshkin.json
+1e855ef024e2ee94127cb7cf5d7c52ef68805388 data/biomancy/tags/entity_type/fleshkin_ignores.json
+1fbc20eec88e32c0260ab9f594e7c8695167c9f7 data/biomancy/tags/entity_type/not_cloneable.json
+35133e95f1c8fdd7a1c21afcc231fc0bffefb9a8 data/biomancy/tags/entity_type/resizing_not_allowed.json
+7d8ddddfbbb5cffbba07c755d16781c953c6c151 data/c/tags/entity_type/bosses.json
+9ba134af12e53925c44ff4093567c53a2f71268c data/c/tags/entity_type/golems.json
+62a78fdcdc8b2c82fdf12051999ee2267ed82451 data/minecraft/tags/entity_type/dismounts_underwater.json
+62a78fdcdc8b2c82fdf12051999ee2267ed82451 data/minecraft/tags/entity_type/fall_damage_immune.json

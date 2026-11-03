@@ -115,7 +115,7 @@ public class EnglishLangProvider extends AbstractLangProvider {
 	}
 
 	private void addRarity(Rarity rarity, String translation) {
-		add("rarity." + rarity.name().toLowerCase(Locale.ENGLISH).replace(":", "."), translation);
+		add("rarity." + rarity.getSerializedName().replace(":", "."), translation);
 	}
 
 	private <T extends Item> void addItem(Supplier<T> supplier, String name, String tooltip) {

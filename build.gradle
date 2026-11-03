@@ -92,6 +92,9 @@ runs {
         systemProperty 'geckolib.disable_examples', 'true'
         systemProperty 'biomancy.dev_mode', 'true'
         modSource project.sourceSets.main
+        dependencies {
+            runtime "com.h2database:h2:${project.h2_version}"
+        }
     }
 
     client {

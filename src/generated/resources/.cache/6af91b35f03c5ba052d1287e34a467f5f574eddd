@@ -1,0 +1,9 @@
+// 1.21.1	2026-11-04T00:24:25.8239136	Biomancy Tags for minecraft:mob_effect mod id biomancy
+edd8f0c0b7e60e882190c8206f77792ca6f4a114 data/biomancy/tags/mob_effect/cradle/anomaly_sources.json
+7831986346fcaab3e8eff09c92f46f45e266cabb data/biomancy/tags/mob_effect/cradle/disease_sources.json
+356e87d9d2d54056eb0e668d897e9cc96bd8951f data/biomancy/tags/mob_effect/cradle/hostility_sources.json
+336e6f18d8e368a9a82a8c30a8620a043b09fc92 data/biomancy/tags/mob_effect/cradle/life_energy_sources.json
+6db61863a91721d3d98c4107f102fe38ebc1f327 data/biomancy/tags/mob_effect/cradle/success_sources.json
+39695892053d2e695be6b41887517d5355d8fa3e data/biomancy/tags/mob_effect/not_removable_with_cleansing_serum.json
+843fe52f5cbb9ce1d959dc615250f0c4e327389a data/c/tags/mob_effect/is_acid.json
+823197c5b89c94a4ad60c9e37dd1690b136692e5 data/neoforge/tags/mob_effect/is_poison.json

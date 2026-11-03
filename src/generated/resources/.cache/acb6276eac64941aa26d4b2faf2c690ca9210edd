@@ -1,0 +1,26 @@
+// 1.21.1	2026-11-04T00:24:25.8203	Biomancy Tags for minecraft:block mod id biomancy
+b56072bfa26bb3765b89f20db598de59b3a44756 data/biomancy/tags/block/acid_destructible.json
+6d3dbd8fb431cb9fc952691e82bcdf18fdcebe08 data/biomancy/tags/block/allow_gas_to_pass_through.json
+2951723f8d0e081a982e30a72ab9c8865949ed46 data/biomancy/tags/block/allow_veins_to_attach.json
+726624b889dae1abf135e01bdbe09dfe8fe96663 data/biomancy/tags/block/decay_destructible.json
+2e46f21b218ed65c9a71019bef086d89e3face6a data/biomancy/tags/block/disallow_veins_to_attach.json
+c7a1ebaac3cfe5de4edee3c5d0a525e444417076 data/biomancy/tags/block/fleshy_fences.json
+b97ed43941c8a9d8ae0b3c1cd6bb6ba6b2d4c051 data/biomancy/tags/block/flesh_replaceable.json
+4444de8bb7d774b6336eb55fda728f6900c37af4 data/biomancy/tags/block/lava_destructible.json
+78f40e2736b11c43e6ab44c571bf69b78ceca0d3 data/create/tags/block/movable_empty_collider.json
+dafbc3976ad9b0534ce007e8d541555172d028c3 data/create/tags/block/windmill_sails.json
+6b2836bc67249eb5d680a8956312393a807a2ed7 data/c/tags/block/chests.json
+fbaeadb15bf46d6edbc6d77f6d4306b206a36f88 data/minecraft/tags/block/climbable.json
+0c2a12b15db235c069e754139c39b7778a94379e data/minecraft/tags/block/doors.json
+5cd60e631aa8f3454f248154b90475a4736dffff data/minecraft/tags/block/fences.json
+309d37af55ccccee3383ecda96bda5eaf5f60847 data/minecraft/tags/block/fence_gates.json
+dafbc3976ad9b0534ce007e8d541555172d028c3 data/minecraft/tags/block/impermeable.json
+adaec101d0fb3e3d848c8efd784c50c022f45289 data/minecraft/tags/block/mineable/hoe.json
+24ddaff37062af8719ae6cab3baf6494f2734815 data/minecraft/tags/block/mineable/pickaxe.json
+0ba0195fbdae32b09f8495d15f1a1b2f85587a1a data/minecraft/tags/block/mineable/shovel.json
+080815dc7fa6b7d2b59d48f5709f0f3e17329c2f data/minecraft/tags/block/pressure_plates.json
+be639679a1e48cc9f5a341fed85b4a2cf2fd5417 data/minecraft/tags/block/slabs.json
+c40bee1dedc97c67d8dd1377e76be2e68854b251 data/minecraft/tags/block/stairs.json
+050ebd20b37f33be768d562fcf62d866323c9a07 data/minecraft/tags/block/trapdoors.json
+918d3b9a91db9ea7577cd4f2017b4a0d3ac74eeb data/minecraft/tags/block/walls.json
+0c2a12b15db235c069e754139c39b7778a94379e data/quark/tags/block/non_double_door.json

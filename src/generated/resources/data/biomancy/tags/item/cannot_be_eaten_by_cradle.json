@@ -1,0 +1,17 @@
+{
+  "values": [
+    "minecraft:dragon_egg",
+    "minecraft:spawner",
+    "minecraft:heart_of_the_sea",
+    "minecraft:name_tag",
+    "minecraft:bundle",
+    "#c:music_discs",
+    "minecraft:elytra",
+    "#c:armors",
+    "#c:tools",
+    "#c:ores/netherite_scrap",
+    "#c:ingots/netherite",
+    "#c:storage_blocks/netherite",
+    "#c:shulker_boxes"
+  ]
+}
