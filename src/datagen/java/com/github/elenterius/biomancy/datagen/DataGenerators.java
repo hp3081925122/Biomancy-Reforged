@@ -49,6 +49,7 @@ public final class DataGenerators {
 		generator.addProvider(includeServer, new ModDamageTypeTagsProvider(packOutput, lookupProvider, existingFileHelper));
 		generator.addProvider(includeServer, new ModMobEffectTagsProvider(packOutput, lookupProvider, existingFileHelper));
 		generator.addProvider(includeServer, new ModPaintingTagsProvider(packOutput, lookupProvider, existingFileHelper));
+		generator.addProvider(includeServer, new ModEnchantmentTagsProvider(packOutput, lookupProvider, existingFileHelper));
 
 		ModRecipeProvider recipeProvider = new ModRecipeProvider(packOutput, lookupProvider);
 		generator.addProvider(includeServer, recipeProvider);

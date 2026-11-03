@@ -1,8 +1,12 @@
-// 1.21.1	2026-11-04T00:24:25.8253151	Biomancy Tags for minecraft:item mod id biomancy
+// 1.21.1	2026-11-04T01:41:32.202717	Biomancy Tags for minecraft:item mod id biomancy
 8ed600b9a6956e7a25077fc43a427a0c42ff1e35 data/biomancy/tags/item/advanced_type.json
 444e04abf546dcef22aab8fd6b5b7b8fdf0bcc2d data/biomancy/tags/item/cannot_be_digested_in_acid.json
 bec4c37f77e6492f4c9c90e537f2454d1f7f676a data/biomancy/tags/item/cannot_be_eaten_by_cradle.json
 7047772ebffb456ad6bcb8741001c99152790c09 data/biomancy/tags/item/cooked_meats.json
+f669faa5d2391fb38e0605a9a6787f51c4ec210e data/biomancy/tags/item/enchantable/living.json
+3128088824d2f75ffd6fc2649f52d8f9474fb3c8 data/biomancy/tags/item/enchantable/surgery.json
+86da0afc578b96e23dc4e436127516502fcde6f8 data/biomancy/tags/item/enchantable/syringe.json
+6e1b278126713e4ba1ac6a22dfaccb71e72c98f0 data/biomancy/tags/item/enchantable/weapon.json
 a83a78289667b75bef3d6e38568ff5db2f50dbda data/biomancy/tags/item/normal_type.json
 fe06fbf9cf74bcadd59602a278c804eae7c81104 data/biomancy/tags/item/primordial_type.json
 115bdbeb850738183f7512199cc3fe3526da87d0 data/biomancy/tags/item/raw_meats.json
@@ -12,6 +16,7 @@ d34ade0b6e44a9c68f1c80722bb29a95945cd525 data/c/tags/item/armors/boots.json
 edb924acbb1965c98372be25d5fdc40df107cbd5 data/c/tags/item/armors/chestplates.json
 3b8373d255c2373f52d8f2bb305b27adcd9934da data/c/tags/item/armors/helmets.json
 0c269109893ce55bfb4b5af2702d3597fc024a7d data/c/tags/item/armors/leggings.json
+35133e95f1c8fdd7a1c21afcc231fc0bffefb9a8 data/c/tags/item/bones/wither.json
 6b2836bc67249eb5d680a8956312393a807a2ed7 data/c/tags/item/chests.json
 b385044ed40a292fc8cd42066742c33ece688f95 data/c/tags/item/claws.json
 7c6a3a5fc0ef4e8eaeb49b64b597823a7964bddd data/c/tags/item/fangs.json
@@ -28,7 +33,22 @@ fdfef1adc024043f49807dedf2f8cc1dc700df03 data/c/tags/item/foods/raw_pork.json
 e82228a1bf235df9f71c22a3439f5412f36c8ce8 data/c/tags/item/tools/claws.json
 04d5cb9aaa6fa8fa3d91d717c5cee64c8bed9ae4 data/c/tags/item/tools/shield.json
 fc0852b7ceaf465336b9f2798726977a9e27a03b data/c/tags/item/tools/swords.json
+edb924acbb1965c98372be25d5fdc40df107cbd5 data/minecraft/tags/item/chest_armor.json
 0c2a12b15db235c069e754139c39b7778a94379e data/minecraft/tags/item/doors.json
+da3d5bc3a423a511efae537353e44be913a48d16 data/minecraft/tags/item/enchantable/armor.json
+026a1da79f4939727f8638f2a1264dcfdf1537b6 data/minecraft/tags/item/enchantable/bow.json
+edb924acbb1965c98372be25d5fdc40df107cbd5 data/minecraft/tags/item/enchantable/chest_armor.json
+35133e95f1c8fdd7a1c21afcc231fc0bffefb9a8 data/minecraft/tags/item/enchantable/durability.json
+e82228a1bf235df9f71c22a3439f5412f36c8ce8 data/minecraft/tags/item/enchantable/fire_aspect.json
+d34ade0b6e44a9c68f1c80722bb29a95945cd525 data/minecraft/tags/item/enchantable/foot_armor.json
+3b8373d255c2373f52d8f2bb305b27adcd9934da data/minecraft/tags/item/enchantable/head_armor.json
+0c269109893ce55bfb4b5af2702d3597fc024a7d data/minecraft/tags/item/enchantable/leg_armor.json
+e82228a1bf235df9f71c22a3439f5412f36c8ce8 data/minecraft/tags/item/enchantable/sharp_weapon.json
+e82228a1bf235df9f71c22a3439f5412f36c8ce8 data/minecraft/tags/item/enchantable/sword.json
+c81347cfa27db184073d797db8f3b9a8dded26af data/minecraft/tags/item/enchantable/vanishing.json
+d34ade0b6e44a9c68f1c80722bb29a95945cd525 data/minecraft/tags/item/foot_armor.json
+3b8373d255c2373f52d8f2bb305b27adcd9934da data/minecraft/tags/item/head_armor.json
+0c269109893ce55bfb4b5af2702d3597fc024a7d data/minecraft/tags/item/leg_armor.json
 64ed90d1c5c6b1b7ce601166b6a3d3642691809d data/minecraft/tags/item/meat.json
-fc0852b7ceaf465336b9f2798726977a9e27a03b data/minecraft/tags/item/swords.json
+237654e65d354ff1fad99d0f3109b4f0ef60307e data/minecraft/tags/item/swords.json
 050ebd20b37f33be768d562fcf62d866323c9a07 data/minecraft/tags/item/trapdoors.json

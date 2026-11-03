@@ -2,6 +2,14 @@ package com.github.elenterius.biomancy.datagen.tags;
 
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.init.ModItems;
+import com.github.elenterius.biomancy.api.livingtool.LivingTool;
+import com.github.elenterius.biomancy.item.armor.LivingArmorItem;
+import com.github.elenterius.biomancy.item.extractor.ExtractorItem;
+import com.github.elenterius.biomancy.item.injector.InjectorItem;
+import com.github.elenterius.biomancy.item.weapon.ClawsItem;
+import com.github.elenterius.biomancy.item.weapon.gun.GunbladeItem;
+import net.minecraft.world.item.ProjectileWeaponItem;
+import net.minecraft.world.item.SwordItem;
 import com.github.elenterius.biomancy.init.tags.ModItemTags;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
@@ -52,6 +60,7 @@ public class ModItemTagsProvider extends ItemTagsProvider {
 		addMinecraftTags();
 		addForgeTags();
 		addConventionalTags();
+		addEnchantableTags();
 	}
 
 	private void addBiomancyTags() {
@@ -253,6 +262,39 @@ public class ModItemTagsProvider extends ItemTagsProvider {
 				shulkerBoxes.add(item);
 			}
 		}
+	}
+
+	private void addEnchantableTags() {
+		createTag(ModItemTags.ENCHANTABLE_LIVING).add(ModItems.stream().filter(LivingTool.class::isInstance));
+		createTag(ModItemTags.ENCHANTABLE_SYRINGE).add(ModItems.stream().filter(item -> item instanceof ExtractorItem || item instanceof InjectorItem));
+		createTag(ModItemTags.ENCHANTABLE_SURGERY).add(ModItems.stream().filter(ExtractorItem.class::isInstance));
+		createTag(ModItemTags.ENCHANTABLE_WEAPON)
+				.addTag(ItemTags.SWORDS, ItemTags.AXES)
+				.addOptionalTag(ModItemTags.C_TOOLS_KNIFE.location())
+				.add(ModItems.stream().filter(ClawsItem.class::isInstance));
+
+		createTag(ItemTags.SWORDS).add(ModItems.stream().filter(SwordItem.class::isInstance));
+
+		createTag(ItemTags.SWORD_ENCHANTABLE).add(ModItems.stream().filter(ClawsItem.class::isInstance));
+		createTag(ItemTags.SHARP_WEAPON_ENCHANTABLE).add(ModItems.stream().filter(ClawsItem.class::isInstance));
+		createTag(ItemTags.FIRE_ASPECT_ENCHANTABLE).add(ModItems.stream().filter(ClawsItem.class::isInstance));
+		createTag(ItemTags.DURABILITY_ENCHANTABLE).add(ModItems.stream().filter(item -> item instanceof ClawsItem && !(item instanceof LivingTool)));
+		createTag(ItemTags.VANISHING_ENCHANTABLE).add(ModItems.stream().filter(item -> item instanceof ClawsItem || item instanceof GunbladeItem || item instanceof LivingArmorItem));
+
+		createTag(ItemTags.BOW_ENCHANTABLE).add(ModItems.stream().filter(ProjectileWeaponItem.class::isInstance));
+
+		createTag(ItemTags.ARMOR_ENCHANTABLE).add(ModItems.stream().filter(LivingArmorItem.class::isInstance));
+		addLivingArmor(ArmorItem.Type.HELMET, ItemTags.HEAD_ARMOR, ItemTags.HEAD_ARMOR_ENCHANTABLE);
+		addLivingArmor(ArmorItem.Type.CHESTPLATE, ItemTags.CHEST_ARMOR, ItemTags.CHEST_ARMOR_ENCHANTABLE);
+		addLivingArmor(ArmorItem.Type.LEGGINGS, ItemTags.LEG_ARMOR, ItemTags.LEG_ARMOR_ENCHANTABLE);
+		addLivingArmor(ArmorItem.Type.BOOTS, ItemTags.FOOT_ARMOR, ItemTags.FOOT_ARMOR_ENCHANTABLE);
+
+		createTag(ModItemTags.C_WITHER_BONES);
+	}
+
+	private void addLivingArmor(ArmorItem.Type type, TagKey<Item> armorTag, TagKey<Item> enchantableTag) {
+		createTag(armorTag).add(ModItems.stream().filter(item -> item instanceof LivingArmorItem armor && armor.getType() == type));
+		createTag(enchantableTag).add(ModItems.stream().filter(item -> item instanceof LivingArmorItem armor && armor.getType() == type));
 	}
 
 	private void addConventionalTags() {
