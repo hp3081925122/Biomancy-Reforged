@@ -1,6 +1,5 @@
 package com.github.elenterius.biomancy.sounds;
 
-import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.network.ModNetworkHandler;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
@@ -11,14 +10,10 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.api.distmarker.Dist;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
 import net.minecraft.core.registries.BuiltInRegistries;
 import org.jspecify.annotations.Nullable;
 
-@EventBusSubscriber(modid = BiomancyMod.MOD_ID, value = Dist.DEDICATED_SERVER)
 public class ServerSoundHandler {
 
 	public static final String SOUND_LAYERS_KEY = "biomancy:sound_layers";
