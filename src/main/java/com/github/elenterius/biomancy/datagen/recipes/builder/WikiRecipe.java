@@ -2,18 +2,21 @@ package com.github.elenterius.biomancy.datagen.recipes.builder;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.mojang.serialization.DynamicOps;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.util.GsonHelper;
 
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 public interface WikiRecipe extends FinishedRecipe {
 
-	default JsonObject serializeWikiRecipe() {
+	String ESSENCE_INGREDIENT_TYPE = "biomancy:essence";
+
+	default JsonObject serializeWikiRecipe(DynamicOps<JsonElement> ops) {
 		JsonObject root = new JsonObject();
-		root.addProperty("type", BuiltInRegistries.RECIPE_SERIALIZER.getKey(getType()).toString());
+		root.addProperty("type", String.valueOf(BuiltInRegistries.RECIPE_SERIALIZER.getKey(getType())));
 
 		JsonObject input = new JsonObject();
 		AtomicInteger i = new AtomicInteger();
@@ -23,7 +26,8 @@ public interface WikiRecipe extends FinishedRecipe {
 
 		serializeWikiRecipeData(
 				in -> input.add(Integer.toString(i.getAndIncrement()), transform(in)),
-				out -> output.add(Integer.toString(o.getAndIncrement()), transform(out))
+				out -> output.add(Integer.toString(o.getAndIncrement()), transform(out)),
+				ops
 		);
 
 		root.add("input", input);
@@ -39,23 +43,8 @@ public interface WikiRecipe extends FinishedRecipe {
 				JsonElement item = jsonObject.get("item");
 				jsonObject.remove("item");
 
-				if (item instanceof JsonObject) {
-					if (jsonObject.has("type")) {
-						String type = GsonHelper.getAsString(jsonObject, "type");
-						if (type.equals("biomancy:essence")) {
-							jsonObject.remove("type");
-							jsonObject.addProperty("id", type);
-							JsonElement nbt = jsonObject.get("predicate_tag");
-							jsonObject.remove("predicate_tag");
-							jsonObject.add("nbt", nbt);
-						}
-						else throw new RuntimeException("Unhandled ingredient type: " + type);
-					}
-					else throw new RuntimeException("Unknown item type: " + item);
-				}
-				else {
-					jsonObject.add("id", item);
-				}
+				if (item instanceof JsonObject) throw new RuntimeException("Unknown item type: " + item);
+				jsonObject.add("id", item);
 			}
 			else if (jsonObject.has("tag")) {
 				if (jsonObject.has("id")) throw new RuntimeException("JSON already contains 'id' member!");
@@ -64,10 +53,24 @@ public interface WikiRecipe extends FinishedRecipe {
 				jsonObject.remove("tag");
 				jsonObject.addProperty("id", "#" + tag);
 			}
+			else if (jsonObject.has("type")) {
+				String type = GsonHelper.getAsString(jsonObject, "type");
+				if (!type.equals(ESSENCE_INGREDIENT_TYPE)) throw new RuntimeException("Unhandled ingredient type: " + type);
+
+				JsonObject nbt = new JsonObject();
+				for (Map.Entry<String, JsonElement> entry : jsonObject.deepCopy().entrySet()) {
+					if (entry.getKey().equals("type") || entry.getKey().equals("count")) continue;
+					nbt.add(entry.getKey(), entry.getValue());
+					jsonObject.remove(entry.getKey());
+				}
+				jsonObject.remove("type");
+				jsonObject.addProperty("id", type);
+				jsonObject.add("nbt", nbt);
+			}
 		}
 		return json;
 	}
 
-	void serializeWikiRecipeData(Consumer<JsonElement> input, Consumer<JsonElement> output);
+	void serializeWikiRecipeData(Consumer<JsonElement> input, Consumer<JsonElement> output, DynamicOps<JsonElement> ops);
 
 }

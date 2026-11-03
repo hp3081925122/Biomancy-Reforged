@@ -1,37 +1,53 @@
 package com.github.elenterius.biomancy.datagen.recipes.builder;
 
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
+import net.neoforged.neoforge.common.crafting.ICustomIngredient;
+import net.neoforged.neoforge.common.crafting.IngredientType;
 
 import java.util.Objects;
 import java.util.stream.Stream;
 
-public final class DatagenIngredient extends Ingredient {
-
-	final ResourceLocation resourceLocation;
+public record DatagenIngredient(ResourceLocation resourceLocation) implements ICustomIngredient {
 
 	public DatagenIngredient(String itemKey) {
-		super(Stream.empty());
-		resourceLocation = Objects.requireNonNull(ResourceLocation.tryParse(itemKey));
+		this(Objects.requireNonNull(ResourceLocation.tryParse(itemKey)));
 	}
 
 	public DatagenIngredient(String namespace, String path) {
-		super(Stream.empty());
-		resourceLocation = Objects.requireNonNull(ResourceLocation.tryBuild(namespace, path));
+		this(Objects.requireNonNull(ResourceLocation.tryBuild(namespace, path)));
 	}
 
-	public DatagenIngredient(ResourceLocation itemKey) {
-		super(Stream.empty());
-		this.resourceLocation = itemKey;
+	public Ingredient ingredient() {
+		return toVanilla();
+	}
+
+	public JsonObject toJson() {
+		JsonObject json = new JsonObject();
+		json.addProperty("item", resourceLocation.toString());
+		return json;
 	}
 
 	@Override
-	public JsonElement toJson() {
-		JsonObject jsonObj = new JsonObject();
-		jsonObj.addProperty("item", resourceLocation.toString());
-		return jsonObj;
+	public boolean test(ItemStack stack) {
+		return false;
+	}
+
+	@Override
+	public Stream<ItemStack> getItems() {
+		return Stream.empty();
+	}
+
+	@Override
+	public boolean isSimple() {
+		return true;
+	}
+
+	@Override
+	public IngredientType<?> getType() {
+		throw new UnsupportedOperationException("DatagenIngredient is only serialized by the Biomancy recipe builders");
 	}
 
 }

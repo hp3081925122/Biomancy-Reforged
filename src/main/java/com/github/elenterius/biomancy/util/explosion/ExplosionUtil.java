@@ -34,6 +34,7 @@ public class ExplosionUtil {
 			case BLOCK -> getDestroyType(level, GameRules.RULE_BLOCK_EXPLOSION_DROP_DECAY);
 			case MOB -> EventHooks.canEntityGrief(level, source) ? getDestroyType(level, GameRules.RULE_MOB_EXPLOSION_DROP_DECAY) : Explosion.BlockInteraction.KEEP;
 			case TNT -> getDestroyType(level, GameRules.RULE_TNT_EXPLOSION_DROP_DECAY);
+			case TRIGGER -> Explosion.BlockInteraction.TRIGGER_BLOCK;
 		};
 
 		Explosion explosion = explosionType.serverFactory.create(level, source, damageSource, damageCalculator, x, y, z, radius, fire, blockInteraction);

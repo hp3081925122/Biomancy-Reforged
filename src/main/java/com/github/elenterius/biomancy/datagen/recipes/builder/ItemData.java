@@ -1,7 +1,8 @@
 package com.github.elenterius.biomancy.datagen.recipes.builder;
 
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.mojang.serialization.JsonOps;
+import com.mojang.serialization.DynamicOps;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
@@ -58,11 +59,11 @@ public final class ItemData {
 		return registryName;
 	}
 
-	public JsonObject toJson() {
+	public JsonObject toJson(DynamicOps<JsonElement> ops) {
 		JsonObject json = new JsonObject();
-		json.addProperty("item", registryName.toString());
+		json.addProperty("id", registryName.toString());
 		if (count > 1) json.addProperty("count", count);
-		if (!components.isEmpty()) json.add("components", DataComponentPatch.CODEC.encodeStart(JsonOps.INSTANCE, components).getOrThrow());
+		if (!components.isEmpty()) json.add("components", DataComponentPatch.CODEC.encodeStart(ops, components).getOrThrow());
 		return json;
 	}
 

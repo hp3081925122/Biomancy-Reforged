@@ -1,8 +1,7 @@
 package com.github.elenterius.biomancy.datagen.recipes.builder;
 
 import com.github.elenterius.biomancy.BiomancyMod;
-import net.minecraft.advancements.CriterionTriggerInstance;
-import net.minecraft.data.recipes.FinishedRecipe;
+import net.minecraft.advancements.Criterion;
 import net.minecraft.data.recipes.RecipeCategory;
 import net.minecraft.data.recipes.ShapedRecipeBuilder;
 import net.minecraft.data.recipes.ShapelessRecipeBuilder;
@@ -11,7 +10,7 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.ItemLike;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
 import org.jspecify.annotations.Nullable;
 
 import java.util.function.Consumer;
@@ -69,8 +68,7 @@ public final class WorkbenchRecipeBuilder {
 	}
 
 	private static String getItemName(ItemLike itemLike) {
-		ResourceLocation key = ForgeRegistries.ITEMS.getKey(itemLike.asItem());
-		return key != null ? key.getPath() : "unknown";
+		return BuiltInRegistries.ITEM.getKey(itemLike.asItem()).getPath();
 	}
 
 	private static String getTagName(TagKey<Item> tag) {
@@ -82,7 +80,7 @@ public final class WorkbenchRecipeBuilder {
 		private final ShapedRecipeBuilder internalBuilder;
 
 		private ShapedBuilder(RecipeCategory category, ItemLike result, int count) {
-			internalBuilder = new ShapedRecipeBuilder(category, result, count);
+			internalBuilder = ShapedRecipeBuilder.shaped(category, result, count);
 		}
 
 		public ShapedBuilder define(Character pSymbol, TagKey<Item> tag) {
@@ -115,7 +113,7 @@ public final class WorkbenchRecipeBuilder {
 			return this;
 		}
 
-		public ShapedBuilder unlockedBy(String name, CriterionTriggerInstance trigger) {
+		public ShapedBuilder unlockedBy(String name, Criterion<?> trigger) {
 			internalBuilder.unlockedBy(name, trigger);
 			return this;
 		}
@@ -126,7 +124,7 @@ public final class WorkbenchRecipeBuilder {
 		}
 
 		public void save(Consumer<FinishedRecipe> consumer, ResourceLocation recipeId) {
-			internalBuilder.save(consumer, recipeId.withPrefix("crafting/"));
+			internalBuilder.save(FinishedRecipeOutput.of(consumer), recipeId.withPrefix("crafting/"));
 		}
 
 	}
@@ -136,7 +134,7 @@ public final class WorkbenchRecipeBuilder {
 		private final ShapelessRecipeBuilder internalBuilder;
 
 		private ShapelessBuilder(RecipeCategory category, ItemLike result, int count) {
-			internalBuilder = new ShapelessRecipeBuilder(category, result, count);
+			internalBuilder = ShapelessRecipeBuilder.shapeless(category, result, count);
 		}
 
 		public ShapelessBuilder requires(TagKey<Item> tag) {
@@ -170,7 +168,7 @@ public final class WorkbenchRecipeBuilder {
 		}
 
 		@Override
-		public ShapelessBuilder unlockedBy(String name, CriterionTriggerInstance trigger) {
+		public ShapelessBuilder unlockedBy(String name, Criterion<?> trigger) {
 			internalBuilder.unlockedBy(name, trigger);
 			return this;
 		}
@@ -181,7 +179,7 @@ public final class WorkbenchRecipeBuilder {
 		}
 
 		public void save(Consumer<FinishedRecipe> consumer, ResourceLocation recipeId) {
-			internalBuilder.save(consumer, recipeId.withPrefix("crafting/"));
+			internalBuilder.save(FinishedRecipeOutput.of(consumer), recipeId.withPrefix("crafting/"));
 		}
 
 	}
