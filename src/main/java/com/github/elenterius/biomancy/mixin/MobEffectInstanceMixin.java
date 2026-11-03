@@ -2,6 +2,7 @@ package com.github.elenterius.biomancy.mixin;
 
 import com.github.elenterius.biomancy.mixin.accessor.MobEffectInstanceAccessor;
 import com.github.elenterius.biomancy.statuseffect.StackingStatusEffect;
+import net.minecraft.core.Holder;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import org.spongepowered.asm.mixin.Final;
@@ -19,7 +20,7 @@ public abstract class MobEffectInstanceMixin {
 
 	@Shadow
 	@Final
-	private MobEffect effect;
+	private Holder<MobEffect> effect;
 
 	@Inject(method = "update", at = @At(value = "HEAD"))
 	private void onUpdate(MobEffectInstance other, CallbackInfoReturnable<Boolean> cir) {

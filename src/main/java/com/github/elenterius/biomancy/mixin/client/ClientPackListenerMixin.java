@@ -14,13 +14,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(ClientPacketListener.class)
 public abstract class ClientPackListenerMixin {
 
-	@Shadow
-	@Final
-	private Minecraft minecraft;
-
 	@Inject(method = "handleAddOrRemoveRecipes", at = @At(value = "TAIL"))
 	private void onAddOrRemoveRecipes(ClientboundRecipePacket packet, CallbackInfo ci) {
-		if (minecraft.screen instanceof BioForgeScreen screen) screen.onRecipeBookUpdated();
+		if (Minecraft.getInstance().screen instanceof BioForgeScreen screen) screen.onRecipeBookUpdated();
 	}
 
 }

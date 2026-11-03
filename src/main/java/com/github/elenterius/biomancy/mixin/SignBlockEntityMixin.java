@@ -16,11 +16,11 @@ import java.util.List;
 @Mixin(SignBlockEntity.class)
 public abstract class SignBlockEntityMixin {
 
-	@SuppressWarnings("UnnecessaryQualifiedMemberReference") // we require the fully qualified member reference for better compatibility with Mohist Server
+	@SuppressWarnings("UnnecessaryQualifiedMemberReference")
 	@ModifyExpressionValue(
 			method = "Lnet/minecraft/world/level/block/entity/SignBlockEntity;setMessages(Lnet/minecraft/world/entity/player/Player;Ljava/util/List;Lnet/minecraft/world/level/block/entity/SignText;)Lnet/minecraft/world/level/block/entity/SignText;",
 			at = @At(value = "INVOKE", target = "Lnet/minecraft/network/chat/Component;getStyle()Lnet/minecraft/network/chat/Style;"),
-			require = 0 // allow it to fail as a fallback
+			require = 0
 	)
 	private Style onSetMessagesModifyStyle(Style originalStyle, Player player, List<FilteredText> filteredText, SignText text) {
 		if (player.hasEffect(ModMobEffects.PRIMORDIAL_INFESTATION)) {

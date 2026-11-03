@@ -12,7 +12,7 @@ public abstract class ItemEntityMixin {
 
 	@Inject(at = @At("TAIL"), method = {"tick()V"})
 	private void onTick(CallbackInfo ci) {
-		ItemEntity itemEntity = (ItemEntity) (Object) this; //I hate casting like this on so many levels -Kd
+		ItemEntity itemEntity = (ItemEntity) (Object) this;
 		if (itemEntity.isRemoved()) return;
 		AcidInteractions.InWorldItemDigesting.tryDigestSubmergedItem(itemEntity);
 	}

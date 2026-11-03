@@ -2,29 +2,40 @@ package com.github.elenterius.biomancy.mixin;
 
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.mojang.authlib.GameProfile;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.NbtUtils;
-import net.minecraft.nbt.Tag;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.PlayerHeadItem;
+import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.item.component.ResolvableProfile;
 import net.minecraft.world.level.block.entity.SkullBlockEntity;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+
 @Mixin(PlayerHeadItem.class)
 public abstract class PlayerHeadItemMixin {
 
-	@Inject(method = "verifyTagAfterLoad", at = @At(value = "TAIL"))
-	private void onVerifyTagAfterLoad(CompoundTag tag, CallbackInfo ci) {
-		if (tag.contains(BiomancyMod.MOD_ID) && tag.contains(PlayerHeadItem.TAG_SKULL_OWNER, Tag.TAG_COMPOUND)) {
-			GameProfile gameProfile = NbtUtils.readGameProfile(tag.getCompound(PlayerHeadItem.TAG_SKULL_OWNER));
+	@Inject(method = "verifyComponentsAfterLoad", at = @At(value = "TAIL"))
+	private void onVerifyComponentsAfterLoad(ItemStack stack, CallbackInfo ci) {
+		CustomData customData = stack.get(DataComponents.CUSTOM_DATA);
+		if (customData == null || !customData.contains(BiomancyMod.MOD_ID)) return;
 
-			SkullBlockEntity.updateGameprofile(gameProfile, profile -> {
-				tag.put(PlayerHeadItem.TAG_SKULL_OWNER, NbtUtils.writeGameProfile(new CompoundTag(), profile));
-				tag.remove(BiomancyMod.MOD_ID);
-			});
-		}
+		ResolvableProfile profile = stack.get(DataComponents.PROFILE);
+		if (profile == null) return;
+
+		CompletableFuture<Optional<GameProfile>> future;
+		if (profile.name().isPresent()) future = SkullBlockEntity.fetchGameProfile(profile.name().get());
+		else if (profile.id().isPresent()) future = SkullBlockEntity.fetchGameProfile(profile.id().get());
+		else return;
+
+		future.thenAcceptAsync(fetched -> {
+			fetched.ifPresent(gameProfile -> stack.set(DataComponents.PROFILE, new ResolvableProfile(gameProfile)));
+			CustomData.update(DataComponents.CUSTOM_DATA, stack, tag -> tag.remove(BiomancyMod.MOD_ID));
+		}, SkullBlockEntity.CHECKED_MAIN_THREAD_EXECUTOR);
 	}
 
 }

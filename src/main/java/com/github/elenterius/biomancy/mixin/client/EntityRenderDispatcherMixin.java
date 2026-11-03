@@ -23,7 +23,7 @@ public abstract class EntityRenderDispatcherMixin {
 	@Shadow
 	public Camera camera;
 
-	@Inject(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/entity/EntityRenderDispatcher;renderHitbox(Lcom/mojang/blaze3d/vertex/PoseStack;Lcom/mojang/blaze3d/vertex/VertexConsumer;Lnet/minecraft/world/entity/Entity;F)V"))
+	@Inject(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/entity/EntityRenderDispatcher;renderHitbox(Lcom/mojang/blaze3d/vertex/PoseStack;Lcom/mojang/blaze3d/vertex/VertexConsumer;Lnet/minecraft/world/entity/Entity;FFFF)V"))
 	private void render(Entity entity, double x, double y, double z, float rotationYaw, float partialTicks, PoseStack poseStack, MultiBufferSource multiBuffer, int packedLight, CallbackInfo ci) {
 		if (entity instanceof DebugInfo.EntityContext context) {
 			context.renderDebugInfo((EntityRenderDispatcher) (Object) this, poseStack, multiBuffer, packedLight, partialTicks);
@@ -35,14 +35,6 @@ public abstract class EntityRenderDispatcherMixin {
 				context.renderDebugInfo(living, itemStack, (EntityRenderDispatcher) (Object) this, poseStack, multiBuffer, packedLight, partialTicks);
 			}
 		}
-
-		//		if (entity == crosshairPickEntity && camera.getEntity() instanceof Player player) {
-		//			ItemStack itemStack = player.getMainHandItem();
-		//			if (itemStack.canPerformAction(ItemAbilities.SWORD_SWEEP)) {
-		//				AABB aabb = itemStack.getSweepHitBox(player, crosshairPickEntity).move(-entity.getX(), -entity.getY(), -entity.getZ());
-		//				LevelRenderer.renderLineBox(poseStack, multiBuffer.getBuffer(RenderType.lines()), aabb, 1f, 0f, 0f, 1f);
-		//			}
-		//		}
 	}
 
 }

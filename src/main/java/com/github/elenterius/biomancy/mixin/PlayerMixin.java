@@ -92,7 +92,7 @@ public abstract class PlayerMixin extends LivingEntity {
 		return source;
 	}
 
-	@Inject(method = "hurtCurrentlyUsedShield", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/item/ItemStack;hurtAndBreak(ILnet/minecraft/world/entity/LivingEntity;Ljava/util/function/Consumer;)V"), cancellable = true)
+	@Inject(method = "hurtCurrentlyUsedShield", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/item/ItemStack;hurtAndBreak(ILnet/minecraft/server/level/ServerLevel;Lnet/minecraft/world/entity/LivingEntity;Ljava/util/function/Consumer;)V"), cancellable = true)
 	private void onHurtCurrentlyUsedShield(float damage, CallbackInfo ci) {
 		if (level().isClientSide()) return;
 
@@ -104,7 +104,6 @@ public abstract class PlayerMixin extends LivingEntity {
 
 	@Inject(method = "isModelPartShown", at = @At("HEAD"), cancellable = true)
 	private void onIsModelPartShown(PlayerModelPart part, CallbackInfoReturnable<Boolean> cir) {
-		//don't render outer skin overlay when wearing the acolyte armor to prevent z-fighting, etc.
 		switch (part) {
 			case HAT -> {
 				if (getItemBySlot(EquipmentSlot.HEAD).getItem() instanceof LivingArmorItem armor && armor.getType() == ArmorItem.Type.HELMET) cir.setReturnValue(false);

@@ -10,7 +10,10 @@ import com.github.elenterius.biomancy.statuseffect.StatusEffectHandler;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.llamalad7.mixinextras.sugar.Share;
 import com.llamalad7.mixinextras.sugar.ref.LocalRef;
+import net.minecraft.core.Holder;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.tags.ItemTags;
+import net.neoforged.neoforge.common.EffectCure;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.AreaEffectCloud;
@@ -52,14 +55,14 @@ public abstract class LivingEntityMixin extends Entity implements LivingEntityDa
 	}
 
 	@Shadow
-	public abstract boolean hasEffect(MobEffect effect);
+	public abstract boolean hasEffect(Holder<MobEffect> effect);
 
 	@Shadow
 	public abstract AttributeMap getAttributes();
 
 	@Shadow
 	@Final
-	private Map<MobEffect, MobEffectInstance> activeEffects;
+	private Map<Holder<MobEffect>, MobEffectInstance> activeEffects;
 
 	@Shadow
 	public abstract Collection<MobEffectInstance> getActiveEffects();
@@ -86,9 +89,9 @@ public abstract class LivingEntityMixin extends Entity implements LivingEntityDa
 		}
 	}
 
-	@Inject(method = "getAttributeValue(Lnet/minecraft/world/entity/ai/attributes/Attribute;)D", at = @At("HEAD"), cancellable = true)
-	protected void onGetAttributeValue(Attribute attribute, CallbackInfoReturnable<Double> cir) {
-		if (attribute == Attributes.ATTACK_DAMAGE && !getAttributes().hasAttribute(Attributes.ATTACK_DAMAGE) && hasEffect(ModMobEffects.FRENZY)) {
+	@Inject(method = "getAttributeValue(Lnet/minecraft/core/Holder;)D", at = @At("HEAD"), cancellable = true)
+	protected void onGetAttributeValue(Holder<Attribute> attribute, CallbackInfoReturnable<Double> cir) {
+		if (attribute.is(Attributes.ATTACK_DAMAGE) && !getAttributes().hasAttribute(Attributes.ATTACK_DAMAGE) && hasEffect(ModMobEffects.FRENZY)) {
 			cir.setReturnValue(FrenzySerum.ATTACK_DAMAGE_FALLBACK);
 		}
 	}
@@ -110,24 +113,23 @@ public abstract class LivingEntityMixin extends Entity implements LivingEntityDa
 	@Inject(method = "addEffect(Lnet/minecraft/world/effect/MobEffectInstance;Lnet/minecraft/world/entity/Entity;)Z", at = @At(value = "HEAD"), cancellable = true)
 	private void onAddEffect(MobEffectInstance effectInstance, @Nullable Entity source, CallbackInfoReturnable<Boolean> cir) {
 		if (source instanceof AreaEffectCloud || source instanceof ThrownPotion || source instanceof Arrow) {
-			// Note: ThrownPotion or AbstractArrow will only be matched if they have no owner (owner == null)
 			if (!StatusEffectHandler.canApplySplashEffectIfAllowed(effectInstance.getEffect(), biomancy$self(), StatusEffectHandler.CONSUME_ONE_NUTRIENT_PER_ARMOR_PIECE)) {
 				cir.setReturnValue(false);
 			}
 		}
 	}
 
-	@Inject(method = "addEatEffect", at = @At(value = "TAIL"))
-	private void onAddEatEffect(ItemStack food, Level level, LivingEntity livingEntity, CallbackInfo ci) {
+	@Inject(method = "eat(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/world/food/FoodProperties;)Lnet/minecraft/world/item/ItemStack;", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/LivingEntity;addEatEffect(Lnet/minecraft/world/food/FoodProperties;)V", shift = At.Shift.AFTER))
+	private void onAddEatEffect(Level level, ItemStack food, FoodProperties foodProperties, CallbackInfoReturnable<ItemStack> cir) {
+		LivingEntity livingEntity = biomancy$self();
 		if (!level.isClientSide && biomancy$getRawMeatNutrition(food) > 2 && livingEntity.getRandom().nextFloat() < 0.2f) {
 			livingEntity.addEffect(new MobEffectInstance(ModMobEffects.PRIMORDIAL_INFESTATION, 20 * 8, 0));
 		}
 	}
 
 	@ModifyArg(
-			method = "curePotionEffects",
-			at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/LivingEntity;onEffectRemoved(Lnet/minecraft/world/effect/MobEffectInstance;)V"),
-			remap = false
+			method = "removeEffectsCuredBy",
+			at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/LivingEntity;onEffectRemoved(Lnet/minecraft/world/effect/MobEffectInstance;)V")
 	)
 	private MobEffectInstance onCurePotionEffects(MobEffectInstance effectInstance, @Share("removedFrenzy") LocalRef<MobEffectInstance> removedFrenzyRef) {
 		if (effectInstance.getEffect().is(ModMobEffects.FRENZY)) {
@@ -136,8 +138,8 @@ public abstract class LivingEntityMixin extends Entity implements LivingEntityDa
 		return effectInstance;
 	}
 
-	@Inject(method = "curePotionEffects", at = @At(value = "TAIL"), remap = false)
-	private void onPostCurePotionEffects(ItemStack curativeItem, CallbackInfoReturnable<Boolean> cir, @Share("removedFrenzy") LocalRef<MobEffectInstance> removedFrenzyRef) {
+	@Inject(method = "removeEffectsCuredBy", at = @At(value = "TAIL"))
+	private void onPostCurePotionEffects(EffectCure cure, CallbackInfoReturnable<Boolean> cir, @Share("removedFrenzy") LocalRef<MobEffectInstance> removedFrenzyRef) {
 		if (level().isClientSide) return;
 
 		MobEffectInstance removedFrenzyEffect = removedFrenzyRef.get();
@@ -169,9 +171,9 @@ public abstract class LivingEntityMixin extends Entity implements LivingEntityDa
 
 	@Unique
 	private static int biomancy$getRawMeatNutrition(ItemStack itemStack) {
-		if (!itemStack.isEdible()) return 0;
+		if (!itemStack.has(DataComponents.FOOD)) return 0;
 		FoodProperties food = itemStack.getFoodProperties(null);
-		return food != null && itemStack.is(ItemTags.MEAT) && itemStack.is(ModItemTags.FRESH_RAW_MEATS) ? food.getNutrition() : 0;
+		return food != null && itemStack.is(ItemTags.MEAT) && itemStack.is(ModItemTags.FRESH_RAW_MEATS) ? food.nutrition() : 0;
 	}
 
 	@Unique

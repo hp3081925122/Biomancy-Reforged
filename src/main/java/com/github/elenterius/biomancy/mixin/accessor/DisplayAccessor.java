@@ -10,5 +10,4 @@ public interface DisplayAccessor {
 	@Invoker("setBillboardConstraints")
 	void biomancy$setBillboardConstraints(Display.BillboardConstraints constraints);
 
-
 }

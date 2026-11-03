@@ -105,6 +105,7 @@ public class PlayerHeadRecipe extends CustomRecipe {
 
 		stack.set(DataComponents.PROFILE, new ResolvableProfile(new GameProfile(uuid, playerName)));
 		CustomData.update(DataComponents.CUSTOM_DATA, stack, tag -> tag.putBoolean(BiomancyMod.MOD_ID, true));
+		stack.getItem().verifyComponentsAfterLoad(stack);
 
 		return stack;
 	}

@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.mixin;
 
+import net.minecraft.core.component.DataComponents;
 import com.github.elenterius.biomancy.init.ModMobEffects;
 import com.github.elenterius.biomancy.styles.TextStyles;
 import com.github.elenterius.biomancy.util.ComponentUtil;
@@ -29,9 +30,9 @@ public abstract class ServerGamePacketListenerImplMixin {
 				if (!slot.hasItem()) return;
 
 				ItemStack stack = slot.getItem();
-				if (!stack.hasCustomHoverName()) return;
+				if (!stack.has(DataComponents.CUSTOM_NAME)) return;
 
-				stack.setHoverName(ComponentUtil.setStyles(stack.getHoverName(), TextStyles.PRIMORDIAL_RUNES));
+				stack.set(DataComponents.CUSTOM_NAME, ComponentUtil.setStyles(stack.getHoverName(), TextStyles.PRIMORDIAL_RUNES));
 			}
 		}
 	}
