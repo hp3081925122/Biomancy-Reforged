@@ -101,6 +101,9 @@ runs {
         systemProperty 'forge.enabledGameTestNamespaces', project.mod_id
         systemProperty 'mixin.debug.export', 'true'
         systemProperty 'mixin.debug.verbose', 'true'
+        if (project.hasProperty('mctestHidden')) {
+            systemProperty 'selfmcp.window', 'hidden'
+        }
     }
 
     server {

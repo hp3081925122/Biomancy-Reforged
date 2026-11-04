@@ -41,7 +41,11 @@
           "probability": 0.2
         },
         "output_state": {
-          "Name": "minecraft:air"
+          "Name": "biomancy:flesh_spike",
+          "Properties": {
+            "facing": "up",
+            "spikes": "2"
+          }
         }
       },
       {

@@ -148,6 +148,7 @@ public class BioForgeMenu extends PlayerContainerMenu {
 	}
 
 	public int getFuelAmount() {
+		if (bioforge == null) return 0;
 		return bioforge.getStateData().fuelHandler.getFuelAmount();
 	}
 
