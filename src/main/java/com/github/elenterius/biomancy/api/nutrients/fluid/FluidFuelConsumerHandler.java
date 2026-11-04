@@ -1,42 +1,81 @@
 package com.github.elenterius.biomancy.api.nutrients.fluid;
 
-import net.minecraft.core.HolderLookup;
 import com.github.elenterius.biomancy.api.nutrients.FuelHandler;
-import net.minecraft.nbt.CompoundTag;
-import net.neoforged.neoforge.common.util.INBTSerializable;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.neoforged.neoforge.common.util.ValueIOSerializable;
 import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.transfer.ResourceHandler;
+import net.neoforged.neoforge.transfer.TransferPreconditions;
+import net.neoforged.neoforge.transfer.fluid.FluidResource;
+import net.neoforged.neoforge.transfer.transaction.SnapshotJournal;
+import net.neoforged.neoforge.transfer.transaction.TransactionContext;
 import org.jetbrains.annotations.ApiStatus;
 
 @ApiStatus.Experimental
-public class FluidFuelConsumerHandler implements IFluidHandler, INBTSerializable<CompoundTag> {
+public class FluidFuelConsumerHandler implements ResourceHandler<FluidResource>, ValueIOSerializable {
 
 	public static final String MILLI_FUEL_BUFFER_KEY = "MilliFuelBuffer";
 
 	private final FuelHandler fuelHandler;
 	private long milliFuelBuffer;
 
+	private final SnapshotJournal<long[]> journal = new SnapshotJournal<>() {
+		@Override
+		protected long[] createSnapshot() {
+			return new long[]{fuelHandler.getFuelAmount(), milliFuelBuffer};
+		}
+
+		@Override
+		protected void revertToSnapshot(long[] snapshot) {
+			fuelHandler.setFuelAmount((int) snapshot[0]);
+			milliFuelBuffer = snapshot[1];
+		}
+	};
+
 	public FluidFuelConsumerHandler(FuelHandler fuelHandler) {
 		this.fuelHandler = fuelHandler;
 	}
 
 	@Override
-	public boolean isFluidValid(int tank, FluidStack resource) {
-		return FluidNutrients.isValid(resource);
+	public int size() {
+		return 1;
 	}
 
 	@Override
-	public int fill(FluidStack resource, FluidAction action) {
-		if (resource.isEmpty()) return 0;
+	public FluidResource getResource(int index) {
+		return FluidResource.EMPTY;
+	}
+
+	@Override
+	public long getAmountAsLong(int index) {
+		return 0;
+	}
+
+	@Override
+	public long getCapacityAsLong(int index, FluidResource resource) {
+		return fuelHandler.getMaxFuelAmount();
+	}
+
+	@Override
+	public boolean isValid(int index, FluidResource resource) {
+		return !resource.isEmpty() && FluidNutrients.isValid(resource.toStack(1));
+	}
+
+	@Override
+	public int insert(int index, FluidResource resource, int amount, TransactionContext transaction) {
+		TransferPreconditions.checkNonEmptyNonNegative(resource, amount);
+		if (amount == 0) return 0;
 		if (fuelHandler.getFuelAmount() >= fuelHandler.getMaxFuelAmount()) return 0;
 
-		FluidToFuelConversion conversion = FluidNutrients.getConversion(resource);
+		FluidStack stack = resource.toStack(amount);
+		FluidToFuelConversion conversion = FluidNutrients.getConversion(stack);
 		if (conversion == null) return 0;
 
-		int milliFuel = conversion.getMilliFuelPerUnit(resource);
+		int milliFuel = conversion.getMilliFuelPerUnit(stack);
 		if (milliFuel <= 0) return 0;
 
-		long amountToConsume = resource.getAmount();
+		long amountToConsume = amount;
 		int fuelYield = (int) ((milliFuelBuffer + milliFuel * amountToConsume) / FluidToFuelConversion.MILLI_FUEL_SCALE);
 
 		if (fuelYield > 0) {
@@ -45,15 +84,12 @@ public class FluidFuelConsumerHandler implements IFluidHandler, INBTSerializable
 
 			amountToConsume = (int) (fuelMissing / milliFuel);
 
-			if (action.simulate()) return (int) amountToConsume;
-
+			journal.updateSnapshots(transaction);
 			fuelHandler.addFuelAmount(fuelToFill);
-
-			long remainder = (milliFuel * amountToConsume - fuelMissing);
-			milliFuelBuffer = remainder;
+			milliFuelBuffer = milliFuel * amountToConsume - fuelMissing;
 		}
 		else {
-			if (action.simulate()) return (int) amountToConsume;
+			journal.updateSnapshots(transaction);
 			milliFuelBuffer += milliFuel * amountToConsume;
 		}
 
@@ -61,40 +97,18 @@ public class FluidFuelConsumerHandler implements IFluidHandler, INBTSerializable
 	}
 
 	@Override
-	public FluidStack drain(FluidStack resource, FluidAction action) {
-		return FluidStack.EMPTY;
+	public int extract(int index, FluidResource resource, int amount, TransactionContext transaction) {
+		return 0;
 	}
 
 	@Override
-	public FluidStack drain(int maxDrain, FluidAction action) {
-		return FluidStack.EMPTY;
+	public void serialize(ValueOutput output) {
+		output.putLong(MILLI_FUEL_BUFFER_KEY, milliFuelBuffer);
 	}
 
 	@Override
-	public int getTanks() {
-		return 1;
-	}
-
-	@Override
-	public int getTankCapacity(int tank) {
-		return fuelHandler.getMaxFuelAmount();
-	}
-
-	@Override
-	public FluidStack getFluidInTank(int tank) {
-		return FluidStack.EMPTY;
-	}
-
-	@Override
-	public CompoundTag serializeNBT(HolderLookup.Provider provider) {
-		CompoundTag tag = new CompoundTag();
-		tag.putLong(MILLI_FUEL_BUFFER_KEY, milliFuelBuffer);
-		return tag;
-	}
-
-	@Override
-	public void deserializeNBT(HolderLookup.Provider provider, CompoundTag tag) {
-		milliFuelBuffer = tag.getLong(MILLI_FUEL_BUFFER_KEY);
+	public void deserialize(ValueInput input) {
+		milliFuelBuffer = input.getLongOr(MILLI_FUEL_BUFFER_KEY, 0L);
 	}
 
 }

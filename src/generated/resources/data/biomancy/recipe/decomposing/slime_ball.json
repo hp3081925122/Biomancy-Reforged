@@ -1,7 +1,7 @@
 {
   "type": "biomancy:decomposing",
   "ingredient": {
-    "item": "minecraft:slime_ball"
+    "ingredient": "minecraft:slime_ball"
   },
   "nutrientsCost": 1,
   "processingTime": 145,

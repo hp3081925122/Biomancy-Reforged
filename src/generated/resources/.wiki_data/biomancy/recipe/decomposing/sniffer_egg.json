@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "minecraft:sniffer_egg"
+      "ingredient": "minecraft:sniffer_egg"
     }
   },
   "output": {

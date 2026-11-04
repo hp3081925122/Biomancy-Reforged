@@ -1,9 +1,7 @@
 {
   "type": "biomancy:digesting",
   "input": {
-    "0": {
-      "id": "minecraft:moss_carpet"
-    }
+    "0": "minecraft:moss_carpet"
   },
   "output": {
     "0": {

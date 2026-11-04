@@ -1,8 +1,6 @@
 {
   "type": "biomancy:digesting",
-  "ingredient": {
-    "item": "minecraft:wheat"
-  },
+  "ingredient": "minecraft:wheat",
   "nutrientsCost": 2,
   "processingTime": 200,
   "result": {

@@ -4,15 +4,15 @@
   "ingredients": [
     {
       "count": 11,
-      "item": "biomancy:mineral_fragment"
+      "ingredient": "biomancy:mineral_fragment"
     },
     {
       "count": 8,
-      "item": "biomancy:tough_fibers"
+      "ingredient": "biomancy:tough_fibers"
     },
     {
       "count": 4,
-      "item": "biomancy:stone_powder"
+      "ingredient": "biomancy:stone_powder"
     }
   ],
   "nutrientsCost": 1,

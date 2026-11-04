@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "biomancy:nutrient_paste"
+      "ingredient": "biomancy:nutrient_paste"
     }
   },
   "output": {

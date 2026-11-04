@@ -5,7 +5,7 @@ import com.github.elenterius.biomancy.util.ComponentUtil;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
@@ -46,7 +46,7 @@ public interface Serum {
 		public void affectPlayerSelf(ServerLevel level, CompoundTag nbt, ServerPlayer targetSelf) {}
 
 		@Override
-		public void appendTooltip(CompoundTag tag, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {}
+		public void appendTooltip(CompoundTag tag, @Nullable Level level, Consumer<Component> tooltip, TooltipFlag flag) {}
 
 		@Override
 		public boolean isEmpty() {
@@ -81,7 +81,7 @@ public interface Serum {
 		stack.remove(ModDataComponents.SERUM_DATA);
 	}
 
-	static String makeTranslationKey(ResourceLocation key) {
+	static String makeTranslationKey(Identifier key) {
 		return TRANSLATION_PREFIX + key.getNamespace() + "." + key.getPath().replace("/", ".");
 	}
 
@@ -99,7 +99,7 @@ public interface Serum {
 
 	int getColor(CompoundTag tag);
 
-	void appendTooltip(CompoundTag tag, @Nullable Level level, List<Component> tooltip, TooltipFlag flag);
+	void appendTooltip(CompoundTag tag, @Nullable Level level, Consumer<Component> tooltip, TooltipFlag flag);
 
 	String getNameTranslationKey();
 

@@ -4,24 +4,32 @@ import com.github.elenterius.biomancy.block.storagesac.StorageSacBlock;
 import com.github.elenterius.biomancy.block.storagesac.StorageSacBlockEntity;
 import com.github.elenterius.biomancy.util.ItemStackCounter;
 import com.mojang.blaze3d.vertex.PoseStack;
-import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
-import net.minecraft.client.renderer.entity.ItemRenderer;
+import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
+import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
+import net.minecraft.client.renderer.item.ItemModelResolver;
+import net.minecraft.client.renderer.item.ItemStackRenderState;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.Vec3;
+import org.jspecify.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.List;
 
-public class StorageSacRenderer implements BlockEntityRenderer<StorageSacBlockEntity> {
+public class StorageSacRenderer implements BlockEntityRenderer<StorageSacBlockEntity, StorageSacRenderer.StorageSacRenderState> {
 
 	private final RandomSource random = RandomSource.create();
-	private final ItemRenderer itemRenderer;
+	private final ItemModelResolver itemModelResolver;
 
 	public StorageSacRenderer(BlockEntityRendererProvider.Context context) {
-		itemRenderer = context.getItemRenderer();
+		itemModelResolver = context.itemModelResolver();
 	}
 
 	private float randomOffset(float amount) {
@@ -29,20 +37,40 @@ public class StorageSacRenderer implements BlockEntityRenderer<StorageSacBlockEn
 	}
 
 	@Override
-	public void render(StorageSacBlockEntity blockEntity, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
-		int seed = (int) blockEntity.getBlockPos().asLong() + blockEntity.getBlockPos().getX() - 1;
-		random.setSeed(seed);
-
-		ItemTranslator itemTranslator = ItemTranslator.from(StorageSacBlock.getFacing(blockEntity.getBlockState()));
-		renderItemsOnAxis(poseStack, bufferSource, packedLight, packedOverlay, blockEntity.getItemsForRendering(), itemTranslator, 0.375f);
+	public StorageSacRenderState createRenderState() {
+		return new StorageSacRenderState();
 	}
 
-	private void renderItemsOnAxis(PoseStack poseStack, MultiBufferSource bufferSource, int packedLight, int packedOverlay, List<ItemStackCounter.CountedItem> items, ItemTranslator itemTranslator, float itemScale) {
+	@Override
+	public void extractRenderState(StorageSacBlockEntity blockEntity, StorageSacRenderState state, float partialTick, Vec3 cameraPosition, ModelFeatureRenderer.@Nullable CrumblingOverlay breakProgress) {
+		BlockEntityRenderer.super.extractRenderState(blockEntity, state, partialTick, cameraPosition, breakProgress);
+
+		state.seed = (int) blockEntity.getBlockPos().asLong() + blockEntity.getBlockPos().getX() - 1;
+		state.itemTranslator = ItemTranslator.from(StorageSacBlock.getFacing(blockEntity.getBlockState()));
+		state.items.clear();
+
+		for (ItemStackCounter.CountedItem countedItem : blockEntity.getItemsForRendering()) {
+			ItemStack stack = countedItem.stack();
+			ItemStackRenderState itemState = new ItemStackRenderState();
+			if (!stack.isEmpty()) {
+				itemModelResolver.updateForTopItem(itemState, stack, ItemDisplayContext.FIXED, blockEntity.getLevel(), null, 0);
+			}
+			state.items.add(new RenderedItem(itemState, stack.getCount()));
+		}
+	}
+
+	@Override
+	public void submit(StorageSacRenderState state, PoseStack poseStack, SubmitNodeCollector submitNodeCollector, CameraRenderState camera) {
+		random.setSeed(state.seed);
+		renderItemsOnAxis(poseStack, submitNodeCollector, state.lightCoords, OverlayTexture.NO_OVERLAY, state.items, state.itemTranslator, 0.375f);
+	}
+
+	private void renderItemsOnAxis(PoseStack poseStack, SubmitNodeCollector collector, int packedLight, int packedOverlay, List<RenderedItem> items, ItemTranslator itemTranslator, float itemScale) {
 		int numberOfItems = items.size();
 
 		for (int i = 0; i < numberOfItems; i++) {
-			ItemStack stack = items.get(i).stack();
-			if (stack.isEmpty()) continue;
+			RenderedItem item = items.get(i);
+			if (item.state().isEmpty()) continue;
 
 			poseStack.pushPose();
 
@@ -51,8 +79,7 @@ public class StorageSacRenderer implements BlockEntityRenderer<StorageSacBlockEn
 			float z = 0.5f + randomOffset(0.175f);
 			itemTranslator.translate(poseStack, x, y, z);
 
-			int amount = stack.getCount();
-			for (int j = 0; j < amount; j++) {
+			for (int j = 0; j < item.count(); j++) {
 				poseStack.pushPose();
 				if (j > 0) {
 					float x2 = randomOffset(0.075f);
@@ -61,7 +88,7 @@ public class StorageSacRenderer implements BlockEntityRenderer<StorageSacBlockEn
 					itemTranslator.translate(poseStack, x2, y2, z2);
 				}
 				poseStack.scale(itemScale, itemScale, itemScale);
-				itemRenderer.renderStatic(stack, ItemDisplayContext.FIXED, packedLight, packedOverlay, poseStack, bufferSource, null, 0);
+				item.state().submit(poseStack, collector, packedLight, packedOverlay, 0);
 				poseStack.popPose();
 			}
 
@@ -69,6 +96,13 @@ public class StorageSacRenderer implements BlockEntityRenderer<StorageSacBlockEn
 		}
 	}
 
+	public static class StorageSacRenderState extends BlockEntityRenderState {
+		int seed;
+		ItemTranslator itemTranslator = ItemTranslator.Y_AXIS;
+		final List<RenderedItem> items = new ArrayList<>();
+	}
+
+	record RenderedItem(ItemStackRenderState state, int count) {}
 
 	enum ItemTranslator {
 		X_AXIS((poseStack, x, y, z) -> poseStack.translate(y, x, z)),
@@ -95,7 +129,6 @@ public class StorageSacRenderer implements BlockEntityRenderer<StorageSacBlockEn
 		interface TranslationFunc {
 			void translate(PoseStack poseStack, float x, float y, float z);
 		}
-
 	}
 
 }

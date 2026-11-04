@@ -21,8 +21,8 @@ import com.github.elenterius.biomancy.init.ModBlocks;
 import net.minecraft.core.Direction;
 import net.minecraft.data.PackOutput;
 import net.minecraft.data.models.model.TextureMapping;
-import net.minecraft.data.models.model.TextureSlot;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.client.data.models.model.TextureSlot;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.state.BlockState;
@@ -42,14 +42,14 @@ import java.util.function.Function;
 
 public class ModBlockStateProvider extends BlockStateProvider {
 
-	protected static final ResourceLocation FLESH_PARTICLE_TEXTURE = BiomancyMod.rl("block/packed_flesh");
-	protected static final ResourceLocation PRIMAL_PARTICLE_TEXTURE = BiomancyMod.rl("block/primal_flesh");
+	protected static final Identifier FLESH_PARTICLE_TEXTURE = BiomancyMod.rl("block/packed_flesh");
+	protected static final Identifier PRIMAL_PARTICLE_TEXTURE = BiomancyMod.rl("block/primal_flesh");
 
 	public ModBlockStateProvider(PackOutput packOutput, ExistingFileHelper fileHelper) {
 		super(packOutput, BiomancyMod.MOD_ID, fileHelper);
 	}
 
-	protected ResourceLocation registryKey(Block block) {
+	protected Identifier registryKey(Block block) {
 		return Objects.requireNonNull(BuiltInRegistries.BLOCK.getKey(block));
 	}
 
@@ -57,26 +57,26 @@ public class ModBlockStateProvider extends BlockStateProvider {
 		return registryKey(block).getPath();
 	}
 
-	protected <T extends Block> ResourceLocation blockAsset(DeferredBlock<T> registryObject) {
+	protected <T extends Block> Identifier blockAsset(DeferredBlock<T> registryObject) {
 		return blockAsset(registryObject.getId());
 	}
 
-	protected ResourceLocation blockAsset(ResourceLocation registryKey) {
-		return ResourceLocation.fromNamespaceAndPath(registryKey.getNamespace(), ModelProvider.BLOCK_FOLDER + "/" + registryKey.getPath());
+	protected Identifier blockAsset(Identifier registryKey) {
+		return Identifier.fromNamespaceAndPath(registryKey.getNamespace(), ModelProvider.BLOCK_FOLDER + "/" + registryKey.getPath());
 	}
 
-	protected ResourceLocation blockAsset(Block block) {
-		ResourceLocation registryKey = registryKey(block);
-		return ResourceLocation.fromNamespaceAndPath(registryKey.getNamespace(), ModelProvider.BLOCK_FOLDER + "/" + registryKey.getPath());
+	protected Identifier blockAsset(Block block) {
+		Identifier registryKey = registryKey(block);
+		return Identifier.fromNamespaceAndPath(registryKey.getNamespace(), ModelProvider.BLOCK_FOLDER + "/" + registryKey.getPath());
 	}
 
-	protected ResourceLocation blockAsset(Block block, String suffix) {
-		ResourceLocation registryKey = registryKey(block);
-		return ResourceLocation.fromNamespaceAndPath(registryKey.getNamespace(), ModelProvider.BLOCK_FOLDER + "/" + registryKey.getPath() + suffix);
+	protected Identifier blockAsset(Block block, String suffix) {
+		Identifier registryKey = registryKey(block);
+		return Identifier.fromNamespaceAndPath(registryKey.getNamespace(), ModelProvider.BLOCK_FOLDER + "/" + registryKey.getPath() + suffix);
 	}
 
-	protected ResourceLocation extend(ResourceLocation resourceLocation, String suffix) {
-		return ResourceLocation.fromNamespaceAndPath(resourceLocation.getNamespace(), resourceLocation.getPath() + suffix);
+	protected Identifier extend(Identifier resourceLocation, String suffix) {
+		return Identifier.fromNamespaceAndPath(resourceLocation.getNamespace(), resourceLocation.getPath() + suffix);
 	}
 
 	@Override
@@ -182,16 +182,16 @@ public class ModBlockStateProvider extends BlockStateProvider {
 		existingBlockWithItem(ModBlocks.WATER_GEL_BLOCK);
 	}
 
-	public <T extends LayeredCauldronBlock> void layeredCauldron(DeferredBlock<T> registryObject, ResourceLocation fluidTexture) {
+	public <T extends LayeredCauldronBlock> void layeredCauldron(DeferredBlock<T> registryObject, Identifier fluidTexture) {
 		T block = registryObject.get();
 		String path = path(block);
 
 		TextureMapping textureMapping = TextureMapping.cauldron(fluidTexture);
 		TextureSlot[] texturesSlots = {TextureSlot.CONTENT, TextureSlot.INSIDE, TextureSlot.TOP, TextureSlot.BOTTOM, TextureSlot.SIDE, TextureSlot.PARTICLE};
 
-		ModelFile modelLevel1 = getTemplateModelWithTextures(path + "_level_1", ResourceLocation.parse("minecraft:block/template_cauldron_level1"), texturesSlots, textureMapping).renderType("translucent");
-		ModelFile modelLevel2 = getTemplateModelWithTextures(path + "_level_2", ResourceLocation.parse("minecraft:block/template_cauldron_level2"), texturesSlots, textureMapping).renderType("translucent");
-		ModelFile modelFull = getTemplateModelWithTextures(path + "_full", ResourceLocation.parse("minecraft:block/template_cauldron_full"), texturesSlots, textureMapping).renderType("translucent");
+		ModelFile modelLevel1 = getTemplateModelWithTextures(path + "_level_1", Identifier.parse("minecraft:block/template_cauldron_level1"), texturesSlots, textureMapping).renderType("translucent");
+		ModelFile modelLevel2 = getTemplateModelWithTextures(path + "_level_2", Identifier.parse("minecraft:block/template_cauldron_level2"), texturesSlots, textureMapping).renderType("translucent");
+		ModelFile modelFull = getTemplateModelWithTextures(path + "_full", Identifier.parse("minecraft:block/template_cauldron_full"), texturesSlots, textureMapping).renderType("translucent");
 
 		getVariantBuilder(block)
 				.partialState().with(LayeredCauldronBlock.LEVEL, 1).modelForState().modelFile(modelLevel1).addModel()
@@ -199,7 +199,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
 				.partialState().with(LayeredCauldronBlock.LEVEL, 3).modelForState().modelFile(modelFull).addModel();
 	}
 
-	private BlockModelBuilder getTemplateModelWithTextures(String name, ResourceLocation template, TextureSlot[] texturesSlots, TextureMapping textureMapping) {
+	private BlockModelBuilder getTemplateModelWithTextures(String name, Identifier template, TextureSlot[] texturesSlots, TextureMapping textureMapping) {
 		BlockModelBuilder modelBuilder = models().withExistingParent(name, template);
 		for (TextureSlot textureSlot : texturesSlots) {
 			modelBuilder.texture(textureSlot.getId(), textureMapping.get(textureSlot));
@@ -207,11 +207,11 @@ public class ModBlockStateProvider extends BlockStateProvider {
 		return modelBuilder;
 	}
 
-	public <T extends Block> void particleOnly(DeferredBlock<T> block, ResourceLocation particleTexture) {
+	public <T extends Block> void particleOnly(DeferredBlock<T> block, Identifier particleTexture) {
 		particleOnly(block.get(), particleTexture);
 	}
 
-	public void particleOnly(Block block, ResourceLocation particleTexture) {
+	public void particleOnly(Block block, Identifier particleTexture) {
 		String path = path(block);
 		simpleBlock(block, models().getBuilder(path).texture("particle", particleTexture));
 	}
@@ -247,7 +247,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
 	}
 
 	public void vialHolder(VialHolderBlock block) {
-		ResourceLocation baseModel = blockAsset(block);
+		Identifier baseModel = blockAsset(block);
 		ModelFile.ExistingModelFile frameModel = models().getExistingFile(extend(baseModel, "_frame"));
 
 		DirectionProperty facingProperty = BlockStateProperties.HORIZONTAL_FACING;
@@ -277,7 +277,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
 	public void fleshkinPressurePlate(OwnablePressurePlateBlock block) {
 		String path = path(block);
-		ResourceLocation baseTexture = blockAsset(block);
+		Identifier baseTexture = blockAsset(block);
 
 		BlockModelBuilder pressurePlateModel = createPressurePlateModel(path, baseTexture, UserSensitivity.FRIENDLY);
 
@@ -301,11 +301,11 @@ public class ModBlockStateProvider extends BlockStateProvider {
 		simpleBlockItem(block, pressurePlateModel);
 	}
 
-	public BlockModelBuilder createPressurePlateModel(String path, ResourceLocation baseTexture, UserSensitivity sensitivity) {
+	public BlockModelBuilder createPressurePlateModel(String path, Identifier baseTexture, UserSensitivity sensitivity) {
 		return models().pressurePlate(path + "_" + sensitivity.getSerializedName(), extend(baseTexture, "_" + sensitivity.getSerializedName()));
 	}
 
-	public BlockModelBuilder createPressurePlateDownModel(String path, ResourceLocation baseTexture, UserSensitivity sensitivity) {
+	public BlockModelBuilder createPressurePlateDownModel(String path, Identifier baseTexture, UserSensitivity sensitivity) {
 		return models().pressurePlateDown(path + "_" + sensitivity.getSerializedName() + "_down", extend(baseTexture, "_" + sensitivity.getSerializedName() + "_down"));
 	}
 
@@ -319,12 +319,12 @@ public class ModBlockStateProvider extends BlockStateProvider {
 	}
 
 	public void wallBlockWithItem(WallBlock block, Block textureBlock) {
-		ResourceLocation texture = blockAsset(textureBlock);
+		Identifier texture = blockAsset(textureBlock);
 		wallBlock(block, texture);
 		wallBlockItem(block, texture);
 	}
 
-	public void wallBlockItem(WallBlock block, ResourceLocation texture) {
+	public void wallBlockItem(WallBlock block, Identifier texture) {
 		String path = path(block);
 		itemModels().getBuilder(path)
 				.parent(new ModelFile.UncheckedModelFile(ModelProvider.BLOCK_FOLDER + "/wall_inventory"))
@@ -336,7 +336,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
 	}
 
 	public void wallBlock(WallBlock block, Block textureBlock) {
-		ResourceLocation texture = blockAsset(textureBlock);
+		Identifier texture = blockAsset(textureBlock);
 		wallBlock(block, texture);
 	}
 
@@ -364,7 +364,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
 	public void simpleVariantBlockWithItem(Block block, int variants) {
 		String path = path(block);
-		ResourceLocation texture = blockAsset(block);
+		Identifier texture = blockAsset(block);
 
 		ModelFile mainModel = models().cubeAll(path, texture);
 		simpleBlockItem(block, mainModel);
@@ -384,7 +384,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
 		existingBlock(block, blockAsset(block));
 	}
 
-	public void existingBlock(Block block, ResourceLocation existingModel) {
+	public void existingBlock(Block block, Identifier existingModel) {
 		ModelFile.ExistingModelFile modelFile = models().getExistingFile(existingModel);
 		simpleBlock(block, modelFile);
 	}
@@ -444,7 +444,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
 	}
 
 	public void orifice(OrificeBlock block) {
-		ResourceLocation model = blockAsset(block);
+		Identifier model = blockAsset(block);
 
 		ModelFile.ExistingModelFile defaultModel = models().getExistingFile(model);
 		ModelFile.ExistingModelFile leakingModel = models().getExistingFile(extend(model, "_leaking"));
@@ -472,7 +472,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
 	}
 
 	public void malignantBloom(BloomBlock block) {
-		ResourceLocation model = blockAsset(block);
+		Identifier model = blockAsset(block);
 
 		ModelFile.ExistingModelFile[] models = {
 				models().getExistingFile(extend(model, "_1")),
@@ -488,7 +488,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
 	}
 
 	public void fleshSpikes(Block block) {
-		ResourceLocation model = blockAsset(block);
+		Identifier model = blockAsset(block);
 		ModelFile.ExistingModelFile[] models = {
 				models().getExistingFile(extend(model, "_1")),
 				models().getExistingFile(extend(model, "_2")),
@@ -532,7 +532,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
 		int scaleHead = 1;
 		float translation3P = 2.5f;
 
-		itemModels().getBuilder(path).parent(new ModelFile.UncheckedModelFile(ResourceLocation.parse("builtin/entity")))
+		itemModels().getBuilder(path).parent(new ModelFile.UncheckedModelFile(Identifier.parse("builtin/entity")))
 				.transforms()
 				.transform(ItemDisplayContext.FIRST_PERSON_RIGHT_HAND).rotation(0, 45, 0).translation(0, (1 - yPct) * 6.5f, 0).scale(scale1P * scaleMultiplier).end()
 				.transform(ItemDisplayContext.FIRST_PERSON_LEFT_HAND).rotation(0, 225, 0).translation(0, (1 - yPct) * 6.5f, 0).scale(scale1P * scaleMultiplier).end()
@@ -544,11 +544,11 @@ public class ModBlockStateProvider extends BlockStateProvider {
 				.transform(ItemDisplayContext.HEAD).translation(0, -8 * yPct, 0).scale(scaleHead * scaleMultiplier).end();
 	}
 
-	public <T extends Block> void geckolibModel(DeferredBlock<T> geoBlock, ResourceLocation particleTexture) {
+	public <T extends Block> void geckolibModel(DeferredBlock<T> geoBlock, Identifier particleTexture) {
 		geckolibModel(geoBlock.get(), particleTexture);
 	}
 
-	public void geckolibModel(Block block, ResourceLocation particleTexture) {
+	public void geckolibModel(Block block, Identifier particleTexture) {
 		String path = path(block);
 		simpleBlock(block, models().getBuilder(path).texture("particle", particleTexture));
 	}
@@ -558,17 +558,17 @@ public class ModBlockStateProvider extends BlockStateProvider {
 	}
 
 	public void directionalSlabBlockWithItem(DirectionalSlabBlock slab, Block fullBlock) {
-		ResourceLocation fullModel = blockAsset(fullBlock);
-		ResourceLocation texture = blockAsset(fullBlock);
+		Identifier fullModel = blockAsset(fullBlock);
+		Identifier texture = blockAsset(fullBlock);
 		directionalSlabBlockWithItem(slab, fullModel, texture);
 	}
 
-	public void directionalSlabBlockWithItem(DirectionalSlabBlock block, ResourceLocation existingModelFull, ResourceLocation texture) {
+	public void directionalSlabBlockWithItem(DirectionalSlabBlock block, Identifier existingModelFull, Identifier texture) {
 		directionalSlabBlock(block, existingModelFull, texture, texture, texture);
 		simpleBlockItem(block);
 	}
 
-	public void directionalSlabBlock(DirectionalSlabBlock block, ResourceLocation existingModelFull, ResourceLocation side, ResourceLocation bottom, ResourceLocation top) {
+	public void directionalSlabBlock(DirectionalSlabBlock block, Identifier existingModelFull, Identifier side, Identifier bottom, Identifier top) {
 		directionalSlabBlock(block, models().slab(path(block), side, bottom, top), models().getExistingFile(existingModelFull));
 	}
 
@@ -603,13 +603,13 @@ public class ModBlockStateProvider extends BlockStateProvider {
 	}
 
 	public void directionalSlabBlockWithItemAndVariants(DirectionalSlabBlock slab, Block fullBlock, int variants) {
-		ResourceLocation fullModel = blockAsset(fullBlock);
-		ResourceLocation texture = blockAsset(fullBlock);
+		Identifier fullModel = blockAsset(fullBlock);
+		Identifier texture = blockAsset(fullBlock);
 		directionalSlabBlockWithVariants(slab, fullModel, texture, variants);
 		simpleBlockItem(slab);
 	}
 
-	public void directionalSlabBlockWithVariants(DirectionalSlabBlock block, ResourceLocation existingModelFull, ResourceLocation texture, int variants) {
+	public void directionalSlabBlockWithVariants(DirectionalSlabBlock block, Identifier existingModelFull, Identifier texture, int variants) {
 		String path = path(block);
 		ModelFile full = models().getExistingFile(existingModelFull);
 		ModelFile halfMain = models().slab(path, texture, texture, texture);
@@ -632,7 +632,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
 								for (int i = 1; i < variants; i++) {
 									String suffix = "_" + i;
-									ResourceLocation textureVariant = extend(texture, suffix);
+									Identifier textureVariant = extend(texture, suffix);
 									BlockModelBuilder modelVariant = models().slab(path + suffix, textureVariant, textureVariant, textureVariant);
 									builder = builder.nextModel().modelFile(modelVariant).rotationX(xRotation).rotationY(yRotation).weight(1);
 								}
@@ -659,16 +659,16 @@ public class ModBlockStateProvider extends BlockStateProvider {
 	}
 
 	public void directionalPillarSlabBlockWithItem(DirectionalPillarSlabBlock slab, RotatedPillarBlock pillarBlock) {
-		ResourceLocation side = extend(blockAsset(pillarBlock), "_side");
-		ResourceLocation end = extend(blockAsset(pillarBlock), "_end");
-		ResourceLocation top = extend(blockAsset(slab), "_top");
+		Identifier side = extend(blockAsset(pillarBlock), "_side");
+		Identifier end = extend(blockAsset(pillarBlock), "_end");
+		Identifier top = extend(blockAsset(slab), "_top");
 
 		directionalPillarSlabBlock(slab, pillarBlock, side, end, top);
 
 		simpleBlockItem(slab);
 	}
 
-	public void directionalPillarSlabBlock(DirectionalPillarSlabBlock slabBlock, RotatedPillarBlock pillarBlock, ResourceLocation side, ResourceLocation end, ResourceLocation top) {
+	public void directionalPillarSlabBlock(DirectionalPillarSlabBlock slabBlock, RotatedPillarBlock pillarBlock, Identifier side, Identifier end, Identifier top) {
 		BlockModelBuilder slab = models().slab(path(slabBlock), side, end, top);
 
 		ModelFile vertical = models().cubeColumn(path(pillarBlock), side, end);
@@ -700,7 +700,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
 	}
 
 	public void tendonChain(FleshChainBlock block) {
-		ResourceLocation file = blockAsset(block);
+		Identifier file = blockAsset(block);
 		ModelFile.ExistingModelFile model = models().getExistingFile(file);
 
 		getVariantBuilder(block)
@@ -716,8 +716,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
 	public void bioLantern(FleshLanternBlock block) {
 		String path = path(block);
-		ResourceLocation texture = blockAsset(block);
-		ResourceLocation template = BiomancyMod.rl("block/template/bio_lantern");
+		Identifier texture = blockAsset(block);
+		Identifier template = BiomancyMod.rl("block/template/bio_lantern");
 
 		ModelFile model = models().singleTexture(path, template, texture).renderType("cutout");
 		ModelFile hangingModel = models().singleTexture(path + "_hanging", extend(template, "_hanging"), texture).renderType("cutout");
@@ -737,13 +737,13 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
 	public void veinsBlock(MultifaceBlock block) {
 		String name = path(block);
-		ResourceLocation templateModel = BiomancyMod.rl("block/template/face_plane");
+		Identifier templateModel = BiomancyMod.rl("block/template/face_plane");
 		ModelFile model = models().singleTexture(name, templateModel, blockAsset(block)).renderType("cutout");
 		multifaceBlock(block, model);
 	}
 
 	public <T extends JumpPadBlock> void jumpPad(DeferredBlock<T> block) {
-		ResourceLocation templateModel = BiomancyMod.rl("block/template/jump_pad");
+		Identifier templateModel = BiomancyMod.rl("block/template/jump_pad");
 		multifaceBlockWithPropertyVariants(block.get(), JumpPadBlock.ENABLED, bool -> bool == true ? "enabled" : "disabled", templateModel, "solid",
 				(direction, propertyValue, model) -> {
 					if (propertyValue && direction == Direction.DOWN) {
@@ -784,7 +784,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
 	}
 
 	public <T extends Comparable<T>> void multifaceBlockWithPropertyVariants(Block block, Property<T> property, Function<T, String> suffixNameFunc) {
-		ResourceLocation templateModel = BiomancyMod.rl("block/template/face_plane");
+		Identifier templateModel = BiomancyMod.rl("block/template/face_plane");
 		multifaceBlockWithPropertyVariants(block, property, suffixNameFunc, templateModel, "cutout", (direction, propertyValue, model) -> {});
 	}
 
@@ -792,7 +792,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
 		void accept(T t, O o, R r);
 	}
 
-	public <T extends Comparable<T>> void multifaceBlockWithPropertyVariants(Block block, Property<T> property, Function<T, String> suffixNameFunc, ResourceLocation templateModel, String renderType, TriConsumer<Direction, T, ModelFile> consumer) {
+	public <T extends Comparable<T>> void multifaceBlockWithPropertyVariants(Block block, Property<T> property, Function<T, String> suffixNameFunc, Identifier templateModel, String renderType, TriConsumer<Direction, T, ModelFile> consumer) {
 		String modelName = path(block);
 
 		MultiPartBlockStateBuilder builder = getMultipartBuilder(block);
@@ -835,11 +835,11 @@ public class ModBlockStateProvider extends BlockStateProvider {
 	}
 
 	public void membranePaneWithItem(PaneBlock block, MembraneBlock parentBlock) {
-		ResourceLocation texture = blockAsset(parentBlock);
+		Identifier texture = blockAsset(parentBlock);
 		customPaneBlock(block, true, true, texture, "translucent", BlockStateProperties.WATERLOGGED);
 	}
 
-	public void customPaneBlock(PaneBlock block, boolean thick, boolean simpleBlockItem, ResourceLocation texture, @Nullable String renderType, Property<?>... ignored) {
+	public void customPaneBlock(PaneBlock block, boolean thick, boolean simpleBlockItem, Identifier texture, @Nullable String renderType, Property<?>... ignored) {
 		String name = path(block);
 		String s = thick ? "thick" : "thin";
 
@@ -893,7 +893,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
 	}
 
 	public void irisDoor(IrisDoorBlock block, boolean simpleBlockItem) {
-		ResourceLocation texture = blockAsset(block);
+		Identifier texture = blockAsset(block);
 		String name = path(block);
 
 		ModelFile openModel = models().singleTexture(name + "_open", BiomancyMod.rl("block/template/thin_pane"), extend(texture, "_open"));

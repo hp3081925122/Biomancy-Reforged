@@ -1,5 +1,9 @@
 package com.github.elenterius.biomancy.block.base;
 
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.ScheduledTickAccess;
+import net.minecraft.world.level.LevelReader;
 import com.github.elenterius.biomancy.block.property.DirectionalSlabType;
 import com.github.elenterius.biomancy.init.ModBlockProperties;
 import com.github.elenterius.biomancy.util.VoxelShapeUtil;
@@ -66,7 +70,7 @@ public class DirectionalSlabBlock extends Block implements SimpleWaterloggedBloc
 	}
 
 	@Override
-	public boolean canPlaceLiquid(@Nullable Player player, BlockGetter level, BlockPos pos, BlockState state, Fluid fluid) {
+	public boolean canPlaceLiquid(@Nullable LivingEntity player, BlockGetter level, BlockPos pos, BlockState state, Fluid fluid) {
 		return state.getValue(TYPE) != DirectionalSlabType.FULL && SimpleWaterloggedBlock.super.canPlaceLiquid(player, level, pos, state, fluid);
 	}
 
@@ -117,11 +121,11 @@ public class DirectionalSlabBlock extends Block implements SimpleWaterloggedBloc
 	}
 
 	@Override
-	public BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor level, BlockPos currentPos, BlockPos neighborPos) {
+	public BlockState updateShape(BlockState state, LevelReader level, ScheduledTickAccess ticks, BlockPos currentPos, Direction direction, BlockPos neighborPos, BlockState neighborState, RandomSource random) {
 		if (Boolean.TRUE.equals(state.getValue(WATERLOGGED))) {
-			level.scheduleTick(currentPos, Fluids.WATER, Fluids.WATER.getTickDelay(level));
+			ticks.scheduleTick(currentPos, Fluids.WATER, Fluids.WATER.getTickDelay(level));
 		}
-		return super.updateShape(state, direction, neighborState, level, currentPos, neighborPos);
+		return super.updateShape(state, level, ticks, currentPos, direction, neighborPos, neighborState, random);
 	}
 
 	@Override

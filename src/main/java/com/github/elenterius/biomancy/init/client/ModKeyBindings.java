@@ -3,16 +3,15 @@ package com.github.elenterius.biomancy.init.client;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
+import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.settings.IKeyConflictContext;
 import net.neoforged.neoforge.client.settings.KeyConflictContext;
 import net.neoforged.neoforge.client.settings.KeyModifier;
 import org.lwjgl.glfw.GLFW;
 
-import java.util.function.Consumer;
-
 public final class ModKeyBindings {
 
-	public static final String MAIN_CATEGORY = BiomancyMod.translationKey("key", "categories.main");
+	public static final KeyMapping.Category MAIN_CATEGORY = new KeyMapping.Category(BiomancyMod.rl("main"));
 	public static final IKeyConflictContext CONFLICT_CONTEXT = new IKeyConflictContext() {
 		@Override
 		public boolean isActive() {
@@ -43,10 +42,11 @@ public final class ModKeyBindings {
 
 	private ModKeyBindings() {}
 
-	static void register(Consumer<KeyMapping> registry) {
-		registry.accept(ModKeyBindings.MAIN_HAND_ITEM_ACTION);
-		registry.accept(ModKeyBindings.OFF_HAND_ITEM_ACTION);
-		registry.accept(ModKeyBindings.EQUIPPED_ARMOR_ACTION);
+	static void register(RegisterKeyMappingsEvent event) {
+		event.registerCategory(MAIN_CATEGORY);
+		event.register(ModKeyBindings.MAIN_HAND_ITEM_ACTION);
+		event.register(ModKeyBindings.OFF_HAND_ITEM_ACTION);
+		event.register(ModKeyBindings.EQUIPPED_ARMOR_ACTION);
 	}
 
 }

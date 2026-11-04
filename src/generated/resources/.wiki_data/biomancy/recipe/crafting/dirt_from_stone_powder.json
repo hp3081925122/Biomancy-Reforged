@@ -2,12 +2,8 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "key": {
-    "L": {
-      "item": "biomancy:stone_powder"
-    },
-    "P": {
-      "item": "biomancy:organic_matter"
-    }
+    "L": "biomancy:stone_powder",
+    "P": "biomancy:organic_matter"
   },
   "pattern": [
     "LPL",
@@ -15,7 +11,6 @@
     "LPL"
   ],
   "result": {
-    "count": 1,
     "id": "minecraft:dirt"
   }
 }

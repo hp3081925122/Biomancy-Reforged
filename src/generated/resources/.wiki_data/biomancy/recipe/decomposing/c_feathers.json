@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "#c:feathers"
+      "ingredient": "#c:feathers"
     }
   },
   "output": {

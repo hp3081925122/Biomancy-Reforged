@@ -1,5 +1,10 @@
 package com.github.elenterius.biomancy.item.weapon;
 
+import com.github.elenterius.biomancy.init.ModItemAbilities;
+import com.github.elenterius.biomancy.item.ConditionalEnchantable;
+import net.minecraft.world.item.component.TooltipDisplay;
+import net.minecraft.world.item.Item;
+import java.util.function.Consumer;
 import net.minecraft.core.Holder;
 import com.github.elenterius.biomancy.api.livingtool.LivingToolState;
 import com.github.elenterius.biomancy.api.livingtool.SpecialLivingTool;
@@ -21,7 +26,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ClickAction;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Tier;
+import net.minecraft.world.item.ToolMaterial;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.level.Level;
@@ -32,19 +37,19 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
-public class LivingClawsItem extends SimpleClawsItem implements SpecialLivingTool, KeyPressListener {
+public class LivingClawsItem extends SimpleClawsItem implements ConditionalEnchantable, SpecialLivingTool, KeyPressListener {
 
 	private final int maxNutrients;
 
-	public LivingClawsItem(Tier tier, float baseAttackDamage, float attackSpeedModifier, float attackRangeModifier, int maxNutrients, Properties properties) {
-		super(tier, baseAttackDamage, attackSpeedModifier, attackRangeModifier, properties);
+	public LivingClawsItem(ToolMaterial material, float baseAttackDamage, float attackSpeedModifier, float attackRangeModifier, int maxNutrients, Properties properties) {
+		super(material, baseAttackDamage, attackSpeedModifier, attackRangeModifier, properties);
 		this.maxNutrients = maxNutrients;
 	}
 
 	@Override
 	public KeyPressResult onClientKeyPress(ItemStack stack, Level level, Player player, EquipmentSlot slot, byte flags) {
 		if (!hasNutrients(stack)) {
-			player.displayClientMessage(TextComponentUtil.getFailureMsgText("not_enough_nutrients"), true);
+			player.sendOverlayMessage(TextComponentUtil.getFailureMsgText("not_enough_nutrients"));
 			player.playSound(ModSoundEvents.FLESHKIN_NO.get(), 1f, 1f + player.level().getRandom().nextFloat() * 0.4f);
 			return KeyPressResult.fail();
 		}
@@ -58,17 +63,16 @@ public class LivingClawsItem extends SimpleClawsItem implements SpecialLivingToo
 	}
 
 	@Override
-	public boolean hurtEnemy(ItemStack stack, LivingEntity target, LivingEntity attacker) {
+	public void hurtEnemy(ItemStack stack, LivingEntity target, LivingEntity attacker) {
 		if (!MobUtil.isCreativePlayer(attacker)) {
 			consumeNutrients(stack, getLivingToolActionCost(stack, ItemAbilities.SWORD_SWEEP));
 		}
-		return true;
 	}
 
 	@Override
 	public boolean mineBlock(ItemStack stack, Level level, BlockState state, BlockPos pos, LivingEntity entity) {
 		if (!level.isClientSide() && state.getDestroySpeed(level, pos) != 0f && !MobUtil.isCreativePlayer(entity)) {
-			consumeNutrients(stack, getLivingToolActionCost(stack, ItemAbilities.SWORD_DIG));
+			consumeNutrients(stack, getLivingToolActionCost(stack, ModItemAbilities.SWORD_DIG));
 		}
 		return true;
 	}
@@ -109,7 +113,7 @@ public class LivingClawsItem extends SimpleClawsItem implements SpecialLivingToo
 	@Override
 	public int getLivingToolActionCost(ItemStack livingTool, LivingToolState state, ItemAbility itemAbility) {
 		int baseCost = 0;
-		if (itemAbility == ItemAbilities.SWORD_DIG) baseCost = 2;
+		if (itemAbility == ModItemAbilities.SWORD_DIG) baseCost = 2;
 		if (itemAbility == ItemAbilities.SWORD_SWEEP) baseCost = 1;
 
 		return switch (state) {
@@ -160,17 +164,17 @@ public class LivingClawsItem extends SimpleClawsItem implements SpecialLivingToo
 	}
 
 	@Override
-	public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag isAdvanced) {
-		super.appendHoverText(stack, context, tooltip, isAdvanced);
-		tooltip.add(ComponentUtil.EMPTY_LINE);
+	public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag isAdvanced) {
+		super.appendHoverText(stack, context, display, tooltip, isAdvanced);
+		tooltip.accept(ComponentUtil.EMPTY_LINE);
 
 		appendLivingToolTooltip(stack, tooltip);
 
-		tooltip.add(ComponentUtil.EMPTY_LINE);
-		tooltip.add(ClientTextUtil.pressButtonTo(ClientTextUtil.getDefaultKey(), TextComponentUtil.getActionText("switch_mode")));
+		tooltip.accept(ComponentUtil.EMPTY_LINE);
+		tooltip.accept(ClientTextUtil.pressButtonTo(ClientTextUtil.getDefaultKey(), TextComponentUtil.getActionText("switch_mode")));
 
 		if (stack.isEnchanted()) {
-			tooltip.add(ComponentUtil.EMPTY_LINE);
+			tooltip.accept(ComponentUtil.EMPTY_LINE);
 		}
 	}
 

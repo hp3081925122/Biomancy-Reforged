@@ -4,11 +4,11 @@
   "ingredients": [
     {
       "count": 2,
-      "item": "biomancy:flesh_bits"
+      "ingredient": "biomancy:flesh_bits"
     },
     {
       "count": 4,
-      "item": "biomancy:elastic_fibers"
+      "ingredient": "biomancy:elastic_fibers"
     }
   ],
   "nutrientsCost": 1,

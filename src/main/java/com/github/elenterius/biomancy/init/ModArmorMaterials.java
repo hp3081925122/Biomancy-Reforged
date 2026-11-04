@@ -1,59 +1,69 @@
 package com.github.elenterius.biomancy.init;
 
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.equipment.Equippable;
 import com.github.elenterius.biomancy.BiomancyMod;
-import net.minecraft.Util;
-import net.minecraft.core.Holder;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.world.item.ArmorItem;
-import net.minecraft.world.item.ArmorMaterial;
-import net.minecraft.world.item.crafting.Ingredient;
-import net.neoforged.neoforge.registries.DeferredHolder;
-import net.neoforged.neoforge.registries.DeferredRegister;
+import com.github.elenterius.biomancy.init.tags.ModItemTags;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.util.Util;
+import net.minecraft.world.item.equipment.ArmorMaterial;
+import net.minecraft.world.item.equipment.ArmorType;
+import net.minecraft.world.item.equipment.EquipmentAsset;
+import net.minecraft.world.item.equipment.EquipmentAssets;
 
 import java.util.EnumMap;
-import java.util.List;
 import java.util.Map;
 
 public final class ModArmorMaterials {
 
-	public static final DeferredRegister<ArmorMaterial> ARMOR_MATERIALS = DeferredRegister.create(Registries.ARMOR_MATERIAL, BiomancyMod.MOD_ID);
-
 	private static final int ACOLYTE_DURABILITY_MULTIPLIER = 1;
 	private static final int WARRIOR_DURABILITY_MULTIPLIER = 1;
 
-	public static final DeferredHolder<ArmorMaterial, ArmorMaterial> ACOLYTE = ARMOR_MATERIALS.register("acolyte", () -> new ArmorMaterial(
+	public static final ArmorMaterial ACOLYTE = new ArmorMaterial(
+			ACOLYTE_DURABILITY_MULTIPLIER,
 			defense(2, 6, 5, 2),
 			0,
 			ModSoundEvents.ARMOR_EQUIP_BIO_ALCHEMIST,
-			() -> Ingredient.EMPTY,
-			List.of(new ArmorMaterial.Layer(BiomancyMod.rl("acolyte"))),
 			0.25f,
-			0.1f
-	));
+			0.1f,
+			ModItemTags.NO_REPAIR_MATERIALS,
+			assetKey("acolyte")
+	);
 
-	public static final DeferredHolder<ArmorMaterial, ArmorMaterial> WARRIOR = ARMOR_MATERIALS.register("warrior", () -> new ArmorMaterial(
+	public static final ArmorMaterial WARRIOR = new ArmorMaterial(
+			WARRIOR_DURABILITY_MULTIPLIER,
 			defense(3, 8, 6, 3),
 			0,
 			ModSoundEvents.ARMOR_EQUIP_WARRIOR,
-			() -> Ingredient.EMPTY,
-			List.of(new ArmorMaterial.Layer(BiomancyMod.rl("warrior"))),
 			0.5f,
-			0
-	));
+			0,
+			ModItemTags.NO_REPAIR_MATERIALS,
+			assetKey("warrior")
+	);
 
 	private ModArmorMaterials() {}
 
-	public static int getDurability(Holder<ArmorMaterial> material, ArmorItem.Type type) {
-		int multiplier = material.is(WARRIOR.getKey()) ? WARRIOR_DURABILITY_MULTIPLIER : ACOLYTE_DURABILITY_MULTIPLIER;
-		return type.getDurability(multiplier);
+	public static Item.Properties applyArmorProperties(ArmorMaterial material, ArmorType type, Item.Properties properties) {
+		properties = properties.durability(type.getDurability(material.durability()))
+				.component(DataComponents.EQUIPPABLE, Equippable.builder(type.getSlot()).setEquipSound(material.equipSound()).setAsset(material.assetId()).build())
+				.repairable(material.repairIngredient());
+		if (material.enchantmentValue() > 0) {
+			properties = properties.enchantable(material.enchantmentValue());
+		}
+		return properties;
 	}
 
-	private static Map<ArmorItem.Type, Integer> defense(int helmet, int chestplate, int leggings, int boots) {
-		return Util.make(new EnumMap<>(ArmorItem.Type.class), map -> {
-			map.put(ArmorItem.Type.HELMET, helmet);
-			map.put(ArmorItem.Type.CHESTPLATE, chestplate);
-			map.put(ArmorItem.Type.LEGGINGS, leggings);
-			map.put(ArmorItem.Type.BOOTS, boots);
+	private static ResourceKey<EquipmentAsset> assetKey(String name) {
+		return ResourceKey.create(EquipmentAssets.ROOT_ID, BiomancyMod.rl(name));
+	}
+
+	private static Map<ArmorType, Integer> defense(int helmet, int chestplate, int leggings, int boots) {
+		return Util.make(new EnumMap<>(ArmorType.class), map -> {
+			map.put(ArmorType.HELMET, helmet);
+			map.put(ArmorType.CHESTPLATE, chestplate);
+			map.put(ArmorType.LEGGINGS, leggings);
+			map.put(ArmorType.BOOTS, boots);
 		});
 	}
 

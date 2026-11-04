@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "minecraft:dead_horn_coral"
+      "ingredient": "minecraft:dead_horn_coral"
     }
   },
   "output": {

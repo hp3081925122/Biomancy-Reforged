@@ -1,7 +1,9 @@
 package com.github.elenterius.biomancy.block;
 
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.ScheduledTickAccess;
 import com.github.elenterius.biomancy.util.InteractionUtil;
-import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.InteractionResult;
 import com.github.elenterius.biomancy.block.property.Orientation;
 import com.github.elenterius.biomancy.init.ModBlockProperties;
 import com.github.elenterius.biomancy.init.ModBlockSetTypes;
@@ -90,7 +92,7 @@ public class FullFleshDoorBlock extends DoorBlock {
 	public BlockState getStateForPlacement(BlockPlaceContext context) {
 		BlockPos pos = context.getClickedPos();
 		Level level = context.getLevel();
-		if (pos.getY() >= level.getMaxBuildHeight() - 1 || !level.getBlockState(pos.above()).canBeReplaced(context)) {
+		if (pos.getY() >= level.getMaxY() || !level.getBlockState(pos.above()).canBeReplaced(context)) {
 			return null;
 		}
 
@@ -167,7 +169,7 @@ public class FullFleshDoorBlock extends DoorBlock {
 	}
 
 	@Override
-	protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+	protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
 		return InteractionUtil.toItemInteractionResult(use(state, level, pos, player, hand, hit));
 	}
 
@@ -179,7 +181,7 @@ public class FullFleshDoorBlock extends DoorBlock {
 
 		setDoubleDoorOpen(state, level, pos, player, isOpening);
 
-		return InteractionResult.sidedSuccess(level.isClientSide);
+		return InteractionResult.SUCCESS;
 	}
 
 	private void setDoubleDoorOpen(BlockState state, Level level, BlockPos pos, Player player, boolean open) {
@@ -221,7 +223,7 @@ public class FullFleshDoorBlock extends DoorBlock {
 	}
 
 	@Override
-	public void neighborChanged(BlockState state, Level level, BlockPos pos, Block block, BlockPos fromPos, boolean isMoving) {
+	public void neighborChanged(BlockState state, Level level, BlockPos pos, Block block, net.minecraft.world.level.redstone.@Nullable Orientation orientation, boolean isMoving) {
 		boolean hasSignal = level.hasNeighborSignal(pos) || level.hasNeighborSignal(pos.relative(isLowerHalf(state) ? Direction.UP : Direction.DOWN));
 
 		if (!defaultBlockState().is(block) && hasSignal != isPowered(state)) {
@@ -234,7 +236,7 @@ public class FullFleshDoorBlock extends DoorBlock {
 	}
 
 	@Override
-	public BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor level, BlockPos currentPos, BlockPos neighborPos) {
+	public BlockState updateShape(BlockState state, LevelReader level, ScheduledTickAccess ticks, BlockPos currentPos, Direction direction, BlockPos neighborPos, BlockState neighborState, RandomSource random) {
 		DoubleBlockHalf half = state.getValue(HALF);
 
 		if ((direction.getAxis() == Direction.Axis.Y) && (half == DoubleBlockHalf.LOWER == (direction == Direction.UP))) {
@@ -251,7 +253,7 @@ public class FullFleshDoorBlock extends DoorBlock {
 			return Blocks.AIR.defaultBlockState();
 		}
 
-		return super.updateShape(state, direction, neighborState, level, currentPos, neighborPos);
+		return super.updateShape(state, level, ticks, currentPos, direction, neighborPos, neighborState, random);
 	}
 
 	protected void triggerOpenCloseEvent(@Nullable Entity entity, Level level, BlockPos pos, boolean isDoorOpening) {
@@ -260,7 +262,7 @@ public class FullFleshDoorBlock extends DoorBlock {
 	}
 
 	private void playSound(@Nullable Player player, Level level, BlockPos pos, SoundEvent sound) {
-		level.playSound(player, pos, sound, SoundSource.BLOCKS, 1f, level.random.nextFloat() * 0.1f + 0.9f);
+		level.playSound(player, pos, sound, SoundSource.BLOCKS, 1f, level.getRandom().nextFloat() * 0.1f + 0.9f);
 	}
 
 	public boolean isLowerHalf(BlockState state) {

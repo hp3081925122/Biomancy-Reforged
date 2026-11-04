@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.block;
 
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
@@ -47,13 +48,13 @@ public class WaterGelBlock extends HalfTransparentBlock {
 	}
 
 	@Override
-	public boolean onDestroyedByPlayer(BlockState state, Level level, BlockPos pos, Player player, boolean willHarvest, FluidState fluid) {
+	public boolean onDestroyedByPlayer(BlockState state, Level level, BlockPos pos, Player player, ItemStack toolStack, boolean willHarvest, FluidState fluid) {
 		playerWillDestroy(level, pos, state, player);
-		return level.setBlock(pos, Fluids.EMPTY.defaultFluidState().createLegacyBlock(), level.isClientSide ? Block.UPDATE_ALL_IMMEDIATE : Block.UPDATE_ALL);
+		return level.setBlock(pos, Fluids.EMPTY.defaultFluidState().createLegacyBlock(), level.isClientSide() ? Block.UPDATE_ALL_IMMEDIATE : Block.UPDATE_ALL);
 	}
 
 	@Override
-	public void fallOn(Level level, BlockState state, BlockPos pos, Entity entity, float fallDistance) {
+	public void fallOn(Level level, BlockState state, BlockPos pos, Entity entity, double fallDistance) {
 		entity.causeFallDamage(fallDistance, 0f, level.damageSources().fall());
 	}
 
@@ -88,7 +89,7 @@ public class WaterGelBlock extends HalfTransparentBlock {
 	}
 
 	@Override
-	public VoxelShape getOcclusionShape(BlockState pState, BlockGetter pLevel, BlockPos pPos) {
+	public VoxelShape getOcclusionShape(BlockState pState) {
 		return Shapes.empty();
 	}
 

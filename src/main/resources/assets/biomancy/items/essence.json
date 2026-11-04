@@ -1,0 +1,10 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "biomancy:item/essence",
+    "tints": [
+      { "type": "biomancy:essence", "layer": 0 },
+      { "type": "biomancy:essence", "layer": 1 }
+    ]
+  }
+}

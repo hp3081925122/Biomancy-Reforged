@@ -1,7 +1,7 @@
 package com.github.elenterius.biomancy.inventory;
 
-import net.minecraft.core.HolderLookup;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.items.wrapper.RecipeWrapper;
@@ -25,13 +25,13 @@ public final class InventoryHandler<T extends SerializableItemHandler> implement
 	}
 
 	@Override
-	public CompoundTag serializeNBT(HolderLookup.Provider provider) {
-		return itemHandler.serializeNBT(provider);
+	public void serialize(ValueOutput output) {
+		itemHandler.serialize(output);
 	}
 
 	@Override
-	public void deserializeNBT(HolderLookup.Provider provider, CompoundTag nbt) {
-		itemHandler.deserializeNBT(provider, nbt);
+	public void deserialize(ValueInput input) {
+		itemHandler.deserialize(input);
 	}
 
 	public T get() {

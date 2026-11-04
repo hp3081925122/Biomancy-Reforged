@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.entity.mob.ai.goal;
 
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -75,7 +76,7 @@ public class FindItemGoal extends Goal {
 		double maxDistSqr = Double.MAX_VALUE;
 
 		for (ItemEntity itemEntity : itemEntities) {
-			if (mob.wantsToPickUp(itemEntity.getItem())) {
+			if (mob.level() instanceof ServerLevel serverLevel && mob.wantsToPickUp(serverLevel, itemEntity.getItem())) {
 				double distSqr = itemEntity.distanceToSqr(mob);
 				if (distSqr < maxDistSqr) {
 					maxDistSqr = distSqr;

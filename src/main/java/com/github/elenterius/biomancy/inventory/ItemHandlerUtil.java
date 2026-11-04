@@ -1,5 +1,7 @@
 package com.github.elenterius.biomancy.inventory;
 
+import net.neoforged.neoforge.transfer.ResourceHandler;
+import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.Containers;
@@ -36,9 +38,10 @@ public final class ItemHandlerUtil {
 			return new CombinedInvWrapper(new PlayerArmorInvWrapper(inventory), new PlayerOffhandInvWrapper(inventory));
 		}
 
-		IItemHandler itemHandler = entity.getCapability(Capabilities.ItemHandler.ENTITY_AUTOMATION, side);
-		if (itemHandler != null) return itemHandler;
-		return entity.getCapability(Capabilities.ItemHandler.ENTITY, null);
+		ResourceHandler<ItemResource> itemHandler = entity.getCapability(Capabilities.Item.ENTITY_AUTOMATION, side);
+		if (itemHandler != null) return IItemHandler.of(itemHandler);
+		itemHandler = entity.getCapability(Capabilities.Item.ENTITY, null);
+		return itemHandler != null ? IItemHandler.of(itemHandler) : null;
 	}
 
 	public static void dropContents(Level level, BlockPos pos, IItemHandler itemHandler) {

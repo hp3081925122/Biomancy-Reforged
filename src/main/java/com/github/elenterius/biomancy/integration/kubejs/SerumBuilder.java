@@ -6,7 +6,7 @@ import dev.latvian.mods.kubejs.registry.BuilderBase;
 import dev.latvian.mods.kubejs.typings.Info;
 import dev.latvian.mods.kubejs.typings.Param;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
@@ -23,7 +23,7 @@ public class SerumBuilder extends BuilderBase<Serum> {
 	public transient CanAffectUserCallback canAffectUser = DefaultCallbacks.CAN_AFFECT_USER;
 	public transient AffectUserCallback affectUser = DefaultCallbacks.AFFECT_USER;
 
-	protected SerumBuilder(ResourceLocation id) {
+	protected SerumBuilder(Identifier id) {
 		super(id);
 	}
 

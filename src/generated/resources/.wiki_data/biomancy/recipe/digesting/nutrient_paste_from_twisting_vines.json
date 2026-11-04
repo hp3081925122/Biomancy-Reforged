@@ -1,9 +1,7 @@
 {
   "type": "biomancy:digesting",
   "input": {
-    "0": {
-      "id": "minecraft:twisting_vines"
-    }
+    "0": "minecraft:twisting_vines"
   },
   "output": {
     "0": {

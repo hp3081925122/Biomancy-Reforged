@@ -29,9 +29,9 @@ public final class MoundGenerator {
 				(byte) -21,
 				(byte) 5,
 				(byte) 2,
-				level.getMaxBuildHeight(),
+				level.getMaxY() + 1,
 				level.getSeaLevel(),
-				ClimateUtil.getTemperature(biome, blockOrigin),
+				ClimateUtil.getTemperature(biome, blockOrigin, level.getSeaLevel()),
 				ClimateUtil.getHumidity(biome)
 		);
 

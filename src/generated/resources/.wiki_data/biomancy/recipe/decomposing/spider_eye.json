@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "minecraft:spider_eye"
+      "ingredient": "minecraft:spider_eye"
     }
   },
   "output": {

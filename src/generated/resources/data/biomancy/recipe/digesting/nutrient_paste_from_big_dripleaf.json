@@ -1,8 +1,6 @@
 {
   "type": "biomancy:digesting",
-  "ingredient": {
-    "item": "minecraft:big_dripleaf"
-  },
+  "ingredient": "minecraft:big_dripleaf",
   "nutrientsCost": 3,
   "processingTime": 464,
   "result": {

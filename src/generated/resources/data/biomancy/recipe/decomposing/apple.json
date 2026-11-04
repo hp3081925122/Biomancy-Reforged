@@ -1,7 +1,7 @@
 {
   "type": "biomancy:decomposing",
   "ingredient": {
-    "item": "minecraft:apple"
+    "ingredient": "minecraft:apple"
   },
   "nutrientsCost": 1,
   "processingTime": 40,

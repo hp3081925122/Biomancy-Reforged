@@ -84,6 +84,10 @@ public class VariableOutput {
 		return item;
 	}
 
+	public DataComponentPatch getComponents() {
+		return components;
+	}
+
 	public ItemStack getItemStack() {
 		return new ItemStack(item.builtInRegistryHolder(), 1, components);
 	}

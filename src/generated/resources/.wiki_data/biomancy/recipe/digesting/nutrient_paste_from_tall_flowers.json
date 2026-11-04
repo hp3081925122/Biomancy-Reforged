@@ -1,9 +1,7 @@
 {
   "type": "biomancy:digesting",
   "input": {
-    "0": {
-      "id": "#minecraft:tall_flowers"
-    }
+    "0": "#c:flowers/tall"
   },
   "output": {
     "0": {

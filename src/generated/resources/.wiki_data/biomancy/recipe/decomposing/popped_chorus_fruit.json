@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "minecraft:popped_chorus_fruit"
+      "ingredient": "minecraft:popped_chorus_fruit"
     }
   },
   "output": {

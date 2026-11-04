@@ -2,36 +2,17 @@
   "type": "minecraft:crafting_shapeless",
   "category": "misc",
   "ingredients": [
-    {
-      "item": "biomancy:bile"
-    },
-    {
-      "item": "biomancy:bile"
-    },
-    {
-      "item": "biomancy:bile"
-    },
-    {
-      "item": "biomancy:bile"
-    },
-    {
-      "item": "biomancy:elastic_fibers"
-    },
-    {
-      "item": "biomancy:elastic_fibers"
-    },
-    {
-      "item": "biomancy:elastic_fibers"
-    },
-    {
-      "item": "biomancy:elastic_fibers"
-    },
-    {
-      "item": "biomancy:elastic_fibers"
-    }
+    "biomancy:bile",
+    "biomancy:bile",
+    "biomancy:bile",
+    "biomancy:bile",
+    "biomancy:elastic_fibers",
+    "biomancy:elastic_fibers",
+    "biomancy:elastic_fibers",
+    "biomancy:elastic_fibers",
+    "biomancy:elastic_fibers"
   ],
   "result": {
-    "count": 1,
     "id": "biomancy:gelling_agent"
   }
 }

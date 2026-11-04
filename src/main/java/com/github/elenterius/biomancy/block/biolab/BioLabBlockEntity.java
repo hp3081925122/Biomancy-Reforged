@@ -1,5 +1,8 @@
 package com.github.elenterius.biomancy.block.biolab;
 
+import net.neoforged.neoforge.items.IItemHandlerModifiable;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.core.HolderLookup;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.api.nutrients.FuelHandler;
@@ -33,7 +36,8 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.transfer.ResourceHandler;
+import net.neoforged.neoforge.transfer.fluid.FluidResource;
 import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.items.wrapper.CombinedInvWrapper;
 import net.neoforged.neoforge.items.wrapper.RangedWrapper;
@@ -41,14 +45,14 @@ import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import org.jspecify.annotations.Nullable;
-import software.bernie.geckolib.animatable.GeoBlockEntity;
-import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.animation.AnimatableManager;
-import software.bernie.geckolib.animation.AnimationController;
-import software.bernie.geckolib.animation.AnimationState;
-import software.bernie.geckolib.animation.RawAnimation;
-import software.bernie.geckolib.animation.PlayState;
-import software.bernie.geckolib.util.GeckoLibUtil;
+import com.geckolib.animatable.GeoBlockEntity;
+import com.geckolib.animatable.instance.AnimatableInstanceCache;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.animation.AnimationController;
+import com.geckolib.animation.state.AnimationTest;
+import com.geckolib.animation.RawAnimation;
+import com.geckolib.animation.object.PlayState;
+import com.geckolib.util.GeckoLibUtil;
 
 import java.util.List;
 
@@ -76,7 +80,7 @@ public class BioLabBlockEntity extends MachineBlockEntity<BioBrewingRecipe, BioL
 	private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 	private LoopingSoundHelper loopingSoundHelper = LoopingSoundHelper.NULL;
 
-	private final IItemHandler combinedInventory;
+	private final IItemHandlerModifiable combinedInventory;
 
 	public BioLabBlockEntity(BlockPos worldPosition, BlockState blockState) {
 		super(ModBlockEntities.BIO_LAB.get(), worldPosition, blockState);
@@ -93,7 +97,7 @@ public class BioLabBlockEntity extends MachineBlockEntity<BioBrewingRecipe, BioL
 		combinedInventory = createCombinedInventory();
 	}
 
-	private IItemHandler createCombinedInventory() {
+	private IItemHandlerModifiable createCombinedInventory() {
 		return new CombinedInvWrapper(
 				fuelInventory,
 				new RangedWrapper(inputInventory, inputInventory.getSlots() - 1, inputInventory.getSlots())) {
@@ -106,7 +110,7 @@ public class BioLabBlockEntity extends MachineBlockEntity<BioBrewingRecipe, BioL
 
 	@Override
 	public void onLoad() {
-		if (level != null && level.isClientSide) {
+		if (level != null && level.isClientSide()) {
 			loopingSoundHelper = SoundUtil.Client.createLoopingSoundHandler();
 		}
 	}
@@ -178,23 +182,23 @@ public class BioLabBlockEntity extends MachineBlockEntity<BioBrewingRecipe, BioL
 	}
 
 	@Override
-	protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-		super.saveAdditional(tag, registries);
-		stateData.serialize(tag);
-		tag.put("Fuel", fuelHandler.serializeNBT(registries));
-		tag.put("FuelSlots", fuelInventory.serializeNBT(registries));
-		tag.put("InputSlots", inputInventory.serializeNBT(registries));
-		tag.put("OutputSlots", outputInventory.serializeNBT(registries));
+	protected void saveAdditional(ValueOutput output) {
+		super.saveAdditional(output);
+		stateData.serialize(output);
+		fuelHandler.serialize(output.child("Fuel"));
+		fuelInventory.serialize(output.child("FuelSlots"));
+		inputInventory.serialize(output.child("InputSlots"));
+		outputInventory.serialize(output.child("OutputSlots"));
 	}
 
 	@Override
-	protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-		super.loadAdditional(tag, registries);
-		stateData.deserialize(tag);
-		fuelHandler.deserializeNBT(registries, tag.getCompound("Fuel"));
-		fuelInventory.deserializeNBT(registries, tag.getCompound("FuelSlots"));
-		inputInventory.deserializeNBT(registries, tag.getCompound("InputSlots"));
-		outputInventory.deserializeNBT(registries, tag.getCompound("OutputSlots"));
+	protected void loadAdditional(ValueInput input) {
+		super.loadAdditional(input);
+		stateData.deserialize(input);
+		fuelHandler.deserialize(input.childOrEmpty("Fuel"));
+		fuelInventory.deserialize(input.childOrEmpty("FuelSlots"));
+		inputInventory.deserialize(input.childOrEmpty("InputSlots"));
+		outputInventory.deserialize(input.childOrEmpty("OutputSlots"));
 	}
 
 	@Override
@@ -243,15 +247,15 @@ public class BioLabBlockEntity extends MachineBlockEntity<BioBrewingRecipe, BioL
 		return true;
 	}
 
-	private <T extends BioLabBlockEntity> PlayState handleAnimationState(AnimationState<T> event) {
+	private <T extends BioLabBlockEntity> PlayState handleAnimationState(AnimationTest<T> event) {
 		boolean isCrafting = getBlockState().getValue(MachineBlock.CRAFTING);
 
 		if (isCrafting) {
-			event.getController().setAnimation(WORKING_ANIM);
+			event.controller().setAnimation(WORKING_ANIM);
 			loopingSoundHelper.startLoop(this, ModSoundEvents.BIO_LAB_CRAFTING.get(), 0.65f);
 		}
 		else {
-			event.getController().setAnimation(IDLE_ANIM);
+			event.controller().setAnimation(IDLE_ANIM);
 			loopingSoundHelper.stopLoop();
 		}
 
@@ -260,7 +264,7 @@ public class BioLabBlockEntity extends MachineBlockEntity<BioBrewingRecipe, BioL
 
 	@Override
 	public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-		controllers.add(new AnimationController<>(this, "main", 0, this::handleAnimationState));
+		controllers.add(new AnimationController<BioLabBlockEntity>("main", 0, this::handleAnimationState));
 	}
 
 	@Override
@@ -270,20 +274,20 @@ public class BioLabBlockEntity extends MachineBlockEntity<BioBrewingRecipe, BioL
 
 	@Override
 	public void setRemoved() {
-		if (level != null && level.isClientSide) {
+		if (level != null && level.isClientSide()) {
 			loopingSoundHelper.clear();
 		}
 		super.setRemoved();
 	}
 
-	public @Nullable IItemHandler getItemHandler(@Nullable Direction side) {
+	public @Nullable IItemHandlerModifiable getItemHandler(@Nullable Direction side) {
 		if (isRemoved()) return null;
 		if (side == null || side == Direction.DOWN) return outputInventory;
 		if (side == Direction.UP) return inputInventory;
 		return combinedInventory;
 	}
 
-	public @Nullable IFluidHandler getFluidHandler(@Nullable Direction side) {
+	public @Nullable ResourceHandler<FluidResource> getFluidHandler(@Nullable Direction side) {
 		if (isRemoved()) return null;
 		return fuelHandler.getFluidConsumer();
 	}

@@ -1,5 +1,7 @@
 package com.github.elenterius.biomancy.util;
 
+import net.neoforged.neoforge.transfer.ResourceHandler;
+import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.SectionPos;
@@ -26,7 +28,8 @@ public final class LevelUtil {
 		if (state.hasBlockEntity()) {
 			BlockEntity blockEntity = level.getBlockEntity(pos);
 			if (blockEntity != null) {
-				return level.getCapability(Capabilities.ItemHandler.BLOCK, pos, state, blockEntity, direction);
+				ResourceHandler<ItemResource> handler = level.getCapability(Capabilities.Item.BLOCK, pos, state, blockEntity, direction);
+				return handler != null ? IItemHandler.of(handler) : null;
 			}
 		}
 		return null;

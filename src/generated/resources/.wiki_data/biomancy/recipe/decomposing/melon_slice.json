@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "minecraft:melon_slice"
+      "ingredient": "minecraft:melon_slice"
     }
   },
   "output": {

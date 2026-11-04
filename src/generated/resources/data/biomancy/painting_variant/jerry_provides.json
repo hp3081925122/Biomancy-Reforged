@@ -1,5 +1,13 @@
 {
   "asset_id": "biomancy:jerry_provides",
+  "author": {
+    "color": "gray",
+    "translate": "painting.biomancy.jerry_provides.author"
+  },
   "height": 1,
+  "title": {
+    "color": "yellow",
+    "translate": "painting.biomancy.jerry_provides.title"
+  },
   "width": 1
 }

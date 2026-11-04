@@ -1,20 +1,18 @@
 {
   "type": "biomancy:bio_brewing",
   "input": {
-    "0": {
-      "id": "biomancy:genetic_compound"
-    },
+    "0": "biomancy:genetic_compound",
     "1": {
-      "id": "biomancy:nutrient_paste"
+      "ingredient": "biomancy:nutrient_paste"
     },
     "2": {
-      "id": "biomancy:hormone_secretion"
+      "ingredient": "biomancy:hormone_secretion"
     },
     "3": {
-      "id": "biomancy:healing_additive"
+      "ingredient": "biomancy:healing_additive"
     },
     "4": {
-      "id": "biomancy:mineral_fragment"
+      "ingredient": "biomancy:mineral_fragment"
     }
   },
   "output": {

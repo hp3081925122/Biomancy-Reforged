@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "minecraft:dead_bubble_coral"
+      "ingredient": "minecraft:dead_bubble_coral"
     }
   },
   "output": {

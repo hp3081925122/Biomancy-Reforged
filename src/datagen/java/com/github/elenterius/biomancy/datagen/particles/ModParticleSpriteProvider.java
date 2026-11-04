@@ -1,14 +1,14 @@
 package com.github.elenterius.biomancy.datagen.particles;
 
+import net.minecraft.server.packs.resources.ResourceManager;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.init.ModParticleTypes;
 import net.minecraft.data.PackOutput;
-import net.neoforged.neoforge.common.data.ExistingFileHelper;
 
 public class ModParticleSpriteProvider extends ParticleSpriteProvider {
 
-	public ModParticleSpriteProvider(PackOutput packOutput, ExistingFileHelper fileHelper) {
-		super(packOutput, BiomancyMod.MOD_ID, fileHelper);
+	public ModParticleSpriteProvider(PackOutput packOutput, ResourceManager resourceManager) {
+		super(packOutput, BiomancyMod.MOD_ID, resourceManager);
 	}
 
 	@Override

@@ -1,20 +1,19 @@
 package com.github.elenterius.biomancy.api.nutrients;
 
-import net.minecraft.core.HolderLookup;
 import com.github.elenterius.biomancy.api.nutrients.fluid.FluidFuelConsumerHandler;
 import com.github.elenterius.biomancy.inventory.Notify;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.common.util.INBTSerializable;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.neoforged.neoforge.common.util.ValueIOSerializable;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.function.Predicate;
 import java.util.function.ToIntFunction;
 
 @ApiStatus.Internal
-public class FuelHandlerImpl implements FuelHandler, INBTSerializable<CompoundTag> {
+public class FuelHandlerImpl implements FuelHandler, ValueIOSerializable {
 	private final int maxFuel;
 	private final Predicate<ItemStack> fuelPredicate;
 	private final ToIntFunction<ItemStack> fuelValueFunc;
@@ -78,20 +77,18 @@ public class FuelHandlerImpl implements FuelHandler, INBTSerializable<CompoundTa
 	}
 
 	@Override
-	public CompoundTag serializeNBT(HolderLookup.Provider provider) {
-		CompoundTag tag = new CompoundTag();
-		tag.putInt("Amount", fuel);
-		tag.put("FluidConsumer", fluidConsumer.serializeNBT(provider));
-		return tag;
+	public void serialize(ValueOutput output) {
+		output.putInt("Amount", fuel);
+		fluidConsumer.serialize(output.child("FluidConsumer"));
 	}
 
 	@Override
-	public void deserializeNBT(HolderLookup.Provider provider, CompoundTag tag) {
-		fuel = tag.getInt("Amount");
-		fluidConsumer.deserializeNBT(provider, tag.getCompound("FluidConsumer"));
+	public void deserialize(ValueInput input) {
+		fuel = input.getIntOr("Amount", 0);
+		fluidConsumer.deserialize(input.childOrEmpty("FluidConsumer"));
 	}
 
-	public IFluidHandler getFluidConsumer() {
+	public FluidFuelConsumerHandler getFluidConsumer() {
 		return fluidConsumer;
 	}
 

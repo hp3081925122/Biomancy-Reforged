@@ -6,8 +6,8 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.entity.animal.Cat;
-import net.minecraft.world.entity.animal.CatVariant;
+import net.minecraft.world.entity.animal.feline.Cat;
+import net.minecraft.world.entity.animal.feline.CatVariants;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -29,13 +29,17 @@ public class CatMorningGiftLootModifier extends LootModifier {
 		this(
 				new LootItemCondition[]{
 						LootItemEntityPropertyCondition.entityPresent(LootContext.EntityTarget.THIS).build(),
-						LootTableIdCondition.builder(BuiltInLootTables.CAT_MORNING_GIFT.location()).build()
+						LootTableIdCondition.builder(BuiltInLootTables.CAT_MORNING_GIFT.identifier()).build()
 				}
 		);
 	}
 
 	public CatMorningGiftLootModifier(LootItemCondition[] conditions) {
-		super(conditions);
+		this(conditions, IGlobalLootModifier.DEFAULT_PRIORITY);
+	}
+
+	public CatMorningGiftLootModifier(LootItemCondition[] conditions, int priority) {
+		super(conditions, priority);
 	}
 
 	@Override
@@ -45,12 +49,12 @@ public class CatMorningGiftLootModifier extends LootModifier {
 
 	@Override
 	protected ObjectArrayList<ItemStack> doApply(ObjectArrayList<ItemStack> generatedLoot, LootContext context) {
-		if (!(context.getParamOrNull(LootContextParams.THIS_ENTITY) instanceof Cat cat)) return generatedLoot;
+		if (!(context.getOptionalParameter(LootContextParams.THIS_ENTITY) instanceof Cat cat)) return generatedLoot;
 
 		RandomSource random = context.getRandom();
 
 		boolean isBlackCat = cat.getVariant().unwrapKey()
-				.filter(variant -> variant.equals(CatVariant.ALL_BLACK) || variant.equals(CatVariant.BLACK))
+				.filter(variant -> variant.equals(CatVariants.ALL_BLACK) || variant.equals(CatVariants.BLACK))
 				.isPresent();
 
 		for (int i = 0; i < generatedLoot.size(); i++) {

@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "#c:eggs"
+      "ingredient": "#c:eggs"
     }
   },
   "output": {

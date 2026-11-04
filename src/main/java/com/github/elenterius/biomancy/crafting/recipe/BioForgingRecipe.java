@@ -1,5 +1,8 @@
 package com.github.elenterius.biomancy.crafting.recipe;
 
+import net.minecraft.core.HolderLookup;
+import net.minecraft.world.item.Item;
+import net.minecraft.core.Holder;
 import com.github.elenterius.biomancy.crafting.IngredientStack;
 import com.github.elenterius.biomancy.init.ModItems;
 import com.github.elenterius.biomancy.init.ModRecipes;
@@ -9,14 +12,16 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.world.entity.player.StackedContents;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.item.crafting.*;
+import net.minecraft.world.item.crafting.display.RecipeDisplay;
+import net.minecraft.world.item.crafting.display.SlotDisplay;
 import net.minecraft.world.level.Level;
 
 import java.util.List;
@@ -27,13 +32,19 @@ public class BioForgingRecipe implements Recipe<RecipeInput> {
 	public static final int MAX_INGREDIENTS = 5;
 	private final BioForgeTab tab;
 	private final List<IngredientStack> ingredients;
-	private final ItemStack result;
+	private final ItemStackTemplate result;
+	private ItemStack resultStack;
 
 	private final NonNullList<Ingredient> vanillaIngredients;
 
 	private final int cost;
 
 	public BioForgingRecipe(BioForgeTab tab, ItemStack result, List<IngredientStack> ingredients, int craftingCostNutrients) {
+		this(tab, ItemStackTemplate.fromNonEmptyStack(result), ingredients, craftingCostNutrients);
+		resultStack = result;
+	}
+
+	public BioForgingRecipe(BioForgeTab tab, ItemStackTemplate result, List<IngredientStack> ingredients, int craftingCostNutrients) {
 		this.tab = tab;
 		this.result = result;
 		this.ingredients = ingredients;
@@ -49,7 +60,7 @@ public class BioForgingRecipe implements Recipe<RecipeInput> {
 		return cost;
 	}
 
-	public boolean isCraftable(StackedContents itemCounter) {
+	public boolean isCraftable(StackedContents<Holder<Item>> itemCounter) {
 		for (IngredientStack ingredientStack : ingredients) {
 			if (!ingredientStack.hasSufficientCount(itemCounter)) {
 				return false;
@@ -112,21 +123,18 @@ public class BioForgingRecipe implements Recipe<RecipeInput> {
 	}
 
 	@Override
-	public ItemStack assemble(RecipeInput input, HolderLookup.Provider registries) {
-		return result.copy();
+	public ItemStack assemble(RecipeInput input) {
+		return resultStack().copy();
 	}
 
-	@Override
 	public boolean canCraftInDimensions(int width, int height) {
 		return width * height >= 0;
 	}
 
-	@Override
 	public ItemStack getResultItem(HolderLookup.Provider registries) {
-		return result;
+		return resultStack();
 	}
 
-	@Override
 	public NonNullList<Ingredient> getIngredients() {
 		return vanillaIngredients;
 	}
@@ -140,21 +148,50 @@ public class BioForgingRecipe implements Recipe<RecipeInput> {
 	}
 
 	@Override
-	public RecipeSerializer<?> getSerializer() {
+	public RecipeSerializer<? extends Recipe<RecipeInput>> getSerializer() {
 		return ModRecipes.BIO_FORGING_SERIALIZER.get();
 	}
 
 	@Override
-	public RecipeType<?> getType() {
+	public RecipeType<? extends Recipe<RecipeInput>> getType() {
 		return ModRecipes.BIO_FORGING_RECIPE_TYPE.get();
 	}
 
-	@Override
 	public ItemStack getToastSymbol() {
 		return new ItemStack(ModItems.BIO_FORGE.get());
 	}
 
-	public static class Serializer implements RecipeSerializer<BioForgingRecipe> {
+	@Override
+	public boolean showNotification() {
+		return true;
+	}
+
+	@Override
+	public String group() {
+		return "";
+	}
+
+	@Override
+	public PlacementInfo placementInfo() {
+		return PlacementInfo.NOT_PLACEABLE;
+	}
+
+	@Override
+	public RecipeBookCategory recipeBookCategory() {
+		return ModRecipes.BIO_FORGING_CATEGORY.get();
+	}
+
+	@Override
+	public List<RecipeDisplay> display() {
+		return List.of(new BioForgingRecipeDisplay(
+				ingredients.stream().map(stack -> stack.ingredient().display()).toList(),
+				ingredients.stream().map(IngredientStack::count).toList(),
+				new SlotDisplay.ItemStackSlotDisplay(result),
+				new SlotDisplay.ItemSlotDisplay(ModItems.BIO_FORGE.get())
+		));
+	}
+
+	public static final class Serializer {
 
 		private static final Codec<List<IngredientStack>> INGREDIENTS_CODEC = IngredientStack.LIST_CODEC.validate(list -> {
 			if (list.isEmpty()) return DataResult.error(() -> "No ingredients for recipe");
@@ -164,29 +201,34 @@ public class BioForgingRecipe implements Recipe<RecipeInput> {
 
 		public static final MapCodec<BioForgingRecipe> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
 				INGREDIENTS_CODEC.fieldOf(RecipeUtil.JsonKeys.INGREDIENTS).forGetter(BioForgingRecipe::getIngredientQuantities),
-				ItemStack.STRICT_CODEC.fieldOf(RecipeUtil.JsonKeys.RESULT).forGetter(r -> r.result),
+				ItemStackTemplate.CODEC.fieldOf(RecipeUtil.JsonKeys.RESULT).forGetter(r -> r.result),
 				Codec.INT.optionalFieldOf(RecipeUtil.JsonKeys.NUTRIENTS_COST, (int) DEFAULT_CRAFTING_COST_NUTRIENTS).forGetter(BioForgingRecipe::getCraftingCostNutrients),
 				BioForgeTab.CODEC.fieldOf(RecipeUtil.JsonKeys.BIO_FORGE_TAB).forGetter(BioForgingRecipe::getTab)
 		).apply(instance, (ingredients, result, cost, tab) -> new BioForgingRecipe(tab, result, ingredients, cost)));
 
 		public static final StreamCodec<RegistryFriendlyByteBuf, BioForgingRecipe> STREAM_CODEC = StreamCodec.composite(
-				ItemStack.STREAM_CODEC, r -> r.result,
+				ItemStackTemplate.STREAM_CODEC, r -> r.result,
 				IngredientStack.LIST_STREAM_CODEC, BioForgingRecipe::getIngredientQuantities,
 				ByteBufCodecs.VAR_INT, BioForgingRecipe::getCraftingCostNutrients,
 				BioForgeTab.STREAM_CODEC, BioForgingRecipe::getTab,
 				(result, ingredients, cost, tab) -> new BioForgingRecipe(tab, result, ingredients, cost)
 		);
 
-		@Override
+		public static final RecipeSerializer<BioForgingRecipe> INSTANCE = new RecipeSerializer<>(CODEC, STREAM_CODEC);
+
 		public MapCodec<BioForgingRecipe> codec() {
 			return CODEC;
 		}
 
-		@Override
 		public StreamCodec<RegistryFriendlyByteBuf, BioForgingRecipe> streamCodec() {
 			return STREAM_CODEC;
 		}
 
+	}
+
+	private ItemStack resultStack() {
+		if (resultStack == null) resultStack = result.create();
+		return resultStack;
 	}
 
 }

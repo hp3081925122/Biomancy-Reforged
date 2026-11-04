@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "minecraft:copper_ingot"
+      "ingredient": "minecraft:copper_ingot"
     }
   },
   "output": {

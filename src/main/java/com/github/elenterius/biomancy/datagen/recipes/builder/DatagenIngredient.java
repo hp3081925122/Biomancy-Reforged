@@ -1,7 +1,10 @@
 package com.github.elenterius.biomancy.datagen.recipes.builder;
 
-import com.google.gson.JsonObject;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.Item;
+import net.minecraft.core.Holder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonPrimitive;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.neoforged.neoforge.common.crafting.ICustomIngredient;
@@ -10,24 +13,22 @@ import net.neoforged.neoforge.common.crafting.IngredientType;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-public record DatagenIngredient(ResourceLocation resourceLocation) implements ICustomIngredient {
+public record DatagenIngredient(Identifier resourceLocation) implements ICustomIngredient {
 
 	public DatagenIngredient(String itemKey) {
-		this(Objects.requireNonNull(ResourceLocation.tryParse(itemKey)));
+		this(Objects.requireNonNull(Identifier.tryParse(itemKey)));
 	}
 
 	public DatagenIngredient(String namespace, String path) {
-		this(Objects.requireNonNull(ResourceLocation.tryBuild(namespace, path)));
+		this(Objects.requireNonNull(Identifier.tryBuild(namespace, path)));
 	}
 
 	public Ingredient ingredient() {
 		return toVanilla();
 	}
 
-	public JsonObject toJson() {
-		JsonObject json = new JsonObject();
-		json.addProperty("item", resourceLocation.toString());
-		return json;
+	public JsonElement toJson() {
+		return new JsonPrimitive(resourceLocation.toString());
 	}
 
 	@Override
@@ -36,7 +37,7 @@ public record DatagenIngredient(ResourceLocation resourceLocation) implements IC
 	}
 
 	@Override
-	public Stream<ItemStack> getItems() {
+	public Stream<Holder<Item>> items() {
 		return Stream.empty();
 	}
 

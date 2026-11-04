@@ -4,7 +4,7 @@
   "ingredients": [
     {
       "count": 8,
-      "item": "biomancy:elastic_fibers"
+      "ingredient": "biomancy:elastic_fibers"
     }
   ],
   "nutrientsCost": 1,

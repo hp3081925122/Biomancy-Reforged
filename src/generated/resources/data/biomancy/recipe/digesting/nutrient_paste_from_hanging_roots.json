@@ -1,8 +1,6 @@
 {
   "type": "biomancy:digesting",
-  "ingredient": {
-    "item": "minecraft:hanging_roots"
-  },
+  "ingredient": "minecraft:hanging_roots",
   "nutrientsCost": 2,
   "processingTime": 200,
   "result": {

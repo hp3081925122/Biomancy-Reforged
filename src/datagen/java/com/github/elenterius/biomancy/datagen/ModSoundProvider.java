@@ -3,10 +3,13 @@ package com.github.elenterius.biomancy.datagen;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.init.ModSoundEvents;
 import net.minecraft.data.PackOutput;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
-import net.neoforged.neoforge.common.data.ExistingFileHelper;
+import net.minecraft.core.Holder;
+import net.minecraft.world.entity.animal.chicken.ChickenSoundVariants;
+import net.minecraft.world.entity.animal.cow.CowSoundVariants;
+import net.minecraft.world.entity.animal.pig.PigSoundVariants;
 import net.neoforged.neoforge.common.data.SoundDefinition;
 import net.neoforged.neoforge.common.data.SoundDefinitionsProvider;
 import net.neoforged.neoforge.registries.DeferredHolder;
@@ -15,8 +18,8 @@ import java.util.Arrays;
 
 public class ModSoundProvider extends SoundDefinitionsProvider {
 
-	protected ModSoundProvider(PackOutput output, ExistingFileHelper helper) {
-		super(output, BiomancyMod.MOD_ID, helper);
+	protected ModSoundProvider(PackOutput output) {
+		super(output, BiomancyMod.MOD_ID);
 	}
 
 	@Override
@@ -118,30 +121,30 @@ public class ModSoundProvider extends SoundDefinitionsProvider {
 		addSimpleSounds(ModSoundEvents.FLESH_BLOB_AMBIENT, 3, 0.8f, 0.9f);
 		addSimpleSound(ModSoundEvents.FLESH_BLOB_MEW_PURR, 0.7f, 0.45f);
 		addSimpleSound(ModSoundEvents.FLESH_BLOB_GROWL, 0.9f, 0.55f);
-		addSimpleRedirect(ModSoundEvents.FLESH_COW_AMBIENT, SoundEvents.COW_AMBIENT, 1f, 0.25f);
-		addSimpleRedirect(ModSoundEvents.FLESH_COW_HURT, SoundEvents.COW_HURT, 1f, 0.25f);
-		addSimpleRedirect(ModSoundEvents.FLESH_COW_DEATH, SoundEvents.COW_DEATH, 1f, 0.25f);
+		addSimpleRedirect(ModSoundEvents.FLESH_COW_AMBIENT, SoundEvents.COW_SOUNDS.get(CowSoundVariants.SoundSet.CLASSIC).ambientSound(), 1f, 0.25f);
+		addSimpleRedirect(ModSoundEvents.FLESH_COW_HURT, SoundEvents.COW_SOUNDS.get(CowSoundVariants.SoundSet.CLASSIC).hurtSound(), 1f, 0.25f);
+		addSimpleRedirect(ModSoundEvents.FLESH_COW_DEATH, SoundEvents.COW_SOUNDS.get(CowSoundVariants.SoundSet.CLASSIC).deathSound(), 1f, 0.25f);
 		addSimpleRedirect(ModSoundEvents.FLESH_SHEEP_AMBIENT, SoundEvents.SHEEP_AMBIENT, 1f, 0.25f);
 		addSimpleRedirect(ModSoundEvents.FLESH_SHEEP_HURT, SoundEvents.SHEEP_HURT, 1f, 0.25f);
 		addSimpleRedirect(ModSoundEvents.FLESH_SHEEP_DEATH, SoundEvents.SHEEP_DEATH, 1f, 0.25f);
-		addSimpleRedirect(ModSoundEvents.FLESH_PIG_AMBIENT, SoundEvents.PIG_AMBIENT, 1f, 0.25f);
-		addSimpleRedirect(ModSoundEvents.FLESH_PIG_HURT, SoundEvents.PIG_HURT, 1f, 0.25f);
-		addSimpleRedirect(ModSoundEvents.FLESH_PIG_DEATH, SoundEvents.PIG_DEATH, 1f, 0.25f);
-		addSimpleRedirect(ModSoundEvents.FLESH_CHICKEN_AMBIENT, SoundEvents.CHICKEN_AMBIENT, 1f, 0.25f);
-		addSimpleRedirect(ModSoundEvents.FLESH_CHICKEN_HURT, SoundEvents.CHICKEN_HURT, 1f, 0.25f);
-		addSimpleRedirect(ModSoundEvents.FLESH_CHICKEN_DEATH, SoundEvents.CHICKEN_DEATH, 1f, 0.25f);
+		addSimpleRedirect(ModSoundEvents.FLESH_PIG_AMBIENT, SoundEvents.PIG_SOUNDS.get(PigSoundVariants.SoundSet.CLASSIC).adultSounds().ambientSound(), 1f, 0.25f);
+		addSimpleRedirect(ModSoundEvents.FLESH_PIG_HURT, SoundEvents.PIG_SOUNDS.get(PigSoundVariants.SoundSet.CLASSIC).adultSounds().hurtSound(), 1f, 0.25f);
+		addSimpleRedirect(ModSoundEvents.FLESH_PIG_DEATH, SoundEvents.PIG_SOUNDS.get(PigSoundVariants.SoundSet.CLASSIC).adultSounds().deathSound(), 1f, 0.25f);
+		addSimpleRedirect(ModSoundEvents.FLESH_CHICKEN_AMBIENT, SoundEvents.CHICKEN_SOUNDS.get(ChickenSoundVariants.SoundSet.CLASSIC).adultSounds().ambientSound(), 1f, 0.25f);
+		addSimpleRedirect(ModSoundEvents.FLESH_CHICKEN_HURT, SoundEvents.CHICKEN_SOUNDS.get(ChickenSoundVariants.SoundSet.CLASSIC).adultSounds().hurtSound(), 1f, 0.25f);
+		addSimpleRedirect(ModSoundEvents.FLESH_CHICKEN_DEATH, SoundEvents.CHICKEN_SOUNDS.get(ChickenSoundVariants.SoundSet.CLASSIC).adultSounds().deathSound(), 1f, 0.25f);
 	}
 
 	public String translationKey(DeferredHolder<SoundEvent, SoundEvent> soundHolder) {
 		return "sounds.biomancy." + soundHolder.getId().getPath();
 	}
 
-	public ResourceLocation extend(ResourceLocation rl, String suffix) {
-		return ResourceLocation.fromNamespaceAndPath(rl.getNamespace(), rl.getPath() + "_" + suffix);
+	public Identifier extend(Identifier rl, String suffix) {
+		return Identifier.fromNamespaceAndPath(rl.getNamespace(), rl.getPath() + "_" + suffix);
 	}
 
-	public ResourceLocation extend(ResourceLocation rl, int variant) {
-		return ResourceLocation.fromNamespaceAndPath(rl.getNamespace(), rl.getPath() + variant);
+	public Identifier extend(Identifier rl, int variant) {
+		return Identifier.fromNamespaceAndPath(rl.getNamespace(), rl.getPath() + variant);
 	}
 
 	protected void addSimpleSounds(DeferredHolder<SoundEvent, SoundEvent> soundHolder, int variants) {
@@ -187,7 +190,7 @@ public class ModSoundProvider extends SoundDefinitionsProvider {
 	protected void addSimpleRedirect(DeferredHolder<SoundEvent, SoundEvent> soundHolder, SoundEvent redirectTarget) {
 		add(soundHolder, definition()
 				.subtitle(translationKey(soundHolder))
-				.with(sound(redirectTarget.getLocation(), SoundDefinition.SoundType.EVENT))
+				.with(sound(redirectTarget.location(), SoundDefinition.SoundType.EVENT))
 		);
 	}
 
@@ -201,7 +204,7 @@ public class ModSoundProvider extends SoundDefinitionsProvider {
 	protected void addSimpleRedirect(DeferredHolder<SoundEvent, SoundEvent> soundHolder, SoundEvent redirectTarget, float volume, float pitch) {
 		add(soundHolder, definition()
 				.subtitle(translationKey(soundHolder))
-				.with(sound(redirectTarget.getLocation(), SoundDefinition.SoundType.EVENT).volume(volume).pitch(pitch))
+				.with(sound(redirectTarget.location(), SoundDefinition.SoundType.EVENT).volume(volume).pitch(pitch))
 		);
 	}
 
@@ -212,11 +215,19 @@ public class ModSoundProvider extends SoundDefinitionsProvider {
 		);
 	}
 
+	protected void addSimpleRedirect(DeferredHolder<SoundEvent, SoundEvent> soundHolder, Holder<SoundEvent> redirectTarget) {
+		addSimpleRedirect(soundHolder, redirectTarget.value());
+	}
+
+	protected void addSimpleRedirect(DeferredHolder<SoundEvent, SoundEvent> soundHolder, Holder<SoundEvent> redirectTarget, float volume, float pitch) {
+		addSimpleRedirect(soundHolder, redirectTarget.value(), volume, pitch);
+	}
+
 	protected void addSimpleRedirects(DeferredHolder<SoundEvent, SoundEvent> soundHolder, SoundEvent... redirectTargets) {
 		SoundDefinition soundDefinition = definition().subtitle(translationKey(soundHolder));
 
 		for (SoundEvent redirectTarget : redirectTargets) {
-			soundDefinition.with().with(sound(redirectTarget.getLocation(), SoundDefinition.SoundType.EVENT));
+			soundDefinition.with().with(sound(redirectTarget.location(), SoundDefinition.SoundType.EVENT));
 		}
 
 		add(soundHolder, soundDefinition);

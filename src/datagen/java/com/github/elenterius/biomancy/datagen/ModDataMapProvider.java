@@ -16,7 +16,7 @@ public class ModDataMapProvider extends DataMapProvider {
 	}
 
 	@Override
-	protected void gather() {
+	protected void gather(HolderLookup.Provider provider) {
 		builder(NeoForgeDataMaps.COMPOSTABLES)
 				.add(ModItems.ORGANIC_MATTER, new Compostable(0.25f), false);
 	}

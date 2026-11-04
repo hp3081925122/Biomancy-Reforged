@@ -1,0 +1,16 @@
+{
+  "wants": {
+    "id": "biomancy:mob_marrow",
+    "count": 4.0
+  },
+  "gives": {
+    "id": "minecraft:emerald"
+  },
+  "max_uses": 12.0,
+  "merchant_predicate": {
+    "condition": "biomancy:trade_config",
+    "option": "villagers"
+  },
+  "reputation_discount": 0.05,
+  "xp": 20.0
+}

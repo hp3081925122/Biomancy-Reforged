@@ -1,19 +1,15 @@
 package com.github.elenterius.biomancy.statuseffect;
 
+import net.minecraft.server.level.ServerLevel;
 import com.github.elenterius.biomancy.BiomancyMod;
 import net.minecraft.core.Holder;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectCategory;
-import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
-import net.neoforged.neoforge.common.EffectCure;
-import net.neoforged.neoforge.common.EffectCures;
 import org.jspecify.annotations.Nullable;
-
-import java.util.Set;
 
 public class StatusEffect extends MobEffect {
 
@@ -34,12 +30,12 @@ public class StatusEffect extends MobEffect {
 	}
 
 	@Override
-	public boolean applyEffectTick(LivingEntity livingEntity, int amplifier) {
+	public boolean applyEffectTick(ServerLevel serverLevel, LivingEntity livingEntity, int amplifier) {
 		return true;
 	}
 
 	@Override
-	public void applyInstantenousEffect(@Nullable Entity source, @Nullable Entity indirectSource, LivingEntity livingEntity, int amplifier, double health) {
+	public void applyInstantenousEffect(ServerLevel serverLevel, @Nullable Entity source, @Nullable Entity indirectSource, LivingEntity livingEntity, int amplifier, double health) {
 	}
 
 	@Override
@@ -47,14 +43,8 @@ public class StatusEffect extends MobEffect {
 		return false;
 	}
 
-	@Override
-	public void fillEffectCures(Set<EffectCure> cures, MobEffectInstance effectInstance) {
-		if (isCurable) {
-			super.fillEffectCures(cures, effectInstance);
-		}
-		else {
-			cures.add(EffectCures.PROTECTED_BY_TOTEM);
-		}
+	public boolean isCuredByMilk() {
+		return isCurable;
 	}
 
 }

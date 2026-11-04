@@ -2,7 +2,7 @@ package com.github.elenterius.biomancy.client.gui.component;
 
 import com.github.elenterius.biomancy.util.ComponentUtil;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.network.chat.Component;
 
@@ -37,14 +37,14 @@ public class CustomEditBox extends EditBox {
 	}
 
 	@Override
-	public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+	public void extractWidgetRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
 		if (!isFocused() && getValue().isEmpty()) {
-			guiGraphics.drawString(font, hint, getX() + 4, getY() + (height - 8) / 2, 0xff_ffffff);
+			guiGraphics.text(font, hint, getX() + 4, getY() + (height - 8) / 2, 0xff_ffffff);
 			return;
 		}
 
 		isBackgroundDisabled = true;
-		super.renderWidget(guiGraphics, mouseX, mouseY, partialTick);
+		super.extractWidgetRenderState(guiGraphics, mouseX, mouseY, partialTick);
 		isBackgroundDisabled = false;
 	}
 

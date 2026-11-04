@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.entity.mob;
 
+import net.minecraft.world.entity.EntitySpawnReason;
 import com.github.elenterius.biomancy.init.ModEntityTypes;
 import com.github.elenterius.biomancy.init.ModSoundEvents;
 import com.github.elenterius.biomancy.util.animation.MobAnimations;
@@ -12,17 +13,17 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.animal.Animal;
-import net.minecraft.world.entity.animal.Cow;
+import net.minecraft.world.entity.animal.cow.Cow;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemUtils;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import org.jspecify.annotations.Nullable;
-import software.bernie.geckolib.animatable.GeoEntity;
-import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.animation.AnimatableManager;
-import software.bernie.geckolib.util.GeckoLibUtil;
+import com.geckolib.animatable.GeoEntity;
+import com.geckolib.animatable.instance.AnimatableInstanceCache;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.util.GeckoLibUtil;
 
 public class FleshCow extends Cow implements GeoEntity {
 
@@ -39,7 +40,7 @@ public class FleshCow extends Cow implements GeoEntity {
 		if (stack.is(Items.BUCKET) && !isBaby()) {
 			player.playSound(SoundEvents.COW_MILK, 1f, 1f);
 			player.setItemInHand(hand, ItemUtils.createFilledResult(stack, player, Items.WATER_BUCKET.getDefaultInstance()));
-			return InteractionResult.sidedSuccess(level().isClientSide);
+			return InteractionResult.SUCCESS;
 		}
 
 		return super.mobInteract(player, hand);
@@ -52,7 +53,7 @@ public class FleshCow extends Cow implements GeoEntity {
 			return (Cow) otherParent.getBreedOffspring(level, this);
 		}
 
-		return ModEntityTypes.FLESH_COW.get().create(level);
+		return ModEntityTypes.FLESH_COW.get().create(level, EntitySpawnReason.BREEDING);
 	}
 
 	@Override

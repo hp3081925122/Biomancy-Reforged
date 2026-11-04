@@ -2,9 +2,7 @@
   "type": "minecraft:crafting_shaped",
   "category": "building",
   "key": {
-    "S": {
-      "item": "biomancy:primal_flesh"
-    }
+    "S": "biomancy:primal_flesh"
   },
   "pattern": [
     "SS",

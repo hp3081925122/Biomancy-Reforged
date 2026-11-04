@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.block.chrysalis;
 
+import com.github.elenterius.biomancy.util.BlockItemUtil;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.component.DataComponents;
 import com.github.elenterius.biomancy.block.base.WaterloggedFacingEntityBlock;
@@ -66,13 +67,13 @@ public class ChrysalisBlock extends WaterloggedFacingEntityBlock {
 
 	@Override
 	public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
-		if (level.isClientSide) {
+		if (level.isClientSide()) {
 			return super.playerWillDestroy(level, pos, state, player);
 		}
 
 		if (player.isCreative() && level.getBlockEntity(pos) instanceof ChrysalisBlockEntity chrysalis && !chrysalis.isEmpty()) {
 			ItemStack stack = new ItemStack(this);
-			chrysalis.saveToItem(stack, level.registryAccess());
+			BlockItemUtil.saveToItem(chrysalis, stack, level.registryAccess());
 			if (chrysalis.hasCustomName()) stack.set(DataComponents.CUSTOM_NAME, chrysalis.getCustomName());
 			ItemEntity itemEntity = new ItemEntity(level, pos.getX() + 0.5d, pos.getY() + 0.5D, pos.getZ() + 0.5d, stack);
 			itemEntity.setDefaultPickUpDelay();

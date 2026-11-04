@@ -1,5 +1,7 @@
 package com.github.elenterius.biomancy.item;
 
+import net.minecraft.world.item.component.TooltipDisplay;
+import java.util.function.Consumer;
 import net.minecraft.world.item.Item;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import com.github.elenterius.biomancy.block.storagesac.StorageSacBlockEntity;
@@ -36,7 +38,8 @@ public class StorageSacBlockItem extends BlockItem implements ItemTooltipStylePr
 	}
 
 	public static Optional<ItemHandlerWrapper> getItemHandler(ItemStack stack) {
-		return Optional.ofNullable(stack.getCapability(Capabilities.ItemHandler.ITEM)).map(ItemHandlerWrapper::new);
+		if (!(stack.getItem() instanceof StorageSacBlockItem)) return Optional.empty();
+		return Optional.of(new ItemHandlerWrapper(ItemStackInventory.create(StorageSacBlockEntity.SLOTS, 64, stack).getItemHandler()));
 	}
 
 	@Override
@@ -100,10 +103,10 @@ public class StorageSacBlockItem extends BlockItem implements ItemTooltipStylePr
 	}
 
 	@Override
-	public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
-		tooltip.addAll(ClientTextUtil.getItemInfoTooltip(stack));
-		tooltip.add(ComponentUtil.wrap(new StorageSacTooltipComponent(getItemHandler(stack).orElse(null))));
-		super.appendHoverText(stack, context, tooltip, flag);
+	public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag flag) {
+		ClientTextUtil.getItemInfoTooltip(stack).forEach(tooltip);
+		tooltip.accept(ComponentUtil.wrap(new StorageSacTooltipComponent(getItemHandler(stack).orElse(null))));
+		super.appendHoverText(stack, context, display, tooltip, flag);
 	}
 
 	private void playRemoveFromSacSound(Player player) {

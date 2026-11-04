@@ -1,8 +1,6 @@
 {
   "type": "biomancy:digesting",
-  "ingredient": {
-    "tag": "c:mushrooms"
-  },
+  "ingredient": "#c:mushrooms",
   "nutrientsCost": 2,
   "processingTime": 409,
   "result": {

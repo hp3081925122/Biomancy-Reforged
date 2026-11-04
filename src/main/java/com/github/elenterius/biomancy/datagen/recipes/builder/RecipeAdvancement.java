@@ -1,12 +1,15 @@
 package com.github.elenterius.biomancy.datagen.recipes.builder;
 
+import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.advancements.Advancement;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.advancements.AdvancementRequirements;
 import net.minecraft.advancements.AdvancementRewards;
 import net.minecraft.advancements.Criterion;
-import net.minecraft.advancements.critereon.RecipeUnlockedTrigger;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.advancements.criterion.RecipeUnlockedTrigger;
+import net.minecraft.resources.Identifier;
 
 final class RecipeAdvancement {
 
@@ -22,10 +25,11 @@ final class RecipeAdvancement {
 		return criteriaCount == 0;
 	}
 
-	AdvancementHolder build(ResourceLocation recipeId, ResourceLocation advancementId) {
+	AdvancementHolder build(Identifier recipeId, Identifier advancementId) {
+		ResourceKey<Recipe<?>> recipeKey = ResourceKey.create(Registries.RECIPE, recipeId);
 		builder.parent(net.minecraft.data.recipes.RecipeBuilder.ROOT_RECIPE_ADVANCEMENT)
-				.addCriterion("has_the_recipe", RecipeUnlockedTrigger.unlocked(recipeId))
-				.rewards(AdvancementRewards.Builder.recipe(recipeId))
+				.addCriterion("has_the_recipe", RecipeUnlockedTrigger.unlocked(recipeKey))
+				.rewards(AdvancementRewards.Builder.recipe(recipeKey))
 				.requirements(AdvancementRequirements.Strategy.OR);
 		return builder.build(advancementId);
 	}

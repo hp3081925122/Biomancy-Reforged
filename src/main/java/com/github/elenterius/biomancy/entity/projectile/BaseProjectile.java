@@ -1,5 +1,7 @@
 package com.github.elenterius.biomancy.entity.projectile;
 
+import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.level.storage.ValueInput;
 import com.github.elenterius.biomancy.util.shooting.ProjectileEntityType;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
@@ -63,17 +65,17 @@ public abstract class BaseProjectile extends Projectile implements IEntityWithCo
 	}
 
 	@Override
-	public void addAdditionalSaveData(CompoundTag tag) {
-		super.addAdditionalSaveData(tag);
-		tag.putFloat("damage", damage);
-		tag.putByte("knockback", knockback);
+	public void addAdditionalSaveData(ValueOutput output) {
+		super.addAdditionalSaveData(output);
+		output.putFloat("damage", damage);
+		output.putByte("knockback", knockback);
 	}
 
 	@Override
-	public void readAdditionalSaveData(CompoundTag tag) {
-		super.readAdditionalSaveData(tag);
-		damage = tag.contains("damage") ? tag.getFloat("damage") : DEFAULT_DAMAGE;
-		knockback = tag.getByte("knockback");
+	public void readAdditionalSaveData(ValueInput input) {
+		super.readAdditionalSaveData(input);
+		damage = input.getFloatOr("damage", DEFAULT_DAMAGE);
+		knockback = input.getByteOr("knockback", (byte) 0);
 	}
 
 	@Override
@@ -123,7 +125,7 @@ public abstract class BaseProjectile extends Projectile implements IEntityWithCo
 	@Override
 	public void tick() {
 		Entity shooter = getOwner();
-		if (level().isClientSide || ((shooter == null || !shooter.isRemoved()) && level().isAreaLoaded(blockPosition(), 1))) {
+		if (level().isClientSide() || ((shooter == null || !shooter.isRemoved()) && level().isAreaLoaded(blockPosition(), 1))) {
 			super.tick();
 
 			if (isInWaterOrRain()) clearFire();
@@ -131,7 +133,7 @@ public abstract class BaseProjectile extends Projectile implements IEntityWithCo
 			if (hitResult.getType() != HitResult.Type.MISS && !EventHooks.onProjectileImpact(this, hitResult)) {
 				onHit(hitResult);
 			}
-			checkInsideBlocks();
+			applyEffectsFromBlocks();
 
 			Vec3 motion = getDeltaMovement();
 			double posX = getX() + motion.x;
@@ -162,7 +164,7 @@ public abstract class BaseProjectile extends Projectile implements IEntityWithCo
 	@Override
 	public void onHit(HitResult result) {
 		super.onHit(result);
-		if (!level().isClientSide) discard();
+		if (!level().isClientSide()) discard();
 	}
 
 	protected void spawnParticle(double x, double y, double z) {

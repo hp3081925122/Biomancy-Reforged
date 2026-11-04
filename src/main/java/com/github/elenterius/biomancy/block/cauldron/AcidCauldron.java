@@ -1,6 +1,7 @@
 package com.github.elenterius.biomancy.block.cauldron;
 
-import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.entity.InsideBlockEffectApplier;
+import net.minecraft.world.InteractionResult;
 import com.github.elenterius.biomancy.init.AcidInteractions;
 import net.minecraft.core.BlockPos;
 import net.minecraft.sounds.SoundSource;
@@ -33,8 +34,8 @@ public class AcidCauldron extends LayeredCauldronBlock {
 	}
 
 	@Override
-	protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity) {
-		if (entity instanceof LivingEntity livingEntity && isEntityInsideContent(state, pos, entity)) {
+	protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity, InsideBlockEffectApplier effectApplier, boolean isPrecise) {
+		if (entity instanceof LivingEntity livingEntity) {
 			if (livingEntity.tickCount % 5 != 0) return;
 			AcidInteractions.handleEntityInsideAcid(livingEntity);
 		}
@@ -45,7 +46,7 @@ public class AcidCauldron extends LayeredCauldronBlock {
 	}
 
 	@Override
-	protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+	protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
 		if (stack.getItem() instanceof BlockItem blockItem) {
 			Block block = blockItem.getBlock();
 			Block convertedBlock = AcidInteractions.convertBlock(block);
@@ -59,7 +60,7 @@ public class AcidCauldron extends LayeredCauldronBlock {
 					level.levelEvent(LevelEvent.LAVA_FIZZ, pos, 0);
 				}
 
-				return ItemInteractionResult.sidedSuccess(level.isClientSide());
+				return InteractionResult.SUCCESS;
 			}
 		}
 

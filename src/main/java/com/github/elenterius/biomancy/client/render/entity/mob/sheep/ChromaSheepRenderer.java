@@ -1,24 +1,19 @@
 package com.github.elenterius.biomancy.client.render.entity.mob.sheep;
 
 import com.github.elenterius.biomancy.entity.mob.ChromaSheep;
-import net.minecraft.client.model.SheepModel;
-import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
-import net.minecraft.client.renderer.entity.MobRenderer;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.client.renderer.entity.state.SheepRenderState;
 
-public class ChromaSheepRenderer extends MobRenderer<ChromaSheep, SheepModel<ChromaSheep>> {
-
-	protected static final ResourceLocation TEXTURE = ResourceLocation.withDefaultNamespace("textures/entity/sheep/sheep.png");
+public class ChromaSheepRenderer extends AbstractSheepRenderer<ChromaSheep, SheepRenderState> {
 
 	public ChromaSheepRenderer(EntityRendererProvider.Context context) {
-		super(context, new SheepModel<>(context.bakeLayer(ModelLayers.SHEEP)), 0.7f);
+		super(context);
 		addLayer(new ChromaSheepFurLayer(this, context.getModelSet()));
 	}
 
 	@Override
-	public ResourceLocation getTextureLocation(ChromaSheep entity) {
-		return TEXTURE;
+	public SheepRenderState createRenderState() {
+		return new SheepRenderState();
 	}
 
 }

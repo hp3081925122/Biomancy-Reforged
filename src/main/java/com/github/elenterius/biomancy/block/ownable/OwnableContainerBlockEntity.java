@@ -1,5 +1,10 @@
 package com.github.elenterius.biomancy.block.ownable;
 
+import net.minecraft.util.ProblemReporter;
+import net.minecraft.world.level.storage.TagValueOutput;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.HolderLookup;
 import com.github.elenterius.biomancy.block.base.SimpleContainerBlockEntity;
 import com.github.elenterius.biomancy.util.ownable.Ownable;
@@ -93,7 +98,7 @@ public abstract class OwnableContainerBlockEntity extends SimpleContainerBlockEn
 	}
 
 	protected void syncToClient() {
-		if (level != null && !level.isClientSide) {
+		if (level != null && !level.isClientSide()) {
 			BlockState state = getBlockState();
 			level.sendBlockUpdated(getBlockPos(), state, state, Block.UPDATE_CLIENTS);
 		}
@@ -101,9 +106,9 @@ public abstract class OwnableContainerBlockEntity extends SimpleContainerBlockEn
 
 	@Override
 	public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
-		CompoundTag tag = new CompoundTag();
-		saveForSyncToClient(tag, registries);
-		return tag;
+		TagValueOutput output = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, registries);
+		saveForSyncToClient(output);
+		return output.buildResult();
 	}
 
 	@Override
@@ -112,53 +117,27 @@ public abstract class OwnableContainerBlockEntity extends SimpleContainerBlockEn
 		return ClientboundBlockEntityDataPacket.create(this);
 	}
 
-	protected void saveForSyncToClient(CompoundTag tag, HolderLookup.Provider registries) {
-		if (ownerId != null) tag.putUUID("OwnerUUID", ownerId);
+	protected void saveForSyncToClient(ValueOutput output) {
+		if (ownerId != null) output.store("OwnerUUID", UUIDUtil.CODEC, ownerId);
 
-		if (!users.isEmpty()) {
-			ListTag listNBT = new ListTag();
-			for (Map.Entry<UUID, UserType> user : users.entrySet()) {
-				CompoundTag userTag = new CompoundTag();
-				userTag.putUUID("UserUUID", user.getKey());
-				user.getValue().serialize(userTag);
-				listNBT.add(userTag);
-			}
-			tag.put("UserList", listNBT);
-		}
+		UserType.serializeUsers(output, "UserList", users);
 	}
 
 	@Override
-	protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-		super.loadAdditional(tag, registries);
-		ownerId = tag.hasUUID("OwnerUUID") ? tag.getUUID("OwnerUUID") : null;
+	protected void loadAdditional(ValueInput input) {
+		super.loadAdditional(input);
+		ownerId = input.read("OwnerUUID", UUIDUtil.CODEC).orElse(null);
 
 		users.clear();
-		if (tag.contains("UserList")) {
-			ListTag nbtList = tag.getList("UserList", Tag.TAG_COMPOUND);
-			for (int i = 0; i < nbtList.size(); i++) {
-				CompoundTag userTag = nbtList.getCompound(i);
-				UUID userUUID = userTag.getUUID("UserUUID");
-				UserType authority = UserType.deserialize(userTag);
-				users.put(userUUID, authority);
-			}
-		}
+		UserType.deserializeUsers(input, "UserList", users);
 	}
 
 	@Override
-	protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-		super.saveAdditional(tag, registries);
-		if (ownerId != null) tag.putUUID("OwnerUUID", ownerId);
+	protected void saveAdditional(ValueOutput output) {
+		super.saveAdditional(output);
+		if (ownerId != null) output.store("OwnerUUID", UUIDUtil.CODEC, ownerId);
 
-		if (!users.isEmpty()) {
-			ListTag listNBT = new ListTag();
-			for (Map.Entry<UUID, UserType> user : users.entrySet()) {
-				CompoundTag userTag = new CompoundTag();
-				userTag.putUUID("UserUUID", user.getKey());
-				user.getValue().serialize(userTag);
-				listNBT.add(userTag);
-			}
-			tag.put("UserList", listNBT);
-		}
+		UserType.serializeUsers(output, "UserList", users);
 	}
 
 }

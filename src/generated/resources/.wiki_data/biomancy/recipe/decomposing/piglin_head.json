@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "minecraft:piglin_head"
+      "ingredient": "minecraft:piglin_head"
     }
   },
   "output": {

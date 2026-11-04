@@ -1,8 +1,6 @@
 {
   "type": "biomancy:digesting",
-  "ingredient": {
-    "item": "minecraft:nether_sprouts"
-  },
+  "ingredient": "minecraft:nether_sprouts",
   "nutrientsCost": 2,
   "processingTime": 332,
   "result": {

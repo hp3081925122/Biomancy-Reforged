@@ -1,9 +1,7 @@
 {
   "type": "biomancy:digesting",
   "input": {
-    "0": {
-      "id": "minecraft:crimson_roots"
-    }
+    "0": "minecraft:crimson_roots"
   },
   "output": {
     "0": {

@@ -1,4 +1,4 @@
-// 1.21.1	2026-11-04T00:24:25.8253151	Tags for minecraft:damage_type mod id biomancy
+// 26.1.2	2026-11-04T22:45:15.2829043	Tags for minecraft:damage_type mod id biomancy
 762a178af79f6f3f6c9e220b2ce72c233056747c data/c/tags/damage_type/is_acid.json
 a469bff2e6de9842fa1a757f15f2b6e751e890d7 data/minecraft/tags/damage_type/always_hurts_ender_dragons.json
 07aacd2bcda2f87a8171d64f09346de2e0ea8dea data/minecraft/tags/damage_type/always_triggers_silverfish.json

@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "minecraft:red_mushroom"
+      "ingredient": "minecraft:red_mushroom"
     }
   },
   "output": {

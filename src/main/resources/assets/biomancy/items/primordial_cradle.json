@@ -1,0 +1,26 @@
+{
+  "model": {
+    "type": "minecraft:select",
+    "property": "minecraft:display_context",
+    "cases": [
+      {
+        "when": ["thirdperson_lefthand", "thirdperson_righthand"],
+        "model": {
+          "type": "minecraft:special",
+          "base": "biomancy:item/primordial_cradle",
+          "model": {
+            "type": "biomancy:block_entity"
+          }
+        }
+      }
+    ],
+    "fallback": {
+      "type": "minecraft:special",
+      "base": "biomancy:item/primordial_cradle",
+      "model": {
+        "type": "biomancy:block_entity",
+        "y_offset": 0.5
+      }
+    }
+  }
+}

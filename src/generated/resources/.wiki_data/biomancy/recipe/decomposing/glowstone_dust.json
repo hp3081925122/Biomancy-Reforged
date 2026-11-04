@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "minecraft:glowstone_dust"
+      "ingredient": "minecraft:glowstone_dust"
     }
   },
   "output": {

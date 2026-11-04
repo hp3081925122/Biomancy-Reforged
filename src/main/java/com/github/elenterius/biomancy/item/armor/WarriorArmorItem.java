@@ -1,12 +1,15 @@
 package com.github.elenterius.biomancy.item.armor;
 
+import com.github.elenterius.biomancy.util.animation.GeoRenderProviders;
+import net.minecraft.world.item.equipment.ArmorType;
+import net.minecraft.world.item.component.TooltipDisplay;
+import net.minecraft.world.item.Item;
 import net.neoforged.neoforge.common.util.Lazy;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.entity.EquipmentSlotGroup;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.core.Holder;
 import com.github.elenterius.biomancy.component.BulletJumpState;
-import com.github.elenterius.biomancy.client.render.item.armor.WarriorArmorRenderer;
 import com.github.elenterius.biomancy.client.util.ClientTextUtil;
 import com.github.elenterius.biomancy.entity.misc.LivingEntityData;
 import com.github.elenterius.biomancy.init.ModDataComponents;
@@ -38,8 +41,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.PanicGoal;
 import net.minecraft.world.entity.ai.goal.WrappedGoal;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ArmorItem;
-import net.minecraft.world.item.ArmorMaterial;
+import net.minecraft.world.item.equipment.ArmorMaterial;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.ClipContext;
@@ -47,13 +49,13 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import software.bernie.geckolib.animatable.client.GeoRenderProvider;
+import com.geckolib.animatable.client.GeoRenderProvider;
 import net.neoforged.neoforge.event.entity.living.LivingFallEvent;
 import org.jspecify.annotations.Nullable;
-import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.animation.AnimatableManager;
-import software.bernie.geckolib.renderer.GeoArmorRenderer;
-import software.bernie.geckolib.util.GeckoLibUtil;
+import com.geckolib.animatable.instance.AnimatableInstanceCache;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.renderer.GeoArmorRenderer;
+import com.geckolib.util.GeckoLibUtil;
 
 import java.util.List;
 import java.util.UUID;
@@ -76,14 +78,14 @@ public class WarriorArmorItem extends LivingArmorGeoItem implements KnowledgeRea
 	protected final Lazy<ItemAttributeModifiers> defaultAttributeModifiers;
 	protected final ItemAttributeModifiers brokenAttributeModifiers;
 
-	public WarriorArmorItem(Holder<ArmorMaterial> material, Type type, int maxNutrients, Properties properties) {
+	public WarriorArmorItem(ArmorMaterial material, ArmorType type, int maxNutrients, Properties properties) {
 		super(material, type, maxNutrients, properties);
 
-		ResourceLocation id = ResourceLocation.withDefaultNamespace("armor." + type.getName());
+		Identifier id = Identifier.withDefaultNamespace("armor." + type.getName());
 		EquipmentSlotGroup slotGroup = EquipmentSlotGroup.bySlot(type.getSlot());
 
 		ItemAttributeModifiers.Builder brokenBuilder = ItemAttributeModifiers.builder();
-		if (type == Type.CHESTPLATE) {
+		if (type == ArmorType.CHESTPLATE) {
 			brokenBuilder.add(Attributes.ATTACK_SPEED, new AttributeModifier(id, -0.1d, AttributeModifier.Operation.ADD_MULTIPLIED_BASE), slotGroup);
 			brokenBuilder.add(Attributes.MOVEMENT_SPEED, new AttributeModifier(id, -0.2d, AttributeModifier.Operation.ADD_MULTIPLIED_BASE), slotGroup);
 		}
@@ -91,17 +93,17 @@ public class WarriorArmorItem extends LivingArmorGeoItem implements KnowledgeRea
 
 		defaultAttributeModifiers = Lazy.of(() -> {
 			ItemAttributeModifiers.Builder defaultBuilder = ItemAttributeModifiers.builder();
-			for (ItemAttributeModifiers.Entry entry : WarriorArmorItem.super.getDefaultAttributeModifiers().modifiers()) {
+			for (ItemAttributeModifiers.Entry entry : material.createAttributes(type).modifiers()) {
 				defaultBuilder.add(entry.attribute(), entry.modifier(), entry.slot());
 			}
 
-			if (type == Type.CHESTPLATE) {
+			if (type == ArmorType.CHESTPLATE) {
 				defaultBuilder.add(Attributes.ATTACK_DAMAGE, new AttributeModifier(id, 0.10d, AttributeModifier.Operation.ADD_MULTIPLIED_BASE), slotGroup);
 				defaultBuilder.add(Attributes.ATTACK_KNOCKBACK, new AttributeModifier(id, 0.5d, AttributeModifier.Operation.ADD_VALUE), slotGroup);
 				defaultBuilder.add(Attributes.ATTACK_SPEED, new AttributeModifier(id, -0.1d, AttributeModifier.Operation.ADD_MULTIPLIED_BASE), slotGroup);
 				defaultBuilder.add(Attributes.MOVEMENT_SPEED, new AttributeModifier(id, -0.2d, AttributeModifier.Operation.ADD_MULTIPLIED_BASE), slotGroup);
 			}
-			else if (type == Type.LEGGINGS) {
+			else if (type == ArmorType.LEGGINGS) {
 				defaultBuilder.add(Attributes.MOVEMENT_SPEED, new AttributeModifier(id, 0.2d, AttributeModifier.Operation.ADD_MULTIPLIED_BASE), slotGroup);
 			}
 
@@ -110,23 +112,23 @@ public class WarriorArmorItem extends LivingArmorGeoItem implements KnowledgeRea
 	}
 
 	@Override
-	public ItemAttributeModifiers getDefaultAttributeModifiers() {
+	protected ItemAttributeModifiers getArmorAttributeModifiers() {
 		return defaultAttributeModifiers.get();
 	}
 
 	@Override
 	public ItemAttributeModifiers getDefaultAttributeModifiers(ItemStack stack) {
-		return getNutrients(stack) > 0 ? super.getDefaultAttributeModifiers(stack) : brokenAttributeModifiers;
+		return getNutrients(stack) > 0 ? getArmorAttributeModifiers() : brokenAttributeModifiers;
 	}
 
 	@Override
 	public KeyPressResult onClientKeyPress(ItemStack stack, Level level, Player player, EquipmentSlot slot, byte flags) {
-		if (slot != EquipmentSlot.HEAD || type != Type.HELMET) return KeyPressResult.fail();
+		if (slot != EquipmentSlot.HEAD || type != ArmorType.HELMET) return KeyPressResult.fail();
 		if (!CombatUtil.hasFulLArmorSetEquipped(player, ARMOR_SET_PREDICATE)) return KeyPressResult.fail();
 
 		int nutrients = getNutrientsFromEquippedArmor(player, ARMOR_SET_PREDICATE);
 		if (nutrients < IMPOSING_ROAR_COST) {
-			player.displayClientMessage(TextComponentUtil.getFailureMsgText("not_enough_nutrients"), true);
+			player.sendOverlayMessage(TextComponentUtil.getFailureMsgText("not_enough_nutrients"));
 			player.playSound(ModSoundEvents.FLESHKIN_NO.get(), 0.8f, 0.8f + player.level().getRandom().nextFloat() * 0.4f);
 			return KeyPressResult.fail();
 		}
@@ -136,7 +138,7 @@ public class WarriorArmorItem extends LivingArmorGeoItem implements KnowledgeRea
 
 	@Override
 	public void onServerReceiveKeyPress(ItemStack stack, ServerLevel level, Player player, byte flags) {
-		if (type != Type.HELMET || player.getItemBySlot(EquipmentSlot.HEAD) != stack) return;
+		if (type != ArmorType.HELMET || player.getItemBySlot(EquipmentSlot.HEAD) != stack) return;
 		if (!CombatUtil.hasFulLArmorSetEquipped(player, ARMOR_SET_PREDICATE)) return;
 
 		int nutrients = getNutrientsFromEquippedArmor(player, ARMOR_SET_PREDICATE);
@@ -152,14 +154,14 @@ public class WarriorArmorItem extends LivingArmorGeoItem implements KnowledgeRea
 	}
 
 	public float getFallReduction(ItemStack stack) {
-		return type == Type.BOOTS && getNutrients(stack) > 0 ? 0.5f : 0f;
+		return type == ArmorType.BOOTS && getNutrients(stack) > 0 ? 0.5f : 0f;
 	}
 
 	public boolean onJump(ItemStack stack, LivingEntity livingEntity, boolean isBulletJumpKeyDown) {
-		if (livingEntity.level().isClientSide) return false;
+		if (livingEntity.level().isClientSide()) return false;
 
-		if (type != ArmorItem.Type.LEGGINGS) return false;
-		if (livingEntity.isInWaterOrBubble()) return false;
+		if (type != ArmorType.LEGGINGS) return false;
+		if (livingEntity.isInWater()) return false;
 
 		if (isBulletJumpKeyDown) {
 			if (livingEntity instanceof ServerPlayer player) {
@@ -172,7 +174,7 @@ public class WarriorArmorItem extends LivingArmorGeoItem implements KnowledgeRea
 					}
 				}
 				else {
-					player.displayClientMessage(TextComponentUtil.getFailureMsgText("not_enough_nutrients"), true);
+					player.sendOverlayMessage(TextComponentUtil.getFailureMsgText("not_enough_nutrients"));
 					ServerSoundHandler.triggerSoundForClientPlayer(player, ModSoundEvents.FLESHKIN_NO.get(), player.getSoundSource(), 1f, 1f + player.level().getRandom().nextFloat() * 0.4f);
 				}
 			}
@@ -213,7 +215,7 @@ public class WarriorArmorItem extends LivingArmorGeoItem implements KnowledgeRea
 	}
 
 	public void onFall(ItemStack stack, LivingFallEvent event) {
-		if (type == Type.BOOTS && getNutrients(stack) >= 1) {
+		if (type == ArmorType.BOOTS && getNutrients(stack) >= 1) {
 			if (event.getDistance() > 3f && event.getDamageMultiplier() > 0f) {
 				consumeNutrients(stack, 1);
 			}
@@ -284,7 +286,7 @@ public class WarriorArmorItem extends LivingArmorGeoItem implements KnowledgeRea
 			}
 		}
 
-		player.hasImpulse = true;
+		player.needsSync = true;
 		player.hurtMarked = true;
 
 		player.level().playSound(null, player.getX(), player.getY(), player.getZ(), ModSoundEvents.ARMOR_BULLET_JUMP.get(), player.getSoundSource(), 1f, 1f);
@@ -294,7 +296,7 @@ public class WarriorArmorItem extends LivingArmorGeoItem implements KnowledgeRea
 
 	protected static boolean canElytraFly(Player player) {
 		if (!player.isFallFlying() && !player.isInWater() && !player.hasEffect(MobEffects.LEVITATION)) {
-			return player.getItemBySlot(EquipmentSlot.CHEST).canElytraFly(player);
+			return LivingEntity.canGlideUsing(player.getItemBySlot(EquipmentSlot.CHEST), EquipmentSlot.CHEST);
 		}
 		return false;
 	}
@@ -311,8 +313,8 @@ public class WarriorArmorItem extends LivingArmorGeoItem implements KnowledgeRea
 			if (center.distanceToSqr(livingEntity.getX(), livingEntity.getY(0.5d), livingEntity.getZ()) >= radiusSqr) continue;
 
 			if (livingEntity.isAlliedTo(player)) {
-				livingEntity.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, IMPOSING_ROAR_DURATION, 1));
-				livingEntity.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, IMPOSING_ROAR_DURATION));
+				livingEntity.addEffect(new MobEffectInstance(MobEffects.STRENGTH, IMPOSING_ROAR_DURATION, 1));
+				livingEntity.addEffect(new MobEffectInstance(MobEffects.RESISTANCE, IMPOSING_ROAR_DURATION));
 			}
 			else {
 				livingEntity.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, IMPOSING_ROAR_DURATION));
@@ -321,30 +323,19 @@ public class WarriorArmorItem extends LivingArmorGeoItem implements KnowledgeRea
 					for (WrappedGoal wrappedGoal : mob.goalSelector.getAvailableGoals()) {
 						if (wrappedGoal.getGoal() instanceof PanicGoal) {
 							livingEntity.setLastHurtByMob(player);
-							livingEntity.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, IMPOSING_ROAR_DURATION));
+							livingEntity.addEffect(new MobEffectInstance(MobEffects.SPEED, IMPOSING_ROAR_DURATION));
 						}
 					}
 				}
 			}
 		}
 
-		player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, IMPOSING_ROAR_DURATION));
+		player.addEffect(new MobEffectInstance(MobEffects.STRENGTH, IMPOSING_ROAR_DURATION));
 	}
 
 	@Override
 	public void createGeoRenderer(Consumer<GeoRenderProvider> consumer) {
-		consumer.accept(new GeoRenderProvider() {
-			private GeoArmorRenderer<?> renderer;
-
-			@Override
-			public <E extends LivingEntity> HumanoidModel<?> getGeoArmorRenderer(@Nullable E livingEntity, ItemStack itemStack, @Nullable EquipmentSlot slot, @Nullable HumanoidModel<E> original) {
-				if (renderer == null) {
-					renderer = new WarriorArmorRenderer();
-				}
-
-				return renderer;
-			}
-		});
+		GeoRenderProviders.accept(this, consumer);
 	}
 
 	@Override
@@ -367,41 +358,41 @@ public class WarriorArmorItem extends LivingArmorGeoItem implements KnowledgeRea
 	}
 
 	@Override
-	public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag isAdvanced) {
+	public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag isAdvanced) {
 		AcolyteArmorUpgrades.appendHoverText(stack, tooltip);
 
-		tooltip.add(ComponentUtil.EMPTY_LINE);
-		tooltip.add(TextComponentUtil.getAbilityText("fleshkin_affinity").withStyle(ChatFormatting.GRAY));
-		tooltip.add(ComponentUtil.space().append(TextComponentUtil.getAbilityText("fleshkin_affinity.desc")).withStyle(ChatFormatting.DARK_GRAY));
+		tooltip.accept(ComponentUtil.EMPTY_LINE);
+		tooltip.accept(TextComponentUtil.getAbilityText("fleshkin_affinity").withStyle(ChatFormatting.GRAY));
+		tooltip.accept(ComponentUtil.space().append(TextComponentUtil.getAbilityText("fleshkin_affinity.desc")).withStyle(ChatFormatting.DARK_GRAY));
 
 		switch (type) {
 			case HELMET -> {
-				tooltip.add(ComponentUtil.EMPTY_LINE);
-				tooltip.add(TextComponentUtil.getAbilityText("imposing_roar").withStyle(ChatFormatting.GRAY));
-				tooltip.add(ComponentUtil.space().append(TextComponentUtil.getAbilityText("imposing_roar.desc", IMPOSING_ROAR_COST, IMPOSING_ROAR_RADIUS, IMPOSING_ROAR_DURATION / 20)).withStyle(ChatFormatting.DARK_GRAY));
-				tooltip.add(ClientTextUtil.pressButtonTo(ComponentUtil.keybind(ModKeyBindings.EQUIPPED_ARMOR_ACTION), TextComponentUtil.getActionText("activate")).withStyle(TextStyles.DARK_GRAY));
+				tooltip.accept(ComponentUtil.EMPTY_LINE);
+				tooltip.accept(TextComponentUtil.getAbilityText("imposing_roar").withStyle(ChatFormatting.GRAY));
+				tooltip.accept(ComponentUtil.space().append(TextComponentUtil.getAbilityText("imposing_roar.desc", IMPOSING_ROAR_COST, IMPOSING_ROAR_RADIUS, IMPOSING_ROAR_DURATION / 20)).withStyle(ChatFormatting.DARK_GRAY));
+				tooltip.accept(ClientTextUtil.pressButtonTo(ComponentUtil.keybind(ModKeyBindings.EQUIPPED_ARMOR_ACTION), TextComponentUtil.getActionText("activate")).withStyle(TextStyles.DARK_GRAY));
 			}
 			case LEGGINGS -> {
-				tooltip.add(ComponentUtil.EMPTY_LINE);
-				tooltip.add(TextComponentUtil.getAbilityText("bullet_jump").withStyle(ChatFormatting.GRAY));
-				tooltip.add(ComponentUtil.space().append(TextComponentUtil.getAbilityText("bullet_jump.desc", BULLET_JUMP_COST[0], abilityCostToString(BULLET_JUMP_COST), BULLET_JUMP_COST_COOLDOWN / 20)).withStyle(ChatFormatting.DARK_GRAY));
+				tooltip.accept(ComponentUtil.EMPTY_LINE);
+				tooltip.accept(TextComponentUtil.getAbilityText("bullet_jump").withStyle(ChatFormatting.GRAY));
+				tooltip.accept(ComponentUtil.space().append(TextComponentUtil.getAbilityText("bullet_jump.desc", BULLET_JUMP_COST[0], abilityCostToString(BULLET_JUMP_COST), BULLET_JUMP_COST_COOLDOWN / 20)).withStyle(ChatFormatting.DARK_GRAY));
 
 			}
 			case BOOTS -> {
-				tooltip.add(ComponentUtil.EMPTY_LINE);
-				tooltip.add(TextComponentUtil.getAbilityText("padded_soles").withStyle(ChatFormatting.GRAY));
+				tooltip.accept(ComponentUtil.EMPTY_LINE);
+				tooltip.accept(TextComponentUtil.getAbilityText("padded_soles").withStyle(ChatFormatting.GRAY));
 
 				int pct = (int) (getFallReduction(stack) * 100f);
-				tooltip.add(ComponentUtil.space().append(pct + "% Fall Reduction").withStyle(ChatFormatting.DARK_GRAY));
+				tooltip.accept(ComponentUtil.space().append(pct + "% Fall Reduction").withStyle(ChatFormatting.DARK_GRAY));
 			}
 		}
 
-		tooltip.add(ComponentUtil.EMPTY_LINE);
+		tooltip.accept(ComponentUtil.EMPTY_LINE);
 
 		appendLivingToolTooltip(stack, tooltip);
 
 		if (stack.isEnchanted()) {
-			tooltip.add(ComponentUtil.EMPTY_LINE);
+			tooltip.accept(ComponentUtil.EMPTY_LINE);
 		}
 	}
 

@@ -4,15 +4,15 @@
   "ingredients": [
     {
       "count": 10,
-      "item": "biomancy:bio_lumens"
+      "ingredient": "biomancy:bio_lumens"
     },
     {
       "count": 2,
-      "item": "minecraft:yellow_dye"
+      "ingredient": "minecraft:yellow_dye"
     },
     {
       "count": 4,
-      "item": "biomancy:organic_matter"
+      "ingredient": "biomancy:organic_matter"
     }
   ],
   "nutrientsCost": 1,

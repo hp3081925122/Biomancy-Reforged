@@ -2,14 +2,12 @@
   "type": "biomancy:bio_brewing",
   "ingredients": [
     {
-      "item": "biomancy:volatile_fluid"
+      "ingredient": "biomancy:volatile_fluid"
     }
   ],
   "nutrientsCost": 2,
   "processingTime": 80,
-  "reactant": {
-    "item": "biomancy:organic_compound"
-  },
+  "reactant": "biomancy:organic_compound",
   "result": {
     "id": "biomancy:unstable_compound"
   }

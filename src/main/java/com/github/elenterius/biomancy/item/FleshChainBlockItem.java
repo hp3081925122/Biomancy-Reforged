@@ -54,8 +54,7 @@ public class FleshChainBlockItem extends SimpleBlockItem {
 		InteractionResult placeResult = place(new BlockPlaceContextWrapper(context));
 
 		if (!placeResult.consumesAction() && components().has(DataComponents.FOOD) && context.getPlayer() != null) {
-			InteractionResult result = use(context.getLevel(), context.getPlayer(), context.getHand()).getResult();
-			return result == InteractionResult.CONSUME ? InteractionResult.CONSUME_PARTIAL : result;
+			return use(context.getLevel(), context.getPlayer(), context.getHand());
 		}
 
 		return placeResult;
@@ -76,9 +75,9 @@ public class FleshChainBlockItem extends SimpleBlockItem {
 		BlockPos.MutableBlockPos mutablePos = pos.mutable().move(direction);
 
 		for (int blocks = 0; blocks < 7; blocks++) {
-			if (!level.isClientSide && !level.isInWorldBounds(mutablePos)) {
+			if (!level.isClientSide() && !level.isInWorldBounds(mutablePos)) {
 				if (context.getPlayer() instanceof ServerPlayer serverPlayer) {
-					int maxBuildHeight = level.getMaxBuildHeight();
+					int maxBuildHeight = level.getMaxY() + 1;
 					if (mutablePos.getY() >= maxBuildHeight) {
 						serverPlayer.sendSystemMessage(ComponentUtil.translatable("build.tooHigh", maxBuildHeight - 1).withStyle(ChatFormatting.RED), true);
 					}

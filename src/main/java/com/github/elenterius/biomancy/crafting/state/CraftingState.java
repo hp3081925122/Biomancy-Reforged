@@ -1,6 +1,7 @@
 package com.github.elenterius.biomancy.crafting.state;
 
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 
 public enum CraftingState {
 	NONE(0), IN_PROGRESS(1), CANCELED(2), COMPLETED(3);
@@ -21,12 +22,12 @@ public enum CraftingState {
 		};
 	}
 
-	public static void toNBT(CompoundTag tag, CraftingState state) {
-		tag.putByte(NBT_KEY, state.id);
+	public static void toNBT(ValueOutput output, CraftingState state) {
+		output.putByte(NBT_KEY, state.id);
 	}
 
-	public static CraftingState fromNBT(CompoundTag tag) {
-		return CraftingState.fromId(tag.getByte(NBT_KEY));
+	public static CraftingState fromNBT(ValueInput input) {
+		return CraftingState.fromId(input.getByteOr(NBT_KEY, (byte) 0));
 	}
 
 	public boolean isCanceled() {

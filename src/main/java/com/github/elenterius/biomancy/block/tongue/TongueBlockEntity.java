@@ -1,5 +1,8 @@
 package com.github.elenterius.biomancy.block.tongue;
 
+import com.github.elenterius.biomancy.util.GeoAnimUtil;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.core.HolderLookup;
 import com.github.elenterius.biomancy.block.base.SimpleSyncedBlockEntity;
 import com.github.elenterius.biomancy.init.ModBlockEntities;
@@ -17,14 +20,14 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.items.IItemHandler;
-import software.bernie.geckolib.animatable.GeoBlockEntity;
-import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.animation.AnimatableManager;
-import software.bernie.geckolib.animation.AnimationController;
-import software.bernie.geckolib.animation.AnimationState;
-import software.bernie.geckolib.animation.RawAnimation;
-import software.bernie.geckolib.animation.PlayState;
-import software.bernie.geckolib.util.GeckoLibUtil;
+import com.geckolib.animatable.GeoBlockEntity;
+import com.geckolib.animatable.instance.AnimatableInstanceCache;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.animation.AnimationController;
+import com.geckolib.animation.state.AnimationTest;
+import com.geckolib.animation.RawAnimation;
+import com.geckolib.animation.object.PlayState;
+import com.geckolib.util.GeckoLibUtil;
 
 public class TongueBlockEntity extends SimpleSyncedBlockEntity implements GeoBlockEntity {
 
@@ -115,20 +118,20 @@ public class TongueBlockEntity extends SimpleSyncedBlockEntity implements GeoBlo
 	}
 
 	@Override
-	protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-		super.saveAdditional(tag, registries);
-		tag.put(INVENTORY_TAG, inventory.serializeNBT(registries));
+	protected void saveAdditional(ValueOutput output) {
+		super.saveAdditional(output);
+		inventory.serialize(output.child(INVENTORY_TAG));
 	}
 
 	@Override
-	protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-		super.loadAdditional(tag, registries);
-		inventory.deserializeNBT(registries, tag.getCompound(INVENTORY_TAG));
+	protected void loadAdditional(ValueInput input) {
+		super.loadAdditional(input);
+		inventory.deserialize(input.childOrEmpty(INVENTORY_TAG));
 	}
 
 	@Override
-	protected void saveForSyncToClient(CompoundTag tag, HolderLookup.Provider registries) {
-		tag.put(INVENTORY_TAG, inventory.serializeNBT(registries));
+	protected void saveForSyncToClient(ValueOutput output) {
+		inventory.serialize(output.child(INVENTORY_TAG));
 	}
 
 	public void dropInventoryContents(Level level, BlockPos pos) {
@@ -142,11 +145,11 @@ public class TongueBlockEntity extends SimpleSyncedBlockEntity implements GeoBlo
 		}
 	}
 
-	protected <T extends TongueBlockEntity> PlayState handleAnimationState(AnimationState<T> state) {
-		AnimationController<T> controller = state.getController();
-		boolean isStopped = controller.getAnimationState() == AnimationController.State.STOPPED;
+	protected <T extends TongueBlockEntity> PlayState handleAnimationState(AnimationTest<T> state) {
+		AnimationController<T> controller = state.controller();
+		boolean isStopped = GeoAnimUtil.isStopped(controller);
 
-		if (state.getAnimatable().isHoldingItem()) {
+		if (state.animatable().isHoldingItem()) {
 			controller.setAnimation(STRETCH_ANIM);
 			if (!isStopped) return PlayState.CONTINUE;
 		}
@@ -160,7 +163,7 @@ public class TongueBlockEntity extends SimpleSyncedBlockEntity implements GeoBlo
 
 	@Override
 	public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-		controllers.add(new AnimationController<>(this, "controller", 0, this::handleAnimationState));
+		controllers.add(new AnimationController<TongueBlockEntity>("controller", 0, this::handleAnimationState));
 	}
 
 	@Override
@@ -168,4 +171,10 @@ public class TongueBlockEntity extends SimpleSyncedBlockEntity implements GeoBlo
 		return cache;
 	}
 
+	@Override
+	public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+		if (level != null) {
+			dropInventoryContents(level, pos);
+		}
+	}
 }

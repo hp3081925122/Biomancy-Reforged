@@ -1,9 +1,7 @@
 {
   "type": "biomancy:digesting",
   "input": {
-    "0": {
-      "id": "#c:seeds"
-    }
+    "0": "#c:seeds"
   },
   "output": {
     "0": {

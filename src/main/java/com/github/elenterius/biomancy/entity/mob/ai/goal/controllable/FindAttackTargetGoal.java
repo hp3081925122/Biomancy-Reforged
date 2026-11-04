@@ -18,7 +18,7 @@ public class FindAttackTargetGoal<T extends Mob & ControllableMob, M extends Liv
 	}
 
 	public FindAttackTargetGoal(T goalOwnerIn, Class<M> targetClassIn, int targetChanceIn, boolean checkSight, boolean nearbyOnlyIn, @Nullable Predicate<LivingEntity> targetPredicate) {
-		super(goalOwnerIn, targetClassIn, targetChanceIn, checkSight, nearbyOnlyIn, targetPredicate);
+		super(goalOwnerIn, targetClassIn, targetChanceIn, checkSight, nearbyOnlyIn, targetPredicate == null ? null : (target, level) -> targetPredicate.test(target));
 		entity = goalOwnerIn;
 	}
 

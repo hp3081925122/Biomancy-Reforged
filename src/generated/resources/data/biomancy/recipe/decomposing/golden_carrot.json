@@ -1,7 +1,7 @@
 {
   "type": "biomancy:decomposing",
   "ingredient": {
-    "item": "minecraft:golden_carrot"
+    "ingredient": "minecraft:golden_carrot"
   },
   "nutrientsCost": 2,
   "processingTime": 400,

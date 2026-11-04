@@ -4,11 +4,11 @@
   "ingredients": [
     {
       "count": 2,
-      "item": "biomancy:elastic_fibers"
+      "ingredient": "biomancy:elastic_fibers"
     },
     {
       "count": 2,
-      "item": "biomancy:mineral_fragment"
+      "ingredient": "biomancy:mineral_fragment"
     }
   ],
   "nutrientsCost": 1,

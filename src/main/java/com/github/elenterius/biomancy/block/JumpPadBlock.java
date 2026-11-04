@@ -1,12 +1,15 @@
 package com.github.elenterius.biomancy.block;
 
+import net.minecraft.world.entity.InsideBlockEffectApplier;
+import net.minecraft.world.level.redstone.Orientation;
+import net.minecraft.world.level.LevelReader;
 import com.github.elenterius.biomancy.util.InteractionUtil;
-import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.InteractionResult;
 import com.github.elenterius.biomancy.block.base.SimpleMultiFaceBlock;
 import com.github.elenterius.biomancy.entity.misc.LivingEntityData;
 import com.github.elenterius.biomancy.init.ModSoundEvents;
 import com.github.elenterius.biomancy.util.VoxelShapeUtil;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Vec3i;
@@ -61,7 +64,7 @@ public class JumpPadBlock extends SimpleMultiFaceBlock {
 	});
 
 	public JumpPadBlock(Properties properties) {
-		super(properties.noCollission().forceSolidOn());
+		super(properties.noCollision().forceSolidOn());
 		registerDefaultState(defaultBlockState().setValue(ENABLED, Boolean.TRUE));
 	}
 
@@ -89,27 +92,27 @@ public class JumpPadBlock extends SimpleMultiFaceBlock {
 	}
 
 	@Override
-	protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
+	protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
 		return InteractionUtil.toItemInteractionResult(use(state, level, pos, player, hand, hitResult));
 	}
 
 	protected InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
 		if (!player.mayBuild()) return InteractionResult.PASS;
 		if (!player.isSecondaryUseActive()) return InteractionResult.PASS;
-		if (level.isClientSide) return InteractionResult.SUCCESS;
+		if (level.isClientSide()) return InteractionResult.SUCCESS;
 
 		BlockState newState = state.cycle(ENABLED);
 		level.setBlock(pos, newState, UPDATE_CLIENTS);
 		level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, newState));
 
 		float pitch = newState.getValue(ENABLED) ? 1f : 0.8f;
-		level.playSound(null, pos, ModSoundEvents.FLESH_BLOCK_HIT.get(), SoundSource.BLOCKS, 0.6f, pitch + level.random.nextFloat() * 0.2f);
+		level.playSound(null, pos, ModSoundEvents.FLESH_BLOCK_HIT.get(), SoundSource.BLOCKS, 0.6f, pitch + level.getRandom().nextFloat() * 0.2f);
 
 		return InteractionResult.CONSUME;
 	}
 
 	@Override
-	public void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, BlockPos neighborPos, boolean movedByPiston) {
+	public void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, @Nullable Orientation orientation, boolean movedByPiston) {
 		if (level.hasNeighborSignal(pos)) {
 			level.setBlock(pos, state.cycle(ENABLED), UPDATE_ALL);
 		}
@@ -134,8 +137,9 @@ public class JumpPadBlock extends SimpleMultiFaceBlock {
 	}
 
 	@Override
-	public void onRemove(BlockState oldState, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
-		if (!movedByPiston && oldState.is(newState.getBlock()) && level instanceof ServerLevel serverLevel) {
+	public void onBlockStateChange(LevelReader levelReader, BlockPos pos, BlockState oldState, BlockState newState) {
+		if (oldState.is(newState.getBlock()) && levelReader instanceof ServerLevel serverLevel) {
+			Level level = serverLevel;
 			List<Direction> missingFaces = new ArrayList<>();
 			for (Direction face : Direction.values()) {
 				if (hasFace(oldState, face) && !hasFace(newState, face)) {
@@ -160,8 +164,8 @@ public class JumpPadBlock extends SimpleMultiFaceBlock {
 	}
 
 	@Override
-	public void entityInside(BlockState state, Level level, BlockPos pos, Entity entity) {
-		if (level.isClientSide) return;
+	public void entityInside(BlockState state, Level level, BlockPos pos, Entity entity, InsideBlockEffectApplier effectApplier, boolean isPrecise) {
+		if (level.isClientSide()) return;
 
 		List<Direction> availableFaces = new ArrayList<>();
 		List<AABB> collisionAABBs = new ArrayList<>();
@@ -193,7 +197,7 @@ public class JumpPadBlock extends SimpleMultiFaceBlock {
 
 		Vector3d mutableImpulse = new Vector3d();
 		for (Direction face : availableFaces) {
-			Vec3i normal = face.getOpposite().getNormal();
+			Vec3i normal = face.getOpposite().getUnitVec3i();
 			mutableImpulse.add(normal.getX() * 2d, normal.getY(), normal.getZ() * 2d);
 		}
 
@@ -206,7 +210,7 @@ public class JumpPadBlock extends SimpleMultiFaceBlock {
 			if (debounce(entity, pos)) return;
 
 			entity.setDeltaMovement(mutableImpulse.x, mutableImpulse.y, mutableImpulse.z);
-			entity.hasImpulse = true;
+			entity.needsSync = true;
 			entity.hurtMarked = true;
 
 			level.playSound(null, pos, ModSoundEvents.FLESH_BLOB_JUMP.get(), SoundSource.BLOCKS, 0.5f, 1.2f);
@@ -252,17 +256,17 @@ public class JumpPadBlock extends SimpleMultiFaceBlock {
 	}
 
 	protected static boolean debounce(Entity entity, BlockPos blockPos) {
-		CompoundTag tag = entity.getPersistentData().getCompound("biomancy:jump_pad");
-		if (entity.tickCount != tag.getInt("tick")) {
+		CompoundTag tag = entity.getPersistentData().getCompoundOrEmpty("biomancy:jump_pad");
+		if (entity.tickCount != tag.getIntOr("tick", 0)) {
 			tag.putInt("tick", entity.tickCount);
 			tag.remove("visitedPositions");
 		}
 
 		long visitingPos = blockPos.asLong();
-		ListTag visitedPositions = tag.getList("visitedPositions", Tag.TAG_LONG);
+		ListTag visitedPositions = tag.getListOrEmpty("visitedPositions");
 		for (Tag visitedPos : visitedPositions) {
 			if (visitedPos instanceof LongTag longTag) {
-				if (longTag.getAsLong() == visitingPos) {
+				if (longTag.longValue() == visitingPos) {
 					return true;
 				}
 			}

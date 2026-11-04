@@ -1,11 +1,14 @@
 package com.github.elenterius.biomancy.datagen.recipes.builder;
 
 import com.github.elenterius.biomancy.BiomancyMod;
+import com.github.elenterius.biomancy.util.ItemHolders;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.advancements.Criterion;
 import net.minecraft.data.recipes.RecipeCategory;
 import net.minecraft.data.recipes.ShapedRecipeBuilder;
 import net.minecraft.data.recipes.ShapelessRecipeBuilder;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.crafting.Ingredient;
@@ -78,9 +81,11 @@ public final class WorkbenchRecipeBuilder {
 	public static final class ShapedBuilder implements RecipeBuilder<ShapedBuilder> {
 
 		private final ShapedRecipeBuilder internalBuilder;
+		private final ItemLike result;
 
 		private ShapedBuilder(RecipeCategory category, ItemLike result, int count) {
-			internalBuilder = ShapedRecipeBuilder.shaped(category, result, count);
+			this.result = result;
+			internalBuilder = ShapedRecipeBuilder.shaped(ItemHolders.LOOKUP, category, result, count);
 		}
 
 		public ShapedBuilder define(Character pSymbol, TagKey<Item> tag) {
@@ -120,11 +125,11 @@ public final class WorkbenchRecipeBuilder {
 
 		@Override
 		public void save(Consumer<FinishedRecipe> consumer, @Nullable RecipeCategory category) {
-			save(consumer, BiomancyMod.rl(getItemName(internalBuilder.getResult())));
+			save(consumer, BiomancyMod.rl(getItemName(result)));
 		}
 
-		public void save(Consumer<FinishedRecipe> consumer, ResourceLocation recipeId) {
-			internalBuilder.save(FinishedRecipeOutput.of(consumer), recipeId.withPrefix("crafting/"));
+		public void save(Consumer<FinishedRecipe> consumer, Identifier recipeId) {
+			internalBuilder.save(FinishedRecipeOutput.of(consumer), ResourceKey.create(Registries.RECIPE, recipeId.withPrefix("crafting/")));
 		}
 
 	}
@@ -132,9 +137,11 @@ public final class WorkbenchRecipeBuilder {
 	public static final class ShapelessBuilder implements RecipeBuilder<ShapelessBuilder> {
 
 		private final ShapelessRecipeBuilder internalBuilder;
+		private final ItemLike result;
 
 		private ShapelessBuilder(RecipeCategory category, ItemLike result, int count) {
-			internalBuilder = ShapelessRecipeBuilder.shapeless(category, result, count);
+			this.result = result;
+			internalBuilder = ShapelessRecipeBuilder.shapeless(ItemHolders.LOOKUP, category, result, count);
 		}
 
 		public ShapelessBuilder requires(TagKey<Item> tag) {
@@ -175,11 +182,11 @@ public final class WorkbenchRecipeBuilder {
 
 		@Override
 		public void save(Consumer<FinishedRecipe> consumer, @Nullable RecipeCategory category) {
-			save(consumer, BiomancyMod.rl(getItemName(internalBuilder.getResult())));
+			save(consumer, BiomancyMod.rl(getItemName(result)));
 		}
 
-		public void save(Consumer<FinishedRecipe> consumer, ResourceLocation recipeId) {
-			internalBuilder.save(FinishedRecipeOutput.of(consumer), recipeId.withPrefix("crafting/"));
+		public void save(Consumer<FinishedRecipe> consumer, Identifier recipeId) {
+			internalBuilder.save(FinishedRecipeOutput.of(consumer), ResourceKey.create(Registries.RECIPE, recipeId.withPrefix("crafting/")));
 		}
 
 	}

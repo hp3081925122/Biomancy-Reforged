@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "minecraft:nether_wart"
+      "ingredient": "minecraft:nether_wart"
     }
   },
   "output": {

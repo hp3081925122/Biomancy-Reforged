@@ -1,9 +1,7 @@
 {
   "type": "biomancy:digesting",
   "input": {
-    "0": {
-      "id": "minecraft:fern"
-    }
+    "0": "minecraft:fern"
   },
   "output": {
     "0": {

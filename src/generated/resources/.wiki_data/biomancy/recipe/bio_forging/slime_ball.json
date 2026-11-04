@@ -3,14 +3,14 @@
   "input": {
     "0": {
       "count": 4,
-      "id": "biomancy:regenerative_fluid"
+      "ingredient": "biomancy:regenerative_fluid"
     },
     "1": {
       "count": 4,
-      "id": "biomancy:bile"
+      "ingredient": "biomancy:bile"
     },
     "2": {
-      "id": "biomancy:gelling_agent"
+      "ingredient": "biomancy:gelling_agent"
     }
   },
   "output": {

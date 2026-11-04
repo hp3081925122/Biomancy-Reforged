@@ -1,5 +1,11 @@
 package com.github.elenterius.biomancy.crafting.recipe;
 
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.world.item.crafting.RecipeBookCategory;
+import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.core.component.DataComponents;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.crafting.AnyFoodIngredient;
 import com.github.elenterius.biomancy.init.ModItems;
@@ -7,18 +13,18 @@ import com.github.elenterius.biomancy.init.ModRecipes;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.recipes.RecipeOutput;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeInput;
 import net.minecraft.world.item.crafting.RecipeSerializer;
@@ -27,27 +33,33 @@ import net.minecraft.world.level.Level;
 public class FoodDigestingRecipe extends DynamicProcessingRecipe implements DigestingRecipe {
 
 	private final int multiplier;
-	private final ItemStack resultBaseItem;
+	private final ItemStackTemplate resultBaseItem;
+	private ItemStack resultBaseItemStack;
 	private final Ingredient ingredient;
 
 	private final int matchPriority;
 	private final NonNullList<Ingredient> vanillaIngredients;
 
 	public FoodDigestingRecipe(int multiplier, ItemStack resultBaseItem) {
+		this(multiplier, ItemStackTemplate.fromNonEmptyStack(resultBaseItem));
+		resultBaseItemStack = resultBaseItem;
+	}
+
+	public FoodDigestingRecipe(int multiplier, ItemStackTemplate resultBaseItem) {
 		super(ModRecipes.DIGESTING_RECIPE_TYPE.get());
 		this.multiplier = multiplier;
 		this.resultBaseItem = resultBaseItem;
 
 		ingredient = AnyFoodIngredient.ingredient();
 
-		vanillaIngredients = NonNullList.of(Ingredient.EMPTY, ingredient);
+		vanillaIngredients = NonNullList.of(ingredient, ingredient);
 		matchPriority = RecipeWithMatchPriority.computeMatchPriority(vanillaIngredients);
 	}
 
 	public static int getFoodNutrition(ItemStack stack) {
 		if (stack.isEmpty()) return 0;
 
-		FoodProperties foodProperties = stack.getFoodProperties(null);
+		FoodProperties foodProperties = stack.get(DataComponents.FOOD);
 		return foodProperties != null ? foodProperties.nutrition() : 0;
 	}
 
@@ -56,7 +68,7 @@ public class FoodDigestingRecipe extends DynamicProcessingRecipe implements Dige
 	}
 
 	public ItemStack getResultBaseItem() {
-		return resultBaseItem;
+		return resultStack();
 	}
 
 	@Override
@@ -71,15 +83,14 @@ public class FoodDigestingRecipe extends DynamicProcessingRecipe implements Dige
 	}
 
 	@Override
-	public ItemStack assemble(RecipeInput input, HolderLookup.Provider registries) {
+	public ItemStack assemble(RecipeInput input) {
 		int nutrition = getFoodNutrition(input.getItem(0));
 		if (nutrition <= 0) return ItemStack.EMPTY;
 
 		int count = Mth.clamp(nutrition * multiplier, 1, 64 * 2);
-		return resultBaseItem.copyWithCount(count);
+		return resultStack().copyWithCount(count);
 	}
 
-	@Override
 	public boolean canCraftInDimensions(int width, int height) {
 		return width * height == 1;
 	}
@@ -107,34 +118,33 @@ public class FoodDigestingRecipe extends DynamicProcessingRecipe implements Dige
 	}
 
 	@Override
-	public RecipeSerializer<?> getSerializer() {
+	public RecipeSerializer<? extends Recipe<RecipeInput>> getSerializer() {
 		return ModRecipes.FOOD_DIGESTING_SERIALIZER.get();
 	}
 
-	@Override
 	public ItemStack getToastSymbol() {
 		return new ItemStack(ModItems.DIGESTER.get());
 	}
 
-	public static class Serializer implements RecipeSerializer<FoodDigestingRecipe> {
+	public static final class Serializer {
 
 		public static final MapCodec<FoodDigestingRecipe> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
 				Codec.INT.optionalFieldOf("multiplier", 1).forGetter(FoodDigestingRecipe::getMultiplier),
-				ItemStack.SINGLE_ITEM_CODEC.fieldOf("result_base").forGetter(FoodDigestingRecipe::getResultBaseItem)
-		).apply(instance, FoodDigestingRecipe::new));
+				ItemStackTemplate.CODEC.fieldOf("result_base").forGetter(r -> r.resultBaseItem)
+		).apply(instance, (multiplier, result) -> new FoodDigestingRecipe(multiplier, result)));
 
 		public static final StreamCodec<RegistryFriendlyByteBuf, FoodDigestingRecipe> STREAM_CODEC = StreamCodec.composite(
 				ByteBufCodecs.VAR_INT, FoodDigestingRecipe::getMultiplier,
-				ItemStack.STREAM_CODEC, FoodDigestingRecipe::getResultBaseItem,
-				FoodDigestingRecipe::new
+				ItemStackTemplate.STREAM_CODEC, r -> r.resultBaseItem,
+				(multiplier, result) -> new FoodDigestingRecipe(multiplier, result)
 		);
 
-		@Override
+		public static final RecipeSerializer<FoodDigestingRecipe> INSTANCE = new RecipeSerializer<>(CODEC, STREAM_CODEC);
+
 		public MapCodec<FoodDigestingRecipe> codec() {
 			return CODEC;
 		}
 
-		@Override
 		public StreamCodec<RegistryFriendlyByteBuf, FoodDigestingRecipe> streamCodec() {
 			return STREAM_CODEC;
 		}
@@ -148,15 +158,20 @@ public class FoodDigestingRecipe extends DynamicProcessingRecipe implements Dige
 		}
 
 		public static void save(RecipeOutput output, int multiplier, ItemStack stack) {
-			ResourceLocation key = BuiltInRegistries.ITEM.getKey(stack.getItem());
+			Identifier key = BuiltInRegistries.ITEM.getKey(stack.getItem());
 			String subFolder = ModRecipes.DIGESTING_RECIPE_TYPE.getId().getPath();
 			save(output, multiplier, stack, BiomancyMod.rl(subFolder + "/" + key.getPath() + "_from_digesting_dynamic_food"));
 		}
 
-		public static void save(RecipeOutput output, int multiplier, ItemStack stack, ResourceLocation id) {
-			output.accept(id, new FoodDigestingRecipe(multiplier, stack.copyWithCount(1)), null);
+		public static void save(RecipeOutput output, int multiplier, ItemStack stack, Identifier id) {
+			output.accept(ResourceKey.create(Registries.RECIPE, id), new FoodDigestingRecipe(multiplier, stack.copyWithCount(1)), null);
 		}
 
+	}
+
+	private ItemStack resultStack() {
+		if (resultBaseItemStack == null) resultBaseItemStack = resultBaseItem.create();
+		return resultBaseItemStack;
 	}
 
 }

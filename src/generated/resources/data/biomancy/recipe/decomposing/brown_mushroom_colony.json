@@ -7,7 +7,7 @@
   ],
   "type": "biomancy:decomposing",
   "ingredient": {
-    "item": "farmersdelight:brown_mushroom_colony"
+    "ingredient": "farmersdelight:brown_mushroom_colony"
   },
   "nutrientsCost": 1,
   "processingTime": 200,

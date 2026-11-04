@@ -23,7 +23,7 @@ public class SpreadingMembraneBlock extends MembraneBlock {
 
 	@Override
 	public void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
-		if (level.random.nextFloat() >= 0.5f) return;
+		if (level.getRandom().nextFloat() >= 0.5f) return;
 		if (!level.isAreaLoaded(pos, 2)) return;
 
 		BlockPos targetPos = pos.offset(VectorUtil.randomOffsetInCube3i(random));

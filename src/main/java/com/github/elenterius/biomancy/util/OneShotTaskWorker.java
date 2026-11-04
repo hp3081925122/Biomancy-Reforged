@@ -1,34 +1,38 @@
 package com.github.elenterius.biomancy.util;
 
+import com.github.elenterius.biomancy.BiomancyMod;
 import net.minecraft.world.entity.LivingEntity;
-import net.neoforged.neoforge.common.WorldWorkerManager;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Consumer;
 
-public abstract class OneShotTaskWorker implements WorldWorkerManager.IWorker {
+@EventBusSubscriber(modid = BiomancyMod.MOD_ID)
+public final class OneShotTaskWorker {
 
-	@Override
-	public boolean hasWork() {
-		return false;
-	}
+	private static final Queue<Runnable> TASKS = new ConcurrentLinkedQueue<>();
 
-	@Override
-	public boolean doWork() {
-		doTask();
-		return false;
-	}
-
-	public abstract void doTask();
+	private OneShotTaskWorker() {}
 
 	public static void onNextTick(LivingEntity livingEntity, Consumer<LivingEntity> task) {
-		WorldWorkerManager.addWorker(new OneShotTaskWorker() {
-			@Override
-			public void doTask() {
-				if (livingEntity.isAlive()) {
-					task.accept(livingEntity);
-				}
+		TASKS.add(() -> {
+			if (livingEntity.isAlive()) {
+				task.accept(livingEntity);
 			}
 		});
+	}
+
+	@SubscribeEvent
+	public static void onServerTick(ServerTickEvent.Post event) {
+		int count = TASKS.size();
+		for (int i = 0; i < count; i++) {
+			Runnable task = TASKS.poll();
+			if (task == null) break;
+			task.run();
+		}
 	}
 
 }

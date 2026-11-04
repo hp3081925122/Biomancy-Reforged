@@ -1,8 +1,6 @@
 {
   "type": "biomancy:digesting",
-  "ingredient": {
-    "item": "minecraft:pumpkin"
-  },
+  "ingredient": "minecraft:pumpkin",
   "nutrientsCost": 3,
   "processingTime": 541,
   "result": {

@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "biomancy:impermeable_membrane_pane"
+      "ingredient": "biomancy:impermeable_membrane_pane"
     }
   },
   "output": {

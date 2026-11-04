@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.datagen.advancements;
 
+import net.minecraft.world.item.ItemStackTemplate;
 import com.github.elenterius.biomancy.datagen.lang.LangProvider;
 import com.github.elenterius.biomancy.util.ComponentUtil;
 import net.minecraft.advancements.Advancement;
@@ -9,16 +10,15 @@ import net.minecraft.advancements.AdvancementRewards;
 import net.minecraft.advancements.AdvancementType;
 import net.minecraft.advancements.Criterion;
 import net.minecraft.advancements.CriteriaTriggers;
-import net.minecraft.advancements.critereon.ImpossibleTrigger;
+import net.minecraft.advancements.criterion.ImpossibleTrigger;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.recipes.RecipeBuilder;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ItemLike;
-import net.neoforged.neoforge.common.data.ExistingFileHelper;
 
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -36,7 +36,7 @@ public class AdvancementBuilder {
 	private String description = null;
 
 	private ItemStack icon = ItemStack.EMPTY;
-	private ResourceLocation background = null;
+	private Identifier background = null;
 	private AdvancementType frameType = AdvancementType.TASK;
 	private boolean showToast = false;
 	private boolean announceToChat = false;
@@ -81,7 +81,7 @@ public class AdvancementBuilder {
 		return this;
 	}
 
-	public AdvancementBuilder background(ResourceLocation texture) {
+	public AdvancementBuilder background(Identifier texture) {
 		this.background = texture;
 		return this;
 	}
@@ -127,13 +127,13 @@ public class AdvancementBuilder {
 	}
 
 	public AdvancementBuilder addHasCriterion(TagKey<Item> tag) {
-		ResourceLocation registryName = tag.location();
+		Identifier registryName = tag.location();
 		internalBuilder.addCriterion("has_" + registryName.getPath(), ModAdvancementProvider.hasTag(tag));
 		return this;
 	}
 
 	public AdvancementBuilder addHasCriterion(ItemLike item) {
-		ResourceLocation registryName = Objects.requireNonNull(BuiltInRegistries.ITEM.getKey(item.asItem()));
+		Identifier registryName = Objects.requireNonNull(BuiltInRegistries.ITEM.getKey(item.asItem()));
 		internalBuilder.addCriterion("has_" + registryName.getPath(), ModAdvancementProvider.hasItems(item));
 		return this;
 	}
@@ -144,7 +144,7 @@ public class AdvancementBuilder {
 	}
 
 	public AdvancementBuilder rewardsDefaultRecipe(ItemLike result) {
-		internalBuilder.rewards(AdvancementRewards.Builder.recipe(RecipeBuilder.getDefaultRecipeId(result)));
+		internalBuilder.rewards(AdvancementRewards.Builder.recipe(RecipeBuilder.getDefaultRecipeId(new ItemStackTemplate(result.asItem()))));
 		return this;
 	}
 
@@ -163,14 +163,14 @@ public class AdvancementBuilder {
 		return this;
 	}
 
-	public AdvancementHolder save(Consumer<AdvancementHolder> consumer, ExistingFileHelper fileHelper) throws IllegalStateException {
-		return save(consumer, fileHelper, modId);
+	public AdvancementHolder save(Consumer<AdvancementHolder> consumer) throws IllegalStateException {
+		return save(consumer, modId);
 	}
 
-	public AdvancementHolder save(Consumer<AdvancementHolder> consumer, ExistingFileHelper fileHelper, String category) throws IllegalStateException {
+	public AdvancementHolder save(Consumer<AdvancementHolder> consumer, String category) throws IllegalStateException {
 		if (empty) {
-			internalBuilder.display(icon.isEmpty() ? new ItemStack(Items.STRUCTURE_VOID) : icon, ComponentUtil.EMPTY, ComponentUtil.EMPTY, background, frameType, showToast, announceToChat, hidden);
-			return internalBuilder.save(consumer, createRL(category + "/" + id), fileHelper);
+			internalBuilder.display(icon.isEmpty() ? new ItemStackTemplate(Items.STRUCTURE_VOID) : ItemStackTemplate.fromNonEmptyStack(icon), ComponentUtil.EMPTY, ComponentUtil.EMPTY, background, frameType, showToast, announceToChat, hidden);
+			return internalBuilder.save(consumer, createRL(category + "/" + id).toString());
 		}
 
 		if (title == null || title.isBlank()) throw new IllegalStateException("Missing title for advancement " + createRL(category + "/" + id));
@@ -178,12 +178,12 @@ public class AdvancementBuilder {
 
 		lang.add(titleTranslationKey, title);
 		lang.add(descriptionTranslationKey, description);
-		internalBuilder.display(icon, ComponentUtil.translatable(titleTranslationKey), ComponentUtil.translatable(descriptionTranslationKey), background, frameType, showToast, announceToChat, hidden);
-		return internalBuilder.save(consumer, createRL(category + "/" + id), fileHelper);
+		internalBuilder.display(ItemStackTemplate.fromNonEmptyStack(icon), ComponentUtil.translatable(titleTranslationKey), ComponentUtil.translatable(descriptionTranslationKey), background, frameType, showToast, announceToChat, hidden);
+		return internalBuilder.save(consumer, createRL(category + "/" + id).toString());
 	}
 
-	private ResourceLocation createRL(String path) {
-		return ResourceLocation.fromNamespaceAndPath(modId, path);
+	private Identifier createRL(String path) {
+		return Identifier.fromNamespaceAndPath(modId, path);
 	}
 
 }

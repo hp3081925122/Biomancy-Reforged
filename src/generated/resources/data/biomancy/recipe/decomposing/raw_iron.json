@@ -1,7 +1,7 @@
 {
   "type": "biomancy:decomposing",
   "ingredient": {
-    "item": "minecraft:raw_iron"
+    "ingredient": "minecraft:raw_iron"
   },
   "nutrientsCost": 2,
   "processingTime": 420,

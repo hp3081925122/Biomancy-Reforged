@@ -4,6 +4,10 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.Connection;
+import net.minecraft.util.ProblemReporter;
+import net.minecraft.world.level.storage.TagValueOutput;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -19,10 +23,10 @@ public abstract class SimpleSyncedBlockEntity extends BlockEntity {
 		super(type, pos, state);
 	}
 
-	protected abstract void saveForSyncToClient(CompoundTag tag, HolderLookup.Provider registries);
+	protected abstract void saveForSyncToClient(ValueOutput output);
 
 	protected void syncToClient() {
-		if (level != null && !level.isClientSide) {
+		if (level != null && !level.isClientSide()) {
 			BlockState state = getBlockState();
 			level.sendBlockUpdated(getBlockPos(), state, state, Block.UPDATE_CLIENTS);
 		}
@@ -30,9 +34,9 @@ public abstract class SimpleSyncedBlockEntity extends BlockEntity {
 
 	@Override
 	public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
-		CompoundTag tag = new CompoundTag();
-		saveForSyncToClient(tag, registries);
-		return tag;
+		TagValueOutput output = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, registries);
+		saveForSyncToClient(output);
+		return output.buildResult();
 	}
 
 	@Override
@@ -42,8 +46,8 @@ public abstract class SimpleSyncedBlockEntity extends BlockEntity {
 	}
 
 	@Override
-	public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket packet, HolderLookup.Provider registries) {
-		super.onDataPacket(net, packet, registries);
+	public void onDataPacket(Connection net, ValueInput input) {
+		super.onDataPacket(net, input);
 		if (reRenderBlockOnSync && level != null) {
 			level.sendBlockUpdated(getBlockPos(), getBlockState(), getBlockState(), 0);
 		}

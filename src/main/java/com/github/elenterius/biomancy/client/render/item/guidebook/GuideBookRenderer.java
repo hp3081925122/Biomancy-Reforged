@@ -1,12 +1,13 @@
 package com.github.elenterius.biomancy.client.render.item.guidebook;
 
+import com.github.elenterius.biomancy.client.render.item.BiomancyGeoItemRenderer;
 import com.github.elenterius.biomancy.item.GuideBookItem;
-import software.bernie.geckolib.renderer.GeoItemRenderer;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 
-public class GuideBookRenderer extends GeoItemRenderer<GuideBookItem> {
+public class GuideBookRenderer extends BiomancyGeoItemRenderer<GuideBookItem> {
 
 	public GuideBookRenderer() {
-		super(new GuideBookModel());
+		super(new GuideBookModel(), RenderTypes::entityCutoutCull);
 	}
 
 }

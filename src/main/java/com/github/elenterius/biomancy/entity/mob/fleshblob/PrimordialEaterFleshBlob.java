@@ -21,7 +21,7 @@ import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.*;
-import net.minecraft.world.entity.animal.AbstractGolem;
+import net.minecraft.world.entity.animal.golem.AbstractGolem;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -68,7 +68,7 @@ public class PrimordialEaterFleshBlob extends EaterFleshBlob implements Primordi
 	}
 
 	@Override
-	public @Nullable SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType reason, @Nullable SpawnGroupData spawnData) {
+	public @Nullable SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, EntitySpawnReason reason, @Nullable SpawnGroupData spawnData) {
 		if (!(spawnData instanceof FleshBlobSpawnData)) {
 			spawnData = new FleshBlobSpawnData.Tumors((byte) 0);
 		}
@@ -95,7 +95,7 @@ public class PrimordialEaterFleshBlob extends EaterFleshBlob implements Primordi
 	}
 
 	@Override
-	protected void pickUpItem(ItemEntity itemEntity) {
+	protected void pickUpItem(ServerLevel level, ItemEntity itemEntity) {
 		ItemStack stack = itemEntity.getItem();
 		if (SPECIAL_ITEMS_TO_HOLD.contains(stack.getItem()) && getItemBySlot(EquipmentSlot.OFFHAND).isEmpty()) {
 			onItemPickup(itemEntity);
@@ -107,13 +107,13 @@ public class PrimordialEaterFleshBlob extends EaterFleshBlob implements Primordi
 			itemEntity.discard();
 		}
 		else {
-			super.pickUpItem(itemEntity);
+			super.pickUpItem(level, itemEntity);
 		}
 	}
 
 	@Override
-	public boolean isInvulnerableTo(DamageSource source) {
-		return super.isInvulnerableTo(source) || source.is(ModDamageTypeTags.C_IS_ACID);
+	public boolean isInvulnerableTo(ServerLevel level, DamageSource source) {
+		return super.isInvulnerableTo(level, source) || source.is(ModDamageTypeTags.C_IS_ACID);
 	}
 
 	@Override
@@ -126,7 +126,7 @@ public class PrimordialEaterFleshBlob extends EaterFleshBlob implements Primordi
 
 	@Override
 	public void remove(RemovalReason reason) {
-		if (reason == RemovalReason.KILLED && !level().isClientSide && level() instanceof ServerLevel serverLevel) {
+		if (reason == RemovalReason.KILLED && !level().isClientSide() && level() instanceof ServerLevel serverLevel) {
 			placeMalignantFleshBlocks(serverLevel);
 		}
 		super.remove(reason);

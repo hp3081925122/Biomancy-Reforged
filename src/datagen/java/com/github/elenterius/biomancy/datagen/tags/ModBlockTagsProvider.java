@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.datagen.tags;
 
+import net.minecraft.data.tags.TagAppender;
 import com.github.elenterius.biomancy.block.FleshDoorBlock;
 import com.github.elenterius.biomancy.block.FullFleshDoorBlock;
 import com.github.elenterius.biomancy.block.base.DirectionalSlabBlock;
@@ -9,13 +10,12 @@ import com.github.elenterius.biomancy.init.tags.ModBlockTags;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.PackOutput;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.block.*;
 import net.neoforged.neoforge.common.Tags;
 import net.neoforged.neoforge.common.data.BlockTagsProvider;
-import net.neoforged.neoforge.common.data.ExistingFileHelper;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import org.apache.commons.lang3.StringUtils;
 import org.jspecify.annotations.Nullable;
@@ -28,12 +28,12 @@ import static com.github.elenterius.biomancy.BiomancyMod.MOD_ID;
 
 public class ModBlockTagsProvider extends BlockTagsProvider {
 
-	public ModBlockTagsProvider(PackOutput output, CompletableFuture<HolderLookup.Provider> lookupProvider, @Nullable ExistingFileHelper existingFileHelper) {
-		super(output, lookupProvider, MOD_ID, existingFileHelper);
+	public ModBlockTagsProvider(PackOutput output, CompletableFuture<HolderLookup.Provider> lookupProvider) {
+		super(output, lookupProvider, MOD_ID);
 	}
 
 	private static TagKey<Block> tagKey(String modId, String path) {
-		return BlockTags.create(ResourceLocation.fromNamespaceAndPath(modId, path));
+		return BlockTags.create(Identifier.fromNamespaceAndPath(modId, path));
 	}
 
 	@Override
@@ -42,7 +42,7 @@ public class ModBlockTagsProvider extends BlockTagsProvider {
 	}
 
 	protected EnhancedTagAppender<Block> enhancedTag(TagKey<Block> tag) {
-		return new EnhancedTagAppender<>(tag(tag), BuiltInRegistries.BLOCK);
+		return new EnhancedTagAppender<>(tag(tag), getOrCreateRawBuilder(tag), BuiltInRegistries.BLOCK, modId);
 	}
 
 	@Override
@@ -146,20 +146,20 @@ public class ModBlockTagsProvider extends BlockTagsProvider {
 		tag(BlockTags.FENCES).addTag(ModBlockTags.FLESHY_FENCES);
 		tag(BlockTags.FENCE_GATES).add(ModBlocks.FLESH_FENCE_GATE.get());
 
-		IntrinsicTagAppender<Block> wallsTag = tag(BlockTags.WALLS);
+		TagAppender<Block, Block> wallsTag = tag(BlockTags.WALLS);
 		ModBlocks.BLOCKS.getEntries().stream().map(DeferredHolder::get).filter(WallBlock.class::isInstance).forEach(wallsTag::add);
 
-		IntrinsicTagAppender<Block> stairsTag = tag(BlockTags.STAIRS);
+		TagAppender<Block, Block> stairsTag = tag(BlockTags.STAIRS);
 		ModBlocks.BLOCKS.getEntries().stream().map(DeferredHolder::get).filter(StairBlock.class::isInstance).forEach(stairsTag::add);
 
 		tag(BlockTags.PRESSURE_PLATES).add(ModBlocks.FLESHKIN_PRESSURE_PLATE.get());
 
 		tag(BlockTags.CLIMBABLE).add(ModBlocks.FLESH_LADDER.get());
 
-		IntrinsicTagAppender<Block> slabsTag = tag(BlockTags.SLABS);
+		TagAppender<Block, Block> slabsTag = tag(BlockTags.SLABS);
 		ModBlocks.BLOCKS.getEntries().stream().map(DeferredHolder::get).filter(block -> block instanceof DirectionalSlabBlock || block instanceof SlabBlock).forEach(slabsTag::add);
 
-		IntrinsicTagAppender<Block> impermeableTag = tag(BlockTags.IMPERMEABLE);
+		TagAppender<Block, Block> impermeableTag = tag(BlockTags.IMPERMEABLE);
 		ModBlocks.BLOCKS.getEntries().stream().map(DeferredHolder::get).filter(Membrane.class::isInstance).forEach(impermeableTag::add);
 	}
 
@@ -167,7 +167,7 @@ public class ModBlockTagsProvider extends BlockTagsProvider {
 		tag(BlockTags.MINEABLE_WITH_PICKAXE).add(ModBlocks.ACID_CAULDRON.get(), ModBlocks.PRIMAL_BONE.get());
 		tag(BlockTags.MINEABLE_WITH_SHOVEL).add(ModBlocks.WATER_GEL_BLOCK.get());
 
-		IntrinsicTagAppender<Block> hoeTag = tag(BlockTags.MINEABLE_WITH_HOE);
+		TagAppender<Block, Block> hoeTag = tag(BlockTags.MINEABLE_WITH_HOE);
 
 		Set<Block> notMineableWithHoe = Set.of(
 				ModBlocks.ACID_CAULDRON.get(), ModBlocks.ACID_FLUID_BLOCK.get(), ModBlocks.ACID_SPLATTER.get(), ModBlocks.VOLATILE_SPLATTER.get(),
@@ -187,14 +187,14 @@ public class ModBlockTagsProvider extends BlockTagsProvider {
 				ModBlocks.FLESH_IRIS_DOOR.get()
 		);
 
-		IntrinsicTagAppender<Block> windmillSailsTag = tag(tagKey(modId, "windmill_sails"));
+		TagAppender<Block, Block> windmillSailsTag = tag(tagKey(modId, "windmill_sails"));
 		ModBlocks.BLOCKS.getEntries().stream().map(DeferredHolder::get).filter(Membrane.class::isInstance).forEach(windmillSailsTag::add);
 	}
 
 	private void addQuarkTags() {
 		String modId = "quark";
 
-		IntrinsicTagAppender<Block> nonDoubleDoorTag = tag(tagKey(modId, "non_double_door"));
+		TagAppender<Block, Block> nonDoubleDoorTag = tag(tagKey(modId, "non_double_door"));
 		Predicate<Block> predicate = block -> block instanceof FleshDoorBlock || block instanceof FullFleshDoorBlock;
 		ModBlocks.BLOCKS.getEntries().stream().map(DeferredHolder::get).filter(predicate).forEach(nonDoubleDoorTag::add);
 	}

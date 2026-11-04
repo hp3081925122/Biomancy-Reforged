@@ -3,19 +3,19 @@
   "input": {
     "0": {
       "count": 20,
-      "id": "biomancy:flesh_bits"
+      "ingredient": "biomancy:flesh_bits"
     },
     "1": {
       "count": 10,
-      "id": "biomancy:mineral_fragment"
+      "ingredient": "biomancy:mineral_fragment"
     },
     "2": {
       "count": 3,
-      "id": "biomancy:elastic_fibers"
+      "ingredient": "biomancy:elastic_fibers"
     },
     "3": {
       "count": 5,
-      "id": "biomancy:tough_fibers"
+      "ingredient": "biomancy:tough_fibers"
     }
   },
   "output": {

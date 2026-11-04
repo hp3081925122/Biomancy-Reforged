@@ -1,11 +1,12 @@
 package com.github.elenterius.biomancy.entity.mob;
 
+import net.minecraft.world.entity.EntitySpawnReason;
 import com.github.elenterius.biomancy.init.ModEntityTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.animal.Animal;
-import net.minecraft.world.entity.animal.Sheep;
+import net.minecraft.world.entity.animal.sheep.Sheep;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.level.Level;
 import org.jspecify.annotations.Nullable;
@@ -35,7 +36,7 @@ public class ChromaSheep extends Sheep {
 			return (Sheep) otherParent.getBreedOffspring(level, this);
 		}
 
-		return ModEntityTypes.CHROMA_SHEEP.get().create(level);
+		return ModEntityTypes.CHROMA_SHEEP.get().create(level, EntitySpawnReason.BREEDING);
 	}
 
 }

@@ -1,8 +1,6 @@
 {
   "type": "biomancy:digesting",
-  "ingredient": {
-    "item": "minecraft:mushroom_stem"
-  },
+  "ingredient": "minecraft:mushroom_stem",
   "nutrientsCost": 3,
   "processingTime": 332,
   "result": {

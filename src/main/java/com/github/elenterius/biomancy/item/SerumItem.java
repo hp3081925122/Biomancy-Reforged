@@ -1,5 +1,7 @@
 package com.github.elenterius.biomancy.item;
 
+import net.minecraft.world.item.component.TooltipDisplay;
+import java.util.function.Consumer;
 import com.github.elenterius.biomancy.api.serum.Serum;
 import com.github.elenterius.biomancy.api.serum.SerumContainer;
 import com.github.elenterius.biomancy.client.util.ClientTextUtil;
@@ -33,7 +35,7 @@ public class SerumItem extends Item implements SerumContainer, ItemTooltipStyleP
 	}
 
 	@Override
-	public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag isAdvanced) {
+	public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag isAdvanced) {
 		if (ClientTextUtil.showItemInfo(tooltip)) {
 			getSerum(stack).appendTooltip(Serum.getDataTag(stack), context.level(), tooltip, isAdvanced);
 		}

@@ -1,7 +1,7 @@
 {
   "type": "biomancy:decomposing",
   "ingredient": {
-    "item": "minecraft:emerald"
+    "ingredient": "minecraft:emerald"
   },
   "nutrientsCost": 2,
   "processingTime": 450,

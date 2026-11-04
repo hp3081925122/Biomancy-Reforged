@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.statuseffect;
 
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -21,7 +22,7 @@ public class FrenzyEffect extends AttackDamageEffect implements StackingStatusEf
 	}
 
 	@Override
-	public boolean applyEffectTick(LivingEntity livingEntity, int amplifier) {
+	public boolean applyEffectTick(ServerLevel serverLevel, LivingEntity livingEntity, int amplifier) {
 		if (livingEntity instanceof Player player) {
 			player.causeFoodExhaustion(0.15f * (amplifier + 1f));
 		}

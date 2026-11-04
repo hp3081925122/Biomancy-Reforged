@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "minecraft:poisonous_potato"
+      "ingredient": "minecraft:poisonous_potato"
     }
   },
   "output": {

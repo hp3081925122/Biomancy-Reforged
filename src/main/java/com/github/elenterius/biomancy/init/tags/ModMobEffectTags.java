@@ -3,7 +3,7 @@ package com.github.elenterius.biomancy.init.tags;
 import com.github.elenterius.biomancy.BiomancyMod;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.effect.MobEffect;
 
@@ -54,10 +54,10 @@ public final class ModMobEffectTags {
 	}
 
 	private static TagKey<MobEffect> conventionalTag(String name) {
-		return createTag(ResourceLocation.fromNamespaceAndPath("c", name));
+		return createTag(Identifier.fromNamespaceAndPath("c", name));
 	}
 
-	private static TagKey<MobEffect> createTag(ResourceLocation key) {
+	private static TagKey<MobEffect> createTag(Identifier key) {
 		return TagKey.create(Registries.MOB_EFFECT, key);
 	}
 

@@ -13,11 +13,6 @@ public class ServerConfig {
 	public final ModConfigSpec.DoubleValue absorptionMaxHearts;
 	public final ModConfigSpec.DoubleValue absorptionHearts;
 
-	public final ModConfigSpec.DoubleValue pehkuiMaxScale;
-	public final ModConfigSpec.DoubleValue pehkuiMinScale;
-	public final ModConfigSpec.DoubleValue pehkuiScaleIncrement;
-	public final ModConfigSpec.DoubleValue pehkuiScaleDecrement;
-
 	public ServerConfig(ModConfigSpec.Builder builder) {
 		builder.push("recipes");
 		doBioForgeRecipeProgression = builder
@@ -57,25 +52,6 @@ public class ServerConfig {
 		absorptionHearts = builder
 				.comment("How many absorption hearts to add on each injection.")
 				.defineInRange("heartsIncrement", 2d, 0.5d, 100d);
-		builder.pop();
-
-		builder.push("pehkui-integration");
-		builder.push("enlargement-serum");
-		pehkuiMaxScale = builder
-				.comment("Maximum scale a mob/player can reach. A value of 2.0 doubles the size of the mob/player.")
-				.defineInRange("maxScale", 2d, 0.01d, 100d);
-		pehkuiScaleIncrement = builder
-				.comment("How much to add to the scale on each injection.")
-				.defineInRange("scaleStep", 0.25d, 0.01d, 100d);
-		builder.pop();
-		builder.push("shrinking-serum");
-		pehkuiMinScale = builder
-				.comment("Minimum scale a mob/player can reach. A value of 0.5 half's the size of the mob/player.")
-				.defineInRange("minScale", 0.25d, 0.01d, 100d);
-		pehkuiScaleDecrement = builder
-				.comment("How much to subtract from the scale on each injection.")
-				.defineInRange("scaleStep", 0.25d, 0.01d, 100d);
-		builder.pop();
 		builder.pop();
 	}
 

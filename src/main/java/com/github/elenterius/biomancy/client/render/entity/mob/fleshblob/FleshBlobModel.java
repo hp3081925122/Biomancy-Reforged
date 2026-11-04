@@ -4,31 +4,32 @@ import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.entity.mob.fleshblob.AdulteratedHangryEaterFleshBlob;
 import com.github.elenterius.biomancy.entity.mob.fleshblob.EaterFleshBlob;
 import com.github.elenterius.biomancy.init.client.ModRenderTypes;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
-import software.bernie.geckolib.model.GeoModel;
+import net.minecraft.resources.Identifier;
+import org.jspecify.annotations.Nullable;
+import com.github.elenterius.biomancy.client.render.BiomancyGeoModel;
 
 import java.util.Locale;
 
-public class FleshBlobModel<T extends EaterFleshBlob> extends GeoModel<T> {
+public class FleshBlobModel<T extends EaterFleshBlob> extends BiomancyGeoModel<T> {
 
-	protected static final ResourceLocation BASE_TEXTURE = BiomancyMod.rl("textures/entity/mob/flesh_blob/flesh_blob_neutral.png");
-	protected static final ResourceLocation HUNGRY_TEXTURE = BiomancyMod.rl("textures/entity/mob/flesh_blob/flesh_blob_hostile.png");
-	protected static final ResourceLocation CLOWN_TEXTURE = BiomancyMod.rl("textures/entity/mob/flesh_blob/flesh_blob_clown.png");
-	protected static final ResourceLocation TROLL_TEXTURE = BiomancyMod.rl("textures/entity/mob/flesh_blob/flesh_blob_troll.png");
-	protected static final ResourceLocation WATCHER_TEXTURE = BiomancyMod.rl("textures/entity/mob/flesh_blob/flesh_blob_watcher.png");
+	protected static final Identifier BASE_TEXTURE = BiomancyMod.rl("textures/entity/mob/flesh_blob/flesh_blob_neutral.png");
+	protected static final Identifier HUNGRY_TEXTURE = BiomancyMod.rl("textures/entity/mob/flesh_blob/flesh_blob_hostile.png");
+	protected static final Identifier CLOWN_TEXTURE = BiomancyMod.rl("textures/entity/mob/flesh_blob/flesh_blob_clown.png");
+	protected static final Identifier TROLL_TEXTURE = BiomancyMod.rl("textures/entity/mob/flesh_blob/flesh_blob_troll.png");
+	protected static final Identifier WATCHER_TEXTURE = BiomancyMod.rl("textures/entity/mob/flesh_blob/flesh_blob_watcher.png");
 
-	protected static final ResourceLocation MODEL = BiomancyMod.rl("geo/entity/mob/flesh_blob.geo.json");
-	protected static final ResourceLocation ANIMATION = BiomancyMod.rl("animations/entity/mob/flesh_blob.animation.json");
+	protected static final Identifier MODEL = BiomancyMod.rl("entity/mob/flesh_blob");
+	protected static final Identifier ANIMATION = BiomancyMod.rl("entity/mob/flesh_blob");
 
 	@Override
-	public ResourceLocation getModelResource(T fleshBlob) {
+	public Identifier getModelResource(T fleshBlob) {
 		return MODEL;
 	}
 
 	@Override
-	public ResourceLocation getTextureResource(T fleshBlob) {
+	public Identifier getTextureResource(T fleshBlob) {
 		if (BiomancyMod.EVENT_CALENDAR.isCarnivalStart()) return CLOWN_TEXTURE;
 
 		if (fleshBlob.hasCustomName()) {
@@ -42,12 +43,12 @@ public class FleshBlobModel<T extends EaterFleshBlob> extends GeoModel<T> {
 	}
 
 	@Override
-	public ResourceLocation getAnimationResource(T fleshBlob) {
+	public Identifier getAnimationResource(T fleshBlob) {
 		return ANIMATION;
 	}
 
 	@Override
-	public RenderType getRenderType(T fleshBlob, ResourceLocation texture) {
+	public @Nullable RenderType getRenderType(T fleshBlob, Identifier texture) {
 		if (BiomancyMod.EVENT_CALENDAR.isAprilFools()) return ModRenderTypes.getCutoutPartyTime(TROLL_TEXTURE);
 
 		if (fleshBlob.hasCustomName()) {
@@ -60,7 +61,7 @@ public class FleshBlobModel<T extends EaterFleshBlob> extends GeoModel<T> {
 			}
 		}
 
-		return super.getRenderType(fleshBlob, texture);
+		return null;
 	}
 
 }

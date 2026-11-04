@@ -4,15 +4,15 @@
   "ingredients": [
     {
       "count": 54,
-      "item": "biomancy:bone_fragments"
+      "ingredient": "biomancy:bone_fragments"
     },
     {
       "count": 13,
-      "item": "biomancy:mineral_fragment"
+      "ingredient": "biomancy:mineral_fragment"
     },
     {
       "count": 20,
-      "item": "biomancy:withering_ooze"
+      "ingredient": "biomancy:withering_ooze"
     }
   ],
   "nutrientsCost": 4,

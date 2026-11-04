@@ -1,9 +1,7 @@
 {
   "type": "biomancy:digesting",
   "input": {
-    "0": {
-      "id": "minecraft:seagrass"
-    }
+    "0": "minecraft:seagrass"
   },
   "output": {
     "0": {

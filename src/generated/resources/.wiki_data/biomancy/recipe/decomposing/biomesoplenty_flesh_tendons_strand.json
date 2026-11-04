@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "biomesoplenty:flesh_tendons_strand"
+      "ingredient": "biomesoplenty:flesh_tendons_strand"
     }
   },
   "output": {

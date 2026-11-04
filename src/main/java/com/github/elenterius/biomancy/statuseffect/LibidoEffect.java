@@ -1,9 +1,10 @@
 package com.github.elenterius.biomancy.statuseffect;
 
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.animal.Animal;
-import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.npc.villager.Villager;
 
 public class LibidoEffect extends StatusEffect {
 
@@ -14,7 +15,7 @@ public class LibidoEffect extends StatusEffect {
 	}
 
 	@Override
-	public boolean applyEffectTick(LivingEntity livingEntity, int amplifier) {
+	public boolean applyEffectTick(ServerLevel serverLevel, LivingEntity livingEntity, int amplifier) {
 		if (livingEntity instanceof Animal animal && !animal.isBaby() && animal.canFallInLove()) {
 			int age = animal.getAge();
 			if (age >= 0) {

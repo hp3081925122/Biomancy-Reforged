@@ -1,7 +1,7 @@
 {
   "type": "biomancy:decomposing",
   "ingredient": {
-    "item": "minecraft:totem_of_undying"
+    "ingredient": "minecraft:totem_of_undying"
   },
   "nutrientsCost": 5,
   "processingTime": 2400,

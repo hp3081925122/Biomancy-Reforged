@@ -2,7 +2,7 @@ package com.github.elenterius.biomancy.util.shooting;
 
 import com.github.elenterius.biomancy.entity.projectile.BaseProjectile;
 import net.minecraft.SharedConstants;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import org.joml.Vector3f;

@@ -1,5 +1,8 @@
 package com.github.elenterius.biomancy.item.weapon.gun;
 
+import com.github.elenterius.biomancy.init.ModItemAbilities;
+import net.minecraft.world.item.ItemInstance;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.entity.EquipmentSlotGroup;
 import com.github.elenterius.biomancy.entity.projectile.BaseProjectile;
@@ -11,7 +14,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attribute;
@@ -61,7 +63,7 @@ public abstract class GunbladeItem<T extends BaseProjectile> extends GunItem<T> 
 	public void onChangeGunbladeMode(ServerLevel level, LivingEntity shooter, ItemStack stack) {}
 
 	@Override
-	public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
+	public InteractionResult use(Level level, Player player, InteractionHand usedHand) {
 		ItemStack stack = player.getItemInHand(usedHand);
 
 		if (GunbladeMode.from(stack) == GunbladeMode.RANGED) {
@@ -72,17 +74,17 @@ public abstract class GunbladeItem<T extends BaseProjectile> extends GunItem<T> 
 		}
 	}
 
-	public InteractionResultHolder<ItemStack> useInRangedMode(Level level, Player player, InteractionHand usedHand, ItemStack stack) {
+	public InteractionResult useInRangedMode(Level level, Player player, InteractionHand usedHand, ItemStack stack) {
 		return super.use(level, player, usedHand);
 	}
 
-	public InteractionResultHolder<ItemStack> useInMeleeMode(Level level, Player player, InteractionHand usedHand, ItemStack stack) {
-		return InteractionResultHolder.pass(stack);
+	public InteractionResult useInMeleeMode(Level level, Player player, InteractionHand usedHand, ItemStack stack) {
+		return InteractionResult.PASS;
 	}
 
 	@Override
 	public void onUseTick(Level level, LivingEntity shooter, ItemStack stack, int remainingUseDuration) {
-		if (level.isClientSide) return;
+		if (level.isClientSide()) return;
 		if (!(level instanceof ServerLevel serverLevel)) return;
 		if (getGunState(stack) != GunState.SHOOTING_OR_CHARGING) return;
 
@@ -115,13 +117,13 @@ public abstract class GunbladeItem<T extends BaseProjectile> extends GunItem<T> 
 	}
 
 	@Override
-	public boolean canPerformAction(ItemStack stack, ItemAbility itemAbility) {
-		return GunbladeMode.from(stack).isBlade() && itemAbility != ItemAbilities.SWORD_SWEEP && ItemAbilities.DEFAULT_SWORD_ACTIONS.contains(itemAbility);
+	public boolean canPerformAction(ItemInstance stack, ItemAbility itemAbility) {
+		return stack instanceof ItemStack itemStack && GunbladeMode.from(itemStack).isBlade() && itemAbility != ItemAbilities.SWORD_SWEEP && ModItemAbilities.DEFAULT_SWORD_ACTIONS.contains(itemAbility);
 	}
 
 	@Override
-	public boolean canAttackBlock(BlockState state, Level level, BlockPos pos, Player player) {
-		return !player.isCreative();
+	public boolean canDestroyBlock(ItemStack stack, BlockState state, Level level, BlockPos pos, LivingEntity user) {
+		return !(user instanceof Player player && player.isCreative());
 	}
 
 	@Override
@@ -136,9 +138,8 @@ public abstract class GunbladeItem<T extends BaseProjectile> extends GunItem<T> 
 	}
 
 	@Override
-	public boolean hurtEnemy(ItemStack stack, LivingEntity target, LivingEntity attacker) {
+	public void hurtEnemy(ItemStack stack, LivingEntity target, LivingEntity attacker) {
 		stack.hurtAndBreak(2, attacker, EquipmentSlot.MAINHAND);
-		return true;
 	}
 
 	@Override

@@ -1,5 +1,11 @@
 package com.github.elenterius.biomancy.entity.mob;
 
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.server.level.ServerLevel;
+import com.github.elenterius.biomancy.util.ItemCategoryUtil;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.level.storage.ValueInput;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.entity.mob.ai.goal.controllable.FollowOwnerGoal;
 import com.github.elenterius.biomancy.entity.mob.ai.goal.controllable.*;
@@ -44,6 +50,9 @@ public class FleshkinHumanoid extends OwnableMonster implements ControllableMob<
 	public FleshkinHumanoid(EntityType<? extends Monster> type, Level level) {
 		super(type, level);
 		setCanPickUpLoot(true);
+		for (EquipmentSlot slot : EquipmentSlot.values()) {
+			setDropChance(slot, 2f);
+		}
 	}
 
 	public static AttributeSupplier.Builder createAttributes() {
@@ -90,20 +99,20 @@ public class FleshkinHumanoid extends OwnableMonster implements ControllableMob<
 	}
 
 	@Override
-	public boolean hurt(DamageSource source, float amount) {
-		if (isInvulnerableTo(source)) {
+	public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
+		if (isInvulnerableTo(level, source)) {
 			return false;
 		}
 		else if (getActiveCommand() == Command.SIT) {
 			setActiveCommand(Command.PATROL_AREA);
 		}
-		return super.hurt(source, amount);
+		return super.hurtServer(level, source, amount);
 	}
 
 	public static void displayCommandSetMsg(Player player, Component name, Command newCommand) {
 		MutableComponent cmd = ComponentUtil.literal(newCommand.toString()).withStyle(ChatFormatting.DARK_AQUA);
 		MutableComponent text = TextComponentUtil.getMsgText("set_behavior_command", name, cmd).withStyle(ChatFormatting.WHITE);
-		player.displayClientMessage(text, true);
+		player.sendOverlayMessage(text);
 	}
 
 	@Override
@@ -112,7 +121,7 @@ public class FleshkinHumanoid extends OwnableMonster implements ControllableMob<
 			Item item = player.getMainHandItem().getItem();
 			if (item == Items.DEBUG_STICK ) {
 				setOwner(player);
-				player.displayClientMessage(ComponentUtil.literal("You are now the owner of this creature!").withStyle(ChatFormatting.RED), true);
+				player.sendOverlayMessage(ComponentUtil.literal("You are now the owner of this creature!").withStyle(ChatFormatting.RED));
 			}
 		}
 
@@ -124,7 +133,7 @@ public class FleshkinHumanoid extends OwnableMonster implements ControllableMob<
 			setActiveCommand(newCommand);
 			displayCommandSetMsg(player, getName(), newCommand);
 		}
-		return InteractionResult.sidedSuccess(level().isClientSide());
+		return InteractionResult.SUCCESS;
 	}
 
 	@Override
@@ -148,17 +157,17 @@ public class FleshkinHumanoid extends OwnableMonster implements ControllableMob<
 	}
 
 	@Override
-	public void addAdditionalSaveData(CompoundTag tag) {
-		super.addAdditionalSaveData(tag);
-		tag.putBoolean("IsBaby", isBaby());
-		tag.putByte("GolemCommand", entityData.get(BEHAVIOR_COMMAND));
+	public void addAdditionalSaveData(ValueOutput output) {
+		super.addAdditionalSaveData(output);
+		output.putBoolean("IsBaby", isBaby());
+		output.putByte("GolemCommand", entityData.get(BEHAVIOR_COMMAND));
 	}
 
 	@Override
-	public void readAdditionalSaveData(CompoundTag tag) {
-		super.readAdditionalSaveData(tag);
-		setBaby(tag.getBoolean("IsBaby"));
-		entityData.set(BEHAVIOR_COMMAND, tag.getByte("GolemCommand"));
+	public void readAdditionalSaveData(ValueInput input) {
+		super.readAdditionalSaveData(input);
+		setBaby(input.getBooleanOr("IsBaby", false));
+		entityData.set(BEHAVIOR_COMMAND, input.getByteOr("GolemCommand", (byte) 0));
 	}
 
 	@Override
@@ -175,11 +184,6 @@ public class FleshkinHumanoid extends OwnableMonster implements ControllableMob<
 	}
 
 	@Override
-	protected float getEquipmentDropChance(EquipmentSlot slot) {
-		return 2f;
-	}
-
-	@Override
 	public boolean isBaby() {
 		return entityData.get(IS_CHILD);
 	}
@@ -187,7 +191,7 @@ public class FleshkinHumanoid extends OwnableMonster implements ControllableMob<
 	@Override
 	public void setBaby(boolean isChild) {
 		entityData.set(IS_CHILD, isChild);
-		if (!level().isClientSide) {
+		if (!level().isClientSide()) {
 			AttributeInstance attribute = getAttribute(Attributes.MOVEMENT_SPEED);
 			if (attribute != null) {
 				attribute.removeModifier(SPEED_MODIFIER);
@@ -205,14 +209,14 @@ public class FleshkinHumanoid extends OwnableMonster implements ControllableMob<
 	}
 
 	@Override
-	public boolean wantsToPickUp(ItemStack stack) {
+	public boolean wantsToPickUp(ServerLevel level, ItemStack stack) {
 		Item item = stack.getItem();
-		return (item instanceof ArmorItem || item instanceof TieredItem || item instanceof ShieldItem || item instanceof ProjectileWeaponItem);
+		return (ItemCategoryUtil.isHumanoidArmor(stack) || ItemCategoryUtil.isTieredTool(stack) || item instanceof ShieldItem || item instanceof ProjectileWeaponItem);
 	}
 
 	@Override
-	public boolean canFireProjectileWeapon(ProjectileWeaponItem item) {
-		return item == Items.CROSSBOW;
+	public boolean canUseNonMeleeWeapon(ItemStack item) {
+		return item.is(Items.CROSSBOW);
 	}
 
 	private boolean isChargingCrossbow() {
@@ -224,7 +228,7 @@ public class FleshkinHumanoid extends OwnableMonster implements ControllableMob<
 	}
 
 	public boolean isHoldingMeleeWeapon() {
-		return getMainHandItem().getItem() instanceof TieredItem;
+		return ItemCategoryUtil.isTieredTool(getMainHandItem());
 	}
 
 	@Override

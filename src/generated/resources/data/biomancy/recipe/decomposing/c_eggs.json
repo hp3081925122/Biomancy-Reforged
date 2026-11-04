@@ -1,7 +1,7 @@
 {
   "type": "biomancy:decomposing",
   "ingredient": {
-    "tag": "c:eggs"
+    "ingredient": "#c:eggs"
   },
   "nutrientsCost": 1,
   "processingTime": 60,

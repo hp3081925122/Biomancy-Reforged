@@ -3,15 +3,15 @@
   "bio_forge_tab": "biomancy:tools",
   "ingredients": [
     {
-      "item": "biomancy:grenade_casing"
+      "ingredient": "biomancy:grenade_casing"
     },
     {
       "count": 2,
-      "item": "biomancy:withering_ooze"
+      "ingredient": "biomancy:withering_ooze"
     },
     {
       "count": 2,
-      "item": "biomancy:decaying_additive"
+      "ingredient": "biomancy:decaying_additive"
     }
   ],
   "nutrientsCost": 1,

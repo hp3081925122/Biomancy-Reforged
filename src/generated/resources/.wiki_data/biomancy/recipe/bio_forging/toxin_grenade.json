@@ -2,11 +2,11 @@
   "type": "biomancy:bio_forging",
   "input": {
     "0": {
-      "id": "biomancy:grenade_casing"
+      "ingredient": "biomancy:grenade_casing"
     },
     "1": {
       "count": 12,
-      "id": "biomancy:toxin_extract"
+      "ingredient": "biomancy:toxin_extract"
     }
   },
   "output": {

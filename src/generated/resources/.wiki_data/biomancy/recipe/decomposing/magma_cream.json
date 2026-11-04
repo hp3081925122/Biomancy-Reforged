@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "minecraft:magma_cream"
+      "ingredient": "minecraft:magma_cream"
     }
   },
   "output": {

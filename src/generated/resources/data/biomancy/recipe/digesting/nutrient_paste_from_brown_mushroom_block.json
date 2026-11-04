@@ -1,8 +1,6 @@
 {
   "type": "biomancy:digesting",
-  "ingredient": {
-    "item": "minecraft:brown_mushroom_block"
-  },
+  "ingredient": "minecraft:brown_mushroom_block",
   "nutrientsCost": 3,
   "processingTime": 541,
   "result": {

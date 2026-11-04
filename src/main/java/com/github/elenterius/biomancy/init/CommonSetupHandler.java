@@ -21,12 +21,18 @@ import net.minecraft.world.level.block.DispenserBlock;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.neoforge.event.RegisterCauldronInteractionEvent;
 import net.neoforged.neoforge.event.brewing.RegisterBrewingRecipesEvent;
 
 @EventBusSubscriber(modid = BiomancyMod.MOD_ID)
 public final class CommonSetupHandler {
 
 	private CommonSetupHandler() {}
+
+	@SubscribeEvent
+	public static void onRegisterCauldronDispatchers(final RegisterCauldronInteractionEvent.Dispatcher event) {
+		event.register(AcidInteractions.ACID_CAULDRON_ID, AcidInteractions.ACID_CAULDRON);
+	}
 
 	@SubscribeEvent
 	public static void onSetup(final FMLCommonSetupEvent event) {

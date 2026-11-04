@@ -3,11 +3,11 @@
   "bio_forge_tab": "biomancy:misc",
   "ingredients": [
     {
-      "item": "biomancy:impermeable_membrane"
+      "ingredient": "biomancy:impermeable_membrane"
     },
     {
       "count": 4,
-      "item": "biomancy:hormone_secretion"
+      "ingredient": "biomancy:hormone_secretion"
     }
   ],
   "nutrientsCost": 1,

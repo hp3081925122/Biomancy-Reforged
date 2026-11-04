@@ -1,5 +1,9 @@
 package com.github.elenterius.biomancy.entity.mob.fleshblob;
 
+import java.util.Optional;
+import com.geckolib.constant.DataTickets;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.core.Holder;
@@ -14,7 +18,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.DifficultyInstance;
@@ -31,14 +35,14 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.gameevent.*;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
-import software.bernie.geckolib.animatable.GeoEntity;
-import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.animation.AnimatableManager;
-import software.bernie.geckolib.animation.AnimationController;
-import software.bernie.geckolib.animation.AnimationState;
-import software.bernie.geckolib.animation.RawAnimation;
-import software.bernie.geckolib.animation.PlayState;
-import software.bernie.geckolib.util.GeckoLibUtil;
+import com.geckolib.animatable.GeoEntity;
+import com.geckolib.animatable.instance.AnimatableInstanceCache;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.animation.AnimationController;
+import com.geckolib.animation.state.AnimationTest;
+import com.geckolib.animation.RawAnimation;
+import com.geckolib.animation.object.PlayState;
+import com.geckolib.util.GeckoLibUtil;
 
 import java.util.function.BiConsumer;
 
@@ -71,7 +75,7 @@ public abstract class FleshBlob extends PathfinderMob implements Fleshkin, JumpM
 
 	@Nullable
 	@Override
-	public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType reason, @Nullable SpawnGroupData spawnData) {
+	public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, EntitySpawnReason reason, @Nullable SpawnGroupData spawnData) {
 		if (spawnData instanceof FleshBlobSpawnData data) {
 			setTumorFlags(data.tumorFlags());
 		}
@@ -81,7 +85,7 @@ public abstract class FleshBlob extends PathfinderMob implements Fleshkin, JumpM
 			spawnData = new FleshBlobSpawnData.Tumors(tumorFlags);
 		}
 
-		if (reason == MobSpawnType.SPAWNER) {
+		if (reason == EntitySpawnReason.SPAWNER) {
 			xpReward = 0;
 		}
 
@@ -123,8 +127,8 @@ public abstract class FleshBlob extends PathfinderMob implements Fleshkin, JumpM
 	}
 
 	@Override
-	public float getScale() {
-		return getBlobScale();
+	protected float sanitizeScale(float scale) {
+		return scale * getBlobScale();
 	}
 
 	public float getBlobScale() {
@@ -151,7 +155,7 @@ public abstract class FleshBlob extends PathfinderMob implements Fleshkin, JumpM
 			setHealth(getMaxHealth());
 		}
 
-		if (getSpawnType() != MobSpawnType.SPAWNER) {
+		if (getSpawnType() != EntitySpawnReason.SPAWNER) {
 			xpReward = size;
 		}
 	}
@@ -170,7 +174,7 @@ public abstract class FleshBlob extends PathfinderMob implements Fleshkin, JumpM
 		int flags = 0;
 		if (tumorFactor > 0) {
 			for (TumorFlag flag : TumorFlag.values()) {
-				if (level().random.nextFloat() < tumorFactor) flags = TumorFlag.setFlag(flags, flag);
+				if (level().getRandom().nextFloat() < tumorFactor) flags = TumorFlag.setFlag(flags, flag);
 			}
 		}
 		entityData.set(TUMORS, (byte) flags);
@@ -189,7 +193,7 @@ public abstract class FleshBlob extends PathfinderMob implements Fleshkin, JumpM
 	}
 
 	public void setDancing(boolean dancing) {
-		if (!level().isClientSide) entityData.set(IS_DANCING, dancing);
+		if (!level().isClientSide()) entityData.set(IS_DANCING, dancing);
 	}
 
 	@Nullable
@@ -199,31 +203,39 @@ public abstract class FleshBlob extends PathfinderMob implements Fleshkin, JumpM
 	}
 
 	@Override
-	public void addAdditionalSaveData(CompoundTag tag) {
-		super.addAdditionalSaveData(tag);
-		tag.putByte("Size", getBlobSize());
-		tag.putByte("Tumors", getTumorFlags());
+	public void addAdditionalSaveData(ValueOutput output) {
+		super.addAdditionalSaveData(output);
+		output.putByte("Size", getBlobSize());
+		output.putByte("Tumors", getTumorFlags());
 	}
 
 	@Override
-	public void readAdditionalSaveData(CompoundTag tag) {
-		super.readAdditionalSaveData(tag);
-		setBlobSize(tag.getByte("Size"), false);
-		setTumorFlags(tag.getByte("Tumors"));
+	public void readAdditionalSaveData(ValueInput input) {
+		super.readAdditionalSaveData(input);
+		setBlobSize(input.getByteOr("Size", (byte) 0), false);
+		setTumorFlags(input.getByteOr("Tumors", (byte) 0));
 	}
 
 	@Override
-	protected ResourceKey<LootTable> getDefaultLootTable() {
+	protected void dropFromLootTable(ServerLevel level, DamageSource source, boolean playerKilled) {
+		Optional<ResourceKey<LootTable>> lootTable = getLootTable();
+		if (lootTable.equals(getType().getDefaultLootTable())) {
+			lootTable = getDefaultLootTable();
+		}
+		lootTable.ifPresent(key -> dropFromLootTable(level, source, playerKilled, key));
+	}
+
+	protected Optional<ResourceKey<LootTable>> getDefaultLootTable() {
 		return switch (getBlobSize()) {
-			case 2 -> ModLoot.Entity.FLESH_BLOB_SIZE_2;
-			case 3 -> ModLoot.Entity.FLESH_BLOB_SIZE_3;
-			case 4 -> ModLoot.Entity.FLESH_BLOB_SIZE_4;
-			case 5 -> ModLoot.Entity.FLESH_BLOB_SIZE_5;
-			case 6 -> ModLoot.Entity.FLESH_BLOB_SIZE_6;
-			case 7 -> ModLoot.Entity.FLESH_BLOB_SIZE_7;
-			case 8 -> ModLoot.Entity.FLESH_BLOB_SIZE_8;
-			case 9 -> ModLoot.Entity.FLESH_BLOB_SIZE_9;
-			case 10 -> ModLoot.Entity.FLESH_BLOB_SIZE_10;
+			case 2 -> Optional.of(ModLoot.Entity.FLESH_BLOB_SIZE_2);
+			case 3 -> Optional.of(ModLoot.Entity.FLESH_BLOB_SIZE_3);
+			case 4 -> Optional.of(ModLoot.Entity.FLESH_BLOB_SIZE_4);
+			case 5 -> Optional.of(ModLoot.Entity.FLESH_BLOB_SIZE_5);
+			case 6 -> Optional.of(ModLoot.Entity.FLESH_BLOB_SIZE_6);
+			case 7 -> Optional.of(ModLoot.Entity.FLESH_BLOB_SIZE_7);
+			case 8 -> Optional.of(ModLoot.Entity.FLESH_BLOB_SIZE_8);
+			case 9 -> Optional.of(ModLoot.Entity.FLESH_BLOB_SIZE_9);
+			case 10 -> Optional.of(ModLoot.Entity.FLESH_BLOB_SIZE_10);
 			default -> getType().getDefaultLootTable();
 		};
 	}
@@ -257,7 +269,7 @@ public abstract class FleshBlob extends PathfinderMob implements Fleshkin, JumpM
 	}
 
 	@Override
-	protected void customServerAiStep() {
+	protected void customServerAiStep(ServerLevel level) {
 		jumpMoveHelper.onCustomServerAiStep();
 	}
 
@@ -271,7 +283,7 @@ public abstract class FleshBlob extends PathfinderMob implements Fleshkin, JumpM
 	protected InteractionResult mobInteract(Player player, InteractionHand hand) {
 		ItemStack stack = player.getItemInHand(hand);
 		if (stack.isEmpty()) {
-			if (!level().isClientSide && pettingDelay <= 0) {
+			if (!level().isClientSide() && pettingDelay <= 0) {
 				pettingDelay = random.nextIntBetweenInclusive(10, 20);
 
 				if (this instanceof Enemy) {
@@ -286,7 +298,7 @@ public abstract class FleshBlob extends PathfinderMob implements Fleshkin, JumpM
 				}
 			}
 
-			return InteractionResult.sidedSuccess(level().isClientSide);
+			return InteractionResult.SUCCESS;
 		}
 
 		return super.mobInteract(player, hand);
@@ -310,7 +322,7 @@ public abstract class FleshBlob extends PathfinderMob implements Fleshkin, JumpM
 	@Override
 	public void setJumping(boolean jumping) {
 		super.setJumping(jumping);
-		if (jumping && !isInWaterOrBubble()) {
+		if (jumping && !isInWater()) {
 			playSound(getJumpSound(), getSoundVolume(), ((float) random.nextGaussian() * 0.2f + 1f) * 0.8f);
 		}
 	}
@@ -357,30 +369,30 @@ public abstract class FleshBlob extends PathfinderMob implements Fleshkin, JumpM
 		}
 	}
 
-	protected <T extends FleshBlob> PlayState handleJumpAnimation(AnimationState<T> event) {
-		float jumpPct = jumpMoveHelper.getJumpCompletionPct(event.getPartialTick());
+	protected <T extends FleshBlob> PlayState handleJumpAnimation(AnimationTest<T> event) {
+		float jumpPct = jumpMoveHelper.getJumpCompletionPct(event.getDataOrDefault(DataTickets.PARTIAL_TICK, 0f));
 		if (jumpPct > 0) {
-			event.getController().transitionLength(0);
+			event.controller().setTransitionTicks(0);
 			if (jumpPct <= 0.28f) {
-				event.getController().setAnimation(JUMP_START_ANIMATION);
+				event.controller().setAnimation(JUMP_START_ANIMATION);
 			}
 			else if (jumpPct < 0.72f) {
-				event.getController().setAnimation(JUMP_IN_AIR_ANIMATION);
+				event.controller().setAnimation(JUMP_IN_AIR_ANIMATION);
 			}
 			else {
-				event.getController().setAnimation(JUMP_LAND_ANIMATION);
+				event.controller().setAnimation(JUMP_LAND_ANIMATION);
 			}
 		}
 		else {
-			event.getController().transitionLength(10);
-			event.getController().setAnimation(ON_GROUND_ANIMATION);
+			event.controller().setTransitionTicks(10);
+			event.controller().setAnimation(ON_GROUND_ANIMATION);
 		}
 		return PlayState.CONTINUE;
 	}
 
-	protected <T extends FleshBlob> PlayState handleDanceAnimation(AnimationState<T> state) {
+	protected <T extends FleshBlob> PlayState handleDanceAnimation(AnimationTest<T> state) {
 		if (isDancing()) {
-			state.getController().setAnimation(DANCE_ANIMATION);
+			state.controller().setAnimation(DANCE_ANIMATION);
 			return PlayState.CONTINUE;
 		}
 		return PlayState.STOP;
@@ -388,8 +400,8 @@ public abstract class FleshBlob extends PathfinderMob implements Fleshkin, JumpM
 
 	@Override
 	public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-		controllers.add(new AnimationController<>(this, "jump", 0, this::handleJumpAnimation));
-		controllers.add(new AnimationController<>(this, "dance", 10, this::handleDanceAnimation));
+		controllers.add(new AnimationController<FleshBlob>("jump", 0, this::handleJumpAnimation));
+		controllers.add(new AnimationController<FleshBlob>("dance", 10, this::handleDanceAnimation));
 	}
 
 	@Override

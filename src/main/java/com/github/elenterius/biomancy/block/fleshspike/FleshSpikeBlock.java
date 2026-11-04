@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.block.fleshspike;
 
+import net.minecraft.world.entity.InsideBlockEffectApplier;
 import com.github.elenterius.biomancy.block.base.WaterloggedFacingBlock;
 import com.github.elenterius.biomancy.init.ModBlockProperties;
 import com.github.elenterius.biomancy.init.ModDamageSources;
@@ -83,7 +84,7 @@ public class FleshSpikeBlock extends WaterloggedFacingBlock {
 	}
 
 	@Override
-	public void fallOn(Level level, BlockState state, BlockPos pos, Entity entity, float fallDistance) {
+	public void fallOn(Level level, BlockState state, BlockPos pos, Entity entity, double fallDistance) {
 		if (getFacing(state) == Direction.UP) {
 			int spikes = getSpikes(state);
 			entity.causeFallDamage(fallDistance + 2f, 1f + spikes * 0.5f, ModDamageSources.fallOnSpike(level, pos));
@@ -92,18 +93,18 @@ public class FleshSpikeBlock extends WaterloggedFacingBlock {
 	}
 
 	@Override
-	public void entityInside(BlockState state, Level level, BlockPos pos, Entity entity) {
+	public void entityInside(BlockState state, Level level, BlockPos pos, Entity entity, InsideBlockEffectApplier effectApplier, boolean isPrecise) {
 		if (entity instanceof ItemEntity) return;
 		if (!isEntityInsideDamageArea(level, pos, state, entity)) return;
 
 		Direction direction = getFacing(state);
-		Vec3i normal = direction.getNormal();
+		Vec3i normal = direction.getUnitVec3i();
 		float x = (1 - Math.abs(normal.getX())) * 0.1f;
 		float y = (1 - Math.abs(normal.getY())) * 0.1f;
 		float z = (1 - Math.abs(normal.getZ())) * 0.1f;
 		entity.makeStuckInBlock(state, new Vec3(0.9d - x, 0.9d - y, 0.9d - z));
 
-		if (!level.isClientSide) {
+		if (!level.isClientSide()) {
 			boolean isMovingAwayCorrectly = entity.getMotionDirection() == direction;
 			int spikes = getSpikes(state);
 			entity.hurt(ModDamageSources.impaleBySpike(level, pos), spikes + (!isMovingAwayCorrectly ? 0.5f : 0f));

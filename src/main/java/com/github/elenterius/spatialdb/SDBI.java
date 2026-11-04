@@ -59,7 +59,7 @@ public class SDBI {
 	}
 
 	protected final String getLevelKey(ServerLevel level) {
-		return level.dimension().location().toString();
+		return level.dimension().identifier().toString();
 	}
 
 	protected MVRTreeMap.RTreeCursor<Long> findIntersecting(String levelKey, Spatial boundingBox) {

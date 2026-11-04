@@ -10,18 +10,25 @@ import dev.latvian.mods.kubejs.recipe.component.RecipeComponentType;
 import dev.latvian.mods.kubejs.recipe.filter.RecipeMatchContext;
 import dev.latvian.mods.kubejs.recipe.match.ReplacementMatchInfo;
 import dev.latvian.mods.rhino.type.TypeInfo;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.Map;
 
-public record VariableOutputComponent(RecipeComponentType<?> type) implements RecipeComponent<VariableOutput> {
+public record VariableOutputComponent() implements RecipeComponent<VariableOutput> {
 
 	public static final String COUNT_RANGE_KEY = "countRange";
 
-	public static final RecipeComponentType<VariableOutput> TYPE = RecipeComponentType.unit(BiomancyMod.rl("variable_output"), VariableOutputComponent::new);
+	public static final ResourceKey<RecipeComponentType<?>> TYPE = RecipeComponentType.key(BiomancyMod.rl("variable_output"));
+	public static final VariableOutputComponent INSTANCE = new VariableOutputComponent();
 
 	private static RecipeComponent<ItemStack> itemStackComponent() {
-		return ItemStackComponent.ITEM_STACK.instance();
+		return ItemStackComponent.ITEM_STACK;
+	}
+
+	@Override
+	public ResourceKey<RecipeComponentType<?>> type() {
+		return TYPE;
 	}
 
 	@Override
@@ -57,7 +64,7 @@ public record VariableOutputComponent(RecipeComponentType<?> type) implements Re
 
 	@Override
 	public String toString() {
-		return type.toString();
+		return TYPE.identifier().toString();
 	}
 
 }

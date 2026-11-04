@@ -4,7 +4,7 @@ import com.github.elenterius.biomancy.world.mound.decorator.ChamberDecorators;
 import com.github.elenterius.spatialdb.geometry.OctantEllipsoidShape;
 import com.github.elenterius.spatialdb.geometry.SphereShape;
 import net.minecraft.util.RandomSource;
-import net.minecraft.util.random.SimpleWeightedRandomList;
+import net.minecraft.util.random.WeightedList;
 
 import java.util.function.Consumer;
 
@@ -82,7 +82,7 @@ public interface ChamberFactory {
 		wrappedConsumer.accept(new MoundChamber(new OctantEllipsoidShape(x - p, y - p - offset, z - p, quarterR, quarterR, quarterR, halfR, halfR, halfR)));
 	};
 
-	SimpleWeightedRandomList<ChamberFactory> RANDOM_DEFAULTS_LIST = SimpleWeightedRandomList.<ChamberFactory>builder()
+	WeightedList<ChamberFactory> RANDOM_DEFAULTS_LIST = WeightedList.<ChamberFactory>builder()
 			.add(ONE_SPHERE, 5)
 			.add(ONE_BIG_FOUR_SMALL_ELLIPSOIDS, 20)
 			.add(FOUR_SMALL_ONE_BIG_ELLIPSOIDS, 20)
@@ -91,7 +91,7 @@ public interface ChamberFactory {
 			.build();
 
 	ChamberFactory RANDOM_DEFAULT = (double x, double y, double z, float chamberRadius, RandomSource random, Consumer<MoundChamber> consumer) -> {
-		ChamberFactory factory = RANDOM_DEFAULTS_LIST.getRandomValue(random).orElse(ChamberFactory.EIGHT_SMALL_ELLIPSOIDS);
+		ChamberFactory factory = RANDOM_DEFAULTS_LIST.getRandom(random).orElse(ChamberFactory.EIGHT_SMALL_ELLIPSOIDS);
 
 		Consumer<MoundChamber> wrappedConsumer = chamber -> {
 			chamber.setDecorator(ChamberDecorators.getRandomDefault(random), random.nextInt());

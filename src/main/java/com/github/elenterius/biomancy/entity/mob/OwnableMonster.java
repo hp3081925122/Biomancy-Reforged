@@ -1,5 +1,10 @@
 package com.github.elenterius.biomancy.entity.mob;
 
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.EntityReference;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.core.UUIDUtil;
 import org.jspecify.annotations.Nullable;
 import net.minecraft.world.scores.PlayerTeam;
 import com.github.elenterius.biomancy.util.ownable.OwnableMob;
@@ -15,7 +20,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.GameRules;
+import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
 
@@ -24,7 +29,7 @@ import java.util.UUID;
 
 public abstract class OwnableMonster extends Monster implements OwnableMob {
 
-	protected static final EntityDataAccessor<Optional<UUID>> OWNER_UNIQUE_ID = SynchedEntityData.defineId(OwnableMonster.class, EntityDataSerializers.OPTIONAL_UUID);
+	protected static final EntityDataAccessor<Optional<EntityReference<LivingEntity>>> OWNER_UNIQUE_ID = SynchedEntityData.defineId(OwnableMonster.class, EntityDataSerializers.OPTIONAL_LIVING_ENTITY_REFERENCE);
 
 	protected OwnableMonster(EntityType<? extends Monster> type, Level level) {
 		super(type, level);
@@ -37,23 +42,18 @@ public abstract class OwnableMonster extends Monster implements OwnableMob {
 	}
 
 	@Override
-	public void addAdditionalSaveData(CompoundTag compound) {
-		super.addAdditionalSaveData(compound);
-		getOptionalOwnerUUID().ifPresent(value -> compound.putUUID("OwnerUUID", value));
+	public void addAdditionalSaveData(ValueOutput output) {
+		super.addAdditionalSaveData(output);
+		getOptionalOwnerUUID().ifPresent(value -> output.store("OwnerUUID", UUIDUtil.CODEC, value));
 	}
 
 	@Override
-	public void readAdditionalSaveData(CompoundTag compound) {
-		super.readAdditionalSaveData(compound);
-		if (compound.hasUUID("OwnerUUID")) {
-			setOwner(compound.getUUID("OwnerUUID"));
+	public void readAdditionalSaveData(ValueInput input) {
+		super.readAdditionalSaveData(input);
+		if (input.read("OwnerUUID", UUIDUtil.CODEC).isPresent()) {
+			setOwner(input.read("OwnerUUID", UUIDUtil.CODEC).orElseThrow());
 		}
 		else removeOwner();
-	}
-
-	@Override
-	protected boolean shouldDespawnInPeaceful() {
-		return false;
 	}
 
 	@Override
@@ -68,12 +68,12 @@ public abstract class OwnableMonster extends Monster implements OwnableMob {
 
 	@Override
 	public Optional<UUID> getOptionalOwnerUUID() {
-		return entityData.get(OWNER_UNIQUE_ID);
+		return entityData.get(OWNER_UNIQUE_ID).map(EntityReference::getUUID);
 	}
 
 	@Override
 	public void setOwner(UUID uuid) {
-		entityData.set(OWNER_UNIQUE_ID, Optional.of(uuid));
+		entityData.set(OWNER_UNIQUE_ID, Optional.of(EntityReference.of(uuid)));
 	}
 
 	@Override
@@ -101,18 +101,18 @@ public abstract class OwnableMonster extends Monster implements OwnableMob {
 	}
 
 	@Override
-	public boolean isAlliedTo(Entity entity) {
+	protected boolean considersEntityAsAlly(Entity entity) {
 		Optional<Player> optional = getOwnerAsPlayer();
 		if (optional.isPresent()) {
 			if (optional.get() == entity) return true;
 			return optional.get().isAlliedTo(entity);
 		}
-		return super.isAlliedTo(entity);
+		return super.considersEntityAsAlly(entity);
 	}
 
 	@Override
 	public void die(DamageSource cause) {
-		if (!level().isClientSide && level().getGameRules().getBoolean(GameRules.RULE_SHOWDEATHMESSAGES)) {
+		if (level() instanceof ServerLevel serverLevel && serverLevel.getGameRules().get(GameRules.SHOW_DEATH_MESSAGES)) {
 			Optional<Player> optional = getOwnerAsPlayer();
 			if (optional.isPresent() && optional.get() instanceof ServerPlayer) {
 				optional.get().sendSystemMessage(getCombatTracker().getDeathMessage());

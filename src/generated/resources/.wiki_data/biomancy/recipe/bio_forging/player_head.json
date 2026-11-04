@@ -2,21 +2,21 @@
   "type": "biomancy:bio_forging",
   "input": {
     "0": {
-      "id": "minecraft:skeleton_skull"
+      "ingredient": "minecraft:skeleton_skull"
     },
     "1": {
-      "id": "biomancy:essence",
-      "nbt": {
+      "ingredient": {
+        "neoforge:ingredient_type": "biomancy:essence",
         "entity_type": "minecraft:player"
       }
     },
     "2": {
       "count": 38,
-      "id": "biomancy:flesh_bits"
+      "ingredient": "biomancy:flesh_bits"
     },
     "3": {
       "count": 15,
-      "id": "biomancy:elastic_fibers"
+      "ingredient": "biomancy:elastic_fibers"
     }
   },
   "output": {

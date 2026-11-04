@@ -3,23 +3,23 @@
   "input": {
     "0": {
       "count": 30,
-      "id": "biomancy:nutrients"
+      "ingredient": "biomancy:nutrients"
     },
     "1": {
       "count": 4,
-      "id": "biomancy:organic_matter"
+      "ingredient": "biomancy:organic_matter"
     },
     "2": {
       "count": 6,
-      "id": "biomancy:hormone_secretion"
+      "ingredient": "biomancy:hormone_secretion"
     },
     "3": {
       "count": 4,
-      "id": "biomancy:mineral_fragment"
+      "ingredient": "biomancy:mineral_fragment"
     },
     "4": {
       "count": 4,
-      "id": "biomancy:regenerative_fluid"
+      "ingredient": "biomancy:regenerative_fluid"
     }
   },
   "output": {

@@ -2,17 +2,15 @@
   "type": "biomancy:bio_brewing",
   "ingredients": [
     {
-      "item": "biomancy:decaying_additive"
+      "ingredient": "biomancy:decaying_additive"
     },
     {
-      "item": "biomancy:healing_additive"
+      "ingredient": "biomancy:healing_additive"
     }
   ],
   "nutrientsCost": 2,
   "processingTime": 160,
-  "reactant": {
-    "item": "biomancy:exotic_compound"
-  },
+  "reactant": "biomancy:exotic_compound",
   "result": {
     "id": "biomancy:cleansing_serum"
   }

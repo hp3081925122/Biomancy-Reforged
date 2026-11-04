@@ -1,5 +1,7 @@
 package com.github.elenterius.biomancy.entity.mob;
 
+import java.util.Optional;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.resources.ResourceKey;
 import com.github.elenterius.biomancy.init.ModEntityTypes;
@@ -17,7 +19,7 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.animal.Animal;
-import net.minecraft.world.entity.animal.Sheep;
+import net.minecraft.world.entity.animal.sheep.Sheep;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.DyeColor;
@@ -26,13 +28,13 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.gameevent.GameEvent;
 import org.jspecify.annotations.Nullable;
-import software.bernie.geckolib.animatable.GeoEntity;
-import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.animation.AnimatableManager;
-import software.bernie.geckolib.animation.AnimationController;
-import software.bernie.geckolib.animation.RawAnimation;
-import software.bernie.geckolib.animation.PlayState;
-import software.bernie.geckolib.util.GeckoLibUtil;
+import com.geckolib.animatable.GeoEntity;
+import com.geckolib.animatable.instance.AnimatableInstanceCache;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.animation.AnimationController;
+import com.geckolib.animation.RawAnimation;
+import com.geckolib.animation.object.PlayState;
+import com.geckolib.util.GeckoLibUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -56,14 +58,14 @@ public class FleshSheep extends Sheep implements GeoEntity {
 	}
 
 	@Override
-	public void shear(SoundSource soundSource) {
+	public void shear(ServerLevel level, SoundSource soundSource, ItemStack tool) {
 		level().playSound(null, this, SoundEvents.SHEEP_SHEAR, soundSource, 1f, 1f);
 
 		setSheared(true);
 
 		int count = random.nextIntBetweenInclusive(1, 4);
 		for (int i = 0; i < count; i++) {
-			ItemEntity itemEntity = spawnAtLocation(ModItems.FLESH_BITS.get(), 1);
+			ItemEntity itemEntity = spawnAtLocation(level, new ItemStack(ModItems.FLESH_BITS.get()), 1f);
 			if (itemEntity != null) {
 				itemEntity.setDeltaMovement(itemEntity.getDeltaMovement().add(
 						(random.nextFloat() - random.nextFloat()) * 0.1f,
@@ -75,7 +77,7 @@ public class FleshSheep extends Sheep implements GeoEntity {
 
 		count = random.nextIntBetweenInclusive(2, 4);
 		for (int i = 0; i < count; i++) {
-			ItemEntity itemEntity = spawnAtLocation(Items.STRING, 1);
+			ItemEntity itemEntity = spawnAtLocation(level, new ItemStack(Items.STRING), 1f);
 			if (itemEntity != null) {
 				itemEntity.setDeltaMovement(itemEntity.getDeltaMovement().add(
 						(random.nextFloat() - random.nextFloat()) * 0.1f,
@@ -91,7 +93,7 @@ public class FleshSheep extends Sheep implements GeoEntity {
 		world.playSound(null, this, SoundEvents.SHEEP_SHEAR, player == null ? SoundSource.BLOCKS : SoundSource.PLAYERS, 1f, 1f);
 		gameEvent(GameEvent.SHEAR, player);
 
-		if (!world.isClientSide) {
+		if (!world.isClientSide()) {
 			setSheared(true);
 
 			List<ItemStack> list = new ArrayList<>();
@@ -112,9 +114,17 @@ public class FleshSheep extends Sheep implements GeoEntity {
 		return List.of();
 	}
 
+	protected Optional<ResourceKey<LootTable>> getDefaultLootTable() {
+		return isSheared() ? getType().getDefaultLootTable() : Optional.of(ModLoot.Entity.FLESH_SHEEP_UNSHORN);
+	}
+
 	@Override
-	public ResourceKey<LootTable> getDefaultLootTable() {
-		return isSheared() ? getType().getDefaultLootTable() : ModLoot.Entity.FLESH_SHEEP_UNSHORN;
+	protected void dropFromLootTable(ServerLevel level, DamageSource source, boolean playerKilled) {
+		Optional<ResourceKey<LootTable>> lootTable = getLootTable();
+		if (lootTable.equals(getType().getDefaultLootTable())) {
+			lootTable = getDefaultLootTable();
+		}
+		lootTable.ifPresent(key -> dropFromLootTable(level, source, playerKilled, key));
 	}
 
 	@Nullable
@@ -124,7 +134,7 @@ public class FleshSheep extends Sheep implements GeoEntity {
 			return (Sheep) otherParent.getBreedOffspring(level, this);
 		}
 
-		return ModEntityTypes.FLESH_SHEEP.get().create(level);
+		return ModEntityTypes.FLESH_SHEEP.get().create(level, EntitySpawnReason.BREEDING);
 	}
 
 	@Override
@@ -168,18 +178,18 @@ public class FleshSheep extends Sheep implements GeoEntity {
 		public static final RawAnimation SHEARED_ANIMATION = RawAnimation.begin().thenPlay("sheared");
 
 		public static <T extends Sheep & GeoEntity> AnimationController<T> grazingController(T geoEntity) {
-			return new AnimationController<>(geoEntity, "grazing", state -> {
-				if (getEatAnimationTick(state.getAnimatable()) > 0) {
+			return new AnimationController<>("grazing", state -> {
+				if (getEatAnimationTick(state.animatable()) > 0) {
 					return state.setAndContinue(GRAZING_ANIMATION);
 				}
 
-				state.resetCurrentAnimation();
+				state.controller().reset();
 				return PlayState.STOP;
 			});
 		}
 
 		public static <T extends Sheep & GeoEntity> AnimationController<T> shearedController(T geoEntity) {
-			return new AnimationController<>(geoEntity, "sheared", state -> {
+			return new AnimationController<>("sheared", state -> {
 				if (geoEntity.isSheared()) {
 					return state.setAndContinue(SHEARED_ANIMATION);
 				}

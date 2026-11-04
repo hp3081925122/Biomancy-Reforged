@@ -18,7 +18,6 @@
       "translate": "advancements.biomancy.genetic_compounds.description"
     },
     "icon": {
-      "count": 1,
       "id": "biomancy:genetic_compound"
     },
     "title": {

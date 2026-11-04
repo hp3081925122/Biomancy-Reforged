@@ -1,5 +1,7 @@
 package com.github.elenterius.biomancy.client.gui;
 
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.core.component.DataComponents;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.api.serum.Serum;
@@ -11,31 +13,27 @@ import com.github.elenterius.biomancy.styles.ColorStyles;
 import com.github.elenterius.biomancy.styles.TextStyles;
 import com.github.elenterius.biomancy.util.ComponentUtil;
 import com.mojang.blaze3d.platform.InputConstants;
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.*;
 import it.unimi.dsi.fastutil.objects.Object2IntArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.ObjectArraySet;
 import it.unimi.dsi.fastutil.objects.ObjectSet;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import org.joml.Matrix4f;
 
 public class InjectorScreen extends Screen {
 
-	public static final ResourceLocation ICONS = BiomancyMod.rl("textures/gui/wheel_icons.png");
+	public static final Identifier ICONS = BiomancyMod.rl("textures/gui/wheel_icons.png");
 
 	public static final int CANCEL_ID = -1;
 	public static final int CLEAR_ID = -2;
@@ -65,7 +63,7 @@ public class InjectorScreen extends Screen {
 
 		double x = minecraft.getWindow().getScreenWidth() / 2d;
 		double y = minecraft.getWindow().getScreenHeight() / 2d - 16;
-		InputConstants.grabOrReleaseMouse(minecraft.getWindow().getWindow(), 212993, x, y);
+		InputConstants.grabOrReleaseMouse(minecraft.getWindow(), 212993, x, y);
 	}
 
 	@Override
@@ -102,7 +100,10 @@ public class InjectorScreen extends Screen {
 	}
 
 	@Override
-	public boolean mouseClicked(double mouseX, double mouseY, int button) {
+	public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+		double mouseX = event.x();
+		double mouseY = event.y();
+		int button = event.button();
 		if (cachedStacks == null || cachedStacks.isEmpty()) {
 			onClose();
 			return false;
@@ -141,7 +142,7 @@ public class InjectorScreen extends Screen {
 	}
 
 	@Override
-	public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+	public void extractRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
 		if (ticks < 0) return;
 		float time = ticks + partialTick;
 		if (time > TRANSITION_DURATION_TICKS) {
@@ -150,7 +151,7 @@ public class InjectorScreen extends Screen {
 		renderWheel(guiGraphics, mouseX, mouseY, time / TRANSITION_DURATION_TICKS);
 	}
 
-	private void renderWheel(GuiGraphics guiGraphics, int mouseX, int mouseY, float pct) {
+	private void renderWheel(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float pct) {
 		if (cachedStacks == null || cachedStacks.isEmpty()) return;
 
 		int blitOffset = 0;
@@ -190,13 +191,13 @@ public class InjectorScreen extends Screen {
 
 			ItemStack currentStack = entry.getKey();
 			if (currentStack == CLEAR_DUMMY_STACK) {
-				guiGraphics.blit(ICONS, Mth.floor(v - 8), Mth.floor(w - 8), 0, 0, 16, 16, 32, 16);
+				guiGraphics.blit(RenderPipelines.GUI_TEXTURED, ICONS, Mth.floor(v - 8), Mth.floor(w - 8), 0, 0, 16, 16, 32, 16);
 			}
 			else if (currentStack == CANCEL_DUMMY_STACK) {
-				guiGraphics.blit(ICONS, Mth.floor(v - 8), Mth.floor(w - 8), 16, 0, 16, 16, 32, 16);
+				guiGraphics.blit(RenderPipelines.GUI_TEXTURED, ICONS, Mth.floor(v - 8), Mth.floor(w - 8), 16, 0, 16, 16, 32, 16);
 			}
 			else {
-				guiGraphics.renderFakeItem(currentStack, Mth.floor(v - 8), Mth.floor(w - 8));
+				guiGraphics.fakeItem(currentStack, Mth.floor(v - 8), Mth.floor(w - 8));
 			}
 
 			if (isMouseInSection) {
@@ -238,8 +239,8 @@ public class InjectorScreen extends Screen {
 		drawItemLabel(guiGraphics, xt, yt, blitOffset, text, lineWidth);
 	}
 
-	private void drawItemLabel(GuiGraphics guiGraphics, float x, float y, int zDepth, Component text, int lineWidth) {
-		guiGraphics.pose().pushPose();
+	private void drawItemLabel(GuiGraphicsExtractor guiGraphics, float x, float y, int zDepth, Component text, int lineWidth) {
+		guiGraphics.pose().pushMatrix();
 
 		int minX = (int) x;
 		int minY = (int) (y - font.lineHeight / 2f);
@@ -247,31 +248,20 @@ public class InjectorScreen extends Screen {
 		int maxY = (int) (y + font.lineHeight / 2f);
 
 		GuiRenderUtil.fill(guiGraphics, minX - 3f, minY - 3f, maxX + 2f, maxY + 1.5f, zDepth, ColorStyles.GENERIC_TOOLTIP.backgroundColor() & 0xE0_FFFFFF);
-		guiGraphics.drawString(font, text, minX, minY, ColorStyles.WHITE_ARGB, true);
+		guiGraphics.text(font, text, minX, minY, ColorStyles.WHITE_ARGB, true);
 
-		guiGraphics.pose().popPose();
+		guiGraphics.pose().popMatrix();
 	}
 
-	public void drawSegment(GuiGraphics guiGraphics, float x, float y, float radius, float startAngle, float endAngle, int argbColor, int blitOffset) {
-		Matrix4f matrix4f = guiGraphics.pose().last().pose();
-
-		RenderSystem.enableBlend();
-		RenderSystem.defaultBlendFunc();
-		RenderSystem.setShader(GameRenderer::getPositionColorShader);
-
-		BufferBuilder bufferBuilder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLE_FAN, DefaultVertexFormat.POSITION_COLOR);
-
+	public void drawSegment(GuiGraphicsExtractor guiGraphics, float x, float y, float radius, float startAngle, float endAngle, int argbColor, int blitOffset) {
 		float innerRadius = Math.max(radius - 16, 0);
-		bufferBuilder.addVertex(matrix4f, x + innerRadius * Mth.cos(startAngle), y + innerRadius * Mth.sin(startAngle), blitOffset).setColor(argbColor);
-		bufferBuilder.addVertex(matrix4f, x + innerRadius * Mth.cos(endAngle), y + innerRadius * Mth.sin(endAngle), blitOffset).setColor(argbColor);
-
 		float outerRadius = radius + 16;
-		bufferBuilder.addVertex(matrix4f, x + outerRadius * Mth.cos(endAngle), y + outerRadius * Mth.sin(endAngle), blitOffset).setColor(argbColor);
-		bufferBuilder.addVertex(matrix4f, x + outerRadius * Mth.cos(startAngle), y + outerRadius * Mth.sin(startAngle), blitOffset).setColor(argbColor);
-
-		BufferUploader.drawWithShader(bufferBuilder.buildOrThrow());
-
-		RenderSystem.disableBlend();
+		GuiRenderUtil.fillQuad(guiGraphics,
+				x + innerRadius * Mth.cos(startAngle), y + innerRadius * Mth.sin(startAngle),
+				x + innerRadius * Mth.cos(endAngle), y + innerRadius * Mth.sin(endAngle),
+				x + outerRadius * Mth.cos(endAngle), y + outerRadius * Mth.sin(endAngle),
+				x + outerRadius * Mth.cos(startAngle), y + outerRadius * Mth.sin(startAngle),
+				argbColor);
 	}
 
 	private Object2IntMap<ItemStack> findSerumStacks(LocalPlayer player) {

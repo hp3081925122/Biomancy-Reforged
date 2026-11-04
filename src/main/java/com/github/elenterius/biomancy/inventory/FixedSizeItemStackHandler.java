@@ -1,10 +1,8 @@
 package com.github.elenterius.biomancy.inventory;
 
-import net.minecraft.core.HolderLookup;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.Tag;
-import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.ContainerHelper;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.neoforged.neoforge.items.ItemStackHandler;
 
 public class FixedSizeItemStackHandler extends ItemStackHandler implements SerializableItemHandler {
@@ -14,37 +12,14 @@ public class FixedSizeItemStackHandler extends ItemStackHandler implements Seria
 	}
 
 	@Override
-	public CompoundTag serializeNBT(HolderLookup.Provider provider) {
-		ListTag list = new ListTag();
-
-		for (int i = 0; i < stacks.size(); i++) {
-			if (stacks.get(i).isEmpty()) continue;
-
-			CompoundTag itemTag = new CompoundTag();
-			itemTag.putInt("Slot", i);
-			list.add(stacks.get(i).save(provider, itemTag));
-		}
-
-		CompoundTag tag = new CompoundTag();
-		tag.put("Items", list);
-		return tag;
+	public void serialize(ValueOutput output) {
+		ContainerHelper.saveAllItems(output, stacks);
 	}
 
 	@Override
-	public void deserializeNBT(HolderLookup.Provider provider, CompoundTag tag) {
+	public void deserialize(ValueInput input) {
 		setSize(stacks.size());
-
-		ListTag list = tag.getList("Items", Tag.TAG_COMPOUND);
-
-		for (int i = 0; i < list.size(); i++) {
-			CompoundTag itemTag = list.getCompound(i);
-			int slotIndex = itemTag.getInt("Slot");
-
-			if (slotIndex >= 0 && slotIndex < stacks.size()) {
-				stacks.set(slotIndex, ItemStack.parse(provider, itemTag).orElse(ItemStack.EMPTY));
-			}
-		}
-
+		ContainerHelper.loadAllItems(input, stacks);
 		onLoad();
 	}
 

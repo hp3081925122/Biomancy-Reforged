@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.entity.projectile;
 
+import net.minecraft.server.level.ServerLevel;
 import com.github.elenterius.biomancy.init.ModDamageSources;
 import com.github.elenterius.biomancy.init.ModItems;
 import com.github.elenterius.biomancy.util.shooting.ProjectileEntityType;
@@ -36,8 +37,8 @@ public class ToothProjectile extends BaseProjectile implements ItemSupplier {
 		}
 
 		DamageSource damageSource = ModDamageSources.toothProjectile(level(), this, shooter);
-		boolean success = victim.hurt(damageSource, getDamage());
-		if (success && victim instanceof LivingEntity && !level().isClientSide) {
+		boolean success = victim.hurtOrSimulate(damageSource, getDamage());
+		if (success && victim instanceof LivingEntity && !level().isClientSide()) {
 			if (getKnockback() > 0) {
 				Vec3 vector3d = getDeltaMovement().multiply(1, 0, 1).normalize().scale(getKnockback() * 0.6d);
 				if (vector3d.lengthSqr() > 0d) {
@@ -50,7 +51,7 @@ public class ToothProjectile extends BaseProjectile implements ItemSupplier {
 			}
 
 			if (!isSilent() && victim != shooter && victim instanceof Player && shooter instanceof ServerPlayer serverPlayer) {
-				serverPlayer.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.ARROW_HIT_PLAYER, 0f));
+				serverPlayer.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.PLAY_ARROW_HIT_SOUND, 0f));
 			}
 		}
 		playSound(SoundEvents.ARROW_HIT, 1f, 1.2f / (random.nextFloat() * 0.2f + 0.9f));
@@ -63,7 +64,7 @@ public class ToothProjectile extends BaseProjectile implements ItemSupplier {
 	}
 
 	@Override
-	public boolean hurt(DamageSource source, float amount) {
+	public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
 		return false;
 	}
 

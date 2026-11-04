@@ -1,5 +1,8 @@
 package com.github.elenterius.biomancy.crafting.recipe;
 
+import net.minecraft.core.HolderLookup;
+import net.minecraft.world.item.crafting.RecipeBookCategory;
+import net.minecraft.world.item.crafting.Recipe;
 import com.github.elenterius.biomancy.crafting.IngredientStack;
 import com.github.elenterius.biomancy.crafting.VariableOutput;
 import com.github.elenterius.biomancy.init.ModItems;
@@ -8,7 +11,6 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -62,17 +64,15 @@ public class DecomposingRecipe extends StaticProcessingRecipe {
 		return true;
 	}
 
-	@Override
 	public ItemStack getResultItem(HolderLookup.Provider registries) {
 		return outputs.get(0).getItemStack();
 	}
 
 	@Override
-	public ItemStack assemble(RecipeInput input, HolderLookup.Provider registries) {
+	public ItemStack assemble(RecipeInput input) {
 		return outputs.get(0).getItemStack().copy();
 	}
 
-	@Override
 	public boolean canCraftInDimensions(int width, int height) {
 		return width * height == 1;
 	}
@@ -91,21 +91,25 @@ public class DecomposingRecipe extends StaticProcessingRecipe {
 	}
 
 	@Override
-	public RecipeSerializer<?> getSerializer() {
+	public RecipeSerializer<? extends Recipe<RecipeInput>> getSerializer() {
 		return ModRecipes.DECOMPOSING_SERIALIZER.get();
 	}
 
 	@Override
-	public RecipeType<?> getType() {
+	public RecipeType<? extends Recipe<RecipeInput>> getType() {
 		return ModRecipes.DECOMPOSING_RECIPE_TYPE.get();
 	}
 
-	@Override
 	public ItemStack getToastSymbol() {
 		return new ItemStack(ModItems.DECOMPOSER.get());
 	}
 
-	public static class Serializer implements RecipeSerializer<DecomposingRecipe> {
+	@Override
+	public RecipeBookCategory recipeBookCategory() {
+		return ModRecipes.DECOMPOSING_CATEGORY.get();
+	}
+
+	public static final class Serializer {
 
 		private static final Codec<List<VariableOutput>> OUTPUTS_CODEC = VariableOutput.CODEC.listOf().validate(list -> list.size() > MAX_OUTPUTS
 				? DataResult.error(() -> "Too many outputs for decomposing recipe. Max amount is %d".formatted(MAX_OUTPUTS))
@@ -126,12 +130,12 @@ public class DecomposingRecipe extends StaticProcessingRecipe {
 				(ingredient, time, cost, outputs) -> new DecomposingRecipe(outputs, ingredient, time, cost)
 		);
 
-		@Override
+		public static final RecipeSerializer<DecomposingRecipe> INSTANCE = new RecipeSerializer<>(CODEC, STREAM_CODEC);
+
 		public MapCodec<DecomposingRecipe> codec() {
 			return CODEC;
 		}
 
-		@Override
 		public StreamCodec<RegistryFriendlyByteBuf, DecomposingRecipe> streamCodec() {
 			return STREAM_CODEC;
 		}

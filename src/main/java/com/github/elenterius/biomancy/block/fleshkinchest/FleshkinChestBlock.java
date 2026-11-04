@@ -1,5 +1,13 @@
 package com.github.elenterius.biomancy.block.fleshkinchest;
 
+import net.minecraft.util.ProblemReporter;
+import net.minecraft.world.level.storage.TagValueInput;
+import com.github.elenterius.biomancy.block.base.BlockTooltipProvider;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
+import net.minecraft.world.level.ScheduledTickAccess;
+import net.minecraft.core.UUIDUtil;
+import net.minecraft.world.item.component.TooltipDisplay;
+import java.util.function.Consumer;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
@@ -8,7 +16,7 @@ import net.minecraft.core.component.DataComponents;
 import com.github.elenterius.biomancy.util.BlockItemUtil;
 import net.minecraft.world.item.Item;
 import com.github.elenterius.biomancy.util.InteractionUtil;
-import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.InteractionResult;
 import com.github.elenterius.biomancy.init.ModBlockEntities;
 import com.github.elenterius.biomancy.init.ModSoundEvents;
 import com.github.elenterius.biomancy.item.EssenceItem;
@@ -19,7 +27,7 @@ import com.github.elenterius.biomancy.util.permission.Actions;
 import com.github.elenterius.biomancy.util.permission.IRestrictedInteraction;
 import com.github.elenterius.biomancy.util.permission.UserType;
 import net.minecraft.ChatFormatting;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -54,7 +62,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
-import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.level.pathfinder.PathComputationType;
@@ -70,11 +77,11 @@ import org.jspecify.annotations.Nullable;
 import java.util.List;
 import java.util.UUID;
 
-public class FleshkinChestBlock extends BaseEntityBlock implements SimpleWaterloggedBlock, OwnableEntityBlock {
+public class FleshkinChestBlock extends BaseEntityBlock implements BlockTooltipProvider, SimpleWaterloggedBlock, OwnableEntityBlock {
 
 	public static final MapCodec<FleshkinChestBlock> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(propertiesCodec(), Codec.FLOAT.fieldOf("destroy_speed").forGetter(block -> block.destroySpeed)).apply(instance, FleshkinChestBlock::new));
 
-	public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
+	public static final EnumProperty<Direction> FACING = BlockStateProperties.HORIZONTAL_FACING;
 	public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
 
 	public static final VoxelShape SHAPE_NORTH_OR_SOUTH = Block.box(0, 0, 1, 16, 13, 15);
@@ -96,8 +103,8 @@ public class FleshkinChestBlock extends BaseEntityBlock implements SimpleWaterlo
 		ItemStack stack = new ItemStack(this);
 		stack.set(DataComponents.CUSTOM_NAME, ComponentUtil.literal("[TEST/other_owner] ").append(stack.getHoverName()));
 		CompoundTag tag = new CompoundTag();
-		tag.putUUID(OwnableEntityBlock.NBT_KEY_OWNER, Util.NIL_UUID);
-		BlockItem.setBlockEntityData(stack, ModBlockEntities.FLESHKIN_CHEST.get(), tag);
+		tag.store(OwnableEntityBlock.NBT_KEY_OWNER, UUIDUtil.CODEC, Util.NIL_UUID);
+		BlockItemUtil.setBlockEntityData(stack, ModBlockEntities.FLESHKIN_CHEST.get(), tag);
 		return stack;
 	}
 
@@ -130,11 +137,11 @@ public class FleshkinChestBlock extends BaseEntityBlock implements SimpleWaterlo
 	}
 
 	@Override
-	public BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor level, BlockPos currentPos, BlockPos neighborPos) {
+	public BlockState updateShape(BlockState state, LevelReader level, ScheduledTickAccess ticks, BlockPos currentPos, Direction direction, BlockPos neighborPos, BlockState neighborState, RandomSource random) {
 		if (Boolean.TRUE.equals(state.getValue(WATERLOGGED))) {
-			level.scheduleTick(currentPos, Fluids.WATER, Fluids.WATER.getTickDelay(level));
+			ticks.scheduleTick(currentPos, Fluids.WATER, Fluids.WATER.getTickDelay(level));
 		}
-		return super.updateShape(state, direction, neighborState, level, currentPos, neighborPos);
+		return super.updateShape(state, level, ticks, currentPos, direction, neighborPos, neighborState, random);
 	}
 
 	@Override
@@ -143,7 +150,7 @@ public class FleshkinChestBlock extends BaseEntityBlock implements SimpleWaterlo
 	}
 
 	@Override
-	protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+	protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
 		return InteractionUtil.toItemInteractionResult(use(state, level, pos, player, hand, hit));
 	}
 
@@ -161,12 +168,12 @@ public class FleshkinChestBlock extends BaseEntityBlock implements SimpleWaterlo
 							boolean success = essenceItem.getEntityUUID(stack).map(chest::addUser).orElse(false);
 							if (success) {
 								stack.shrink(1);
-								level.playSound(null, pos, ModSoundEvents.FLESHKIN_EAT.get(), SoundSource.BLOCKS, 1f, level.random.nextFloat() * 0.1f + 0.9f);
+								level.playSound(null, pos, ModSoundEvents.FLESHKIN_EAT.get(), SoundSource.BLOCKS, 1f, level.getRandom().nextFloat() * 0.1f + 0.9f);
 								return InteractionResult.SUCCESS;
 							}
 						}
 
-						level.playSound(null, pos, ModSoundEvents.FLESHKIN_NO.get(), SoundSource.BLOCKS, 1f, level.random.nextFloat() * 0.1f + 0.9f);
+						level.playSound(null, pos, ModSoundEvents.FLESHKIN_NO.get(), SoundSource.BLOCKS, 1f, level.getRandom().nextFloat() * 0.1f + 0.9f);
 						return InteractionResult.CONSUME;
 					}
 
@@ -177,14 +184,14 @@ public class FleshkinChestBlock extends BaseEntityBlock implements SimpleWaterlo
 					}
 				}
 				else {
-					if (level.random.nextFloat() < 0.6f) {
+					if (level.getRandom().nextFloat() < 0.6f) {
 						chest.attack(state.getValue(FACING), player);
-						level.playSound(null, pos, ModSoundEvents.FLESHKIN_CHEST_BITE_ATTACK.get(), SoundSource.BLOCKS, 1f, level.random.nextFloat() * 0.1f + 0.9f);
+						level.playSound(null, pos, ModSoundEvents.FLESHKIN_CHEST_BITE_ATTACK.get(), SoundSource.BLOCKS, 1f, level.getRandom().nextFloat() * 0.1f + 0.9f);
 					}
 					else {
-						int particleCount = level.random.nextInt(1, 3);
+						int particleCount = level.getRandom().nextInt(1, 3);
 						((ServerLevel) level).sendParticles(ParticleTypes.ANGRY_VILLAGER, pos.getX() + 0.5d, pos.getY() + 0.5d, pos.getZ() + 0.5d, particleCount, 0.5d, 0.25d, 0.5d, 0);
-						level.playSound(null, pos, ModSoundEvents.FLESHKIN_NO.get(), SoundSource.BLOCKS, 1f, level.random.nextFloat() * 0.1f + 0.9f);
+						level.playSound(null, pos, ModSoundEvents.FLESHKIN_NO.get(), SoundSource.BLOCKS, 1f, level.getRandom().nextFloat() * 0.1f + 0.9f);
 					}
 				}
 			}
@@ -194,36 +201,28 @@ public class FleshkinChestBlock extends BaseEntityBlock implements SimpleWaterlo
 	}
 
 	@Override
-	public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
-		if (!level.isClientSide && !state.is(newState.getBlock()) && level.getBlockEntity(pos) instanceof FleshkinChestBlockEntity chest) {
-			chest.dropContainerContents(level, pos);
-		}
-		super.onRemove(state, level, pos, newState, isMoving);
-	}
-
-	@Override
 	public boolean canDropFromExplosion(BlockState state, BlockGetter level, BlockPos pos, Explosion explosion) {
 		return false;
 	}
 
 	@Override
-	public void onBlockExploded(BlockState state, Level level, BlockPos pos, Explosion explosion) {
+	public void onBlockExploded(BlockState state, ServerLevel level, BlockPos pos, Explosion explosion) {
 	}
 
 	@Override
 	public float getDestroyProgress(BlockState state, Player player, BlockGetter level, BlockPos pos) {
 		if (level.getBlockEntity(pos) instanceof IRestrictedInteraction interaction && interaction.isActionAllowed(player, Actions.DESTROY_BLOCK)) {
 			int i = EventHooks.doPlayerHarvestCheck(player, state, level, pos) ? 30 : 100;
-			return player.getDigSpeed(state, pos) / destroySpeed / i;
+			return player.getDestroySpeed(state, pos) / destroySpeed / i;
 		}
 		return 0;
 	}
 
 	@Override
-	public ItemStack getCloneItemStack(BlockState state, HitResult target, LevelReader level, BlockPos pos, Player player) {
-		ItemStack stack = super.getCloneItemStack(state, target, level, pos, player);
+	public ItemStack getCloneItemStack(LevelReader level, BlockPos pos, BlockState state, boolean includeData, Player player) {
+		ItemStack stack = super.getCloneItemStack(level, pos, state, includeData, player);
 		if (level.getBlockEntity(pos) instanceof FleshkinChestBlockEntity chest) {
-			chest.saveToItem(stack, level.registryAccess());
+			BlockItemUtil.saveToItem(chest, stack, level.registryAccess());
 		}
 		return stack;
 	}
@@ -234,7 +233,7 @@ public class FleshkinChestBlock extends BaseEntityBlock implements SimpleWaterlo
 	}
 
 	@Override
-	public int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos) {
+	public int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos, Direction direction) {
 		if (level.getBlockEntity(pos) instanceof FleshkinChestBlockEntity chest) {
 			return ItemHandlerHelper.calcRedstoneFromInventory(chest.getInventory());
 		}
@@ -253,7 +252,7 @@ public class FleshkinChestBlock extends BaseEntityBlock implements SimpleWaterlo
 
 	@Override
 	public RenderShape getRenderShape(BlockState state) {
-		return RenderShape.ENTITYBLOCK_ANIMATED;
+		return RenderShape.INVISIBLE;
 	}
 
 	@Override
@@ -270,9 +269,8 @@ public class FleshkinChestBlock extends BaseEntityBlock implements SimpleWaterlo
 		return false;
 	}
 
-	@Override
-	public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
-		super.appendHoverText(stack, context, tooltip, flag);
+	
+	public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag flag) {
 
 		OwnableEntityBlock.appendUserListToTooltip(stack, tooltip);
 
@@ -280,14 +278,14 @@ public class FleshkinChestBlock extends BaseEntityBlock implements SimpleWaterlo
 
 		CompoundTag tag = BlockItemUtil.getBlockEntityData(stack);
 		if (tag != null) {
-			tooltip.add(ComponentUtil.EMPTY_LINE);
+			tooltip.accept(ComponentUtil.EMPTY_LINE);
 
 			if (isAuthorized(Minecraft.getInstance().player.getUUID(), tag)) {
-				CompoundTag inventoryTag = tag.getCompound("Inventory");
-				if (!inventoryTag.isEmpty() && inventoryTag.contains("Items", Tag.TAG_LIST)) {
-					int size = inventoryTag.contains("Size") ? inventoryTag.getInt("Size") : FleshkinChestBlockEntity.SLOTS;
+				CompoundTag inventoryTag = tag.getCompoundOrEmpty("Inventory");
+				if (!inventoryTag.isEmpty() && inventoryTag.contains("Items")) {
+					int size = inventoryTag.getIntOr("Size", FleshkinChestBlockEntity.SLOTS);
 					NonNullList<ItemStack> itemList = NonNullList.withSize(size, ItemStack.EMPTY);
-					ContainerHelper.loadAllItems(inventoryTag, itemList, Minecraft.getInstance().player.registryAccess());
+					ContainerHelper.loadAllItems(TagValueInput.create(ProblemReporter.DISCARDING, Minecraft.getInstance().player.registryAccess(), inventoryTag), itemList);
 					int count = 0;
 					int totalCount = 0;
 
@@ -298,35 +296,35 @@ public class FleshkinChestBlock extends BaseEntityBlock implements SimpleWaterlo
 								count++;
 								MutableComponent textComponent = storedStack.getHoverName().copy();
 								textComponent.append(" x").append(String.valueOf(storedStack.getCount())).withStyle(ChatFormatting.GRAY);
-								tooltip.add(textComponent);
+								tooltip.accept(textComponent);
 							}
 						}
 					}
 
 					if (totalCount - count > 0) {
-						tooltip.add((ComponentUtil.translatable("container.shulkerBox.more", totalCount - count)).withStyle(ChatFormatting.ITALIC, ChatFormatting.GRAY));
+						tooltip.accept((ComponentUtil.translatable("container.shulkerBox.more", totalCount - count)).withStyle(ChatFormatting.ITALIC, ChatFormatting.GRAY));
 					}
-					tooltip.add(ComponentUtil.EMPTY_LINE);
-					tooltip.add(ComponentUtil.literal(String.format("%d/%d ", totalCount, FleshkinChestBlockEntity.SLOTS)).append(ComponentUtil.translatable("tooltip.biomancy.slots")).withStyle(ChatFormatting.GRAY));
+					tooltip.accept(ComponentUtil.EMPTY_LINE);
+					tooltip.accept(ComponentUtil.literal(String.format("%d/%d ", totalCount, FleshkinChestBlockEntity.SLOTS)).append(ComponentUtil.translatable("tooltip.biomancy.slots")).withStyle(ChatFormatting.GRAY));
 				}
 			}
 			else {
-				tooltip.add(ComponentUtil.literal("Who are you? I don't like you!").withStyle(TextStyles.PRIMORDIAL_RUNES_GRAY));
+				tooltip.accept(ComponentUtil.literal("Who are you? I don't like you!").withStyle(TextStyles.PRIMORDIAL_RUNES_GRAY));
 			}
 		}
 	}
 
 	private boolean isAuthorized(UUID uuid, CompoundTag tag) {
-		if (tag.hasUUID(NBT_KEY_OWNER)) {
-			if (tag.getUUID(NBT_KEY_OWNER).equals(uuid)) return true;
+		if (tag.read(NBT_KEY_OWNER, UUIDUtil.CODEC).isPresent()) {
+			if (tag.read(NBT_KEY_OWNER, UUIDUtil.CODEC).orElseThrow().equals(uuid)) return true;
 		}
 
 		if (tag.contains(NBT_KEY_USER_LIST)) {
-			ListTag nbtList = tag.getList(NBT_KEY_USER_LIST, Tag.TAG_COMPOUND);
+			ListTag nbtList = tag.getListOrEmpty(NBT_KEY_USER_LIST);
 			for (int i = 0; i < nbtList.size(); i++) {
-				CompoundTag userTag = nbtList.getCompound(i);
-				UUID userUUID = userTag.getUUID("UserUUID");
-				UserType authority = UserType.deserialize(userTag);
+				CompoundTag userTag = nbtList.getCompoundOrEmpty(i);
+				UUID userUUID = userTag.read("UserUUID", UUIDUtil.CODEC).orElseThrow();
+				UserType authority = UserType.fromTag(userTag);
 				if (userUUID.equals(uuid) && authority.isUserLevel()) return true;
 			}
 		}

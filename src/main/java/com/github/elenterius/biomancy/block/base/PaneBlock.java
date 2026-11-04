@@ -1,8 +1,11 @@
 package com.github.elenterius.biomancy.block.base;
 
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.ScheduledTickAccess;
+import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.item.ItemStack;
 import com.github.elenterius.biomancy.util.InteractionUtil;
-import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.InteractionResult;
 import com.github.elenterius.biomancy.block.property.Orientation;
 import com.github.elenterius.biomancy.init.ModBlockProperties;
 import net.minecraft.core.BlockPos;
@@ -87,7 +90,7 @@ public class PaneBlock extends Block implements SimpleWaterloggedBlock {
 	}
 
 	@Override
-	protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+	protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
 		return InteractionUtil.toItemInteractionResult(use(state, level, pos, player, hand, hit));
 	}
 
@@ -97,7 +100,7 @@ public class PaneBlock extends Block implements SimpleWaterloggedBlock {
 	}
 
 	@Override
-	public void neighborChanged(BlockState state, Level level, BlockPos pos, Block block, BlockPos fromPos, boolean isMoving) {
+	public void neighborChanged(BlockState state, Level level, BlockPos pos, Block block, net.minecraft.world.level.redstone.@Nullable Orientation orientation, boolean isMoving) {
 		if (level.isClientSide()) return;
 		if (isWaterlogged(state)) level.scheduleTick(pos, Fluids.WATER, Fluids.WATER.getTickDelay(level));
 	}
@@ -127,11 +130,11 @@ public class PaneBlock extends Block implements SimpleWaterloggedBlock {
 	}
 
 	@Override
-	public BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor level, BlockPos currentPos, BlockPos neighborPos) {
+	public BlockState updateShape(BlockState state, LevelReader level, ScheduledTickAccess ticks, BlockPos currentPos, Direction direction, BlockPos neighborPos, BlockState neighborState, RandomSource random) {
 		if (isWaterlogged(state)) {
-			level.scheduleTick(currentPos, Fluids.WATER, Fluids.WATER.getTickDelay(level));
+			ticks.scheduleTick(currentPos, Fluids.WATER, Fluids.WATER.getTickDelay(level));
 		}
-		return super.updateShape(state, direction, neighborState, level, currentPos, neighborPos);
+		return super.updateShape(state, level, ticks, currentPos, direction, neighborPos, neighborState, random);
 	}
 
 	@Override

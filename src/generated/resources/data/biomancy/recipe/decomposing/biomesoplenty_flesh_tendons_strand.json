@@ -7,7 +7,7 @@
   ],
   "type": "biomancy:decomposing",
   "ingredient": {
-    "item": "biomesoplenty:flesh_tendons_strand"
+    "ingredient": "biomesoplenty:flesh_tendons_strand"
   },
   "nutrientsCost": 1,
   "processingTime": 58,

@@ -1,7 +1,7 @@
 {
   "type": "biomancy:decomposing",
   "ingredient": {
-    "item": "minecraft:wither_rose"
+    "ingredient": "minecraft:wither_rose"
   },
   "nutrientsCost": 1,
   "processingTime": 215,

@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "farmersdelight:red_mushroom_colony"
+      "ingredient": "farmersdelight:red_mushroom_colony"
     }
   },
   "output": {

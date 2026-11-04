@@ -4,7 +4,7 @@ import com.github.elenterius.biomancy.network.ModNetworkHandler;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.game.ClientboundSoundPacket;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
@@ -19,31 +19,31 @@ public class ServerSoundHandler {
 	public static final String SOUND_LAYERS_KEY = "biomancy:sound_layers";
 
 	private static @Nullable SoundEvent parseSoundEvent(String soundId) {
-		ResourceLocation key = ResourceLocation.tryParse(soundId);
+		Identifier key = Identifier.tryParse(soundId);
 		if (key == null) return null;
-		return BuiltInRegistries.SOUND_EVENT.get(key);
+		return BuiltInRegistries.SOUND_EVENT.getValue(key);
 	}
 
 	public void onStartTrackingEntity(final PlayerEvent.StartTracking event) {
-		CompoundTag soundLayers = event.getTarget().getPersistentData().getCompound(SOUND_LAYERS_KEY);
+		CompoundTag soundLayers = event.getTarget().getPersistentData().getCompoundOrEmpty(SOUND_LAYERS_KEY);
 
-		for (String soundLayerId : soundLayers.getAllKeys()) {
-			CompoundTag soundLayer = soundLayers.getCompound(soundLayerId);
-			SoundEvent soundEvent = parseSoundEvent(soundLayer.getString("sound_id"));
+		for (String soundLayerId : soundLayers.keySet()) {
+			CompoundTag soundLayer = soundLayers.getCompoundOrEmpty(soundLayerId);
+			SoundEvent soundEvent = parseSoundEvent(soundLayer.getStringOr("sound_id", ""));
 
 			if (soundEvent == null) continue;
 
-			float volume = soundLayer.getFloat("volume");
-			long startTime = soundLayer.getLong("start_timestamp");
+			float volume = soundLayer.getFloatOr("volume", 0f);
+			long startTime = soundLayer.getLongOr("start_timestamp", 0L);
 			ModNetworkHandler.sendSoundLayerUpdateToClients(event.getTarget(), soundLayerId, soundEvent, startTime, volume);
 		}
 	}
 
 	public static void triggerSoundLayerForClients(Entity entity, String soundLayerId, SoundEvent soundEvent, long startTime, float volume) {
-		CompoundTag soundLayers = entity.getPersistentData().getCompound(SOUND_LAYERS_KEY);
+		CompoundTag soundLayers = entity.getPersistentData().getCompoundOrEmpty(SOUND_LAYERS_KEY);
 
 		CompoundTag soundLayer = new CompoundTag();
-		soundLayer.putString("sound_id", soundEvent.getLocation().toString());
+		soundLayer.putString("sound_id", soundEvent.location().toString());
 		soundLayer.putFloat("volume", volume);
 		soundLayer.putLong("start_timestamp", startTime);
 
@@ -54,7 +54,7 @@ public class ServerSoundHandler {
 	}
 
 	public static void removeSoundLayerForClients(Entity entity, String soundLayerId) {
-		CompoundTag soundLayers = entity.getPersistentData().getCompound(SOUND_LAYERS_KEY);
+		CompoundTag soundLayers = entity.getPersistentData().getCompoundOrEmpty(SOUND_LAYERS_KEY);
 		soundLayers.remove(soundLayerId);
 
 		ModNetworkHandler.sendSoundLayerRemovalToClients(entity, soundLayerId, true);

@@ -1,5 +1,7 @@
 package com.github.elenterius.biomancy.statuseffect;
 
+import com.github.elenterius.biomancy.mixin.accessor.AbstractHorseAccessor;
+import net.minecraft.world.entity.ConversionParams;
 import com.github.elenterius.biomancy.init.ModParticleTypes;
 import com.github.elenterius.biomancy.init.tags.ModDamageTypeTags;
 import com.github.elenterius.biomancy.util.CombatUtil;
@@ -8,10 +10,10 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.animal.horse.SkeletonHorse;
-import net.minecraft.world.entity.animal.horse.ZombieHorse;
-import net.minecraft.world.entity.monster.Skeleton;
-import net.minecraft.world.entity.monster.Zombie;
+import net.minecraft.world.entity.animal.equine.SkeletonHorse;
+import net.minecraft.world.entity.animal.equine.ZombieHorse;
+import net.minecraft.world.entity.monster.skeleton.Skeleton;
+import net.minecraft.world.entity.monster.zombie.Zombie;
 import net.minecraft.world.level.block.LevelEvent;
 import net.neoforged.neoforge.event.EventHooks;
 
@@ -24,12 +26,12 @@ public class CorrosiveEffect extends StatusEffect {
 	}
 
 	@Override
-	public boolean applyEffectTick(LivingEntity livingEntity, int amplifier) {
+	public boolean applyEffectTick(ServerLevel serverLevel, LivingEntity livingEntity, int amplifier) {
 		int effectLevel = amplifier + 1;
-		boolean isWet = livingEntity.isInWaterRainOrBubble();
+		boolean isWet = livingEntity.isInWaterOrRain();
 		float conversionProbability = 0.1f + 0.05f * effectLevel + (isWet ? 0.15f : 0);
 
-		if (livingEntity.level() instanceof ServerLevel serverLevel && livingEntity.level().random.nextFloat() < conversionProbability) {
+		if (livingEntity.level().getRandom().nextFloat() < conversionProbability) {
 			DamageSource lastDamageSource = livingEntity.getLastDamageSource();
 			if (lastDamageSource != null && lastDamageSource.is(ModDamageTypeTags.C_IS_ACID)) {
 				convertZombieToSkeleton(serverLevel, livingEntity);
@@ -41,7 +43,7 @@ public class CorrosiveEffect extends StatusEffect {
 		float damage = 2 * effectLevel + (isWet ? 0.5f : 0);
 		CombatUtil.hurtWithAcid(livingEntity, damage);
 
-		if (livingEntity.level().random.nextFloat() < 0.85f && livingEntity.level() instanceof ServerLevel serverLevel) {
+		if (livingEntity.level().getRandom().nextFloat() < 0.85f) {
 			float xz = livingEntity.getBbWidth() * 0.25f;
 			float y = livingEntity.getBbHeight() * 0.25f;
 			serverLevel.sendParticles(ModParticleTypes.FALLING_ACID.get(), livingEntity.getX(), livingEntity.getY(0.5f), livingEntity.getZ(), 4, xz, y, xz, 0);
@@ -57,7 +59,7 @@ public class CorrosiveEffect extends StatusEffect {
 
 	private boolean convertZombieToSkeleton(ServerLevel level, LivingEntity livingEntity) {
 		if (livingEntity instanceof Zombie zombie && EventHooks.canLivingConvert(zombie, EntityType.SKELETON, timer -> {})) {
-			Skeleton skeleton = zombie.convertTo(EntityType.SKELETON, true);
+			Skeleton skeleton = zombie.convertTo(EntityType.SKELETON, ConversionParams.single(zombie, true, true), converted -> {});
 			if (skeleton != null) {
 				skeleton.invulnerableTime = 60;
 				EventHooks.onLivingConvert(zombie, skeleton);
@@ -68,13 +70,10 @@ public class CorrosiveEffect extends StatusEffect {
 			}
 		}
 		else if (livingEntity instanceof ZombieHorse zombieHorse && EventHooks.canLivingConvert(zombieHorse, EntityType.SKELETON_HORSE, timer -> {})) {
-			SkeletonHorse horse = zombieHorse.convertTo(EntityType.SKELETON_HORSE, true);
+			SkeletonHorse horse = zombieHorse.convertTo(EntityType.SKELETON_HORSE, ConversionParams.single(zombieHorse, true, true), converted -> {});
 			if (horse != null) {
 				horse.invulnerableTime = 60;
-				UUID owner = zombieHorse.getOwnerUUID();
-				if (owner != null) {
-					horse.setOwnerUUID(owner);
-				}
+				((AbstractHorseAccessor) horse).biomancy$setOwnerReference(zombieHorse.getOwnerReference());
 				horse.setTamed(zombieHorse.isTamed());
 				EventHooks.onLivingConvert(zombieHorse, horse);
 				if (!zombieHorse.isSilent()) {

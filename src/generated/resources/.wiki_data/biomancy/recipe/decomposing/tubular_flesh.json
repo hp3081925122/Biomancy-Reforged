@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "biomancy:tubular_flesh"
+      "ingredient": "biomancy:tubular_flesh"
     }
   },
   "output": {

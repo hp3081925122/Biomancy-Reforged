@@ -1,9 +1,7 @@
 {
   "type": "biomancy:digesting",
   "input": {
-    "0": {
-      "id": "minecraft:short_grass"
-    }
+    "0": "minecraft:short_grass"
   },
   "output": {
     "0": {

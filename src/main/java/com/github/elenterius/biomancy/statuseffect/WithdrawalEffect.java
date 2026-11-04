@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.statuseffect;
 
+import net.minecraft.server.level.ServerLevel;
 import com.github.elenterius.biomancy.util.OneShotTaskWorker;
 import net.minecraft.stats.Stats;
 import net.minecraft.world.effect.MobEffectCategory;
@@ -15,19 +16,19 @@ public class WithdrawalEffect extends AttackDamageEffect {
 	}
 
 	@Override
-	public boolean applyEffectTick(LivingEntity livingEntity, int amplifier) {
+	public boolean applyEffectTick(ServerLevel serverLevel, LivingEntity livingEntity, int amplifier) {
 		if (livingEntity instanceof Player player) {
 
 			if (livingEntity.getRandom().nextFloat() < 0.09f) {
 				if (amplifier < 1) {
 					if (livingEntity.getRandom().nextFloat() < 0.7f) {
-						MobEffectInstance effectInstance = new MobEffectInstance(MobEffects.CONFUSION, 20 * livingEntity.getRandom().nextIntBetweenInclusive(3, 5), 0);
+						MobEffectInstance effectInstance = new MobEffectInstance(MobEffects.NAUSEA, 20 * livingEntity.getRandom().nextIntBetweenInclusive(3, 5), 0);
 						OneShotTaskWorker.onNextTick(livingEntity, living -> living.addEffect(effectInstance));
 					}
 					player.causeFoodExhaustion(1.5F);
 				}
 				else if (amplifier < 2 || livingEntity.getRandom().nextFloat() < 0.4f) {
-					MobEffectInstance effectInstance = new MobEffectInstance(MobEffects.CONFUSION, 20 * livingEntity.getRandom().nextIntBetweenInclusive(3, 4 + amplifier * 2), 1);
+					MobEffectInstance effectInstance = new MobEffectInstance(MobEffects.NAUSEA, 20 * livingEntity.getRandom().nextIntBetweenInclusive(3, 4 + amplifier * 2), 1);
 					OneShotTaskWorker.onNextTick(livingEntity, living -> living.addEffect(effectInstance));
 					player.causeFoodExhaustion(2F * (amplifier + 1f));
 				}

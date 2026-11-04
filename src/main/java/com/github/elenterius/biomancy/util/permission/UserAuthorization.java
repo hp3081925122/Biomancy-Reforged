@@ -1,20 +1,21 @@
 package com.github.elenterius.biomancy.util.permission;
 
-import net.minecraft.core.HolderLookup;
-import net.minecraft.nbt.CompoundTag;
-import net.neoforged.neoforge.common.util.INBTSerializable;
 
+import net.minecraft.core.UUIDUtil;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.neoforged.neoforge.common.util.ValueIOSerializable;
 import java.util.Objects;
 import java.util.UUID;
 
-public class UserAuthorization implements INBTSerializable<CompoundTag> {
+public class UserAuthorization implements ValueIOSerializable {
 
 	private UUID userUUID;
 	private UserType authority;
 
-	public UserAuthorization(CompoundTag nbt) {
-		userUUID = nbt.getUUID("UserUUID");
-		authority = UserType.deserialize(nbt);
+	public UserAuthorization(ValueInput input) {
+		userUUID = input.read("UserUUID", UUIDUtil.CODEC).orElseThrow();
+		authority = UserType.deserialize(input);
 	}
 
 	public UserAuthorization(UUID userUUID) {
@@ -43,17 +44,15 @@ public class UserAuthorization implements INBTSerializable<CompoundTag> {
 	}
 
 	@Override
-	public CompoundTag serializeNBT(HolderLookup.Provider provider) {
-		CompoundTag nbt = new CompoundTag();
-		nbt.putUUID("UserUUID", userUUID);
-		authority.serialize(nbt);
-		return nbt;
+	public void serialize(ValueOutput output) {
+		output.store("UserUUID", UUIDUtil.CODEC, userUUID);
+		authority.serialize(output);
 	}
 
 	@Override
-	public void deserializeNBT(HolderLookup.Provider provider, CompoundTag nbt) {
-		userUUID = nbt.getUUID("UserUUID");
-		authority = UserType.deserialize(nbt);
+	public void deserialize(ValueInput input) {
+		userUUID = input.read("UserUUID", UUIDUtil.CODEC).orElseThrow();
+		authority = UserType.deserialize(input);
 	}
 
 	@Override

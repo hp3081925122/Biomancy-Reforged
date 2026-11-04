@@ -97,7 +97,7 @@ public final class PrimordialEcosystem {
 
 			level.setBlockAndUpdate(pos, ModBlocks.MALIGNANT_FLESH.get().defaultBlockState());
 
-			level.playSound(null, pos, ModSoundEvents.FLESH_BLOCK_PLACE.get(), SoundSource.BLOCKS, 1f, 0.15f + level.random.nextFloat() * 0.5f);
+			level.playSound(null, pos, ModSoundEvents.FLESH_BLOCK_PLACE.get(), SoundSource.BLOCKS, 1f, 0.15f + level.getRandom().nextFloat() * 0.5f);
 			return true;
 		}
 		else if (currentState.canBeReplaced(new DirectionalPlaceContext(level, pos, Direction.DOWN, ItemStack.EMPTY, Direction.UP))) {
@@ -141,7 +141,7 @@ public final class PrimordialEcosystem {
 
 			level.setBlockAndUpdate(pos, ModBlocks.MALIGNANT_FLESH.get().defaultBlockState());
 
-			level.playSound(null, pos, ModSoundEvents.FLESH_BLOCK_PLACE.get(), SoundSource.BLOCKS, 1f, 0.15f + level.random.nextFloat() * 0.5f);
+			level.playSound(null, pos, ModSoundEvents.FLESH_BLOCK_PLACE.get(), SoundSource.BLOCKS, 1f, 0.15f + level.getRandom().nextFloat() * 0.5f);
 			return true;
 		}
 		else if (currentState.canBeReplaced(new DirectionalPlaceContext(level, pos, Direction.DOWN, ItemStack.EMPTY, Direction.UP))) {
@@ -164,7 +164,7 @@ public final class PrimordialEcosystem {
 		BlockState state = level.getBlockState(pos);
 		if (MALIGNANT_UPGRADE_TARGETS.contains(state.getBlock())) {
 			level.setBlock(pos, ModBlocks.MALIGNANT_FLESH.get().defaultBlockState(), Block.UPDATE_CLIENTS);
-			level.playSound(null, pos, ModSoundEvents.FLESH_BLOCK_PLACE.get(), SoundSource.BLOCKS, 1f, 0.15f + level.random.nextFloat() * 0.5f);
+			level.playSound(null, pos, ModSoundEvents.FLESH_BLOCK_PLACE.get(), SoundSource.BLOCKS, 1f, 0.15f + level.getRandom().nextFloat() * 0.5f);
 			return true;
 		}
 
@@ -214,7 +214,7 @@ public final class PrimordialEcosystem {
 	public static boolean spreadMalignantVeinsFromSource(ServerLevel level, BlockPos pos, IntSupplier chargeSupplier) {
 		FleshVeinsBlock veinsBlock = ModBlocks.MALIGNANT_FLESH_VEINS.get();
 		BlockState state = level.getBlockState(pos);
-		RandomSource random = level.random;
+		RandomSource random = level.getRandom();
 
 		boolean hasPlacedVeins = false;
 

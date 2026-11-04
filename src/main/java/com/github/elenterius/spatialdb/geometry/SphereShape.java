@@ -71,10 +71,10 @@ public class SphereShape implements Shape, HasRadius {
 
 		@Override
 		public SphereShape read(CompoundTag tag) {
-			float radius = tag.getFloat("Radius");
-			double x = tag.getDouble("X");
-			double y = tag.getDouble("Y");
-			double z = tag.getDouble("Z");
+			float radius = tag.getFloatOr("Radius", 0f);
+			double x = tag.getDoubleOr("X", 0d);
+			double y = tag.getDoubleOr("Y", 0d);
+			double z = tag.getDoubleOr("Z", 0d);
 			return new SphereShape(x, y, z, radius);
 		}
 	}

@@ -2,8 +2,6 @@ package com.github.elenterius.biomancy.datagen.loot;
 
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.init.ModItems;
-import net.mcreator.sonsofsins.SonsOfSinsMod;
-import net.mcreator.sonsofsins.init.SonsOfSinsModEntities;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.util.Mth;
@@ -32,9 +30,7 @@ public class ModDespoilLoot extends DespoilLootProvider {
 
 	protected static final Set<EntityType<?>> BONE_MARROW_MOBS = Set.of(
 			EntityType.SKELETON_HORSE, EntityType.SKELETON, EntityType.STRAY,
-			EntityType.WARDEN,
-
-			SonsOfSinsModEntities.WISTIVER.get(), SonsOfSinsModEntities.DEVOURER.get()
+			EntityType.WARDEN
 	);
 
 	protected static final Set<EntityType<?>> WITHERED_BONE_MARROW_MOBS = Set.of(
@@ -58,9 +54,7 @@ public class ModDespoilLoot extends DespoilLootProvider {
 			EntityType.CAT, EntityType.OCELOT,
 			EntityType.WOLF, EntityType.FOX,
 			EntityType.POLAR_BEAR, EntityType.PANDA,
-			EntityType.ENDER_DRAGON,
-
-			SonsOfSinsModEntities.GUZZLER.get()
+			EntityType.ENDER_DRAGON
 	);
 
 	protected static final Set<EntityType<?>> SHARP_FANG_MOBS = Set.of(
@@ -69,9 +63,7 @@ public class ModDespoilLoot extends DespoilLootProvider {
 			EntityType.WOLF, EntityType.FOX,
 			EntityType.POLAR_BEAR, EntityType.PANDA,
 			EntityType.HOGLIN, EntityType.ZOGLIN,
-			EntityType.ENDER_DRAGON,
-
-			SonsOfSinsModEntities.NIBBLER.get(), SonsOfSinsModEntities.GUZZLER.get()
+			EntityType.ENDER_DRAGON
 	);
 
 	protected static final Set<EntityType<?>> INVALID_MOBS_FOR_MEATY_LOOT = Set.of(
@@ -82,10 +74,7 @@ public class ModDespoilLoot extends DespoilLootProvider {
 			EntityType.HUSK, EntityType.DROWNED, EntityType.ZOMBIE, EntityType.ZOMBIE_HORSE, EntityType.ZOMBIE_VILLAGER,
 			EntityType.SKELETON, EntityType.SKELETON_HORSE, EntityType.STRAY, EntityType.WITHER_SKELETON, EntityType.WITHER,
 			EntityType.WARDEN,
-			EntityType.CREEPER,
-
-			SonsOfSinsModEntities.GRUB_ORGANS.get(), SonsOfSinsModEntities.GUZZLER_ORGANS.get(), SonsOfSinsModEntities.GULBER_ORGANS.get(), SonsOfSinsModEntities.NIBBLER_ORGANS.get(), SonsOfSinsModEntities.DEVOURER_ORGANS.get(),
-			SonsOfSinsModEntities.CURSE.get(), SonsOfSinsModEntities.WALKING_BED.get()
+			EntityType.CREEPER
 	);
 
 	public ModDespoilLoot(HolderLookup.Provider registries) {
@@ -94,7 +83,7 @@ public class ModDespoilLoot extends DespoilLootProvider {
 
 	@Override
 	public void generate() {
-		Set<String> validNamespaces = Set.of("minecraft", BiomancyMod.MOD_ID, SonsOfSinsMod.MODID);
+		Set<String> validNamespaces = Set.of("minecraft", BiomancyMod.MOD_ID);
 		Predicate<EntityType<?>> allowedNamespace = entityType -> validNamespaces.contains(Objects.requireNonNull(BuiltInRegistries.ENTITY_TYPE.getKey(entityType)).getNamespace());
 
 		Predicate<EntityType<?>> validEntityType = entityType -> entityType.getCategory() != MobCategory.MISC;

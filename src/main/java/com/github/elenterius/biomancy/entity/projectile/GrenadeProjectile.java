@@ -1,5 +1,9 @@
 package com.github.elenterius.biomancy.entity.projectile;
 
+import com.github.elenterius.biomancy.init.ModItems;
+import net.minecraft.world.item.ItemStackTemplate;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.level.storage.ValueInput;
 import com.github.elenterius.biomancy.entity.misc.GasCloud;
 import com.github.elenterius.biomancy.init.*;
 import com.github.elenterius.biomancy.util.explosion.ExplosionUtil;
@@ -18,7 +22,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
+import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrowableItemProjectile;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -36,11 +40,11 @@ public class GrenadeProjectile extends ThrowableItemProjectile {
 	}
 
 	public GrenadeProjectile(Level level, LivingEntity thrower) {
-		super(ModEntityTypes.GRENADE_PROJECTILE.get(), thrower, level);
+		super(ModEntityTypes.GRENADE_PROJECTILE.get(), thrower, level, new ItemStack(ModItems.TOXIN_GRENADE.get()));
 	}
 
 	public GrenadeProjectile(Level level, double x, double y, double z) {
-		super(ModEntityTypes.GRENADE_PROJECTILE.get(), x, y, z, level);
+		super(ModEntityTypes.GRENADE_PROJECTILE.get(), x, y, z, level, new ItemStack(ModItems.TOXIN_GRENADE.get()));
 	}
 
 	@Override
@@ -66,7 +70,7 @@ public class GrenadeProjectile extends ThrowableItemProjectile {
 	protected void onHit(HitResult hitResult) {
 		super.onHit(hitResult);
 
-		if (!level().isClientSide && level() instanceof ServerLevel serverLevel) {
+		if (!level().isClientSide() && level() instanceof ServerLevel serverLevel) {
 
 			serverLevel.playSound(null, getX(), getY(), getZ(), SoundEvents.GENERIC_EXPLODE, SoundSource.BLOCKS, 1.2f, 1f);
 
@@ -114,7 +118,7 @@ public class GrenadeProjectile extends ThrowableItemProjectile {
 				double xSpeed = (random.nextDouble() - 0.5d) * scale;
 				double ySpeed = (random.nextDouble() - 0.5d) * scale;
 				double zSpeed = (random.nextDouble() - 0.5d) * scale;
-				level().addParticle(new ItemParticleOption(ParticleTypes.ITEM, item), getX(), getY(), getZ(), xSpeed, ySpeed, zSpeed);
+				level().addParticle(new ItemParticleOption(ParticleTypes.ITEM, ItemStackTemplate.fromNonEmptyStack(item)), getX(), getY(), getZ(), xSpeed, ySpeed, zSpeed);
 			}
 		}
 	}
@@ -124,15 +128,15 @@ public class GrenadeProjectile extends ThrowableItemProjectile {
 	}
 
 	@Override
-	public void readAdditionalSaveData(CompoundTag tag) {
-		super.readAdditionalSaveData(tag);
-		setExplodeDelay(tag.getInt("explode_delay_ticks"));
+	public void readAdditionalSaveData(ValueInput input) {
+		super.readAdditionalSaveData(input);
+		setExplodeDelay(input.getIntOr("explode_delay_ticks", 0));
 	}
 
 	@Override
-	public void addAdditionalSaveData(CompoundTag tag) {
-		super.addAdditionalSaveData(tag);
-		tag.putInt("explode_delay_ticks", getExplodeDelayTicks());
+	public void addAdditionalSaveData(ValueOutput output) {
+		super.addAdditionalSaveData(output);
+		output.putInt("explode_delay_ticks", getExplodeDelayTicks());
 	}
 
 }

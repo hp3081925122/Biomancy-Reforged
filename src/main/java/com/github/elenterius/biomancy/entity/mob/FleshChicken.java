@@ -1,5 +1,8 @@
 package com.github.elenterius.biomancy.entity.mob;
 
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.tags.ItemTags;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.tags.EntityTypeTags;
 import com.github.elenterius.biomancy.entity.projectile.AcidSpitProjectile;
 import com.github.elenterius.biomancy.init.ModBlocks;
@@ -22,7 +25,7 @@ import net.minecraft.world.entity.ai.goal.RangedAttackGoal;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.animal.Animal;
-import net.minecraft.world.entity.animal.Chicken;
+import net.minecraft.world.entity.animal.chicken.Chicken;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.RangedAttackMob;
 import net.minecraft.world.item.Items;
@@ -30,16 +33,16 @@ import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
-import software.bernie.geckolib.animatable.GeoEntity;
-import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.animation.AnimatableManager;
-import software.bernie.geckolib.util.GeckoLibUtil;
+import com.geckolib.animatable.GeoEntity;
+import com.geckolib.animatable.instance.AnimatableInstanceCache;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.util.GeckoLibUtil;
 
 import java.util.function.Predicate;
 
 public class FleshChicken extends Chicken implements RangedAttackMob, GeoEntity {
 
-	public static final Predicate<LivingEntity> TARGET_SELECTOR = livingEntity -> livingEntity.getType().is(EntityTypeTags.UNDEAD);
+	public static final Predicate<LivingEntity> TARGET_SELECTOR = livingEntity -> livingEntity.is(EntityTypeTags.UNDEAD);
 	public static final ConfiguredProjectile<AcidSpitProjectile> GASTRIC_SPIT = new ConfiguredProjectile<>(1.5f, 1, 0, 0.8f, ModSoundEvents.ACID_SPIT.get(), ModEntityTypes.ACID_SPIT_PROJECTILE);
 
 	protected final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
@@ -55,12 +58,12 @@ public class FleshChicken extends Chicken implements RangedAttackMob, GeoEntity 
 		super.registerGoals();
 		goalSelector.addGoal(1, new RangedAttackGoal(this, 1.25d, 40, 20f));
 		targetSelector.addGoal(1, new FleshChickenHurtByTargetGoal(this).setAlertOthers());
-		targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Mob.class, 10, false, false, TARGET_SELECTOR));
+		targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Mob.class, 10, false, false, (target, serverLevel) -> TARGET_SELECTOR.test(target)));
 	}
 
 	@Override
-	public boolean isInvulnerableTo(DamageSource source) {
-		return super.isInvulnerableTo(source) || source.is(ModDamageTypeTags.C_IS_ACID);
+	public boolean isInvulnerableTo(ServerLevel level, DamageSource source) {
+		return super.isInvulnerableTo(level, source) || source.is(ModDamageTypeTags.C_IS_ACID);
 	}
 
 	@Override
@@ -85,21 +88,18 @@ public class FleshChicken extends Chicken implements RangedAttackMob, GeoEntity 
 
 	@Nullable
 	@Override
-	public ItemEntity spawnAtLocation(ItemLike item) {
-		if (item == Items.EGG) {
-			if (level() instanceof ServerLevel serverLevel) {
-				if (random.nextFloat() <= 0.4f) {
-					ModBlocks.ACID_SPLATTER.get().placeSmallSplatter(serverLevel, blockPosition(), Direction.UP, random);
-					return null;
-				}
-				else {
-					return super.spawnAtLocation(ModItems.ACIDIC_EGG.get());
-				}
+	public ItemEntity spawnAtLocation(ServerLevel level, ItemStack stack) {
+		if (stack.is(ItemTags.EGGS)) {
+			if (random.nextFloat() <= 0.4f) {
+				ModBlocks.ACID_SPLATTER.get().placeSmallSplatter(level, blockPosition(), Direction.UP, random);
+				return null;
 			}
-			return null;
+			else {
+				return super.spawnAtLocation(level, new ItemStack(ModItems.ACIDIC_EGG.get(), stack.getCount()));
+			}
 		}
 
-		return super.spawnAtLocation(item);
+		return super.spawnAtLocation(level, stack);
 	}
 
 	@Nullable
@@ -109,7 +109,7 @@ public class FleshChicken extends Chicken implements RangedAttackMob, GeoEntity 
 			return (Chicken) otherParent.getBreedOffspring(level, this);
 		}
 
-		return ModEntityTypes.FLESH_CHICKEN.get().create(level);
+		return ModEntityTypes.FLESH_CHICKEN.get().create(level, EntitySpawnReason.BREEDING);
 	}
 
 	@Override

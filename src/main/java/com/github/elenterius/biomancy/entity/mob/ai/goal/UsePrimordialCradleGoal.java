@@ -95,7 +95,7 @@ public class UsePrimordialCradleGoal<T extends PathfinderMob & PrimordialCradleU
 		if (nearestBlockEntity == null) return false;
 
 		BlockPos nearestPos = nearestBlockEntity.getBlockPos();
-		if (mob.isWithinRestriction(nearestPos) && isValidTarget(mob.level(), nearestPos)) {
+		if (mob.isWithinHome(nearestPos) && isValidTarget(mob.level(), nearestPos)) {
 			this.blockPos = nearestPos;
 			return true;
 		}

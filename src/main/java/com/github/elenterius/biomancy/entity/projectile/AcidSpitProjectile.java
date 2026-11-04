@@ -1,5 +1,7 @@
 package com.github.elenterius.biomancy.entity.projectile;
 
+import com.github.elenterius.biomancy.util.CombatUtil;
+import net.minecraft.server.level.ServerLevel;
 import com.github.elenterius.biomancy.init.ModDamageSources;
 import com.github.elenterius.biomancy.statuseffect.StatusEffectHandler;
 import com.github.elenterius.biomancy.util.shooting.ProjectileEntityType;
@@ -25,7 +27,7 @@ public class AcidSpitProjectile extends BaseProjectile {
 	}
 
 	@Override
-	public boolean hurt(DamageSource source, float amount) {
+	public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
 		return false;
 	}
 
@@ -38,14 +40,14 @@ public class AcidSpitProjectile extends BaseProjectile {
 	@Override
 	protected void onHitEntity(EntityHitResult result) {
 		super.onHitEntity(result);
-		if (!level().isClientSide) {
+		if (!level().isClientSide()) {
 			Entity victim = result.getEntity();
 			Entity owner = getOwner();
 
 			DamageSource acidDamageSource = ModDamageSources.acidProjectile(level(), this, owner);
 			victim.hurt(acidDamageSource, getDamage());
 
-			if (victim instanceof LivingEntity livingVictim && !livingVictim.isInvulnerableTo(acidDamageSource)) {
+			if (victim instanceof LivingEntity livingVictim && !CombatUtil.isInvulnerableTo(livingVictim, acidDamageSource)) {
 				StatusEffectHandler.applyCorrosiveEffect(livingVictim, 4);
 			}
 

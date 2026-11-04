@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "biomancy:mob_fang"
+      "ingredient": "biomancy:mob_fang"
     }
   },
   "output": {

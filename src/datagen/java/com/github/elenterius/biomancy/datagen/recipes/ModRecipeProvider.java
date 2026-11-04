@@ -11,7 +11,7 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.data.CachedOutput;
 import net.minecraft.data.DataProvider;
 import net.minecraft.data.PackOutput;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -55,7 +55,7 @@ public class ModRecipeProvider implements DataProvider {
 	public CompletableFuture<?> run(CachedOutput output) {
 		return registries.thenCompose(lookup -> {
 			DynamicOps<JsonElement> ops = lookup.createSerializationContext(JsonOps.INSTANCE);
-			Set<ResourceLocation> recipeIds = new HashSet<>();
+			Set<Identifier> recipeIds = new HashSet<>();
 			List<CompletableFuture<?>> futures = new ArrayList<>();
 
 			buildRecipes(recipe -> {

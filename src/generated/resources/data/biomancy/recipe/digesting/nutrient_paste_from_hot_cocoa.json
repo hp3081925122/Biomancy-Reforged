@@ -6,9 +6,7 @@
     }
   ],
   "type": "biomancy:digesting",
-  "ingredient": {
-    "item": "farmersdelight:hot_cocoa"
-  },
+  "ingredient": "farmersdelight:hot_cocoa",
   "nutrientsCost": 3,
   "processingTime": 668,
   "result": {

@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "minecraft:player_head"
+      "ingredient": "minecraft:player_head"
     }
   },
   "output": {

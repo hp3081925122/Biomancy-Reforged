@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "minecraft:coarse_dirt"
+      "ingredient": "minecraft:coarse_dirt"
     }
   },
   "output": {

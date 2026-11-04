@@ -1,9 +1,7 @@
 {
   "type": "biomancy:digesting",
   "input": {
-    "0": {
-      "id": "minecraft:shroomlight"
-    }
+    "0": "minecraft:shroomlight"
   },
   "output": {
     "0": {

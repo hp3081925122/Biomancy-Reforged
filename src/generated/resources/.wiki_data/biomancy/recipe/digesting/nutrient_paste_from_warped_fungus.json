@@ -1,9 +1,7 @@
 {
   "type": "biomancy:digesting",
   "input": {
-    "0": {
-      "id": "minecraft:warped_fungus"
-    }
+    "0": "minecraft:warped_fungus"
   },
   "output": {
     "0": {

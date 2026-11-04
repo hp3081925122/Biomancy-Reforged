@@ -16,9 +16,9 @@ public final class ModArmPoses {
 	static void init() {}
 
 	public static final class Proxies {
-		public static final EnumProxy<HumanoidModel.ArmPose> HOLD_AND_AIM_GUN_TWO_HANDED = new EnumProxy<>(HumanoidModel.ArmPose.class, true, (IArmPoseTransformer) (model, livingEntity, arm) -> {
+		public static final EnumProxy<HumanoidModel.ArmPose> HOLD_AND_AIM_GUN_TWO_HANDED = new EnumProxy<>(HumanoidModel.ArmPose.class, true, true, (IArmPoseTransformer) (model, state, arm) -> {
 			boolean rightHanded = arm == HumanoidArm.RIGHT;
-			float elapsedTicks = Mth.clamp(livingEntity.getTicksUsingItem(), 0f, 5f);
+			float elapsedTicks = Mth.clamp(state.ticksUsingItem, 0f, 5f);
 			float progress = elapsedTicks / 2.5f;
 
 			ModelPart mainHand = rightHanded ? model.rightArm : model.leftArm;

@@ -7,23 +7,20 @@
     "defaultRequire": 1
   },
   "mixins": [
-    "AnimalMixin", "AreaEffectCloudMixin", "ArrowMixin", "FlowingFluidMixin", "ItemEntityMixin", "LivingEntityMixin",
-    "MobEffectInstanceMixin", "NodeEvaluatorMixin", "PhantomMixin", "PlayerHeadItemMixin", "PlayerMixin", "ServerGamePacketListenerImplMixin",
+    "AnimalMixin", "AreaEffectCloudMixin", "AvatarMixin", "ArrowMixin", "ClearAllStatusEffectsConsumeEffectMixin", "FoodPropertiesMixin", "RemoveStatusEffectsConsumeEffectMixin", "FlowingFluidMixin", "ItemEntityMixin", "ItemStackMixin", "LivingEntityMixin",
+    "MobEffectInstanceMixin", "NodeEvaluatorMixin", "PhantomMixin", "PlayerMixin", "ServerGamePacketListenerImplMixin",
     "ServerLevelMixin", "SignBlockEntityMixin", "ThrownPotionMixin", "VillagerMakeLoveMixin", "VillagerMixin", "WallBlockMixin",
-    "accessor.AgeableMobAccessor", "accessor.AnimalAccessor", "accessor.ArmorStandAccessor", "accessor.BiomeAccessor",
-    "accessor.CreeperAccessor", "accessor.DamageSourceAccessor", "accessor.DimensionDataStorageAccessor", "accessor.DisplayAccessor", "accessor.EntityAccessor",
-    "accessor.ExplosionAccessor", "accessor.IngredientAccessor", "accessor.IntegerPropertyAccessor", "accessor.LivingEntityAccessor",
-    "accessor.MobEffectInstanceAccessor", "accessor.MobEntityAccessor", "accessor.ServerLevelAccessor", "accessor.SheepAccessor",
+    "accessor.AbstractHorseAccessor", "accessor.AgeableMobAccessor", "accessor.AnimalAccessor", "accessor.ArmorStandAccessor", "accessor.BiomeAccessor",
+    "accessor.CreeperAccessor", "accessor.DamageSourceAccessor", "accessor.DisplayAccessor", "accessor.EntityAccessor",
+    "accessor.IntegerPropertyAccessor", "accessor.LivingEntityAccessor",
+    "accessor.MobEffectInstanceAccessor", "accessor.MobEntityAccessor", "accessor.SavedDataStorageAccessor", "accessor.ServerLevelAccessor", "accessor.SheepAccessor",
     "accessor.SlimeAccessor", "accessor.StructureTemplateAccessor", "accessor.TadpoleAccessor", "accessor.TextDisplayAccessor",
     "accessor.TextureSlotAccessor", "accessor.ZombieVillagerMixinAccessor"
   ],
   "client": [
-    "accessor.PlayerRendererAccessor", "accessor.RecipeCollectionAccessor", "client.AbstractSignEditScreenMixin", "client.AnvilScreenMixin",
-    "client.ClientPackListenerMixin", "client.EntityRenderDispatcherMixin", "client.FontMixin", "client.GuiGraphicsMixin",
-    "client.GuiMixin", "client.HeartTypeMixin", "client.LiquidBlockRendererMixin", "client.PlayerRendererMixin",
-    "geckolibextras.BlockAndItemGeoLayerMixin", "geckolibextras.GeoItemRendererMixin", "geckolibextras.ItemDisplayRendererMixin",
-    "geckolibextras.ItemEntityRendererMixin", "geckolibextras.ItemFrameRendererMixin", "geckolibextras.ItemRendererMixin",
-    "geckolibextras.ThrownItemRendererMixin"
+    "client.AbstractSignEditScreenMixin", "client.AnvilScreenMixin",
+    "client.ClientPackListenerMixin", "client.FontMixin", "client.GuiGraphicsMixin",
+    "client.GuiMixin", "client.HeartTypeMixin", "client.LiquidBlockRendererMixin"
   ],
   "server": []
 }

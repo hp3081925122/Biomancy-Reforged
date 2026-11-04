@@ -1,8 +1,6 @@
 {
   "type": "biomancy:digesting",
-  "ingredient": {
-    "item": "minecraft:sniffer_egg"
-  },
+  "ingredient": "minecraft:sniffer_egg",
   "nutrientsCost": 3,
   "processingTime": 541,
   "result": {

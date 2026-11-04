@@ -1,8 +1,6 @@
 {
   "type": "biomancy:digesting",
-  "ingredient": {
-    "item": "minecraft:lily_pad"
-  },
+  "ingredient": "minecraft:lily_pad",
   "nutrientsCost": 2,
   "processingTime": 332,
   "result": {

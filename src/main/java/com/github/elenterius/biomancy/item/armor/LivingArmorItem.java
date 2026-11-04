@@ -1,5 +1,7 @@
 package com.github.elenterius.biomancy.item.armor;
 
+import com.github.elenterius.biomancy.item.ConditionalEnchantable;
+import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.core.Holder;
@@ -23,8 +25,10 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ClickAction;
 import net.minecraft.world.inventory.Slot;
-import net.minecraft.world.item.ArmorItem;
-import net.minecraft.world.item.ArmorMaterial;
+import net.minecraft.world.item.equipment.ArmorType;
+import net.neoforged.neoforge.common.util.Lazy;
+import com.github.elenterius.biomancy.init.ModArmorMaterials;
+import net.minecraft.world.item.equipment.ArmorMaterial;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.enchantment.Enchantment;
@@ -35,18 +39,43 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
-public class LivingArmorItem extends ArmorItem implements SimpleLivingTool {
+public class LivingArmorItem extends Item implements ConditionalEnchantable, SimpleLivingTool {
 
 	private final int maxNutrients;
+	protected final ArmorMaterial material;
+	protected final ArmorType type;
+	private final Lazy<ItemAttributeModifiers> armorAttributeModifiers;
 
-	public LivingArmorItem(Holder<ArmorMaterial> material, Type type, int maxNutrients, Properties properties) {
-		super(material, type, properties);
+	public LivingArmorItem(ArmorMaterial material, ArmorType type, int maxNutrients, Properties properties) {
+		super(ModArmorMaterials.applyArmorProperties(material, type, properties));
 		this.maxNutrients = maxNutrients;
+		this.material = material;
+		this.type = type;
+		armorAttributeModifiers = Lazy.of(() -> material.createAttributes(type));
 	}
+
+	public ArmorMaterial getMaterial() {
+		return material;
+	}
+
+	public ArmorType getType() {
+		return type;
+	}
+
+	public EquipmentSlot getEquipmentSlot() {
+		return type.getSlot();
+	}
+
+	protected ItemAttributeModifiers getArmorAttributeModifiers() {
+		return armorAttributeModifiers.get();
+	}
+
+	public static final List<EquipmentSlot> ARMOR_SLOTS = List.of(EquipmentSlot.FEET, EquipmentSlot.LEGS, EquipmentSlot.CHEST, EquipmentSlot.HEAD);
 
 	public static int getNutrientsFromEquippedArmor(Player player, Predicate<ItemStack> predicate) {
 		int nutrients = 0;
-		for (ItemStack stackInArmorSlot : player.getArmorSlots()) {
+		for (EquipmentSlot slot : ARMOR_SLOTS) {
+			ItemStack stackInArmorSlot = player.getItemBySlot(slot);
 			if (stackInArmorSlot.getItem() instanceof LivingArmorItem armor && predicate.test(stackInArmorSlot)) {
 				nutrients += armor.getNutrients(stackInArmorSlot);
 			}
@@ -55,7 +84,7 @@ public class LivingArmorItem extends ArmorItem implements SimpleLivingTool {
 	}
 
 	public static void consumeNutrientsFromEquippedArmor(Player player, final int amount, Predicate<ItemStack> predicate) {
-		NonNullList<ItemStack> armorSlots = player.getInventory().armor;
+		List<ItemStack> armorSlots = ARMOR_SLOTS.stream().map(player::getItemBySlot).toList();
 
 		int[] availableNutrients = new int[armorSlots.size()];
 
@@ -138,14 +167,14 @@ public class LivingArmorItem extends ArmorItem implements SimpleLivingTool {
 	}
 
 	@Override
-	public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag isAdvanced) {
-		tooltip.addAll(ClientTextUtil.getItemInfoTooltip(stack));
-		tooltip.add(ComponentUtil.EMPTY_LINE);
+	public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag isAdvanced) {
+		ClientTextUtil.getItemInfoTooltip(stack).forEach(tooltip);
+		tooltip.accept(ComponentUtil.EMPTY_LINE);
 
 		appendLivingToolTooltip(stack, tooltip);
 
 		if (stack.isEnchanted()) {
-			tooltip.add(ComponentUtil.EMPTY_LINE);
+			tooltip.accept(ComponentUtil.EMPTY_LINE);
 		}
 	}
 
@@ -156,7 +185,7 @@ public class LivingArmorItem extends ArmorItem implements SimpleLivingTool {
 
 	@Override
 	public ItemAttributeModifiers getDefaultAttributeModifiers(ItemStack stack) {
-		return getNutrients(stack) > 0 ? super.getDefaultAttributeModifiers(stack) : ItemAttributeModifiers.EMPTY;
+		return getNutrients(stack) > 0 ? getArmorAttributeModifiers() : ItemAttributeModifiers.EMPTY;
 	}
 
 	@Override

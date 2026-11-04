@@ -1,7 +1,7 @@
 package com.github.elenterius.biomancy.block.bloom;
 
 import com.github.elenterius.biomancy.util.InteractionUtil;
-import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.InteractionResult;
 import com.github.elenterius.biomancy.block.base.WaterloggedFacingBlock;
 import com.github.elenterius.biomancy.entity.projectile.BloomberryProjectile;
 import com.github.elenterius.biomancy.init.ModEntityTypes;
@@ -145,26 +145,26 @@ public class BloomBlock extends WaterloggedFacingBlock implements PlantTypeProvi
 	}
 
 	@Override
-	protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+	protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
 		return InteractionUtil.toItemInteractionResult(use(state, level, pos, player, hand, hit));
 	}
 
 	protected InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
 		int age = AGE.getValue(state);
 		if (age > 5 && player.getItemInHand(hand).isEmpty()) {
-			if (!level.isClientSide) {
-				int count = 1 + (age > 6 ? level.random.nextInt(2) : 0);
+			if (!level.isClientSide()) {
+				int count = 1 + (age > 6 ? level.getRandom().nextInt(2) : 0);
 				popResource(level, pos, new ItemStack(ModItems.BLOOMBERRY.get(), count));
 
 				player.hurt(level.damageSources().sweetBerryBush(), 1f);
 
-				level.playSound(null, pos, SoundEvents.CAVE_VINES_PICK_BERRIES, SoundSource.BLOCKS, 1f, 0.5f + level.random.nextFloat() * 0.4f);
+				level.playSound(null, pos, SoundEvents.CAVE_VINES_PICK_BERRIES, SoundSource.BLOCKS, 1f, 0.5f + level.getRandom().nextFloat() * 0.4f);
 				BlockState blockState = AGE.setValue(state, AGE.getMin());
 				level.setBlock(pos, blockState, Block.UPDATE_CLIENTS);
 				level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, blockState));
 			}
 
-			return InteractionResult.sidedSuccess(level.isClientSide);
+			return InteractionResult.SUCCESS;
 		}
 
 		return super.useWithoutItem(state, level, pos, player, hit);
@@ -176,8 +176,8 @@ public class BloomBlock extends WaterloggedFacingBlock implements PlantTypeProvi
 	}
 
 	@Override
-	public BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor level, BlockPos currentPos, BlockPos neighborPos) {
-		return !state.canSurvive(level, currentPos) ? Blocks.AIR.defaultBlockState() : super.updateShape(state, direction, neighborState, level, currentPos, neighborPos);
+	public BlockState updateShape(BlockState state, LevelReader level, ScheduledTickAccess ticks, BlockPos currentPos, Direction direction, BlockPos neighborPos, BlockState neighborState, RandomSource random) {
+		return !state.canSurvive(level, currentPos) ? Blocks.AIR.defaultBlockState() : super.updateShape(state, level, ticks, currentPos, direction, neighborPos, neighborState, random);
 	}
 
 	public boolean mayPlaceOn(BlockGetter level, BlockPos pos, BlockState state, Direction facing) {
@@ -192,7 +192,7 @@ public class BloomBlock extends WaterloggedFacingBlock implements PlantTypeProvi
 	}
 
 	@Override
-	public boolean propagatesSkylightDown(BlockState state, BlockGetter level, BlockPos pos) {
+	public boolean propagatesSkylightDown(BlockState state) {
 		return state.getFluidState().isEmpty();
 	}
 

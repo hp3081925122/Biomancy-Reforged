@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "biomancy:toxin_gland"
+      "ingredient": "biomancy:toxin_gland"
     }
   },
   "output": {

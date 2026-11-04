@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "minecraft:enchanted_golden_apple"
+      "ingredient": "minecraft:enchanted_golden_apple"
     }
   },
   "output": {

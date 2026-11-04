@@ -1,21 +1,24 @@
 package com.github.elenterius.biomancy.datagen;
 
+import net.minecraft.server.packs.PackType;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.datagen.advancements.ModAdvancementProvider;
 import com.github.elenterius.biomancy.datagen.lang.EnglishLangProvider;
 import com.github.elenterius.biomancy.datagen.loot.ModGlobalLootModifierProvider;
 import com.github.elenterius.biomancy.datagen.loot.ModLootTableProvider;
 import com.github.elenterius.biomancy.datagen.loot.WikiDespoilLootProvider;
-import com.github.elenterius.biomancy.datagen.models.ModBlockStateProvider;
-import com.github.elenterius.biomancy.datagen.models.ModItemModelProvider;
 import com.github.elenterius.biomancy.datagen.particles.ModParticleSpriteProvider;
 import com.github.elenterius.biomancy.datagen.recipes.ModRecipeProvider;
 import com.github.elenterius.biomancy.datagen.recipes.WikiRecipesProvider;
 import com.github.elenterius.biomancy.datagen.tags.*;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.HolderSet;
+import net.minecraft.tags.ItemTags;
+import net.neoforged.neoforge.common.CommonHooks;
+import net.minecraft.core.component.DataComponentInitializers;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.DataGenerator;
 import net.minecraft.data.PackOutput;
-import net.neoforged.neoforge.common.data.ExistingFileHelper;
 import net.neoforged.neoforge.data.event.GatherDataEvent;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -28,52 +31,46 @@ public final class DataGenerators {
 	private DataGenerators() {}
 
 	@SubscribeEvent
-	public static void gatherData(final GatherDataEvent event) {
-		boolean includeServer = event.includeServer();
-		boolean includeClient = event.includeClient();
-
+	public static void gatherData(final GatherDataEvent.Client event) {
 		DataGenerator generator = event.getGenerator();
-		ExistingFileHelper existingFileHelper = event.getExistingFileHelper();
 		PackOutput packOutput = generator.getPackOutput();
 		CompletableFuture<HolderLookup.Provider> lookupProvider = event.getLookupProvider();
+		CommonHooks.markComponentClassAsValid(HolderSet.emptyNamed(BuiltInRegistries.ITEM, ItemTags.BANNERS).getClass());
+		BuiltInRegistries.DATA_COMPONENT_INITIALIZERS.build(lookupProvider.join()).forEach(DataComponentInitializers.PendingComponents::apply);
 
 		DatapackEntriesProvider datapackEntriesProvider = new DatapackEntriesProvider(packOutput, lookupProvider);
 		lookupProvider = datapackEntriesProvider.getRegistryProvider();
-		generator.addProvider(includeServer, datapackEntriesProvider);
+		generator.addProvider(true, datapackEntriesProvider);
 
-		ModBlockTagsProvider blockTagsProvider = new ModBlockTagsProvider(packOutput, lookupProvider, existingFileHelper);
-		generator.addProvider(includeServer, blockTagsProvider);
-		generator.addProvider(includeServer, new ModItemTagsProvider(packOutput, lookupProvider, blockTagsProvider.contentsGetter(), existingFileHelper));
-		generator.addProvider(includeServer, new ModEntityTypeTagsProvider(packOutput, lookupProvider, existingFileHelper));
-		generator.addProvider(includeServer, new ModBannerPatternTagsProvider(packOutput, lookupProvider, existingFileHelper));
-		generator.addProvider(includeServer, new ModDamageTypeTagsProvider(packOutput, lookupProvider, existingFileHelper));
-		generator.addProvider(includeServer, new ModMobEffectTagsProvider(packOutput, lookupProvider, existingFileHelper));
-		generator.addProvider(includeServer, new ModPaintingTagsProvider(packOutput, lookupProvider, existingFileHelper));
-		generator.addProvider(includeServer, new ModEnchantmentTagsProvider(packOutput, lookupProvider, existingFileHelper));
+		generator.addProvider(true, new ModBlockTagsProvider(packOutput, lookupProvider));
+		generator.addProvider(true, new ModItemTagsProvider(packOutput, lookupProvider));
+		generator.addProvider(true, new ModEntityTypeTagsProvider(packOutput, lookupProvider));
+		generator.addProvider(true, new ModBannerPatternTagsProvider(packOutput, lookupProvider));
+		generator.addProvider(true, new ModDamageTypeTagsProvider(packOutput, lookupProvider));
+		generator.addProvider(true, new ModMobEffectTagsProvider(packOutput, lookupProvider));
+		generator.addProvider(true, new ModPaintingTagsProvider(packOutput, lookupProvider));
+		generator.addProvider(true, new ModEnchantmentTagsProvider(packOutput, lookupProvider));
 
 		ModRecipeProvider recipeProvider = new ModRecipeProvider(packOutput, lookupProvider);
-		generator.addProvider(includeServer, recipeProvider);
-		generator.addProvider(includeServer, new WikiRecipesProvider(packOutput, recipeProvider, lookupProvider));
+		generator.addProvider(true, recipeProvider);
+		generator.addProvider(true, new WikiRecipesProvider(packOutput, recipeProvider, lookupProvider));
 
-		generator.addProvider(includeServer, new ModDataMapProvider(packOutput, lookupProvider));
-		generator.addProvider(includeServer, new ModLootTableProvider(packOutput, lookupProvider));
-		generator.addProvider(includeServer, new ModGlobalLootModifierProvider(packOutput, lookupProvider));
+		generator.addProvider(true, new ModDataMapProvider(packOutput, lookupProvider));
+		generator.addProvider(true, new ModLootTableProvider(packOutput, lookupProvider));
+		generator.addProvider(true, new ModGlobalLootModifierProvider(packOutput, lookupProvider));
 		if (System.getProperty("wiki.docs") != null) {
-			generator.addProvider(includeServer, new WikiDespoilLootProvider(packOutput, lookupProvider));
+			generator.addProvider(true, new WikiDespoilLootProvider(packOutput, lookupProvider));
 		}
 
-		generator.addProvider(includeServer, new ModBlockStateProvider(packOutput, existingFileHelper));
-		generator.addProvider(includeServer, new ModItemModelProvider(packOutput, existingFileHelper));
+		generator.addProvider(true, new ModSoundProvider(packOutput));
 
-		generator.addProvider(includeClient, new ModSoundProvider(packOutput, existingFileHelper));
-
-		generator.addProvider(includeServer, new ModParticleSpriteProvider(packOutput, existingFileHelper));
+		generator.addProvider(true, new ModParticleSpriteProvider(packOutput, event.getResourceManager(PackType.CLIENT_RESOURCES)));
 
 		EnglishLangProvider enLanguage = new EnglishLangProvider(packOutput);
 
-		generator.addProvider(includeServer, new ModAdvancementProvider(packOutput, lookupProvider, existingFileHelper, enLanguage));
+		generator.addProvider(true, new ModAdvancementProvider(packOutput, lookupProvider, enLanguage));
 
-		generator.addProvider(includeServer, enLanguage);
+		generator.addProvider(true, enLanguage);
 	}
 
 }

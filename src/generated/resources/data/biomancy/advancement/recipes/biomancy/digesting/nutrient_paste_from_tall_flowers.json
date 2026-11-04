@@ -1,11 +1,11 @@
 {
   "parent": "minecraft:recipes/root",
   "criteria": {
-    "has_tall_flowers": {
+    "has_flowers/tall": {
       "conditions": {
         "items": [
           {
-            "items": "#minecraft:tall_flowers"
+            "items": "#c:flowers/tall"
           }
         ]
       },
@@ -20,7 +20,7 @@
   },
   "requirements": [
     [
-      "has_tall_flowers",
+      "has_flowers/tall",
       "has_the_recipe"
     ]
   ],

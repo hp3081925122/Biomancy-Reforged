@@ -1,5 +1,10 @@
 package com.github.elenterius.biomancy.item.weapon.gun;
 
+import com.github.elenterius.biomancy.item.ConditionalEnchantable;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.item.component.TooltipDisplay;
+import net.minecraft.world.item.Item;
+import java.util.function.Consumer;
 import net.minecraft.core.Holder;
 import com.github.elenterius.biomancy.api.livingtool.SimpleLivingTool;
 import com.github.elenterius.biomancy.client.util.ClientTextUtil;
@@ -15,7 +20,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.SlotAccess;
 import net.minecraft.world.entity.player.Player;
@@ -30,7 +34,7 @@ import org.jspecify.annotations.Nullable;
 import java.util.List;
 import java.util.function.Predicate;
 
-public abstract class LivingGunItem<T extends BaseProjectile> extends GunItem<T> implements SimpleLivingTool {
+public abstract class LivingGunItem<T extends BaseProjectile> extends GunItem<T> implements ConditionalEnchantable, SimpleLivingTool {
 
 	private static final Predicate<ItemStack> AMMO_PREDICATE = itemStack -> false;
 
@@ -48,13 +52,13 @@ public abstract class LivingGunItem<T extends BaseProjectile> extends GunItem<T>
 	}
 
 	@Override
-	public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
+	public InteractionResult use(Level level, Player player, InteractionHand usedHand) {
 		ItemStack stack = player.getItemInHand(usedHand);
 
 		if (getNutrients(stack) < getDurabilityCost(stack)) {
-			player.displayClientMessage(TextComponentUtil.getFailureMsgText("not_enough_nutrients"), true);
+			player.sendOverlayMessage(TextComponentUtil.getFailureMsgText("not_enough_nutrients"));
 			gunProperties.sounds().playLocalFail(level, player);
-			return InteractionResultHolder.fail(stack);
+			return InteractionResult.FAIL;
 		}
 
 		return super.use(level, player, usedHand);
@@ -62,7 +66,7 @@ public abstract class LivingGunItem<T extends BaseProjectile> extends GunItem<T>
 
 	@Override
 	public void onUseTick(Level level, LivingEntity shooter, ItemStack stack, int remainingUseDuration) {
-		if (level.isClientSide) return;
+		if (level.isClientSide()) return;
 		if (!(level instanceof ServerLevel serverLevel)) return;
 		if (getGunState(stack) != GunState.SHOOTING_OR_CHARGING) return;
 
@@ -70,7 +74,7 @@ public abstract class LivingGunItem<T extends BaseProjectile> extends GunItem<T>
 			shooter.releaseUsingItem();
 			stopShooting(stack, serverLevel, shooter);
 			if (shooter instanceof ServerPlayer player) {
-				player.displayClientMessage(TextComponentUtil.getFailureMsgText("not_enough_nutrients"), true);
+				player.sendOverlayMessage(TextComponentUtil.getFailureMsgText("not_enough_nutrients"));
 			}
 			return;
 		}
@@ -110,17 +114,17 @@ public abstract class LivingGunItem<T extends BaseProjectile> extends GunItem<T>
 	}
 
 	@Override
-	public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag isAdvanced) {
+	public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag isAdvanced) {
 		appendGunStats(stack, tooltip);
 
-		tooltip.add(ComponentUtil.EMPTY_LINE);
+		tooltip.accept(ComponentUtil.EMPTY_LINE);
 		appendLivingToolTooltip(stack, tooltip);
 
-		tooltip.add(ComponentUtil.EMPTY_LINE);
-		tooltip.add(ClientTextUtil.pressButtonTo(ClientTextUtil.getDefaultKey(), TextComponentUtil.getActionText("reload")).withStyle(TextStyles.DARK_GRAY));
+		tooltip.accept(ComponentUtil.EMPTY_LINE);
+		tooltip.accept(ClientTextUtil.pressButtonTo(ClientTextUtil.getDefaultKey(), TextComponentUtil.getActionText("reload")).withStyle(TextStyles.DARK_GRAY));
 
 		if (stack.isEnchanted()) {
-			tooltip.add(ComponentUtil.EMPTY_LINE);
+			tooltip.accept(ComponentUtil.EMPTY_LINE);
 		}
 	}
 

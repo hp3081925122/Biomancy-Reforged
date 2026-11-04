@@ -1,7 +1,7 @@
 package com.github.elenterius.biomancy.init.tags;
 
 import com.github.elenterius.biomancy.BiomancyMod;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
@@ -18,6 +18,9 @@ public final class ModItemTags {
 	public static final TagKey<Item> FRESH_RAW_MEATS = tag("raw_meats");
 	public static final TagKey<Item> COOKED_MEATS = tag("cooked_meats");
 	public static final TagKey<Item> SUGARS = tag("sugars");
+	public static final TagKey<Item> BONE_TOOL_MATERIALS = tag("tool_materials/bone");
+	public static final TagKey<Item> PRIMAL_FLESH_TOOL_MATERIALS = tag("tool_materials/primal_flesh");
+	public static final TagKey<Item> NO_REPAIR_MATERIALS = tag("tool_materials/none");
 
 	public static final TagKey<Item> CANNOT_BE_DIGESTED_IN_ACID = tag("cannot_be_digested_in_acid");
 	public static final TagKey<Item> CANNOT_BE_EATEN_BY_CRADLE = tag("cannot_be_eaten_by_cradle");
@@ -34,7 +37,7 @@ public final class ModItemTags {
 	}
 
 	private static TagKey<Item> conventionalTag(String path) {
-		return ItemTags.create(ResourceLocation.fromNamespaceAndPath("c", path));
+		return ItemTags.create(Identifier.fromNamespaceAndPath("c", path));
 	}
 
 }

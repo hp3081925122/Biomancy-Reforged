@@ -14,7 +14,7 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.item.ArmorItem;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.*;
@@ -38,7 +38,7 @@ public final class AdaptiveDamageResistanceHandler {
 		stack.set(ModDataComponents.DAMAGE_RESISTANCE_TRACKER, resistanceTracker.immutableCopy());
 	}
 
-	public static float absorbDamage(LivingEntity livingEntity, DamageSource damageSource, float damage, ArmorItem armor, ItemStack stack) {
+	public static float absorbDamage(LivingEntity livingEntity, DamageSource damageSource, float damage, Item armor, ItemStack stack) {
 		List<TagKey<DamageType>> rootDamageTypes = damageSource.typeHolder().tags()
 				.filter(tagKey -> VALID_NAMESPACES.contains(tagKey.location().getNamespace()) && tagKey.location().getPath().startsWith(TAG_PREFIX))
 				.toList();

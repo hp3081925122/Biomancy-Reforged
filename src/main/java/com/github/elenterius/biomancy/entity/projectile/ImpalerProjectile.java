@@ -1,5 +1,10 @@
 package com.github.elenterius.biomancy.entity.projectile;
 
+import net.minecraft.world.item.component.BlocksAttacks;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.level.storage.ValueInput;
 import com.github.elenterius.biomancy.init.ModDamageSources;
 import com.github.elenterius.biomancy.init.ModItems;
 import com.github.elenterius.biomancy.init.ModSoundEvents;
@@ -31,10 +36,10 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.ItemAbilities;
 import org.jspecify.annotations.Nullable;
-import software.bernie.geckolib.animatable.GeoEntity;
-import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.animation.AnimatableManager;
-import software.bernie.geckolib.util.GeckoLibUtil;
+import com.geckolib.animatable.GeoEntity;
+import com.geckolib.animatable.instance.AnimatableInstanceCache;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.util.GeckoLibUtil;
 
 public class ImpalerProjectile extends BaseProjectile implements GeoEntity {
 
@@ -87,7 +92,7 @@ public class ImpalerProjectile extends BaseProjectile implements GeoEntity {
 		if (moveSpeed < 0.1d) return false;
 
 		if (moveSpeed * 2.5f >= destroySpeed) {
-			if (!level().isClientSide) {
+			if (!level().isClientSide()) {
 				level().destroyBlock(pos, true);
 			}
 
@@ -163,15 +168,15 @@ public class ImpalerProjectile extends BaseProjectile implements GeoEntity {
 	}
 
 	@Override
-	public void addAdditionalSaveData(CompoundTag tag) {
-		super.addAdditionalSaveData(tag);
-		tag.putInt("pierce", getPierceLevel());
+	public void addAdditionalSaveData(ValueOutput output) {
+		super.addAdditionalSaveData(output);
+		output.putInt("pierce", getPierceLevel());
 	}
 
 	@Override
-	public void readAdditionalSaveData(CompoundTag tag) {
-		super.readAdditionalSaveData(tag);
-		setPierceLevel(tag.getInt("pierce"));
+	public void readAdditionalSaveData(ValueInput input) {
+		super.readAdditionalSaveData(input);
+		setPierceLevel(input.getIntOr("pierce", 0));
 	}
 
 	@Override
@@ -180,7 +185,7 @@ public class ImpalerProjectile extends BaseProjectile implements GeoEntity {
 	}
 
 	@Override
-	public boolean hurt(DamageSource source, float amount) {
+	public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
 		return false;
 	}
 
@@ -237,9 +242,9 @@ public class ImpalerProjectile extends BaseProjectile implements GeoEntity {
 		boolean hurtSuccess;
 		float damage = getDamage();
 		DamageSource damageSource = ModDamageSources.impalerProjectile(level(), this, getOwner());
-		hurtSuccess = livingTarget.hurt(damageSource, damage);
+		hurtSuccess = livingTarget.hurtOrSimulate(damageSource, damage);
 
-		if (hurtSuccess && !level().isClientSide) {
+		if (hurtSuccess && !level().isClientSide()) {
 			if (shooter instanceof LivingEntity livingEntity) {
 				doPostAttackEffects(livingEntity, victim, damageSource);
 			}
@@ -283,10 +288,9 @@ public class ImpalerProjectile extends BaseProjectile implements GeoEntity {
 	protected void disableShield(LivingEntity victim, int cooldownTicks) {
 		ItemStack itemStackInUse = victim.getUseItem();
 
-		if (!itemStackInUse.isEmpty() && victim.isUsingItem() && itemStackInUse.getItem().canPerformAction(itemStackInUse, ItemAbilities.SHIELD_BLOCK)) {
-			if (victim instanceof Player player) player.getCooldowns().addCooldown(itemStackInUse.getItem(), cooldownTicks);
-			victim.stopUsingItem();
-			victim.playSound(SoundEvents.SHIELD_BREAK, 0.8f, 0.8f + level().random.nextFloat() * 0.4f);
+		BlocksAttacks blocksAttacks = itemStackInUse.get(DataComponents.BLOCKS_ATTACKS);
+		if (!itemStackInUse.isEmpty() && victim.isUsingItem() && blocksAttacks != null && level() instanceof ServerLevel serverLevel) {
+			blocksAttacks.disable(serverLevel, victim, cooldownTicks / 20f, itemStackInUse);
 		}
 	}
 

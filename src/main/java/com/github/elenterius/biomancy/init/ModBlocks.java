@@ -31,6 +31,9 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.*;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.NoteBlockInstrument;
@@ -46,6 +49,8 @@ public final class ModBlocks {
 
 	private static final float FLESH_DESTROY_SPEED = 3f;
 	private static final float FLESH_EXPLOSION_RESISTANCE = 3f;
+
+	private static Identifier currentId;
 
 	public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(BiomancyMod.MOD_ID);
 	public static final DeferredBlock<PrimordialCradleBlock> PRIMORDIAL_CRADLE = register("primordial_cradle", PrimordialCradleBlock::new);
@@ -96,7 +101,7 @@ public final class ModBlocks {
 	public static final DeferredBlock<StairBlock> MALIGNANT_FLESH_STAIRS = registerStairs(MALIGNANT_FLESH, StairBlock::new);
 	public static final DeferredBlock<DirectionalSlabBlock> MALIGNANT_FLESH_SLAB = registerSlab(MALIGNANT_FLESH, DirectionalSlabBlock::new);
 	public static final DeferredBlock<WallBlock> MALIGNANT_FLESH_WALL = registerWall(MALIGNANT_FLESH, WallBlock::new);
-	public static final DeferredBlock<FleshVeinsBlock> MALIGNANT_FLESH_VEINS = register("malignant_flesh_veins", () -> new FleshVeinsBlock(createFleshVeinsProperties().noCollission().noOcclusion()));
+	public static final DeferredBlock<FleshVeinsBlock> MALIGNANT_FLESH_VEINS = register("malignant_flesh_veins", () -> new FleshVeinsBlock(createFleshVeinsProperties().noCollision().noOcclusion()));
 	public static final DeferredBlock<BloomBlock> PRIMAL_BLOOM = register("primal_bloom", properties -> new BloomBlock(properties.randomTicks().noOcclusion().lightLevel(BloomBlock::getLightEmission)));
 	public static final DeferredBlock<Block> BLOOMLIGHT = register("bloomlight", properties -> new Block(properties.sound(SoundType.SHROOMLIGHT).lightLevel(x -> 15)));
 	public static final DeferredBlock<OrificeBlock> PRIMAL_ORIFICE = register("primal_orifice", properties -> new OrificeBlock(properties.randomTicks().lightLevel(OrificeBlock.lightEmission(7))));
@@ -136,11 +141,17 @@ public final class ModBlocks {
 	private ModBlocks() {}
 
 	private static <T extends Block> DeferredBlock<T> register(String name, Function<BlockBehaviour.Properties, T> factory) {
-		return BLOCKS.register(name, () -> factory.apply(createFleshProperties()));
+		return BLOCKS.register(name, id -> {
+			currentId = id;
+			return factory.apply(createFleshProperties());
+		});
 	}
 
 	private static <T extends Block> DeferredBlock<T> register(String name, Supplier<T> factory) {
-		return BLOCKS.register(name, factory);
+		return BLOCKS.register(name, id -> {
+			currentId = id;
+			return factory.get();
+		});
 	}
 
 	private static <T extends StairBlock> DeferredBlock<T> registerStairs(DeferredBlock<? extends Block> parent, StairBlockFactory<T> factory) {
@@ -148,7 +159,10 @@ public final class ModBlocks {
 	}
 
 	private static <T extends StairBlock> DeferredBlock<T> registerStairs(String name, DeferredBlock<? extends Block> parent, StairBlockFactory<T> factory) {
-		return BLOCKS.register(name, () -> factory.create(parent.get().defaultBlockState(), copyProperties(parent.get())));
+		return BLOCKS.register(name, id -> {
+			currentId = id;
+			return factory.create(parent.get().defaultBlockState(), copyProperties(parent.get()));
+		});
 	}
 
 	private static <T extends WallBlock> DeferredBlock<T> registerWall(DeferredBlock<? extends Block> parent, Function<BlockBehaviour.Properties, T> factory) {
@@ -156,7 +170,10 @@ public final class ModBlocks {
 	}
 
 	private static <T extends WallBlock> DeferredBlock<T> registerWall(String name, DeferredBlock<? extends Block> parent, Function<BlockBehaviour.Properties, T> factory) {
-		return BLOCKS.register(name, () -> factory.apply(copyProperties(parent.get())));
+		return BLOCKS.register(name, id -> {
+			currentId = id;
+			return factory.apply(copyProperties(parent.get()));
+		});
 	}
 
 	private static <T extends DirectionalSlabBlock> DeferredBlock<T> registerSlab(DeferredBlock<? extends Block> parent, Function<BlockBehaviour.Properties, T> factory) {
@@ -164,7 +181,10 @@ public final class ModBlocks {
 	}
 
 	private static <T extends DirectionalSlabBlock> DeferredBlock<T> registerSlab(String name, DeferredBlock<? extends Block> parent, Function<BlockBehaviour.Properties, T> factory) {
-		return BLOCKS.register(name, () -> factory.apply(copyProperties(parent.get())));
+		return BLOCKS.register(name, id -> {
+			currentId = id;
+			return factory.apply(copyProperties(parent.get()));
+		});
 	}
 
 	private static DeferredBlock<MembraneBlock> registerMembrane(String name, IgnoreEntityCollisionPredicate predicate) {
@@ -204,21 +224,25 @@ public final class ModBlocks {
 	}
 
 	public static BlockBehaviour.Properties copyProperties(BlockBehaviour behaviour) {
-		return BlockBehaviour.Properties.ofLegacyCopy(behaviour);
+		return withId(BlockBehaviour.Properties.ofLegacyCopy(behaviour));
 	}
 
 	public static BlockBehaviour.Properties createProperties() {
-		return BlockBehaviour.Properties.of();
+		return withId(BlockBehaviour.Properties.of());
+	}
+
+	private static BlockBehaviour.Properties withId(BlockBehaviour.Properties properties) {
+		return properties.setId(ResourceKey.create(Registries.BLOCK, currentId));
 	}
 
 	public static BlockBehaviour.Properties createFleshProperties() {
-		return BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_PINK).strength(FLESH_DESTROY_SPEED, FLESH_EXPLOSION_RESISTANCE).sound(ModSoundTypes.FLESH_BLOCK).isValidSpawn(ModBlocks::isValidFleshkinSpawn);
+		return createProperties().mapColor(MapColor.COLOR_PINK).strength(FLESH_DESTROY_SPEED, FLESH_EXPLOSION_RESISTANCE).sound(ModSoundTypes.FLESH_BLOCK).isValidSpawn(ModBlocks::isValidFleshkinSpawn);
 	}
 
 	public static BlockBehaviour.Properties createFleshVeinsProperties() {
-		return BlockBehaviour.Properties.of()
+		return createProperties()
 				.strength(FLESH_DESTROY_SPEED, FLESH_EXPLOSION_RESISTANCE)
-				.noCollission()
+				.noCollision()
 				.pushReaction(PushReaction.DESTROY)
 				.sound(ModSoundTypes.FLESH_BLOCK)
 				.isValidSpawn(ModBlocks::isValidFleshkinSpawn);
@@ -229,15 +253,15 @@ public final class ModBlocks {
 	}
 
 	public static BlockBehaviour.Properties createBonyFleshProperties() {
-		return BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_PINK).strength(FLESH_DESTROY_SPEED + 1, FLESH_EXPLOSION_RESISTANCE * 2).sound(ModSoundTypes.BONY_FLESH_BLOCK).isValidSpawn(ModBlocks::isValidFleshkinSpawn);
+		return createProperties().mapColor(MapColor.COLOR_PINK).strength(FLESH_DESTROY_SPEED + 1, FLESH_EXPLOSION_RESISTANCE * 2).sound(ModSoundTypes.BONY_FLESH_BLOCK).isValidSpawn(ModBlocks::isValidFleshkinSpawn);
 	}
 
 	public static BlockBehaviour.Properties createBoneProperties() {
-		return BlockBehaviour.Properties.of().mapColor(MapColor.TERRACOTTA_GRAY).instrument(NoteBlockInstrument.XYLOPHONE).requiresCorrectToolForDrops().strength(FLESH_DESTROY_SPEED * 2, FLESH_EXPLOSION_RESISTANCE * 4).sound(SoundType.BONE_BLOCK).isValidSpawn(ModBlocks::isValidFleshkinSpawn);
+		return createProperties().mapColor(MapColor.TERRACOTTA_GRAY).instrument(NoteBlockInstrument.XYLOPHONE).requiresCorrectToolForDrops().strength(FLESH_DESTROY_SPEED * 2, FLESH_EXPLOSION_RESISTANCE * 4).sound(SoundType.BONE_BLOCK).isValidSpawn(ModBlocks::isValidFleshkinSpawn);
 	}
 
 	public static boolean isValidFleshkinSpawn(BlockState state, BlockGetter level, BlockPos pos, EntityType<?> entityType) {
-		return entityType.is(ModEntityTags.FLESHKIN) && state.isFaceSturdy(level, pos, Direction.UP);
+		return entityType.builtInRegistryHolder().is(ModEntityTags.FLESHKIN) && state.isFaceSturdy(level, pos, Direction.UP);
 	}
 
 	public static boolean neverValid(BlockState state, BlockGetter level, BlockPos pos, EntityType<?> entityType) {

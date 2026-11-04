@@ -4,23 +4,23 @@
   "ingredients": [
     {
       "count": 4,
-      "item": "biomancy:living_flesh"
+      "ingredient": "biomancy:living_flesh"
     },
     {
       "count": 32,
-      "item": "biomancy:flesh_bits"
+      "ingredient": "biomancy:flesh_bits"
     },
     {
       "count": 32,
-      "item": "biomancy:elastic_fibers"
+      "ingredient": "biomancy:elastic_fibers"
     },
     {
       "count": 16,
-      "item": "biomancy:bone_fragments"
+      "ingredient": "biomancy:bone_fragments"
     },
     {
       "count": 4,
-      "item": "biomancy:volatile_gland"
+      "ingredient": "biomancy:volatile_gland"
     }
   ],
   "nutrientsCost": 200,

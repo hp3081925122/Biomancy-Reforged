@@ -4,22 +4,22 @@
   "ingredients": [
     {
       "count": 6,
-      "item": "biomancy:tough_fibers"
+      "ingredient": "biomancy:tough_fibers"
     },
     {
       "count": 8,
-      "item": "biomancy:elastic_fibers"
+      "ingredient": "biomancy:elastic_fibers"
     },
     {
       "count": 16,
-      "item": "biomancy:bile"
+      "ingredient": "biomancy:bile"
     },
     {
       "count": 16,
-      "item": "biomancy:hormone_secretion"
+      "ingredient": "biomancy:hormone_secretion"
     },
     {
-      "item": "biomancy:living_flesh"
+      "ingredient": "biomancy:living_flesh"
     }
   ],
   "nutrientsCost": 1,

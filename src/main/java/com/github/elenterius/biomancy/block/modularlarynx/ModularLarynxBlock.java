@@ -1,9 +1,16 @@
 package com.github.elenterius.biomancy.block.modularlarynx;
 
+import com.github.elenterius.biomancy.block.base.BlockTooltipProvider;
+import net.minecraft.world.level.redstone.Orientation;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.ScheduledTickAccess;
+import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.item.component.TooltipDisplay;
+import java.util.function.Consumer;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.world.item.Item;
 import com.github.elenterius.biomancy.util.InteractionUtil;
-import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.InteractionResult;
 import com.github.elenterius.biomancy.block.property.BlockPropertyUtil;
 import com.github.elenterius.biomancy.init.ModBlockEntities;
 import com.github.elenterius.biomancy.init.ModBlockProperties;
@@ -44,7 +51,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
-public class ModularLarynxBlock extends BaseEntityBlock {
+public class ModularLarynxBlock extends BaseEntityBlock implements BlockTooltipProvider {
 
 	public static final MapCodec<ModularLarynxBlock> CODEC = simpleCodec(ModularLarynxBlock::new);
 
@@ -93,12 +100,12 @@ public class ModularLarynxBlock extends BaseEntityBlock {
 	}
 
 	@Override
-	protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+	protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
 		return InteractionUtil.toItemInteractionResult(use(state, level, pos, player, hand, hit));
 	}
 
 	protected InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-		if (level.isClientSide) return InteractionResult.SUCCESS;
+		if (level.isClientSide()) return InteractionResult.SUCCESS;
 
 		ItemStack heldStack = player.getItemInHand(hand);
 		if (!heldStack.isEmpty()) {
@@ -132,7 +139,7 @@ public class ModularLarynxBlock extends BaseEntityBlock {
 	}
 
 	@Override
-	public void neighborChanged(BlockState state, Level level, BlockPos pos, Block block, BlockPos fromPos, boolean isMoving) {
+	public void neighborChanged(BlockState state, Level level, BlockPos pos, Block block, @Nullable Orientation orientation, boolean isMoving) {
 		boolean hasSignal = level.hasNeighborSignal(pos);
 		if (hasSignal != isPowered(state)) {
 			if (hasSignal) playSound(state, level, pos);
@@ -147,11 +154,11 @@ public class ModularLarynxBlock extends BaseEntityBlock {
 	}
 
 	@Override
-	public BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor level, BlockPos pos, BlockPos neighborPos) {
+	public BlockState updateShape(BlockState state, LevelReader level, ScheduledTickAccess ticks, BlockPos pos, Direction direction, BlockPos neighborPos, BlockState neighborState, RandomSource random) {
 		if (direction == Direction.DOWN) {
 			return state.setValue(MOB_SOUND_TYPE, getSoundTypeFromStateBelow(neighborState));
 		}
-		return super.updateShape(state, direction, neighborState, level, pos, neighborPos);
+		return super.updateShape(state, level, ticks, pos, direction, neighborPos, neighborState, random);
 	}
 
 	private MobSoundType getSoundTypeFromStateBelow(BlockState stateBelow) {
@@ -161,7 +168,7 @@ public class ModularLarynxBlock extends BaseEntityBlock {
 	}
 
 	private void playSound(BlockState state, Level level, BlockPos pos) {
-		if (level.isClientSide) return;
+		if (level.isClientSide()) return;
 		if (!level.isEmptyBlock(pos.above())) return;
 
 		if (level.getBlockEntity(pos) instanceof ModularLarynxBlockEntity larynx) {
@@ -181,17 +188,6 @@ public class ModularLarynxBlock extends BaseEntityBlock {
 	}
 
 	@Override
-	public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
-		if (!state.is(newState.getBlock())) {
-			BlockEntity tileEntity = level.getBlockEntity(pos);
-			if (tileEntity instanceof ModularLarynxBlockEntity voiceBox) {
-				voiceBox.dropInventoryContents(level, pos);
-			}
-		}
-		super.onRemove(state, level, pos, newState, isMoving);
-	}
-
-	@Override
 	public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
 		return SHAPE;
 	}
@@ -201,17 +197,16 @@ public class ModularLarynxBlock extends BaseEntityBlock {
 		return RenderShape.MODEL;
 	}
 
-	@Override
-	public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
-		super.appendHoverText(stack, context, tooltip, flag);
+	
+	public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag flag) {
 
-		tooltip.add(ComponentUtil.EMPTY_LINE);
-		tooltip.add(getExtraTooltip(this, "1").withStyle(ChatFormatting.GRAY));
-		tooltip.add(ComponentUtil.literal(" ").append(getExtraTooltip(this, "2")).withStyle(ChatFormatting.DARK_GRAY));
-		tooltip.add(getExtraTooltip(this, "3").withStyle(ChatFormatting.GRAY));
-		tooltip.add(ComponentUtil.literal(" ").append(getExtraTooltip(this, "4")).withStyle(ChatFormatting.DARK_GRAY));
-		tooltip.add(getExtraTooltip(this, "5").withStyle(ChatFormatting.GRAY));
-		tooltip.add(ComponentUtil.literal(" ").append(getExtraTooltip(this, "6")).withStyle(ChatFormatting.DARK_GRAY));
+		tooltip.accept(ComponentUtil.EMPTY_LINE);
+		tooltip.accept(getExtraTooltip(this, "1").withStyle(ChatFormatting.GRAY));
+		tooltip.accept(ComponentUtil.literal(" ").append(getExtraTooltip(this, "2")).withStyle(ChatFormatting.DARK_GRAY));
+		tooltip.accept(getExtraTooltip(this, "3").withStyle(ChatFormatting.GRAY));
+		tooltip.accept(ComponentUtil.literal(" ").append(getExtraTooltip(this, "4")).withStyle(ChatFormatting.DARK_GRAY));
+		tooltip.accept(getExtraTooltip(this, "5").withStyle(ChatFormatting.GRAY));
+		tooltip.accept(ComponentUtil.literal(" ").append(getExtraTooltip(this, "6")).withStyle(ChatFormatting.DARK_GRAY));
 	}
 
 	public static MutableComponent getExtraTooltip(Block block, String suffix) {

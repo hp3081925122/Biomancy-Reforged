@@ -1,8 +1,6 @@
 {
   "type": "biomancy:digesting",
-  "ingredient": {
-    "item": "minecraft:nether_wart_block"
-  },
+  "ingredient": "minecraft:nether_wart_block",
   "nutrientsCost": 16,
   "processingTime": 750,
   "result": {

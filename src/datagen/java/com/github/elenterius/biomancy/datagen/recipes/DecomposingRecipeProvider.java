@@ -1,21 +1,16 @@
 package com.github.elenterius.biomancy.datagen.recipes;
 
+import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.block.membrane.Membrane;
 import com.github.elenterius.biomancy.datagen.recipes.builder.DatagenIngredient;
 import com.github.elenterius.biomancy.datagen.recipes.builder.DecomposingRecipeBuilder;
 import com.github.elenterius.biomancy.init.ModBlocks;
 import com.github.elenterius.biomancy.init.ModItems;
 import com.github.elenterius.biomancy.init.tags.ModItemTags;
-import net.mcreator.sonsofsins.SonsOfSinsMod;
-import net.mcreator.sonsofsins.init.SonsOfSinsModItems;
 import com.github.elenterius.biomancy.datagen.recipes.builder.FinishedRecipe;
 import net.minecraft.world.item.Items;
 import net.neoforged.neoforge.common.Tags;
 import net.neoforged.neoforge.registries.DeferredHolder;
-import net.orcinus.overweightfarming.OverweightFarming;
-import net.orcinus.overweightfarming.init.OFBlocks;
-import net.orcinus.overweightfarming.init.OFItems;
-import vectorwing.farmersdelight.FarmersDelight;
 
 import java.util.function.Consumer;
 
@@ -32,9 +27,6 @@ public class DecomposingRecipeProvider {
 		buildBiomesOPlentyRecipes(consumer);
 
 		buildFarmersDelightRecipes(consumer);
-		buildOverweightFarmingRecipes(consumer);
-
-		buildSonsOfSinsRecipes(consumer);
 	}
 
 	private void buildBaseRecipes(Consumer<FinishedRecipe> consumer) {
@@ -390,221 +382,29 @@ public class DecomposingRecipeProvider {
 				.unlockedBy(ModItems.BILE).save(consumer);
 	}
 
+	private static final String FARMERS_DELIGHT = "farmersdelight";
+
 	private DecomposingRecipeBuilder farmersDelightRecipe() {
-		return DecomposingRecipeBuilder.create().ifModLoaded(FarmersDelight.MODID);
-	}
-
-	private DecomposingRecipeBuilder overweightFarmingRecipe() {
-		return DecomposingRecipeBuilder.create().ifModLoaded(OverweightFarming.MODID);
-	}
-
-	private DecomposingRecipeBuilder sonsOfSinsRecipe() {
-		return DecomposingRecipeBuilder.create().ifModLoaded(SonsOfSinsMod.MODID);
+		return DecomposingRecipeBuilder.create().ifModLoaded(FARMERS_DELIGHT);
 	}
 
 	private void buildFarmersDelightRecipes(Consumer<FinishedRecipe> consumer) {
-		class FarmersDelightItems extends vectorwing.farmersdelight.common.registry.ModItems {}
-
 		farmersDelightRecipe()
-				.setIngredient(FarmersDelightItems.BROWN_MUSHROOM_COLONY.get())
+				.setIngredient(new DatagenIngredient(FARMERS_DELIGHT, "brown_mushroom_colony").ingredient(), 1, BiomancyMod.rl("brown_mushroom_colony"))
 				.addOutput(ModItems.ORGANIC_MATTER.get(), 5, 2 * 5)
-				.unlockedBy(FarmersDelightItems.BROWN_MUSHROOM_COLONY.get()).save(consumer);
+				.unlockedBy(new DatagenIngredient(FARMERS_DELIGHT, "brown_mushroom_colony")).save(consumer);
 
 		farmersDelightRecipe()
-				.setIngredient(FarmersDelightItems.RED_MUSHROOM_COLONY.get())
+				.setIngredient(new DatagenIngredient(FARMERS_DELIGHT, "red_mushroom_colony").ingredient(), 1, BiomancyMod.rl("red_mushroom_colony"))
 				.addOutput(ModItems.ORGANIC_MATTER.get(), 5, 2 * 5)
-				.unlockedBy(FarmersDelightItems.RED_MUSHROOM_COLONY.get()).save(consumer);
+				.unlockedBy(new DatagenIngredient(FARMERS_DELIGHT, "red_mushroom_colony")).save(consumer);
 
 		farmersDelightRecipe()
-				.setIngredient(FarmersDelightItems.HAM.get())
+				.setIngredient(new DatagenIngredient(FARMERS_DELIGHT, "ham").ingredient(), 1, BiomancyMod.rl("ham"))
 				.addOutput(ModItems.FLESH_BITS.get(), 3 * 2, 5 * 2)
 				.addOutput(ModItems.BONE_FRAGMENTS.get(), 2 * 2, 3 * 2)
 				.addOutput(ModItems.ELASTIC_FIBERS.get(), 2, 2 * 2)
-				.unlockedBy(FarmersDelightItems.HAM.get()).save(consumer);
-	}
-
-	private void buildOverweightFarmingRecipes(Consumer<FinishedRecipe> consumer) {
-		overweightFarmingRecipe()
-				.setIngredient(OFItems.VEGETABLE_PEELS.get())
-				.addOutput(ModItems.ORGANIC_MATTER.get(), 2, 4)
-				.unlockedBy(OFItems.VEGETABLE_PEELS.get()).save(consumer);
-
-		overweightFarmingRecipe()
-				.setIngredient(OFBlocks.OVERWEIGHT_COCOA.get())
-				.addOutput(ModItems.ORGANIC_MATTER.get(), 2 * 10, 4 * 10)
-				.unlockedBy(OFBlocks.OVERWEIGHT_COCOA.get()).save(consumer);
-
-		overweightFarmingRecipe()
-				.setIngredient(OFBlocks.PEELED_OVERWEIGHT_COCOA.get())
-				.addOutput(ModItems.ORGANIC_MATTER.get(), 2 * 10 - 2, 4 * 10 - 4)
-				.unlockedBy(OFBlocks.OVERWEIGHT_COCOA.get()).save(consumer);
-
-		overweightFarmingRecipe()
-				.setIngredient(OFBlocks.OVERWEIGHT_APPLE.get())
-				.addOutput(ModItems.ORGANIC_MATTER.get(), 10, 2 * 10)
-				.unlockedBy(OFBlocks.OVERWEIGHT_APPLE.get()).save(consumer);
-
-		overweightFarmingRecipe()
-				.setIngredient(OFBlocks.OVERWEIGHT_BEETROOT.get())
-				.addOutput(ModItems.ORGANIC_MATTER.get(), 2 * 10, 4 * 10)
-				.unlockedBy(OFBlocks.OVERWEIGHT_BEETROOT.get()).save(consumer);
-
-		overweightFarmingRecipe()
-				.setIngredient(OFBlocks.OVERWEIGHT_CARROT.get())
-				.addOutput(ModItems.ORGANIC_MATTER.get(), 10, 2 * 10)
-				.unlockedBy(OFBlocks.OVERWEIGHT_CARROT.get()).save(consumer);
-
-		overweightFarmingRecipe()
-				.setIngredient(OFBlocks.OVERWEIGHT_POTATO.get())
-				.addOutput(ModItems.ORGANIC_MATTER.get(), 10, 2 * 10)
-				.unlockedBy(OFBlocks.OVERWEIGHT_POTATO.get()).save(consumer);
-
-		overweightFarmingRecipe()
-				.setIngredient(OFBlocks.OVERWEIGHT_POISONOUS_POTATO.get())
-				.addOutput(ModItems.TOXIN_EXTRACT.get(), 2 * 10, 4 * 10)
-				.addOutput(ModItems.ORGANIC_MATTER.get(), 10, 3 * 10)
-				.unlockedBy(OFBlocks.OVERWEIGHT_POISONOUS_POTATO.get()).save(consumer);
-
-		overweightFarmingRecipe()
-				.setIngredient(OFBlocks.OVERWEIGHT_BAKED_POTATO.get())
-				.addOutput(ModItems.ORGANIC_MATTER.get(), 2 * 10, 5 * 10)
-				.unlockedBy(OFBlocks.OVERWEIGHT_BAKED_POTATO.get()).save(consumer);
-
-		overweightFarmingRecipe()
-				.setIngredient(OFBlocks.OVERWEIGHT_NETHER_WART.get())
-				.addOutput(ModItems.ORGANIC_MATTER.get(), 10, 2 * 10)
-				.addOutput(ModItems.EXOTIC_DUST.get(), 4, 10)
-				.unlockedBy(OFBlocks.OVERWEIGHT_NETHER_WART.get()).save(consumer);
-
-		overweightFarmingRecipe().ifModLoaded(FarmersDelight.MODID)
-				.setIngredient(OFBlocks.OVERWEIGHT_CABBAGE.get())
-				.addOutput(ModItems.ORGANIC_MATTER.get(), 10, 2 * 10)
-				.unlockedBy(OFBlocks.OVERWEIGHT_CABBAGE.get()).save(consumer);
-
-		overweightFarmingRecipe().ifModLoaded(FarmersDelight.MODID)
-				.setIngredient(OFBlocks.OVERWEIGHT_ONION.get())
-				.addOutput(ModItems.ORGANIC_MATTER.get(), 10, 2 * 10)
-				.unlockedBy(OFBlocks.OVERWEIGHT_ONION.get()).save(consumer);
-	}
-
-	private void buildSonsOfSinsRecipes(Consumer<FinishedRecipe> consumer) {
-		sonsOfSinsRecipe()
-				.setIngredient(SonsOfSinsModItems.RIBS)
-				.addOutput(ModItems.FLESH_BITS.get(), 2, 4)
-				.addOutput(ModItems.ELASTIC_FIBERS.get(), 1, 2)
-				.addOutput(ModItems.BONE_FRAGMENTS.get(), 2, 5)
-				.unlockedBy(SonsOfSinsModItems.RIBS).save(consumer);
-
-		sonsOfSinsRecipe()
-				.setIngredient(SonsOfSinsModItems.CREEPER_RIBS)
-				.addOutput(ModItems.FLESH_BITS.get(), 2, 4)
-				.addOutput(ModItems.ELASTIC_FIBERS.get(), 1, 2)
-				.addOutput(ModItems.BONE_FRAGMENTS.get(), 2, 5)
-				.addOutput(ModItems.VOLATILE_FLUID.get(), 2, 3)
-				.unlockedBy(SonsOfSinsModItems.CREEPER_RIBS).save(consumer);
-
-		sonsOfSinsRecipe()
-				.setIngredient(SonsOfSinsModItems.CHARGED_CREEPER_RIBS)
-				.addOutput(ModItems.FLESH_BITS.get(), 2, 4)
-				.addOutput(ModItems.ELASTIC_FIBERS.get(), 1, 2)
-				.addOutput(ModItems.BONE_FRAGMENTS.get(), 2, 5)
-				.addOutput(ModItems.VOLATILE_FLUID.get(), 2 * 3, 3 * 3)
-				.addOutput(ModItems.EXOTIC_DUST.get(), 1, 2)
-				.unlockedBy(SonsOfSinsModItems.CHARGED_CREEPER_RIBS).save(consumer);
-
-		sonsOfSinsRecipe()
-				.setIngredient(SonsOfSinsModItems.MUSCLE)
-				.addOutput(ModItems.ELASTIC_FIBERS.get(), 4, 8)
-				.addOutput(ModItems.FLESH_BITS.get(), 1, 2)
-				.unlockedBy(SonsOfSinsModItems.MUSCLE).save(consumer);
-
-		sonsOfSinsRecipe()
-				.setIngredient(SonsOfSinsModItems.RAVAGER_MUSCLE)
-				.addOutput(ModItems.ELASTIC_FIBERS.get(), 4, 8)
-				.addOutput(ModItems.TOUGH_FIBERS.get(), 1, 2)
-				.addOutput(ModItems.FLESH_BITS.get(), 2, 4)
-				.unlockedBy(SonsOfSinsModItems.RAVAGER_MUSCLE).save(consumer);
-
-		sonsOfSinsRecipe()
-				.setIngredient(SonsOfSinsModItems.ENDERMAN_MUSCLE)
-				.addOutput(ModItems.ELASTIC_FIBERS.get(), 4, 8)
-				.addOutput(ModItems.FLESH_BITS.get(), 1, 2)
-				.addOutput(ModItems.EXOTIC_DUST.get(), 2, 3)
-				.unlockedBy(SonsOfSinsModItems.ENDERMAN_MUSCLE).save(consumer);
-
-		sonsOfSinsRecipe()
-				.setIngredient(SonsOfSinsModItems.STRIDER_MUSCLE)
-				.addOutput(ModItems.ELASTIC_FIBERS.get(), 4, 8)
-				.addOutput(ModItems.TOUGH_FIBERS.get(), 2, 3)
-				.addOutput(ModItems.STONE_POWDER.get(), 2, 4)
-				.addOutput(ModItems.FLESH_BITS.get(), 0, 1)
-				.unlockedBy(SonsOfSinsModItems.STRIDER_MUSCLE).save(consumer);
-
-		sonsOfSinsRecipe()
-				.setIngredient(SonsOfSinsModItems.HEART)
-				.addOutput(ModItems.ELASTIC_FIBERS.get(), 4, 8)
-				.addOutput(ModItems.FLESH_BITS.get(), 1, 2)
-				.unlockedBy(SonsOfSinsModItems.HEART).save(consumer);
-
-		sonsOfSinsRecipe()
-				.setIngredient(SonsOfSinsModItems.SPIDER_HEART)
-				.addOutput(ModItems.ELASTIC_FIBERS.get(), 4, 8)
-				.addOutput(ModItems.FLESH_BITS.get(), 1, 2)
-				.unlockedBy(SonsOfSinsModItems.SPIDER_HEART).save(consumer);
-
-		sonsOfSinsRecipe()
-				.setIngredient(SonsOfSinsModItems.BLAZING_HEART)
-				.addOutput(ModItems.ELASTIC_FIBERS.get(), 4, 8)
-				.addOutput(ModItems.FLESH_BITS.get(), 1, 2)
-				.addOutput(ModItems.EXOTIC_DUST.get(), 2 * 3)
-				.addOutput(ModItems.BIO_LUMENS.get(), 2 * 3, 4 * 3)
-				.unlockedBy(SonsOfSinsModItems.BLAZING_HEART).save(consumer);
-
-		sonsOfSinsRecipe()
-				.setIngredient(SonsOfSinsModItems.ICE_HEART)
-				.addOutput(ModItems.ELASTIC_FIBERS.get(), 4, 8)
-				.addOutput(ModItems.FLESH_BITS.get(), 1, 2)
-				.addOutput(ModItems.EXOTIC_DUST.get(), 2 * 3)
-				.unlockedBy(SonsOfSinsModItems.ICE_HEART).save(consumer);
-
-		sonsOfSinsRecipe()
-				.setIngredient(SonsOfSinsModItems.BLOODY_BONE)
-				.addOutput(ModItems.BONE_FRAGMENTS.get(), 3, 6)
-				.unlockedBy(SonsOfSinsModItems.BLOODY_BONE).save(consumer);
-
-		sonsOfSinsRecipe()
-				.setIngredient(SonsOfSinsModItems.FLESH_OF_DEMISE)
-				.addOutput(ModItems.BONE_FRAGMENTS.get(), 3, 6)
-				.addOutput(ModItems.FLESH_BITS.get(), -1, 1)
-				.unlockedBy(SonsOfSinsModItems.BLOODY_BONE).save(consumer);
-
-		sonsOfSinsRecipe()
-				.setIngredient(SonsOfSinsModItems.SLIME_REAR)
-				.addOutput(ModItems.REGENERATIVE_FLUID.get(), 2, 3)
-				.addOutput(ModItems.BILE.get(), 1, 2)
-				.unlockedBy(SonsOfSinsModItems.SLIME_REAR).save(consumer);
-
-		DecomposingRecipeBuilder.create().setIngredient(SonsOfSinsModItems.BLOCK_OF_SLIME_REAR)
-				.addExtraCraftingCost(3)
-				.addOutput(ModItems.REGENERATIVE_FLUID.get(), 2 * 9, 3 * 9)
-				.addOutput(ModItems.BILE.get(), 10, 18)
-				.unlockedBy(SonsOfSinsModItems.BLOCK_OF_SLIME_REAR).save(consumer);
-
-		sonsOfSinsRecipe()
-				.setIngredient(SonsOfSinsModItems.GOLEM_CUIRASS)
-				.addExtraCraftingCost(2)
-				.addOutput(ModItems.MINERAL_FRAGMENT.get(), 4, 6)
-				.unlockedBy(SonsOfSinsModItems.GOLEM_CUIRASS).save(consumer);
-
-		sonsOfSinsRecipe()
-				.setIngredient(SonsOfSinsModItems.ETHER_ASHES)
-				.addOutput(ModItems.EXOTIC_DUST.get(), 0, 2)
-				.unlockedBy(SonsOfSinsModItems.ETHER_ASHES).save(consumer);
-
-		sonsOfSinsRecipe()
-				.setIngredient(SonsOfSinsModItems.CRYSTALLIZED_ETHER)
-				.addOutput(ModItems.EXOTIC_DUST.get(), 1, 3)
-				.unlockedBy(SonsOfSinsModItems.CRYSTALLIZED_ETHER).save(consumer);
+				.unlockedBy(new DatagenIngredient(FARMERS_DELIGHT, "ham")).save(consumer);
 	}
 
 }

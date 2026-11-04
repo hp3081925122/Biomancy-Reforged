@@ -3,15 +3,15 @@
   "input": {
     "0": {
       "count": 10,
-      "id": "biomancy:mineral_fragment"
+      "ingredient": "biomancy:mineral_fragment"
     },
     "1": {
       "count": 12,
-      "id": "biomancy:tough_fibers"
+      "ingredient": "biomancy:tough_fibers"
     },
     "2": {
       "count": 2,
-      "id": "biomancy:stone_powder"
+      "ingredient": "biomancy:stone_powder"
     }
   },
   "output": {

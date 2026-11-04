@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "biomesoplenty:pus_bubble"
+      "ingredient": "biomesoplenty:pus_bubble"
     }
   },
   "output": {

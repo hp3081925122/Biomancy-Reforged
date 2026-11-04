@@ -1,5 +1,7 @@
 package com.github.elenterius.biomancy.client.particle;
 
+import net.minecraft.util.RandomSource;
+import net.minecraft.client.particle.SpriteSet;
 import com.github.elenterius.biomancy.init.ModMobEffects;
 import com.github.elenterius.biomancy.init.ModParticleTypes;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -8,36 +10,37 @@ import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.util.FastColor;
+import net.minecraft.util.ARGB;
 import net.minecraft.util.Mth;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
-@OnlyIn(Dist.CLIENT)
-public abstract class BloodDripParticle extends TextureSheetParticle {
+public abstract class BloodDripParticle extends SingleQuadParticle {
+
+	public void pickSprite(SpriteSet sprites) {
+		setSprite(sprites.get(random));
+	}
 
 	protected BloodDripParticle(ClientLevel level, double x, double y, double z) {
-		super(level, x, y, z);
+		super(level, x, y, z, null);
 		setSize(0.01f, 0.01f);
 		setColorRGB(ModMobEffects.BLEED.get().getColor());
 	}
 
 	public void setColorRGB(int color) {
-		rCol = FastColor.ARGB32.red(color) / 255f;
-		gCol = FastColor.ARGB32.green(color) / 255f;
-		bCol = FastColor.ARGB32.blue(color) / 255f;
+		rCol = ARGB.red(color) / 255f;
+		gCol = ARGB.green(color) / 255f;
+		bCol = ARGB.blue(color) / 255f;
 	}
 
 	public void setColorARGB(int color) {
-		rCol = FastColor.ARGB32.red(color) / 255f;
-		gCol = FastColor.ARGB32.green(color) / 255f;
-		bCol = FastColor.ARGB32.blue(color) / 255f;
-		alpha = FastColor.ARGB32.alpha(color) / 255f;
+		rCol = ARGB.red(color) / 255f;
+		gCol = ARGB.green(color) / 255f;
+		bCol = ARGB.blue(color) / 255f;
+		alpha = ARGB.alpha(color) / 255f;
 	}
 
 	@Override
-	public ParticleRenderType getRenderType() {
-		return ParticleRenderType.PARTICLE_SHEET_OPAQUE;
+	protected Layer getLayer() {
+		return Layer.OPAQUE;
 	}
 
 	@Override
@@ -106,7 +109,7 @@ public abstract class BloodDripParticle extends TextureSheetParticle {
 		}
 
 		@Override
-		public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
+		public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed, RandomSource random) {
 			FallingBloodParticle particle = new FallingBloodParticle(level, x, y, z, ModParticleTypes.LANDING_BLOOD.get());
 			particle.lifetime = (int) (64f / (level.getRandom().nextFloat() * 0.8f + 0.2f));
 			particle.setParticleSpeed(xSpeed, ySpeed, zSpeed);
@@ -123,7 +126,7 @@ public abstract class BloodDripParticle extends TextureSheetParticle {
 		}
 
 		@Override
-		public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
+		public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed, RandomSource random) {
 			LandingBloodParticle particle = new LandingBloodParticle(level, x, y, z);
 			particle.lifetime = (int) (128d / (level.getRandom().nextFloat() * 0.8d + 0.2d));
 			particle.pickSprite(sprite);

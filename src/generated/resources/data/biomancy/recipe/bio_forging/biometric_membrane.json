@@ -3,18 +3,18 @@
   "bio_forge_tab": "biomancy:misc",
   "ingredients": [
     {
-      "item": "biomancy:impermeable_membrane"
+      "ingredient": "biomancy:impermeable_membrane"
     },
     {
       "count": 4,
-      "item": "biomancy:bile"
+      "ingredient": "biomancy:bile"
     },
     {
       "count": 2,
-      "item": "biomancy:gem_fragments"
+      "ingredient": "biomancy:gem_fragments"
     },
     {
-      "item": "biomancy:living_flesh"
+      "ingredient": "biomancy:living_flesh"
     }
   ],
   "nutrientsCost": 1,

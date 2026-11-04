@@ -29,7 +29,7 @@ public class UnstableCompoundItem extends SimpleItem {
 	}
 
 	public static void explode(ItemEntity itemEntity, boolean isBurning) {
-		if (itemEntity.level().isClientSide) return;
+		if (itemEntity.level().isClientSide()) return;
 		if (itemEntity.fallDistance <= 1f) return;
 
 		float explosionRadius = 0.5f + (itemEntity.getItem().getCount() / 64f) * 1.5f;
@@ -57,21 +57,21 @@ public class UnstableCompoundItem extends SimpleItem {
 		Block block = state.getBlock();
 
 		if (block instanceof TntBlock tnt) {
-			if (!level.isClientSide) {
+			if (!level.isClientSide()) {
 				context.getItemInHand().shrink(1);
 				tnt.onCaughtFire(state, level, pos, context.getClickedFace(), context.getPlayer());
 				level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL_IMMEDIATE);
 			}
-			return InteractionResult.sidedSuccess(level.isClientSide);
+			return InteractionResult.SUCCESS;
 		}
 
 		if (block instanceof MagmaBlock) {
-			if (!level.isClientSide) {
+			if (!level.isClientSide()) {
 				context.getItemInHand().shrink(1);
 				level.setBlock(pos, Blocks.LAVA.defaultBlockState(), Block.UPDATE_ALL_IMMEDIATE);
 			}
-			level.playSound(context.getPlayer(), pos, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.BLOCKS, 2f, (1f + (level.random.nextFloat() - level.random.nextFloat()) * 0.2f) * 0.7f);
-			return InteractionResult.sidedSuccess(level.isClientSide);
+			level.playSound(context.getPlayer(), pos, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.BLOCKS, 2f, (1f + (level.getRandom().nextFloat() - level.getRandom().nextFloat()) * 0.2f) * 0.7f);
+			return InteractionResult.SUCCESS;
 		}
 
 		return InteractionResult.PASS;
@@ -80,11 +80,11 @@ public class UnstableCompoundItem extends SimpleItem {
 	@Override
 	public InteractionResult interactLivingEntity(ItemStack stack, Player player, LivingEntity target, InteractionHand usedHand) {
 		if (target instanceof Creeper creeper) {
-			if (!player.level().isClientSide) {
+			if (!player.level().isClientSide()) {
 				stack.shrink(1);
 			}
 			((CreeperAccessor) creeper).biomancy$explodeCreeper();
-			return InteractionResult.sidedSuccess(player.level().isClientSide);
+			return InteractionResult.SUCCESS;
 		}
 
 		return InteractionResult.PASS;

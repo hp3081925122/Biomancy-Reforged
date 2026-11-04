@@ -1,8 +1,6 @@
 {
   "type": "biomancy:digesting",
-  "ingredient": {
-    "item": "minecraft:cactus"
-  },
+  "ingredient": "minecraft:cactus",
   "nutrientsCost": 3,
   "processingTime": 332,
   "result": {

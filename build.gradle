@@ -1,18 +1,24 @@
-// 构建配置：NeoForge 开发环境、依赖、运行配置与资源处理。
 plugins {
     id 'java-library'
-    id 'eclipse'
-    id 'idea'
     id 'maven-publish'
-    id 'net.neoforged.gradle.userdev' version '7.1.37'
+    id 'net.neoforged.moddev' version '2.0.140'
 }
 
 version = project.mod_version
 group = project.mod_group_id
 
-// 依赖仓库：沿用原项目使用的来源。
+base {
+    archivesName = "${project.mod_id}-${project.minecraft_version}-neoforge"
+}
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(25)
+
 repositories {
     mavenLocal()
+    exclusiveContent {
+        forRepository { mavenCentral() }
+        filter { includeGroup 'com.h2database' }
+    }
     maven { url = 'https://maven.neoforged.net/releases' }
     maven {
         url = 'https://www.cursemaven.com'
@@ -27,32 +33,9 @@ repositories {
             includeGroup 'maven.modrinth'
         }
     }
-    maven {
-        name = 'Geckolib'
-        url = 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/'
-        content {
-            includeGroupByRegex 'software\\.bernie.*'
-            includeGroup 'com.eliotlash.mclib'
-        }
-    }
-    maven {
-        name = 'KubeJS'
-        url = 'https://maven.latvian.dev/releases'
-        content {
-            includeGroup 'dev.latvian.mods'
-            includeGroup 'dev.latvian.apps'
-        }
-    }
     mavenCentral()
 }
 
-base {
-    archivesName = "${project.mod_id}-${project.minecraft_version}-neoforge"
-}
-
-java.toolchain.languageVersion = JavaLanguageVersion.of(21)
-
-// 源码集：datagen 独立于主代码，与原项目一致。
 sourceSets {
     main {
         resources {
@@ -63,63 +46,70 @@ sourceSets {
         }
     }
     datagen {
+        java {
+            exclude 'com/github/elenterius/biomancy/datagen/models/**'
+        }
         compileClasspath += main.output
         runtimeClasspath += main.output
     }
 }
 
-// 开发映射与访问转换器。
-subsystems {
-    parchment {
-        minecraftVersion = project.parchment_minecraft_version
-        mappingsVersion = project.parchment_mappings_version
+neoForge {
+    version = project.neo_version
+
+    accessTransformers = project.files('src/main/resources/META-INF/accesstransformer.cfg')
+
+    addModdingDependenciesTo sourceSets.datagen
+
+    interfaceInjectionData {
+        from(file('gradle/interface_injections/geckolib.json'))
     }
-}
 
-minecraft {
-    accessTransformers {
-        file('src/main/resources/META-INF/accesstransformer.cfg')
-    }
-}
+    runs {
+        configureEach {
+            systemProperty 'forge.logging.markers', 'REGISTRIES'
+            systemProperty 'geckolib.disable_examples', 'true'
+            systemProperty 'biomancy.dev_mode', 'true'
+            logLevel = org.slf4j.event.Level.DEBUG
+        }
 
-jarJar.enable()
+        client {
+            client()
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'mixin.debug.export', 'true'
+            systemProperty 'mixin.debug.verbose', 'true'
+            if (project.hasProperty('mctestHidden')) {
+                systemProperty 'selfmcp.window', 'hidden'
+            }
+        }
 
-// 运行配置：保留原项目的 Mixin 调试与开发开关。
-runs {
-    configureEach {
-        systemProperty 'forge.logging.markers', 'REGISTRIES'
-        systemProperty 'forge.logging.console.level', 'debug'
-        systemProperty 'geckolib.disable_examples', 'true'
-        systemProperty 'biomancy.dev_mode', 'true'
-        modSource project.sourceSets.main
-        dependencies {
-            runtime "com.h2database:h2:${project.h2_version}"
+        server {
+            server()
+            programArgument '--nogui'
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'mixin.debug.export', 'true'
+            systemProperty 'mixin.debug.verbose', 'true'
+        }
+
+        gameTestServer {
+            type = 'gameTestServer'
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        }
+
+        data {
+            clientData()
+            sourceSet = project.sourceSets.datagen
+            programArguments.addAll '--mod', project.mod_id, '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
         }
     }
 
-    client {
-        systemProperty 'forge.enabledGameTestNamespaces', project.mod_id
-        systemProperty 'mixin.debug.export', 'true'
-        systemProperty 'mixin.debug.verbose', 'true'
-        if (project.hasProperty('mctestHidden')) {
-            systemProperty 'selfmcp.window', 'hidden'
+    mods {
+        "${project.mod_id}" {
+            sourceSet(sourceSets.main)
+            if (project.hasProperty('datagen')) {
+                sourceSet(sourceSets.datagen)
+            }
         }
-    }
-
-    server {
-        systemProperty 'forge.enabledGameTestNamespaces', project.mod_id
-        systemProperty 'mixin.debug.export', 'true'
-        systemProperty 'mixin.debug.verbose', 'true'
-        programArgument '--nogui'
-    }
-
-    gameTestServer {
-        systemProperty 'forge.enabledGameTestNamespaces', project.mod_id
-    }
-
-    data {
-        modSource project.sourceSets.datagen
-        programArguments.addAll '--mod', project.mod_id, '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
     }
 }
 
@@ -130,17 +120,14 @@ configurations {
 }
 
 dependencies {
-    // 加载器与模板自带的开发辅助依赖。
     implementation "net.neoforged:neoforge:${project.neo_version}"
-    implementation "curse.maven:jei-238222:8792638"
-    implementation "curse.maven:just-enough-characters-250702:8117474"
-    implementation "curse.maven:jade-324717:8591319"
+    implementation "curse.maven:jei-238222:8771077"
+    implementation "curse.maven:just-enough-characters-250702:8413185"
+    implementation "curse.maven:jade-324717:8651070"
 
-    // 注解。
     api "org.jspecify:jspecify:${project.jspecify_version}"
     api "org.jetbrains:annotations:${project.jetbrains_annotations_version}"
 
-    // H2 MVStore：空间数据库，打包进 jar。
     jarJar(implementation("com.h2database:h2")) {
         version {
             strictly project.h2_version_range
@@ -148,22 +135,14 @@ dependencies {
         }
     }
 
-    // 必需前置 GeckoLib。
-    implementation "software.bernie.geckolib:geckolib-neoforge-${project.minecraft_version}:${project.geckolib_version}"
+    implementation "maven.modrinth:8BmcQJ2H:${project.geckolib_file_id}"
 
-    // 联动模组。
-    implementation "maven.modrinth:pehkui:${project.pehkui_version}"
-    compileOnly("dev.latvian.mods:kubejs-neoforge:${project.kubejs_version}") { transitive = false }
-    compileOnly("dev.latvian.mods:rhino:${project.rhino_version}") { transitive = false }
-    implementation "maven.modrinth:farmers-delight:${project.farmers_delight_version}"
-    implementation "maven.modrinth:overweight-farming:${project.overweight_farming_version}"
-    implementation "maven.modrinth:sons-of-sins:${project.sons_of_sins_version}"
+    compileOnly "curse.maven:kubejs-238086:${project.kubejs_file_id}"
+    compileOnly "curse.maven:rhino-416294:${project.rhino_file_id}"
 
-    // 仅开发环境运行时使用。
     runtimeOnly "maven.modrinth:appleskin:${project.appleskin_version}"
 }
 
-// 资源占位符替换。
 tasks.withType(ProcessResources).configureEach {
     def replaceProperties = [
             minecraft_version: project.minecraft_version,
@@ -188,7 +167,6 @@ tasks.withType(ProcessResources).configureEach {
     }
 }
 
-// jar 清单与随包许可文件。
 jar {
     manifest.attributes([
             'Specification-Title'     : project.mod_name,
@@ -215,13 +193,7 @@ publishing {
 }
 
 tasks.withType(JavaCompile).configureEach {
+    options.release = 25
     options.encoding = 'UTF-8'
-    options.compilerArgs << '-Xmaxerrs' << '100000'
-}
-
-idea {
-    module {
-        downloadSources = true
-        downloadJavadoc = true
-    }
+    options.compilerArgs << '-Xmaxerrs' << '9000'
 }

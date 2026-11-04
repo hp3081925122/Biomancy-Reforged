@@ -1,10 +1,11 @@
 package com.github.elenterius.biomancy.block.orifice;
 
+import net.minecraft.world.entity.LivingEntity;
 import org.jspecify.annotations.Nullable;
 import com.github.elenterius.biomancy.block.PlantType;
 import com.github.elenterius.biomancy.block.PlantTypeProvider;
 import com.github.elenterius.biomancy.util.InteractionUtil;
-import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.InteractionResult;
 import com.github.elenterius.biomancy.entity.projectile.AcidBlobProjectile;
 import com.github.elenterius.biomancy.init.*;
 import com.github.elenterius.biomancy.util.EnhancedIntegerProperty;
@@ -35,7 +36,7 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.common.util.TriState;
+import net.minecraft.util.TriState;
 
 import java.util.Optional;
 import java.util.function.ToIntFunction;
@@ -79,7 +80,7 @@ public class OrificeBlock extends Block implements BucketPickup {
 			else {
 				if (random.nextFloat() < 0.5f) {
 					BlockPos posBelow = pos.below();
-					if (FallingBlock.isFree(level.getBlockState(posBelow)) && pos.getY() >= level.getMinBuildHeight()) {
+					if (FallingBlock.isFree(level.getBlockState(posBelow)) && pos.getY() >= level.getMinY()) {
 						level.setBlock(pos, AGE.setValue(state, AGE.getMin()), Block.UPDATE_CLIENTS);
 						float x = random.nextIntBetweenInclusive(-6, 6) / 16f;
 						float z = random.nextIntBetweenInclusive(-6, 6) / 16f;
@@ -96,7 +97,7 @@ public class OrificeBlock extends Block implements BucketPickup {
 	}
 
 	@Override
-	public ItemStack pickupBlock(@Nullable Player player, LevelAccessor level, BlockPos pos, BlockState state) {
+	public ItemStack pickupBlock(@Nullable LivingEntity player, LevelAccessor level, BlockPos pos, BlockState state) {
 		if (AGE.getValue(state) == AGE.getMax()) {
 			level.setBlock(pos, AGE.setValue(state, AGE.getMin()), Block.UPDATE_CLIENTS);
 			return new ItemStack(ModFluids.ACID.get().getBucket());
@@ -106,7 +107,7 @@ public class OrificeBlock extends Block implements BucketPickup {
 	}
 
 	@Override
-	protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
+	protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
 		return InteractionUtil.toItemInteractionResult(use(state, level, pos, player, hand, hitResult));
 	}
 
@@ -116,7 +117,7 @@ public class OrificeBlock extends Block implements BucketPickup {
 
 		if (AGE.getValue(state) == AGE.getMin()) return InteractionResult.FAIL;
 
-		if (!level.isClientSide) {
+		if (!level.isClientSide()) {
 			player.setItemInHand(hand, ItemUtils.createFilledResult(stack, player, ModItems.ACID_EXTRACT.get().getDefaultInstance()));
 			player.awardStat(Stats.ITEM_USED.get(stack.getItem()));
 
@@ -126,7 +127,7 @@ public class OrificeBlock extends Block implements BucketPickup {
 			level.gameEvent(player, GameEvent.FLUID_PICKUP, pos);
 		}
 
-		return InteractionResult.sidedSuccess(level.isClientSide);
+		return InteractionResult.SUCCESS;
 	}
 
 	@Override

@@ -1,20 +1,19 @@
 package com.github.elenterius.biomancy.api.tribute;
 
-import net.minecraft.core.HolderLookup;
 import com.github.elenterius.biomancy.api.tribute.fluid.FluidTributeConsumerHandler;
 import com.github.elenterius.biomancy.inventory.Notify;
 import com.github.elenterius.biomancy.util.SaturatedMath;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.Mth;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.neoforged.neoforge.common.util.ValueIOSerializable;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.common.util.INBTSerializable;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.function.Consumer;
 
 @ApiStatus.Internal
-public class SacrificeHandler implements INBTSerializable<CompoundTag> {
+public class SacrificeHandler implements ValueIOSerializable {
 
 	private static final int MAX_BIOMASS_VALUE = 100;
 	private static final int REQUIRED_LIFE_ENERGY = 100;
@@ -255,40 +254,53 @@ public class SacrificeHandler implements INBTSerializable<CompoundTag> {
 	}
 
 	@Override
-	public CompoundTag serializeNBT(HolderLookup.Provider provider) {
-		CompoundTag tag = new CompoundTag();
-		tag.putByte("Biomass", biomass);
-		tag.putInt("LifeEnergy", lifeEnergy);
+	public void serialize(ValueOutput output) {
+		output.putByte("Biomass", biomass);
+		output.putInt("LifeEnergy", lifeEnergy);
 
-		tag.putInt("Success", successValue);
+		output.putInt("Success", successValue);
 
-		tag.putInt("Disease", diseaseValue);
-		tag.putInt("Hostile", hostileValue);
-		tag.putInt("Anomaly", anomalyValue);
+		output.putInt("Disease", diseaseValue);
+		output.putInt("Hostile", hostileValue);
+		output.putInt("Anomaly", anomalyValue);
 
-		tag.putBoolean("HasModifiers", hasModifiers);
+		output.putBoolean("HasModifiers", hasModifiers);
 
-		tag.put("FluidConsumer", fluidConsumer.serializeNBT(provider));
-		return tag;
+		fluidConsumer.serialize(output.child("FluidConsumer"));
 	}
 
 	@Override
-	public void deserializeNBT(HolderLookup.Provider provider, CompoundTag tag) {
-		biomass = tag.getByte("Biomass");
-		lifeEnergy = tag.getInt("LifeEnergy");
+	public void deserialize(ValueInput input) {
+		biomass = input.getByteOr("Biomass", (byte) 0);
+		lifeEnergy = input.getIntOr("LifeEnergy", 0);
 
-		successValue = tag.getInt("Success");
+		successValue = input.getIntOr("Success", 0);
 
-		diseaseValue = tag.getInt("Disease");
-		hostileValue = tag.getInt("Hostile");
-		anomalyValue = tag.getInt("Anomaly");
+		diseaseValue = input.getIntOr("Disease", 0);
+		hostileValue = input.getIntOr("Hostile", 0);
+		anomalyValue = input.getIntOr("Anomaly", 0);
 
-		hasModifiers = tag.getBoolean("HasModifiers");
+		hasModifiers = input.getBooleanOr("HasModifiers", false);
 
-		fluidConsumer.deserializeNBT(provider, tag.getCompound("FluidConsumer"));
+		fluidConsumer.deserialize(input.childOrEmpty("FluidConsumer"));
 	}
 
-	public IFluidHandler getFluidConsumer() {
+	public int[] captureState() {
+		return new int[]{biomass, lifeEnergy, successValue, diseaseValue, hostileValue, anomalyValue, hasModifiers ? 1 : 0, isDirty ? 1 : 0};
+	}
+
+	public void restoreState(int[] state) {
+		biomass = (byte) state[0];
+		lifeEnergy = state[1];
+		successValue = state[2];
+		diseaseValue = state[3];
+		hostileValue = state[4];
+		anomalyValue = state[5];
+		hasModifiers = state[6] != 0;
+		isDirty = state[7] != 0;
+	}
+
+	public FluidTributeConsumerHandler getFluidConsumer() {
 		return fluidConsumer;
 	}
 

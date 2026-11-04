@@ -1,5 +1,9 @@
 package com.github.elenterius.biomancy.datagen.recipes.builder;
 
+import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+import com.github.elenterius.biomancy.util.ItemHolders;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.crafting.IngredientStack;
 import com.github.elenterius.biomancy.crafting.VariableOutput;
@@ -7,7 +11,6 @@ import com.github.elenterius.biomancy.crafting.recipe.DecomposingRecipe;
 import com.github.elenterius.biomancy.crafting.recipe.RecipeUtil;
 import com.github.elenterius.biomancy.init.ModItems;
 import com.github.elenterius.biomancy.init.ModRecipes;
-import com.github.elenterius.biomancy.util.ItemStackCounter;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -16,7 +19,7 @@ import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.advancements.Criterion;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.recipes.RecipeCategory;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.Item;
@@ -39,7 +42,7 @@ public final class DecomposingRecipeBuilder implements RecipeBuilder<Decomposing
 	private final List<VariableOutput> outputs = new ArrayList<>();
 	private final RecipeAdvancement advancement = new RecipeAdvancement();
 	private final List<ICondition> conditions = new ArrayList<>();
-	private ResourceLocation recipeId;
+	private Identifier recipeId;
 	private IngredientStack ingredientStack = null;
 	private int craftingTimeTicks = -1;
 	private int extraCraftingTimeTicks = 0;
@@ -57,20 +60,20 @@ public final class DecomposingRecipeBuilder implements RecipeBuilder<Decomposing
 	}
 
 	//	public static DecomposerRecipeBuilder create(String modId, String ingredientName) {
-	//		ResourceLocation rl = ResourceLocation.fromNamespaceAndPath(modId, ingredientName + SUFFIX);
+	//		Identifier rl = Identifier.fromNamespaceAndPath(modId, ingredientName + SUFFIX);
 	//		return new DecomposerRecipeBuilder(rl);
 	//	}
 	//
 	//	public static DecomposerRecipeBuilder create(String ingredientName) {
-	//		ResourceLocation rl = BiomancyMod.createRL(ingredientName + SUFFIX);
+	//		Identifier rl = BiomancyMod.createRL(ingredientName + SUFFIX);
 	//		return new DecomposerRecipeBuilder(rl);
 	//	}
 	//
-	//	public static DecomposerRecipeBuilder create(ResourceLocation recipeId) {
+	//	public static DecomposerRecipeBuilder create(Identifier recipeId) {
 	//		return new DecomposerRecipeBuilder(recipeId);
 	//	}
 
-	private static ResourceLocation getRegistryKey(ItemLike itemLike) {
+	private static Identifier getRegistryKey(ItemLike itemLike) {
 		return Objects.requireNonNull(BuiltInRegistries.ITEM.getKey(itemLike.asItem()));
 	}
 
@@ -114,14 +117,14 @@ public final class DecomposingRecipeBuilder implements RecipeBuilder<Decomposing
 	}
 
 	public DecomposingRecipeBuilder setIngredient(TagKey<Item> tagKey, int quantity) {
-		return setIngredient(Ingredient.of(tagKey), quantity, BiomancyMod.rl(tagKey.location().toDebugFileName()));
+		return setIngredient(ItemHolders.ingredient(tagKey), quantity, BiomancyMod.rl(tagKey.location().toDebugFileName()));
 	}
 
 	public DecomposingRecipeBuilder setIngredient(ItemLike itemIn) {
 		return setIngredient(itemIn, 1);
 	}
 
-	public DecomposingRecipeBuilder setIngredient(Ingredient ingredient, ResourceLocation recipeId) {
+	public DecomposingRecipeBuilder setIngredient(Ingredient ingredient, Identifier recipeId) {
 		return setIngredient(ingredient, 1, recipeId);
 	}
 
@@ -135,10 +138,10 @@ public final class DecomposingRecipeBuilder implements RecipeBuilder<Decomposing
 		return this;
 	}
 
-	public DecomposingRecipeBuilder setIngredient(Ingredient ingredient, int count, ResourceLocation recipeId) {
+	public DecomposingRecipeBuilder setIngredient(Ingredient ingredient, int count, Identifier recipeId) {
 		if (ingredientStack != null) throw new IllegalStateException("Ingredient is already set");
 		ingredientStack = new IngredientStack(ingredient, count);
-		this.recipeId = ResourceLocation.fromNamespaceAndPath(recipeId.getNamespace(), RECIPE_SUB_FOLDER + "/" + recipeId.getPath());
+		this.recipeId = Identifier.fromNamespaceAndPath(recipeId.getNamespace(), RECIPE_SUB_FOLDER + "/" + recipeId.getPath());
 		return this;
 	}
 
@@ -199,7 +202,7 @@ public final class DecomposingRecipeBuilder implements RecipeBuilder<Decomposing
 		validate();
 
 		String folderName = RecipeBuilder.getRecipeFolderName(category, BiomancyMod.MOD_ID);
-		ResourceLocation advancementId = ResourceLocation.fromNamespaceAndPath(recipeId.getNamespace(), "recipes/%s/%s".formatted(folderName, recipeId.getPath()));
+		Identifier advancementId = Identifier.fromNamespaceAndPath(recipeId.getNamespace(), "recipes/%s/%s".formatted(folderName, recipeId.getPath()));
 
 		consumer.accept(new RecipeResult(this, advancement.build(recipeId, advancementId)));
 	}
@@ -221,19 +224,17 @@ public final class DecomposingRecipeBuilder implements RecipeBuilder<Decomposing
 	}
 
 	private int getNeededSlots() {
-		ItemStackCounter counter = new ItemStackCounter();
+		Map<List<Object>, Integer> counts = new HashMap<>();
 		for (VariableOutput output : outputs) {
-			ItemStack stack = output.getItemStack();
-			stack.setCount(output.getCountRange().getMaxCount());
-			counter.accountStack(stack);
+			counts.merge(List.of(output.getItem(), output.getComponents()), output.getCountRange().getMaxCount(), Integer::sum);
 		}
 
-		return counter.getItemCounts().stream().mapToInt(countedItem -> Mth.ceil(countedItem.amount() / 64f)).sum();
+		return counts.values().stream().mapToInt(amount -> Mth.ceil(amount / 64f)).sum();
 	}
 
 	public static class RecipeResult implements FinishedRecipe, WikiRecipe {
 
-		private final ResourceLocation id;
+		private final Identifier id;
 		private final String group;
 		private final IngredientStack ingredientStack;
 		private final List<VariableOutput> outputs;
@@ -287,7 +288,7 @@ public final class DecomposingRecipeBuilder implements RecipeBuilder<Decomposing
 		}
 
 		@Override
-		public ResourceLocation getId() {
+		public Identifier getId() {
 			return id;
 		}
 

@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.datagen.recipes.builder;
 
+import com.github.elenterius.biomancy.util.ItemHolders;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.crafting.recipe.RecipeUtil;
 import com.github.elenterius.biomancy.init.ModItems;
@@ -12,7 +13,7 @@ import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.advancements.Criterion;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.recipes.RecipeCategory;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.Item;
@@ -35,7 +36,7 @@ public final class DigestingRecipeBuilder implements RecipeBuilder<DigestingReci
 
 	public static final short DEFAULT_CRAFTING_COST_NUTRIENTS = 2;
 
-	private final ResourceLocation recipeId;
+	private final Identifier recipeId;
 	private final List<ICondition> conditions = new ArrayList<>();
 	private final ItemData recipeResult;
 	private final RecipeAdvancement advancement = new RecipeAdvancement();
@@ -47,32 +48,32 @@ public final class DigestingRecipeBuilder implements RecipeBuilder<DigestingReci
 	@Nullable
 	private String group;
 
-	private DigestingRecipeBuilder(ResourceLocation recipeId, ItemData result) {
-		this.recipeId = ResourceLocation.fromNamespaceAndPath(recipeId.getNamespace(), RECIPE_SUB_FOLDER + "/" + recipeId.getPath());
+	private DigestingRecipeBuilder(Identifier recipeId, ItemData result) {
+		this.recipeId = Identifier.fromNamespaceAndPath(recipeId.getNamespace(), RECIPE_SUB_FOLDER + "/" + recipeId.getPath());
 		recipeResult = result;
 	}
 
-	public static DigestingRecipeBuilder create(ResourceLocation recipeId, ItemData result) {
+	public static DigestingRecipeBuilder create(Identifier recipeId, ItemData result) {
 		return new DigestingRecipeBuilder(recipeId, result);
 	}
 
 	public static DigestingRecipeBuilder create(String modId, String outputName, ItemData result) {
-		ResourceLocation rl = ResourceLocation.fromNamespaceAndPath(modId, outputName + "_from_" + result.getItemPath());
+		Identifier rl = Identifier.fromNamespaceAndPath(modId, outputName + "_from_" + result.getItemPath());
 		return new DigestingRecipeBuilder(rl, result);
 	}
 
 	public static DigestingRecipeBuilder create(String outputName, ItemData result) {
-		ResourceLocation rl = BiomancyMod.rl(outputName + "_from_" + result.getItemPath());
+		Identifier rl = BiomancyMod.rl(outputName + "_from_" + result.getItemPath());
 		return new DigestingRecipeBuilder(rl, result);
 	}
 
 	public static DigestingRecipeBuilder create(ItemData result) {
-		ResourceLocation rl = BiomancyMod.rl(result.getItemPath());
+		Identifier rl = BiomancyMod.rl(result.getItemPath());
 		return new DigestingRecipeBuilder(rl, result);
 	}
 
 	public static DigestingRecipeBuilder create(ItemData result, String postSuffix) {
-		ResourceLocation rl = BiomancyMod.rl(result.getItemPath() + "_from_" + postSuffix);
+		Identifier rl = BiomancyMod.rl(result.getItemPath() + "_from_" + postSuffix);
 		return new DigestingRecipeBuilder(rl, result);
 	}
 
@@ -110,11 +111,11 @@ public final class DigestingRecipeBuilder implements RecipeBuilder<DigestingReci
 	}
 
 	public DigestingRecipeBuilder setIngredient(TagKey<Item> tag) {
-		return setIngredient(Ingredient.of(tag));
+		return setIngredient(ItemHolders.ingredient(tag));
 	}
 
 	public DigestingRecipeBuilder setIngredient(ItemStack stack) {
-		return setIngredient(Ingredient.of(stack));
+		return setIngredient(Ingredient.of(stack.getItem()));
 	}
 
 	public DigestingRecipeBuilder setIngredient(Ingredient ingredient) {
@@ -179,7 +180,7 @@ public final class DigestingRecipeBuilder implements RecipeBuilder<DigestingReci
 		if (craftingCostNutrients < 0) throw new IllegalArgumentException("Invalid crafting cost: " + craftingCostNutrients);
 
 		String folderName = RecipeBuilder.getRecipeFolderName(category, BiomancyMod.MOD_ID);
-		ResourceLocation advancementId = ResourceLocation.fromNamespaceAndPath(recipeId.getNamespace(), "recipes/%s/%s".formatted(folderName, recipeId.getPath()));
+		Identifier advancementId = Identifier.fromNamespaceAndPath(recipeId.getNamespace(), "recipes/%s/%s".formatted(folderName, recipeId.getPath()));
 
 		consumer.accept(new Result(this, advancement.build(recipeId, advancementId)));
 	}
@@ -192,7 +193,7 @@ public final class DigestingRecipeBuilder implements RecipeBuilder<DigestingReci
 
 	public static class Result implements FinishedRecipe, WikiRecipe {
 
-		private final ResourceLocation id;
+		private final Identifier id;
 		private final String group;
 		private final Ingredient ingredient;
 		private final ItemData recipeResult;
@@ -235,7 +236,7 @@ public final class DigestingRecipeBuilder implements RecipeBuilder<DigestingReci
 			return ModRecipes.DIGESTING_SERIALIZER.get();
 		}
 
-		public ResourceLocation getId() {
+		public Identifier getId() {
 			return id;
 		}
 

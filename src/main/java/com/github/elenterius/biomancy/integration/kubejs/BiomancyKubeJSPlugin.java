@@ -103,7 +103,7 @@ public class BiomancyKubeJSPlugin implements KubeJSPlugin {
 
 	@Override
 	public void registerRecipeComponents(RecipeComponentTypeRegistry registry) {
-		registry.register(VariableOutputComponent.TYPE);
+		registry.unit(VariableOutputComponent.TYPE, VariableOutputComponent.INSTANCE);
 	}
 
 	@Override
@@ -117,22 +117,22 @@ public class BiomancyKubeJSPlugin implements KubeJSPlugin {
 	}
 
 	interface Components {
-		RecipeComponent<SizedIngredient> INGREDIENT_STACK = SizedIngredientComponent.SIZED_INGREDIENT.instance().withCodec(IngredientStack.CODEC.xmap(
+		RecipeComponent<SizedIngredient> INGREDIENT_STACK = SizedIngredientComponent.SIZED_INGREDIENT.withCodec(IngredientStack.CODEC.xmap(
 				stack -> new SizedIngredient(stack.ingredient(), stack.count()),
 				sized -> new IngredientStack(sized.ingredient(), sized.count())
 		));
 	}
 
 	interface Keys {
-		RecipeKey<Ingredient> INGREDIENT = IngredientComponent.INGREDIENT.instance().inputKey(RecipeUtil.JsonKeys.INGREDIENT);
+		RecipeKey<Ingredient> INGREDIENT = IngredientComponent.INGREDIENT.inputKey(RecipeUtil.JsonKeys.INGREDIENT);
 		RecipeKey<SizedIngredient> INGREDIENT_STACK = Components.INGREDIENT_STACK.inputKey(RecipeUtil.JsonKeys.INGREDIENT);
 		RecipeKey<List<SizedIngredient>> INGREDIENT_STACKS = Components.INGREDIENT_STACK.asList().inputKey(RecipeUtil.JsonKeys.INGREDIENTS);
-		RecipeKey<Ingredient> REACTANT = IngredientComponent.INGREDIENT.instance().inputKey(RecipeUtil.JsonKeys.REACTANT);
+		RecipeKey<Ingredient> REACTANT = IngredientComponent.INGREDIENT.inputKey(RecipeUtil.JsonKeys.REACTANT);
 
-		RecipeKey<ItemStack> RESULT = ItemStackComponent.ITEM_STACK.instance().outputKey(RecipeUtil.JsonKeys.RESULT);
-		RecipeKey<List<VariableOutput>> RESULTS = VariableOutputComponent.TYPE.instance().asList().outputKey(RecipeUtil.JsonKeys.RESULTS);
+		RecipeKey<ItemStack> RESULT = ItemStackComponent.ITEM_STACK.outputKey(RecipeUtil.JsonKeys.RESULT);
+		RecipeKey<List<VariableOutput>> RESULTS = VariableOutputComponent.INSTANCE.asList().outputKey(RecipeUtil.JsonKeys.RESULTS);
 
-		RecipeKey<String> BIO_FORGE_TAB = StringComponent.ID.instance().otherKey(RecipeUtil.JsonKeys.BIO_FORGE_TAB);
+		RecipeKey<String> BIO_FORGE_TAB = StringComponent.ID.otherKey(RecipeUtil.JsonKeys.BIO_FORGE_TAB);
 
 		RecipeKey<Integer> PROCESSING_TIME = NumberComponent.INT.otherKey(RecipeUtil.JsonKeys.PROCESSING_TIME).defaultOptional();
 		RecipeKey<Integer> NUTRIENTS_COST = NumberComponent.INT.otherKey(RecipeUtil.JsonKeys.NUTRIENTS_COST).defaultOptional();

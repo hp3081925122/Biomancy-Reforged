@@ -3,7 +3,7 @@
   "bio_forge_tab": "biomancy:tools",
   "ingredients": [
     {
-      "item": "biomancy:elastic_fibers"
+      "ingredient": "biomancy:elastic_fibers"
     }
   ],
   "nutrientsCost": 1,

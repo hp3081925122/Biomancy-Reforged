@@ -23,7 +23,7 @@ import mezz.jei.api.recipe.RecipeType;
 import mezz.jei.api.recipe.category.IRecipeCategory;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
@@ -63,8 +63,13 @@ public class DecomposingCategory implements IRecipeCategory<DecomposingRecipe> {
 	}
 
 	@Override
-	public IDrawable getBackground() {
-		return background;
+	public int getWidth() {
+		return background.getWidth();
+	}
+
+	@Override
+	public int getHeight() {
+		return background.getHeight();
 	}
 
 	@Override
@@ -104,7 +109,7 @@ public class DecomposingCategory implements IRecipeCategory<DecomposingRecipe> {
 			slotBuilder.addItemStack(stack);
 
 			final ItemCountRange countRange = output.getCountRange();
-			slotBuilder.addTooltipCallback((slotView, tooltip) -> {
+			slotBuilder.addRichTooltipCallback((slotView, tooltip) -> {
 				tooltip.add(ComponentUtil.EMPTY_LINE);
 
 				if (countRange instanceof ItemCountRange.UniformRange uniform) {
@@ -135,7 +140,8 @@ public class DecomposingCategory implements IRecipeCategory<DecomposingRecipe> {
 	}
 
 	@Override
-	public void draw(DecomposingRecipe recipe, IRecipeSlotsView recipeSlotsView, GuiGraphics guiGraphics, double mouseX, double mouseY) {
+	public void draw(DecomposingRecipe recipe, IRecipeSlotsView recipeSlotsView, GuiGraphicsExtractor guiGraphics, double mouseX, double mouseY) {
+		background.draw(guiGraphics);
 		Font font = Minecraft.getInstance().font;
 
 		IRecipeSlotView slotView = recipeSlotsView.getSlotViews(RecipeIngredientRole.INPUT).get(0);
@@ -145,10 +151,10 @@ public class DecomposingCategory implements IRecipeCategory<DecomposingRecipe> {
 		int ticks = recipe.getCraftingTimeTicks(inputInventoryWrapper);
 		int seconds = ticks > 0 ? ticks / 20 : 0;
 		MutableComponent timeString = ComponentUtil.translatable("gui.jei.category.smelting.time.seconds", seconds);
-		guiGraphics.drawString(font, timeString, 16, 59 - font.lineHeight, ColorStyles.WHITE_ARGB);
+		guiGraphics.text(font, timeString, 16, 59 - font.lineHeight, ColorStyles.WHITE_ARGB);
 
 		MutableComponent costString = ComponentUtil.literal("-" + recipe.getCraftingCostNutrients(inputInventoryWrapper));
-		guiGraphics.drawString(font, costString, 16, 43 - font.lineHeight, ColorStyles.WHITE_ARGB);
+		guiGraphics.text(font, costString, 16, 43 - font.lineHeight, ColorStyles.WHITE_ARGB);
 
 		int gap = 10;
 		int offset = 16 + gap;
@@ -165,7 +171,7 @@ public class DecomposingCategory implements IRecipeCategory<DecomposingRecipe> {
 		drawOutputAmount(font, guiGraphics, x + offset * 2, y1, outputs, 5);
 	}
 
-	private void drawOutputAmount(Font font, GuiGraphics guiGraphics, int x, int y, List<VariableOutput> outputs, int index) {
+	private void drawOutputAmount(Font font, GuiGraphicsExtractor guiGraphics, int x, int y, List<VariableOutput> outputs, int index) {
 		assert index >= 0;
 		assert index < DecomposingRecipe.MAX_OUTPUTS;
 
@@ -173,26 +179,26 @@ public class DecomposingCategory implements IRecipeCategory<DecomposingRecipe> {
 			VariableOutput output = outputs.get(index);
 			if (output.getItemStack().isEmpty()) return;
 
-			guiGraphics.pose().pushPose();
-			guiGraphics.pose().translate(x, y, 0);
-			guiGraphics.pose().scale(0.75f, 0.75f, 1f);
-			guiGraphics.pose().translate(-x, -y, 90);
+			guiGraphics.pose().pushMatrix();
+			guiGraphics.pose().translate(x, y);
+			guiGraphics.pose().scale(0.75f, 0.75f);
+			guiGraphics.pose().translate(-x, -y);
 
 			ItemCountRange countRange = output.getCountRange();
 			if (countRange instanceof ItemCountRange.UniformRange uniform) {
 				MutableComponent component = ComponentUtil.literal("%d–%d".formatted(uniform.min(), uniform.max()));
-				guiGraphics.drawString(font, component, x - font.width(component), y, ColorStyles.WHITE_ARGB);
+				guiGraphics.text(font, component, x - font.width(component), y, ColorStyles.WHITE_ARGB);
 			}
 			else if (countRange instanceof ItemCountRange.ConstantValue constant) {
 				MutableComponent component = ComponentUtil.literal("" + constant.value());
-				guiGraphics.drawString(font, component, x - font.width(component), y, ColorStyles.WHITE_ARGB);
+				guiGraphics.text(font, component, x - font.width(component), y, ColorStyles.WHITE_ARGB);
 			}
 			else if (countRange instanceof ItemCountRange.BinomialRange binomialRange) {
 				MutableComponent component = ComponentUtil.literal("n=%d p=%s".formatted(binomialRange.n(), binomialRange.p()));
-				guiGraphics.drawString(font, component, x - font.width(component), y, ColorStyles.WHITE_ARGB);
+				guiGraphics.text(font, component, x - font.width(component), y, ColorStyles.WHITE_ARGB);
 			}
 
-			guiGraphics.pose().popPose();
+			guiGraphics.pose().popMatrix();
 		}
 	}
 

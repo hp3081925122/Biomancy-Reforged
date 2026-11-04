@@ -1,12 +1,13 @@
 package com.github.elenterius.biomancy.item.armor;
 
+import java.util.function.Consumer;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.init.ModDataComponents;
 import com.github.elenterius.biomancy.styles.TextComponentUtil;
 import com.github.elenterius.biomancy.styles.TextStyles;
 import com.github.elenterius.biomancy.util.ComponentUtil;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -22,7 +23,7 @@ public final class AcolyteArmorUpgrades {
 
 	private AcolyteArmorUpgrades() {}
 
-	public static Upgrade register(ResourceLocation name) {
+	public static Upgrade register(Identifier name) {
 		Upgrade upgrade = new Upgrade(name);
 		UPGRADES.add(upgrade);
 		return upgrade;
@@ -35,9 +36,9 @@ public final class AcolyteArmorUpgrades {
 	}
 
 	public static ItemStack addUpgrade(ItemStack stack, Upgrade upgrade) {
-		List<ResourceLocation> upgrades = stack.getOrDefault(ModDataComponents.ARMOR_UPGRADES, List.of());
+		List<Identifier> upgrades = stack.getOrDefault(ModDataComponents.ARMOR_UPGRADES, List.of());
 		if (!upgrades.contains(upgrade.id)) {
-			List<ResourceLocation> newUpgrades = new ArrayList<>(upgrades);
+			List<Identifier> newUpgrades = new ArrayList<>(upgrades);
 			newUpgrades.add(upgrade.id);
 			stack.set(ModDataComponents.ARMOR_UPGRADES, List.copyOf(newUpgrades));
 		}
@@ -48,10 +49,10 @@ public final class AcolyteArmorUpgrades {
 		return stack.getOrDefault(ModDataComponents.ARMOR_UPGRADES, List.of()).contains(upgrade.id);
 	}
 
-	public static void appendHoverText(ItemStack stack, List<Component> tooltip) {
+	public static void appendHoverText(ItemStack stack, Consumer<Component> tooltip) {
 		for (Upgrade upgrade : UPGRADES) {
 			if (hasUpgrade(stack, upgrade)) {
-				tooltip.add(ComponentUtil.EMPTY_LINE);
+				tooltip.accept(ComponentUtil.EMPTY_LINE);
 				upgrade.appendHoverText(stack, tooltip);
 			}
 		}
@@ -59,20 +60,20 @@ public final class AcolyteArmorUpgrades {
 
 	public static class Upgrade {
 
-		private final ResourceLocation id;
+		private final Identifier id;
 
-		public Upgrade(ResourceLocation id) {
+		public Upgrade(Identifier id) {
 			this.id = id;
 		}
 
-		public ResourceLocation getId() {
+		public Identifier getId() {
 			return id;
 		}
 
-		public void appendHoverText(ItemStack stack, List<Component> tooltip) {
+		public void appendHoverText(ItemStack stack, Consumer<Component> tooltip) {
 			String translationKey = id.getPath();
-			tooltip.add(TextComponentUtil.getAbilityText(translationKey).withStyle(TextStyles.GRAY));
-			tooltip.add(ComponentUtil.literal(" ").append(TextComponentUtil.getAbilityText(translationKey + ".desc")).withStyle(TextStyles.DARK_GRAY));
+			tooltip.accept(TextComponentUtil.getAbilityText(translationKey).withStyle(TextStyles.GRAY));
+			tooltip.accept(ComponentUtil.literal(" ").append(TextComponentUtil.getAbilityText(translationKey + ".desc")).withStyle(TextStyles.DARK_GRAY));
 		}
 
 	}

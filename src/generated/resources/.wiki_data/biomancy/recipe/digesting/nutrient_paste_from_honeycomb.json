@@ -1,9 +1,7 @@
 {
   "type": "biomancy:digesting",
   "input": {
-    "0": {
-      "id": "minecraft:honeycomb"
-    }
+    "0": "minecraft:honeycomb"
   },
   "output": {
     "0": {

@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "minecraft:crimson_roots"
+      "ingredient": "minecraft:crimson_roots"
     }
   },
   "output": {

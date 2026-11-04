@@ -7,7 +7,7 @@
   ],
   "type": "biomancy:decomposing",
   "ingredient": {
-    "item": "biomesoplenty:eyebulb"
+    "ingredient": "biomesoplenty:eyebulb"
   },
   "nutrientsCost": 1,
   "processingTime": 60,

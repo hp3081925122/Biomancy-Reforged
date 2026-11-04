@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "minecraft:goat_horn"
+      "ingredient": "minecraft:goat_horn"
     }
   },
   "output": {

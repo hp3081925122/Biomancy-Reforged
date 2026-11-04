@@ -3,30 +3,38 @@ package com.github.elenterius.biomancy.client.gui;
 import com.github.elenterius.biomancy.BiomancyConfig;
 import com.github.elenterius.biomancy.crafting.IngredientStack;
 import com.github.elenterius.biomancy.crafting.recipe.BioForgingRecipe;
+import com.github.elenterius.biomancy.crafting.recipe.RecipeMaps;
 import com.github.elenterius.biomancy.init.ModBioForgeTabs;
 import com.github.elenterius.biomancy.init.ModRecipeBookTypes;
-import com.github.elenterius.biomancy.init.client.ModRecipeBookCategories;
+import com.github.elenterius.biomancy.init.ModRecipes;
 import com.github.elenterius.biomancy.menu.BioForgeMenu;
 import com.github.elenterius.biomancy.menu.BioForgeTab;
-import com.github.elenterius.biomancy.mixin.accessor.RecipeCollectionAccessor;
 import com.github.elenterius.biomancy.network.ModNetworkHandler;
 import com.github.elenterius.biomancy.util.ItemStackCounter;
-import com.google.common.collect.Lists;
-import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
-import it.unimi.dsi.fastutil.objects.ObjectSet;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.ClientRecipeBook;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.recipebook.RecipeCollection;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.stats.RecipeBook;
+import net.minecraft.client.searchtree.FullTextSearchTree;
+import net.minecraft.client.searchtree.SearchTree;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.Mth;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.item.crafting.display.RecipeDisplay;
+import net.minecraft.world.item.crafting.display.RecipeDisplayEntry;
+import net.neoforged.neoforge.client.ClientTooltipFlag;
 import org.jspecify.annotations.Nullable;
 
 import java.util.*;
+import java.util.stream.Stream;
 
 class BioForgeScreenController {
 
@@ -42,12 +50,15 @@ class BioForgeScreenController {
 	private final List<BioForgeTab> tabs;
 	private final Minecraft minecraft;
 	private final BioForgeMenu menu;
+	private final Set<ResourceKey<Recipe<?>>> craftableRecipes = new HashSet<>();
+	private List<RecipeHolder<BioForgingRecipe>> allRecipes = List.of();
+	private SearchTree<RecipeHolder<BioForgingRecipe>> searchTree = SearchTree.empty();
 	private int maxPages = 0;
 	private int activeTab = 0;
 	private int startIndex = 0;
 	private int playerInvChanges;
 	private String currentSearchString = "";
-	private List<RecipeCollection> shownRecipes = List.of();
+	private List<RecipeHolder<BioForgingRecipe>> shownRecipes = List.of();
 	private int crossoverGridIndex = 0;
 
 	public BioForgeScreenController(Minecraft minecraft, BioForgeMenu menu) {
@@ -58,12 +69,13 @@ class BioForgeScreenController {
 
 		playerInvChanges = getPlayer().getInventory().getTimesChanged();
 		itemCounter = new ItemStackCounter();
-		itemCounter.accountStacks(getPlayer().getInventory().items);
+		itemCounter.accountStacks(getPlayer().getInventory().getNonEquipmentItems());
 
 		if (recipeSelection != RecipeSelection.EMPTY && menu.getSelectedRecipe() == null && recipeSelection.recipe != null) {
 			ModNetworkHandler.sendBioForgeRecipeToServer(menu.containerId, recipeSelection.recipe);
 		}
 
+		reloadRecipes();
 		updateAndSearchRecipes();
 	}
 
@@ -111,28 +123,18 @@ class BioForgeScreenController {
 		return !shownRecipes.isEmpty();
 	}
 
-	@SuppressWarnings("unchecked")
-	public List<RecipeHolder<BioForgingRecipe>> getOrderedRecipes(RecipeCollection recipeCollection) {
-		List<RecipeHolder<?>> list = recipeCollection.getDisplayRecipes(true);
-		if (!getPlayer().getRecipeBook().isFiltering(ModRecipeBookTypes.BIO_FORGE)) {
-			list.addAll(recipeCollection.getDisplayRecipes(false));
-		}
-		return list.stream().map(holder -> (RecipeHolder<BioForgingRecipe>) holder).toList();
-	}
-
 	private RecipeHolder<BioForgingRecipe> getRecipe(int index) {
 		if (index >= shownRecipes.size()) throw new IndexOutOfBoundsException(index);
-		return getOrderedRecipes(shownRecipes.get(index)).get(0);
-	}
-
-	public RecipeCollection getRecipeCollectionByGrid(int gridIndex) {
-		if (gridIndex >= GRID_SIZE) throw new IndexOutOfBoundsException(gridIndex);
-		return shownRecipes.get(startIndex + gridIndex);
+		return shownRecipes.get(index);
 	}
 
 	public RecipeHolder<BioForgingRecipe> getRecipeByGrid(int gridIndex) {
 		if (gridIndex >= GRID_SIZE) throw new IndexOutOfBoundsException(gridIndex);
 		return getRecipe(startIndex + gridIndex);
+	}
+
+	public boolean isCraftable(RecipeHolder<BioForgingRecipe> recipe) {
+		return craftableRecipes.contains(recipe.id());
 	}
 
 	public int getTotalItemCountInPlayerInv(ItemStack stack) {
@@ -230,45 +232,61 @@ class BioForgeScreenController {
 
 	private void countPlayerInvItems() {
 		itemCounter.clear();
-		itemCounter.accountStacks(getPlayer().getInventory().items);
+		itemCounter.accountStacks(getPlayer().getInventory().getNonEquipmentItems());
 		updateAndSearchRecipes();
 	}
 
 	public void updateSearchString(String searchString) {
 		searchString = searchString.toLowerCase(Locale.ROOT);
 		if (searchString.equals(currentSearchString)) return;
-		updateAndSearchRecipes();
 		currentSearchString = searchString;
+		updateAndSearchRecipes();
 	}
 
-	private static void canCraftRecipe(RecipeCollection recipeCollection, ItemStackCounter itemCounter, RecipeBook book, boolean isCreativePlayer) {
-		RecipeCollectionAccessor accessor = (RecipeCollectionAccessor) recipeCollection;
-		Set<RecipeHolder<?>> fitDimensions = accessor.biomancy$getFitDimensions();
-		Set<RecipeHolder<?>> craftable = accessor.biomancy$getCraftable();
+	private void reloadRecipes() {
+		allRecipes = List.copyOf(RecipeMaps.getClientRecipeMap().byType(ModRecipes.BIO_FORGING_RECIPE_TYPE.get()));
 
-		for (RecipeHolder<?> recipe : recipeCollection.getRecipes()) {
-			boolean isRecipeKnown = isCreativePlayer || book.contains(recipe);
-			boolean canCraftRecipe = recipe.value().canCraftInDimensions(0, 0) && isRecipeKnown;
+		ClientLevel level = getLevel();
+		Item.TooltipContext tooltipContext = Item.TooltipContext.of(level.registryAccess());
+		TooltipFlag tooltipFlag = ClientTooltipFlag.of(TooltipFlag.Default.NORMAL);
+		searchTree = new FullTextSearchTree<>(
+				recipe -> getTooltipLines(getResultItem(recipe), tooltipContext, tooltipFlag),
+				recipe -> Stream.of(BuiltInRegistries.ITEM.getKey(getResultItem(recipe).getItem())),
+				allRecipes
+		);
+	}
 
-			if (canCraftRecipe) {
-				fitDimensions.add(recipe);
-			}
-			else {
-				fitDimensions.remove(recipe);
-			}
+	private ItemStack getResultItem(RecipeHolder<BioForgingRecipe> recipe) {
+		return recipe.value().getResultItem(getLevel().registryAccess());
+	}
 
-			if (recipe.value() instanceof BioForgingRecipe bioForgingRecipe) {
-				if (canCraftRecipe && bioForgingRecipe.isCraftable(itemCounter)) {
-					craftable.add(recipe);
-				}
-				else {
-					craftable.remove(recipe);
-				}
-			}
-			else {
-				craftable.remove(recipe);
+	private static Stream<String> getTooltipLines(ItemStack stack, Item.TooltipContext context, TooltipFlag flag) {
+		return stack.getTooltipLines(context, null, flag).stream()
+				.map(line -> ChatFormatting.stripFormatting(line.getString()).trim())
+				.filter(line -> !line.isEmpty());
+	}
+
+	private Set<ResourceKey<Recipe<?>>> getKnownRecipes(ClientRecipeBook recipeBook) {
+		Map<RecipeDisplay, ResourceKey<Recipe<?>>> recipesByDisplay = new HashMap<>();
+		for (RecipeHolder<BioForgingRecipe> recipe : allRecipes) {
+			for (RecipeDisplay display : recipe.value().display()) {
+				recipesByDisplay.putIfAbsent(display, recipe.id());
 			}
 		}
+
+		Set<ResourceKey<Recipe<?>>> known = new HashSet<>();
+		for (RecipeCollection collection : recipeBook.getCollection(ModRecipes.BIO_FORGING_CATEGORY.get())) {
+			for (RecipeDisplayEntry entry : collection.getRecipes()) {
+				ResourceKey<Recipe<?>> id = recipesByDisplay.get(entry.display());
+				if (id != null) known.add(id);
+			}
+		}
+		return known;
+	}
+
+	private static boolean isInTab(RecipeHolder<BioForgingRecipe> recipe, BioForgeTab tab) {
+		if (tab == ModBioForgeTabs.SEARCH.get()) return true;
+		return recipe.value().getTab() == tab;
 	}
 
 	private void updateAndSearchRecipes() {
@@ -276,27 +294,34 @@ class BioForgeScreenController {
 		boolean isCreativePlayer = player.isCreative() || !BiomancyConfig.SERVER_SYNCED.doBioForgeRecipeProgression.get();
 
 		ClientRecipeBook recipeBook = player.getRecipeBook();
+		Set<ResourceKey<Recipe<?>>> knownRecipes = isCreativePlayer ? Set.of() : getKnownRecipes(recipeBook);
 		BioForgeTab currentTab = tabs.get(activeTab);
-		List<RecipeCollection> recipesForCategory = recipeBook.getCollection(ModRecipeBookCategories.BIO_FORGE).stream().filter(recipeCollection -> ModRecipeBookCategories.isInTab(recipeCollection, currentTab)).toList();
-		recipesForCategory.forEach(recipeCollection -> canCraftRecipe(recipeCollection, itemCounter, recipeBook, isCreativePlayer));
 
-		List<RecipeCollection> recipes = Lists.newArrayList(recipesForCategory);
-		if (!isCreativePlayer) recipes.removeIf(recipeCollection -> !recipeCollection.hasKnownRecipes());
-		recipes.removeIf(recipeCollection -> !recipeCollection.hasFitting());
+		craftableRecipes.clear();
+		List<RecipeHolder<BioForgingRecipe>> recipes = new ArrayList<>();
+		for (RecipeHolder<BioForgingRecipe> recipe : allRecipes) {
+			if (!isInTab(recipe, currentTab)) continue;
+			if (!isCreativePlayer && !knownRecipes.contains(recipe.id())) continue;
 
-		if (!currentSearchString.isEmpty() && minecraft.getConnection() != null) {
-			ObjectSet<RecipeCollection> searchResult = new ObjectLinkedOpenHashSet<>(minecraft.getConnection().searchTrees().recipes().search(currentSearchString));
-			recipes.removeIf(recipeCollection -> !searchResult.contains(recipeCollection));
+			recipes.add(recipe);
+			if (recipe.value().isCraftable(itemCounter)) {
+				craftableRecipes.add(recipe.id());
+			}
+		}
+
+		if (!currentSearchString.isEmpty()) {
+			Set<RecipeHolder<BioForgingRecipe>> searchResult = new HashSet<>(searchTree.search(currentSearchString));
+			recipes.removeIf(recipe -> !searchResult.contains(recipe));
 		}
 
 		if (recipeBook.isFiltering(ModRecipeBookTypes.BIO_FORGE)) {
-			recipes.removeIf(recipeCollection -> !recipeCollection.hasCraftable());
+			recipes.removeIf(recipe -> !craftableRecipes.contains(recipe.id()));
 		}
 
 		setShownRecipes(recipes);
 	}
 
-	private void setShownRecipes(List<RecipeCollection> recipes) {
+	private void setShownRecipes(List<RecipeHolder<BioForgingRecipe>> recipes) {
 		shownRecipes = recipes;
 
 		maxPages = Mth.ceil(recipes.size() / (float) GRID_SIZE);
@@ -328,6 +353,7 @@ class BioForgeScreenController {
 	}
 
 	public void onRecipeBookUpdated() {
+		reloadRecipes();
 		updateAndSearchRecipes();
 	}
 
@@ -335,8 +361,8 @@ class BioForgeScreenController {
 		public static RecipeSelection EMPTY = new RecipeSelection(null, -1, -1);
 
 		@Nullable
-		public ResourceLocation getRecipeId() {
-			return recipe != null ? recipe.id() : null;
+		public Identifier getRecipeId() {
+			return recipe != null ? recipe.id().identifier() : null;
 		}
 	}
 

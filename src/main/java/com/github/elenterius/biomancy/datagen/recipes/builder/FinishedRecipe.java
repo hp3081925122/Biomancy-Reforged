@@ -5,7 +5,7 @@ import com.google.gson.JsonObject;
 import com.mojang.serialization.DynamicOps;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.neoforged.neoforge.common.conditions.ICondition;
 import org.jspecify.annotations.Nullable;
@@ -14,7 +14,7 @@ import java.util.List;
 
 public interface FinishedRecipe {
 
-	ResourceLocation getId();
+	Identifier getId();
 
 	RecipeSerializer<?> getType();
 

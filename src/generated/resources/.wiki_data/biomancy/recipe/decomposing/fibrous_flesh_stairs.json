@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "biomancy:fibrous_flesh_stairs"
+      "ingredient": "biomancy:fibrous_flesh_stairs"
     }
   },
   "output": {

@@ -1,6 +1,6 @@
 package com.github.elenterius.biomancy.mixin.accessor;
 
-import net.minecraft.data.models.model.TextureSlot;
+import net.minecraft.client.data.models.model.TextureSlot;
 import org.jspecify.annotations.NonNull;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Invoker;

@@ -1,7 +1,7 @@
 {
   "type": "biomancy:decomposing",
   "ingredient": {
-    "item": "biomancy:fibrous_primal_flesh_stairs"
+    "ingredient": "biomancy:fibrous_primal_flesh_stairs"
   },
   "nutrientsCost": 1,
   "processingTime": 18,

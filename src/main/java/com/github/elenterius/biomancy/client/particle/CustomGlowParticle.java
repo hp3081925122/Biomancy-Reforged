@@ -1,23 +1,25 @@
 package com.github.elenterius.biomancy.client.particle;
 
+import net.minecraft.client.particle.SpriteSet;
 import com.github.elenterius.biomancy.util.colors.ColorHarmony;
 import com.github.elenterius.biomancy.util.colors.ColorSpaces;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.*;
 import net.minecraft.core.particles.SimpleParticleType;
-import net.minecraft.util.FastColor;
+import net.minecraft.util.ARGB;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
-@OnlyIn(Dist.CLIENT)
-public class CustomGlowParticle extends TextureSheetParticle {
+public class CustomGlowParticle extends SingleQuadParticle {
+
+	public void pickSprite(SpriteSet sprites) {
+		setSprite(sprites.get(random));
+	}
 	static final RandomSource RANDOM = RandomSource.create();
 	private final SpriteSet sprites;
 
 	protected CustomGlowParticle(ClientLevel level, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed, SpriteSet sprites) {
-		super(level, x, y, z, xSpeed, ySpeed, zSpeed);
+		super(level, x, y, z, xSpeed, ySpeed, zSpeed, null);
 
 		this.sprites = sprites;
 		quadSize *= 0.75F;
@@ -34,13 +36,13 @@ public class CustomGlowParticle extends TextureSheetParticle {
 	}
 
 	@Override
-	public ParticleRenderType getRenderType() {
-		return ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT;
+	protected Layer getLayer() {
+		return Layer.TRANSLUCENT;
 	}
 
 	@Override
-	public int getLightColor(float partialTick) {
-		int lightColor = super.getLightColor(partialTick);
+	public int getLightCoords(float partialTick) {
+		int lightColor = super.getLightCoords(partialTick);
 		int k = lightColor >> 16 & 255;
 
 		float agePct = Mth.clamp((age + partialTick) / (float) lifetime, 0f, 1f);
@@ -56,12 +58,11 @@ public class CustomGlowParticle extends TextureSheetParticle {
 	}
 
 	public void setColorRGB(int color) {
-		rCol = FastColor.ARGB32.red(color) / 255f;
-		gCol = FastColor.ARGB32.green(color) / 255f;
-		bCol = FastColor.ARGB32.blue(color) / 255f;
+		rCol = ARGB.red(color) / 255f;
+		gCol = ARGB.green(color) / 255f;
+		bCol = ARGB.blue(color) / 255f;
 	}
 
-	@OnlyIn(Dist.CLIENT)
 	public static class AnalogousColorProvider implements ParticleProvider<SimpleParticleType> {
 		private final SpriteSet sprite;
 		private final int color;
@@ -71,10 +72,10 @@ public class CustomGlowParticle extends TextureSheetParticle {
 			color = rgbColor;
 		}
 
-		public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
+		public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed, RandomSource random) {
 			CustomGlowParticle particle = new CustomGlowParticle(level, x, y, z, 0.5d - RANDOM.nextDouble(), ySpeed, 0.5d - RANDOM.nextDouble(), sprite);
 
-			if (level.random.nextFloat() < 0.4f) {
+			if (level.getRandom().nextFloat() < 0.4f) {
 				double[][] colors = ColorHarmony.analogousOkLCh(ColorSpaces.OkLCh.fromARGB32(color));
 				double[] rgb = ColorSpaces.OkLCh.toSRGB(colors[1]);
 				particle.setColor((float) rgb[0], (float) rgb[1], (float) rgb[2]);
@@ -87,7 +88,6 @@ public class CustomGlowParticle extends TextureSheetParticle {
 		}
 	}
 
-	@OnlyIn(Dist.CLIENT)
 	public static class TwoColorProvider implements ParticleProvider<SimpleParticleType> {
 		private final SpriteSet sprite;
 		private final int primaryColor;
@@ -99,14 +99,13 @@ public class CustomGlowParticle extends TextureSheetParticle {
 			this.secondaryColor = secondaryColor;
 		}
 
-		public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
+		public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed, RandomSource random) {
 			CustomGlowParticle particle = new CustomGlowParticle(level, x, y, z, 0.5d - RANDOM.nextDouble(), ySpeed, 0.5d - RANDOM.nextDouble(), sprite);
-			particle.setColorRGB(level.random.nextFloat() < 0.4f ? secondaryColor : primaryColor);
+			particle.setColorRGB(level.getRandom().nextFloat() < 0.4f ? secondaryColor : primaryColor);
 			return particle;
 		}
 	}
 
-	@OnlyIn(Dist.CLIENT)
 	public static class GenericProvider implements ParticleProvider<SimpleParticleType> {
 		private final SpriteSet sprite;
 
@@ -114,7 +113,7 @@ public class CustomGlowParticle extends TextureSheetParticle {
 			sprite = sprites;
 		}
 
-		public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
+		public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed, RandomSource random) {
 			return new CustomGlowParticle(level, x, y, z, 0.5d - RANDOM.nextDouble(), ySpeed, 0.5d - RANDOM.nextDouble(), sprite);
 		}
 	}

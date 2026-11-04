@@ -5,15 +5,15 @@ import com.llamalad7.mixinextras.injector.v2.WrapWithCondition;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.projectile.Arrow;
+import net.minecraft.world.entity.projectile.arrow.Arrow;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 
 @Mixin(Arrow.class)
 public abstract class ArrowMixin {
 
-	@WrapWithCondition(method = "doPostHurtEffects", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/LivingEntity;addEffect(Lnet/minecraft/world/effect/MobEffectInstance;Lnet/minecraft/world/entity/Entity;)Z"))
-	private boolean onlyApplyEffectIfAllowed(LivingEntity target, MobEffectInstance effectInstance, Entity source) {
+	@WrapWithCondition(method = "lambda$doPostHurtEffects$0", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/LivingEntity;addEffect(Lnet/minecraft/world/effect/MobEffectInstance;Lnet/minecraft/world/entity/Entity;)Z"))
+	private static boolean onlyApplyEffectIfAllowed(LivingEntity target, MobEffectInstance effectInstance, Entity source) {
 		return StatusEffectHandler.canApplySplashEffectIfAllowed(effectInstance.getEffect(), target, StatusEffectHandler.CONSUME_ONE_NUTRIENT_PER_ARMOR_PIECE);
 	}
 

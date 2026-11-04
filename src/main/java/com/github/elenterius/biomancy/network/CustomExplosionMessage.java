@@ -1,24 +1,20 @@
 package com.github.elenterius.biomancy.network;
 
-import com.github.elenterius.biomancy.mixin.accessor.ExplosionAccessor;
+import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.util.ClientUtil;
 import com.github.elenterius.biomancy.util.explosion.ExplosionType;
-import net.minecraft.core.BlockPos;
-import com.github.elenterius.biomancy.BiomancyMod;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.util.Mth;
-import net.minecraft.world.entity.Entity;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.ServerExplosion;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
-import org.jspecify.annotations.Nullable;
-
-import java.util.List;
 
 public class CustomExplosionMessage implements CustomPacketPayload {
 
@@ -27,32 +23,30 @@ public class CustomExplosionMessage implements CustomPacketPayload {
 	public static final StreamCodec<FriendlyByteBuf, CustomExplosionMessage> STREAM_CODEC = StreamCodec.ofMember(CustomExplosionMessage::encode, CustomExplosionMessage::decode);
 
 	private final ExplosionType type;
-	private final @Nullable Integer sourceId;
 
 	private final double x;
 	private final double y;
 	private final double z;
 
 	private final float radius;
-	private final List<BlockPos> toBlow;
+	private final boolean spawnParticles;
+	private final boolean largeExplosion;
 
 	private final float knockbackX;
 	private final float knockbackY;
 	private final float knockbackZ;
 
-	public CustomExplosionMessage(ExplosionType type, Explosion explosion, ServerPlayer serverPlayer) {
+	public CustomExplosionMessage(ExplosionType type, ServerExplosion explosion, ServerPlayer serverPlayer, boolean spawnParticles) {
 		this.type = type;
-
-		Entity source = explosion.getDirectSourceEntity();
-		sourceId = source != null ? source.getId() : null;
 
 		Vec3 position = explosion.center();
 		x = position.x;
 		y = position.y;
 		z = position.z;
 
-		radius = ((ExplosionAccessor) explosion).getRadius();
-		toBlow = explosion.getToBlow();
+		radius = explosion.radius();
+		this.spawnParticles = spawnParticles;
+		largeExplosion = !(radius < 2f) && explosion.getBlockInteraction() != Explosion.BlockInteraction.KEEP;
 
 		Vec3 knockback = explosion.getHitPlayers().get(serverPlayer);
 
@@ -68,14 +62,14 @@ public class CustomExplosionMessage implements CustomPacketPayload {
 		}
 	}
 
-	public CustomExplosionMessage(ExplosionType type, @Nullable Integer sourceId, double x, double y, double z, float radius, List<BlockPos> toBlow, float knockbackX, float knockbackY, float knockbackZ) {
+	public CustomExplosionMessage(ExplosionType type, double x, double y, double z, float radius, boolean spawnParticles, boolean largeExplosion, float knockbackX, float knockbackY, float knockbackZ) {
 		this.type = type;
-		this.sourceId = sourceId;
 		this.x = x;
 		this.y = y;
 		this.z = z;
 		this.radius = radius;
-		this.toBlow = toBlow;
+		this.spawnParticles = spawnParticles;
+		this.largeExplosion = largeExplosion;
 		this.knockbackX = knockbackX;
 		this.knockbackY = knockbackY;
 		this.knockbackZ = knockbackZ;
@@ -92,29 +86,12 @@ public class CustomExplosionMessage implements CustomPacketPayload {
 
 	public void encode(final FriendlyByteBuf buffer) {
 		buffer.writeEnum(type);
-
-		if (sourceId != null) {
-			buffer.writeBoolean(true);
-			buffer.writeVarInt(sourceId);
-		}
-		else {
-			buffer.writeBoolean(false);
-		}
-
 		buffer.writeDouble(x);
 		buffer.writeDouble(y);
 		buffer.writeDouble(z);
 		buffer.writeFloat(radius);
-
-		int xi = Mth.floor(x);
-		int yi = Mth.floor(y);
-		int zi = Mth.floor(z);
-		buffer.writeCollection(toBlow, (buf, pos) -> {
-			buf.writeByte(pos.getX() - xi);
-			buf.writeByte(pos.getY() - yi);
-			buf.writeByte(pos.getZ() - zi);
-		});
-
+		buffer.writeBoolean(spawnParticles);
+		buffer.writeBoolean(largeExplosion);
 		buffer.writeFloat(knockbackX);
 		buffer.writeFloat(knockbackY);
 		buffer.writeFloat(knockbackZ);
@@ -122,31 +99,16 @@ public class CustomExplosionMessage implements CustomPacketPayload {
 
 	public static CustomExplosionMessage decode(final FriendlyByteBuf buffer) {
 		ExplosionType type = buffer.readEnum(ExplosionType.class);
-
-		Integer sourceId = null;
-		if (buffer.readBoolean()) {
-			sourceId = buffer.readVarInt();
-		}
-
 		double x = buffer.readDouble();
 		double y = buffer.readDouble();
 		double z = buffer.readDouble();
-		float power = buffer.readFloat();
-
-		int xi = Mth.floor(x);
-		int yi = Mth.floor(y);
-		int zi = Mth.floor(z);
-		List<BlockPos> toBlow = buffer.readList(buf -> new BlockPos(
-				buf.readByte() + xi,
-				buf.readByte() + yi,
-				buf.readByte() + zi
-		));
-
+		float radius = buffer.readFloat();
+		boolean spawnParticles = buffer.readBoolean();
+		boolean largeExplosion = buffer.readBoolean();
 		float knockbackX = buffer.readFloat();
 		float knockbackY = buffer.readFloat();
 		float knockbackZ = buffer.readFloat();
-
-		return new CustomExplosionMessage(type, sourceId, x, y, z, power, toBlow, knockbackX, knockbackY, knockbackZ);
+		return new CustomExplosionMessage(type, x, y, z, radius, spawnParticles, largeExplosion, knockbackX, knockbackY, knockbackZ);
 	}
 
 	private static class ClientHandler {
@@ -156,9 +118,12 @@ public class CustomExplosionMessage implements CustomPacketPayload {
 			Player player = ClientUtil.getPlayer();
 			if (level == null || player == null) return;
 
-			Entity source = ClientUtil.getEntity(packet.sourceId);
-			Explosion explosion = packet.type.clientFactory.create(level, source, packet.x, packet.y, packet.z, packet.radius, packet.toBlow);
-			explosion.finalizeExplosion(true);
+			level.playLocalSound(packet.x, packet.y, packet.z, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.BLOCKS, 4f, (1f + (level.getRandom().nextFloat() - level.getRandom().nextFloat()) * 0.2f) * 0.7f, false);
+
+			if (packet.spawnParticles) {
+				level.addParticle(packet.largeExplosion ? packet.type.largeParticle.get() : packet.type.smallParticle.get(), packet.x, packet.y, packet.z, 1d, 0d, 0d);
+			}
+
 			player.setDeltaMovement(player.getDeltaMovement().add(packet.knockbackX, packet.knockbackY, packet.knockbackZ));
 		}
 

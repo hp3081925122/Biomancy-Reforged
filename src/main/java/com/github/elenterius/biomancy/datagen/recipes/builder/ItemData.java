@@ -5,13 +5,13 @@ import com.google.gson.JsonObject;
 import com.mojang.serialization.DynamicOps;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ItemLike;
 
 public final class ItemData {
 
-	private final ResourceLocation registryName;
+	private final Identifier registryName;
 	private final int count;
 	private final DataComponentPatch components;
 
@@ -38,14 +38,14 @@ public final class ItemData {
 	}
 
 	public static ItemData from(String namespace, String path) {
-		return new ItemData(ResourceLocation.fromNamespaceAndPath(namespace, path));
+		return new ItemData(Identifier.fromNamespaceAndPath(namespace, path));
 	}
 
-	public ItemData(ResourceLocation registryName) {
+	public ItemData(Identifier registryName) {
 		this(registryName, DataComponentPatch.EMPTY, 1);
 	}
 
-	public ItemData(ResourceLocation registryName, DataComponentPatch components, int count) {
+	public ItemData(Identifier registryName, DataComponentPatch components, int count) {
 		this.registryName = registryName;
 		this.components = components;
 		this.count = count;
@@ -55,7 +55,7 @@ public final class ItemData {
 		return count;
 	}
 
-	public ResourceLocation getRegistryName() {
+	public Identifier getRegistryName() {
 		return registryName;
 	}
 

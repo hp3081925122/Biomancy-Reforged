@@ -1,7 +1,7 @@
 {
   "type": "biomancy:decomposing",
   "ingredient": {
-    "item": "minecraft:copper_ingot"
+    "ingredient": "minecraft:copper_ingot"
   },
   "nutrientsCost": 3,
   "processingTime": 360,

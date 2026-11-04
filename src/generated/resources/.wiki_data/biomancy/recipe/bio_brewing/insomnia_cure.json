@@ -1,14 +1,12 @@
 {
   "type": "biomancy:bio_brewing",
   "input": {
-    "0": {
-      "id": "biomancy:exotic_compound"
-    },
+    "0": "biomancy:exotic_compound",
     "1": {
-      "id": "minecraft:sugar"
+      "ingredient": "minecraft:sugar"
     },
     "2": {
-      "id": "biomancy:bile"
+      "ingredient": "biomancy:bile"
     }
   },
   "output": {

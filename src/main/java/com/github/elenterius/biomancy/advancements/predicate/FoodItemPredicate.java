@@ -1,21 +1,20 @@
 package com.github.elenterius.biomancy.advancements.predicate;
 
 import com.mojang.serialization.MapCodec;
-import net.minecraft.advancements.critereon.ItemSubPredicate;
+import net.minecraft.core.component.DataComponentGetter;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.world.item.ItemStack;
+import net.minecraft.core.component.predicates.DataComponentPredicate;
 
-public final class FoodItemPredicate implements ItemSubPredicate {
+public final class FoodItemPredicate implements DataComponentPredicate {
 
 	public static final FoodItemPredicate INSTANCE = new FoodItemPredicate();
-	public static final ItemSubPredicate.Type<FoodItemPredicate> TYPE = new ItemSubPredicate.Type<>(MapCodec.unit(INSTANCE).codec());
+	public static final DataComponentPredicate.Type<FoodItemPredicate> TYPE = new DataComponentPredicate.ConcreteType<>(MapCodec.unitCodec(INSTANCE));
 
 	private FoodItemPredicate() {}
 
 	@Override
-	public boolean matches(ItemStack stack) {
-		if (!stack.has(DataComponents.FOOD)) return false;
-		return stack.getFoodProperties(null) != null;
+	public boolean matches(DataComponentGetter components) {
+		return components.get(DataComponents.FOOD) != null;
 	}
 
 }

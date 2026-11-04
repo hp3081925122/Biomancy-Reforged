@@ -3,21 +3,21 @@
   "bio_forge_tab": "biomancy:components",
   "ingredients": [
     {
-      "item": "minecraft:yellow_dye"
+      "ingredient": "minecraft:yellow_dye"
     },
     {
       "count": 4,
-      "item": "minecraft:sugar"
+      "ingredient": "minecraft:sugar"
     },
     {
       "count": 4,
-      "item": "biomancy:bile"
+      "ingredient": "biomancy:bile"
     },
     {
-      "item": "biomancy:gelling_agent"
+      "ingredient": "biomancy:gelling_agent"
     },
     {
-      "item": "minecraft:glass_bottle"
+      "ingredient": "minecraft:glass_bottle"
     }
   ],
   "nutrientsCost": 1,

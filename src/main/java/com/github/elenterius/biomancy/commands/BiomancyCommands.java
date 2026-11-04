@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.commands;
 
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.core.registries.Registries;
@@ -25,7 +26,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.EntityType;
@@ -60,7 +61,7 @@ public class BiomancyCommands {
 	}
 
 	public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
-		Predicate<CommandSourceStack> spOrOP = source -> source != null && (source.getServer().isSingleplayer() || source.hasPermission(Commands.LEVEL_GAMEMASTERS));
+		Predicate<CommandSourceStack> spOrOP = source -> source != null && (source.getServer().isSingleplayer() || Commands.LEVEL_GAMEMASTERS.check(source.permissions()));
 
 		LiteralArgumentBuilder<CommandSourceStack> builder = Commands
 				.literal("biomancy")
@@ -86,15 +87,15 @@ public class BiomancyCommands {
 		StructureTemplateManager structureManager = level.getServer().getStructureManager();
 		ReloadableServerRegistries.Holder lootManager = level.getServer().reloadableRegistries();
 
-		List<ResourceLocation> templateIds = structureManager.listTemplates()
+		List<Identifier> templateIds = structureManager.listTemplates()
 				.filter(id -> id.getNamespace().equals(BiomancyMod.MOD_ID))
 				.toList();
 
 		ctx.getSource().sendSystemMessage(ComponentUtil.literal("Placing %,d structure templates...".formatted(templateIds.size())));
 		AtomicInteger structuresPlaced = new AtomicInteger();
 
-		Map<String, List<ResourceLocation>> templatesByFolder = new HashMap<>();
-		for (ResourceLocation templateId : templateIds) {
+		Map<String, List<Identifier>> templatesByFolder = new HashMap<>();
+		for (Identifier templateId : templateIds) {
 			String path = templateId.getPath();
 			int index = path.lastIndexOf('/');
 			String folder = index == -1 ? "root" : path.substring(0, index);
@@ -111,11 +112,11 @@ public class BiomancyCommands {
 			int length = 0;
 			int maxDepth = 0;
 
-			List<ResourceLocation> templatesInFolder = folder.getValue();
-			templatesInFolder.sort(ResourceLocation::compareTo);
+			List<Identifier> templatesInFolder = folder.getValue();
+			templatesInFolder.sort(Identifier::compareTo);
 
 			BiomancyMod.LOGGER.debug("Placing {} templates from folder '{}'...", templatesInFolder.size(), folder.getKey());
-			for (ResourceLocation templateId : templatesInFolder) {
+			for (Identifier templateId : templatesInFolder) {
 				Optional<StructureTemplate> optional = structureManager.get(templateId);
 				if (optional.isEmpty()) continue;
 
@@ -170,13 +171,13 @@ public class BiomancyCommands {
 					List<StructureTemplate.StructureBlockInfo> blockInfos = ((StructureTemplateAccessor) template).biomancy$getPalettes().get(0).blocks();
 					for (StructureTemplate.StructureBlockInfo blockInfo : blockInfos) {
 						CompoundTag tag = blockInfo.nbt();
-						if (tag == null || !tag.contains(RandomizableContainerBlockEntity.LOOT_TABLE_TAG, Tag.TAG_STRING)) continue;
+						if (tag == null || !tag.contains(RandomizableContainerBlockEntity.LOOT_TABLE_TAG)) continue;
 
-						String lootTableId = tag.getString(RandomizableContainerBlockEntity.LOOT_TABLE_TAG);
-						long lootTableSeed = tag.getLong(RandomizableContainerBlockEntity.LOOT_TABLE_SEED_TAG);
+						String lootTableId = tag.getStringOr(RandomizableContainerBlockEntity.LOOT_TABLE_TAG, "");
+						long lootTableSeed = tag.getLongOr(RandomizableContainerBlockEntity.LOOT_TABLE_SEED_TAG, 0L);
 
 						boolean lootableExsists = false;
-						ResourceLocation id = ResourceLocation.tryParse(lootTableId);
+						Identifier id = Identifier.tryParse(lootTableId);
 						if (id != null) {
 							LootTable lootTable = lootManager.getLootTable(ResourceKey.create(Registries.LOOT_TABLE, id));
 							lootableExsists = lootTable != LootTable.EMPTY;
@@ -193,7 +194,7 @@ public class BiomancyCommands {
 							BlockEntity blockEntity = level.getBlockEntity(new BlockPos(x, y, z));
 							if (blockEntity != null) {
 								CompoundTag data = blockEntity.saveWithoutMetadata(level.registryAccess());
-								if (!data.contains(RandomizableContainerBlockEntity.LOOT_TABLE_TAG, Tag.TAG_STRING)) {
+								if (!data.contains(RandomizableContainerBlockEntity.LOOT_TABLE_TAG)) {
 									text.append("\n").append(ComponentUtil.literal("LootTable is missing!").withStyle(TextStyles.ERROR));
 								}
 							}
@@ -233,7 +234,7 @@ public class BiomancyCommands {
 	}
 
 	private static void spawnTextDisplay(ServerLevel level, double x, double y, double z, Display.TextDisplay.Align textAlignment, Component text) {
-		Display.TextDisplay textDisplay = EntityType.TEXT_DISPLAY.create(level);
+		Display.TextDisplay textDisplay = EntityType.TEXT_DISPLAY.create(level, EntitySpawnReason.COMMAND);
 		if (textDisplay != null) {
 			textDisplay.setPos(x, y, z);
 
@@ -258,8 +259,8 @@ public class BiomancyCommands {
 	private static boolean dumpBiomeTemperatureAndHumidity(RegistryAccess registryAccess) {
 		BiomancyMod.LOGGER.info("dumping biome default temperatures to biome_temperatures.csv...");
 		try {
-			Stream<String> stringStream = registryAccess.registryOrThrow(Registries.BIOME).entrySet().stream()
-					.map(keyEntry -> "%s,%s,%s".formatted(keyEntry.getKey().location(), keyEntry.getValue().getBaseTemperature(), keyEntry.getValue().getModifiedClimateSettings().downfall()));
+			Stream<String> stringStream = registryAccess.lookupOrThrow(Registries.BIOME).entrySet().stream()
+					.map(keyEntry -> "%s,%s,%s".formatted(keyEntry.getKey().identifier(), keyEntry.getValue().getBaseTemperature(), keyEntry.getValue().getModifiedClimateSettings().downfall()));
 
 			Files.write(Paths.get("biome_temperatures.csv"), (Iterable<String>) stringStream::iterator);
 			return true;

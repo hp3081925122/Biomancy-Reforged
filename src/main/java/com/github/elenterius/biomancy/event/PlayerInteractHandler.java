@@ -1,6 +1,6 @@
 package com.github.elenterius.biomancy.event;
 
-import net.neoforged.neoforge.common.util.TriState;
+import net.minecraft.util.TriState;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.api.serum.SerumContainer;
 import com.github.elenterius.biomancy.block.vialholder.VialHolderBlock;

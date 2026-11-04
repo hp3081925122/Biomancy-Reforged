@@ -1,9 +1,7 @@
 {
   "type": "biomancy:digesting",
   "input": {
-    "0": {
-      "id": "farmersdelight:rotten_tomato"
-    }
+    "0": "farmersdelight:rotten_tomato"
   },
   "output": {
     "0": {

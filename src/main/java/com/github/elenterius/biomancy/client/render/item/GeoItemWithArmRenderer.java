@@ -1,98 +1,94 @@
 package com.github.elenterius.biomancy.client.render.item;
 
-import net.minecraft.client.resources.PlayerSkin;
-import com.github.elenterius.biomancy.mixin.accessor.PlayerRendererAccessor;
+import com.geckolib.animatable.GeoAnimatable;
+import com.geckolib.constant.DataTickets;
+import com.geckolib.model.GeoModel;
+import com.geckolib.renderer.base.BoneSnapshots;
+import com.geckolib.renderer.base.GeoRenderState;
+import com.geckolib.renderer.base.RenderPassInfo;
+import com.geckolib.util.RenderUtil;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.model.HumanoidModel;
-import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.model.geom.ModelPart;
+import net.minecraft.client.model.player.PlayerModel;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
-import net.minecraft.client.renderer.entity.EntityRenderer;
-import net.minecraft.client.renderer.entity.player.PlayerRenderer;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.entity.player.AvatarRenderer;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.client.resources.DefaultPlayerSkin;
-import net.minecraft.world.entity.player.Player;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.entity.player.PlayerModelPart;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemDisplayContext;
-import software.bernie.geckolib.cache.object.GeoBone;
-import software.bernie.geckolib.animatable.GeoAnimatable;
-import software.bernie.geckolib.model.GeoModel;
-import software.bernie.geckolib.renderer.GeoItemRenderer;
-import software.bernie.geckolib.util.RenderUtil;
 
-import java.util.Map;
+import java.util.function.Function;
 
-public class GeoItemWithArmRenderer<T extends Item & GeoAnimatable> extends GeoItemRenderer<T> {
+public class GeoItemWithArmRenderer<T extends Item & GeoAnimatable> extends BiomancyGeoItemRenderer<T> {
+
+	protected static final String ARM_PLACEHOLDER_BONE = "arm_placeholder";
 
 	public GeoItemWithArmRenderer(GeoModel<T> model) {
 		super(model);
 	}
 
-	private static PlayerRenderer getPlayerRenderer(LocalPlayer player) {
-		EntityRenderDispatcher renderDispatcher = Minecraft.getInstance().getEntityRenderDispatcher();
-
-		if (renderDispatcher.getRenderer(player) instanceof PlayerRenderer playerRenderer) return playerRenderer;
-
-		Map<PlayerSkin.Model, EntityRenderer<? extends Player>> playerRenderers = renderDispatcher.getSkinMap();
-
-		PlayerSkin.Model skinModel = DefaultPlayerSkin.get(player.getUUID()).model();
-		if (playerRenderers.get(skinModel) instanceof PlayerRenderer playerRenderer) return playerRenderer;
-
-		return (PlayerRenderer) playerRenderers.get(PlayerSkin.Model.WIDE);
+	public GeoItemWithArmRenderer(GeoModel<T> model, Function<Identifier, RenderType> renderType) {
+		super(model, renderType);
 	}
 
-	protected static void renderPlayerArm(PoseStack poseStack, MultiBufferSource buffer, int packedLight, LocalPlayer player, boolean isRightArm) {
+	@Override
+	public void adjustModelBonesForRender(RenderPassInfo<GeoRenderState> renderPassInfo, BoneSnapshots snapshots) {
+		super.adjustModelBonesForRender(renderPassInfo, snapshots);
+		snapshots.ifPresent(ARM_PLACEHOLDER_BONE, bone -> bone.skipRender(true).skipChildrenRender(true));
+	}
+
+	@Override
+	public void preRenderPass(RenderPassInfo<GeoRenderState> renderPassInfo, SubmitNodeCollector renderTasks) {
+		super.preRenderPass(renderPassInfo, renderTasks);
+
+		ItemDisplayContext perspective = renderPassInfo.getGeckolibData(DataTickets.ITEM_RENDER_PERSPECTIVE);
+		if (perspective == null || !perspective.firstPerson()) return;
+
+		LocalPlayer player = Minecraft.getInstance().player;
+		if (player == null || player.isInvisible()) return;
+
+		boolean isRightArm = perspective == ItemDisplayContext.FIRST_PERSON_RIGHT_HAND;
+
+		renderPassInfo.model().getBone(ARM_PLACEHOLDER_BONE).ifPresent(placeholder -> renderPassInfo.addPerBoneRender(placeholder, (passInfo, bone, collector) -> {
+			PoseStack poseStack = passInfo.poseStack();
+			bone.translateAwayFromPivotPoint(poseStack);
+			RenderUtil.translateAndRotateMatrixForBone(poseStack, bone);
+			renderPlayerArm(poseStack, collector, passInfo.packedLight(), player, isRightArm);
+		}));
+	}
+
+	protected static void renderPlayerArm(PoseStack poseStack, SubmitNodeCollector collector, int packedLight, AbstractClientPlayer player, boolean isRightArm) {
 		float direction = isRightArm ? 1f : -1f;
 		poseStack.mulPose(Axis.YP.rotationDegrees(90f * direction));
 		poseStack.translate(1f / 16f * direction, 0f, 0f);
 
-		renderHandWithEmptyPose(poseStack, buffer, packedLight, player, isRightArm);
+		renderHandWithEmptyPose(poseStack, collector, packedLight, player, isRightArm);
 	}
 
-	protected static void renderHandWithEmptyPose(PoseStack poseStack, MultiBufferSource buffer, int packedLight, LocalPlayer player, boolean isRightArm) {
-		PlayerRenderer playerRenderer = getPlayerRenderer(player);
-		PlayerModel<AbstractClientPlayer> playerModel = playerRenderer.getModel();
-		ModelPart armModel = isRightArm ? playerModel.rightArm : playerModel.leftArm;
-		ModelPart armSleeveModel = isRightArm ? playerModel.rightSleeve : playerModel.leftSleeve;
+	protected static void renderHandWithEmptyPose(PoseStack poseStack, SubmitNodeCollector collector, int packedLight, AbstractClientPlayer player, boolean isRightArm) {
+		AvatarRenderer<AbstractClientPlayer> playerRenderer = Minecraft.getInstance().getEntityRenderDispatcher().getPlayerRenderer(player);
+		PlayerModel playerModel = playerRenderer.getModel();
 
-		((PlayerRendererAccessor) playerRenderer).biomancy$SetModelProperties(player);
-		playerModel.rightArmPose = HumanoidModel.ArmPose.EMPTY;
-		playerModel.leftArmPose = HumanoidModel.ArmPose.EMPTY;
+		ModelPart arm = isRightArm ? playerModel.rightArm : playerModel.leftArm;
+		ModelPart sleeve = isRightArm ? playerModel.rightSleeve : playerModel.leftSleeve;
 
-		armModel.setRotation(0f, 0f, 0f);
-		armModel.setPos(0f, 0f, 0f);
-		armSleeveModel.setRotation(0f, 0f, 0f);
-		armSleeveModel.setPos(0f, 0f, 0f);
+		arm.resetPose();
+		arm.setPos(0f, 0f, 0f);
+		arm.setRotation(0f, 0f, 0f);
+		arm.visible = true;
+		sleeve.resetPose();
+		sleeve.visible = player.isModelPartShown(isRightArm ? PlayerModelPart.RIGHT_SLEEVE : PlayerModelPart.LEFT_SLEEVE);
 
-		armModel.render(poseStack, buffer.getBuffer(RenderType.entityCutoutNoCull(player.getSkin().texture())), packedLight, OverlayTexture.NO_OVERLAY);
-		armSleeveModel.render(poseStack, buffer.getBuffer(RenderType.entityTranslucent(player.getSkin().texture())), packedLight, OverlayTexture.NO_OVERLAY);
-	}
-
-	@Override
-	public void renderRecursively(PoseStack poseStack, T animatable, GeoBone bone, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, int colour) {
-		if (bone.getName().equals("arm_placeholder")) {
-			LocalPlayer player = Minecraft.getInstance().player;
-			if (renderPerspective.firstPerson() && player != null && !player.isInvisible()) {
-				poseStack.pushPose();
-
-				RenderUtil.prepMatrixForBone(poseStack, bone);
-				RenderUtil.translateAndRotateMatrixForBone(poseStack, bone);
-				renderPlayerArm(poseStack, bufferSource, packedLight, player, renderPerspective == ItemDisplayContext.FIRST_PERSON_RIGHT_HAND);
-				poseStack.popPose();
-
-				bufferSource.getBuffer(renderType);
-			}
-		}
-		else {
-			super.renderRecursively(poseStack, animatable, bone, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, colour);
-		}
+		//26.1 中袖子是手臂的子部件，原版在同一次提交中以半透明一起绘制
+		Identifier skinTexture = player.getSkin().body().texturePath();
+		collector.submitModelPart(arm, poseStack, RenderTypes.entityTranslucent(skinTexture), packedLight, OverlayTexture.NO_OVERLAY, null);
 	}
 
 }

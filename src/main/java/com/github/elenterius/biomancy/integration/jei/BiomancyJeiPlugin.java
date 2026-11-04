@@ -20,13 +20,14 @@ import mezz.jei.api.recipe.RecipeType;
 import mezz.jei.api.registration.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeHolder;
-import net.minecraft.world.item.crafting.RecipeManager;
+import net.minecraft.world.item.crafting.RecipeMap;
+import com.github.elenterius.biomancy.crafting.recipe.RecipeMaps;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Collection;
@@ -36,10 +37,10 @@ import java.util.Objects;
 @JeiPlugin
 public class BiomancyJeiPlugin implements IModPlugin {
 
-	private static final ResourceLocation ID = BiomancyMod.rl("plugin");
+	private static final Identifier ID = BiomancyMod.rl("plugin");
 
 	@Override
-	public ResourceLocation getPluginUid() {
+	public Identifier getPluginUid() {
 		return ID;
 	}
 
@@ -59,14 +60,14 @@ public class BiomancyJeiPlugin implements IModPlugin {
 	@Override
 	public void registerRecipes(IRecipeRegistration registration) {
 		ClientLevel level = Objects.requireNonNull(Minecraft.getInstance().level);
-		RecipeManager recipeManager = level.getRecipeManager();
+		RecipeMap recipeMap = RecipeMaps.getClientRecipeMap();
 
-		registration.addRecipes(DecomposingCategory.RECIPE_TYPE, values(recipeManager.getAllRecipesFor(ModRecipes.DECOMPOSING_RECIPE_TYPE.get())));
-		registration.addRecipes(BioBrewingCategory.RECIPE_TYPE, values(recipeManager.getAllRecipesFor(ModRecipes.BIO_BREWING_RECIPE_TYPE.get())));
+		registration.addRecipes(DecomposingCategory.RECIPE_TYPE, values(recipeMap.byType(ModRecipes.DECOMPOSING_RECIPE_TYPE.get())));
+		registration.addRecipes(BioBrewingCategory.RECIPE_TYPE, values(recipeMap.byType(ModRecipes.BIO_BREWING_RECIPE_TYPE.get())));
 		registration.addRecipes(BioBrewingCategory.RECIPE_TYPE, values(PotionSerumRecipes.getRecipes(level)));
 
 		registration.addRecipes(DigestingCategory.RECIPE_TYPE, DigestingRecipes.getRecipes(level));
-		registration.addRecipes(BioForgingCategory.RECIPE_TYPE, values(recipeManager.getAllRecipesFor(ModRecipes.BIO_FORGING_RECIPE_TYPE.get())));
+		registration.addRecipes(BioForgingCategory.RECIPE_TYPE, values(recipeMap.byType(ModRecipes.BIO_FORGING_RECIPE_TYPE.get())));
 
 		registration.addRecipes(RecipeTypes.CRAFTING, SpecialCraftingRecipeMaker.createBiometricMembraneRecipes());
 		registration.addRecipes(RecipeTypes.CRAFTING, SpecialCraftingRecipeMaker.createCradleCleansingRecipes());

@@ -2,18 +2,10 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "key": {
-    "C": {
-      "tag": "c:claws"
-    },
-    "E": {
-      "item": "biomancy:living_flesh"
-    },
-    "M": {
-      "tag": "biomancy:raw_meats"
-    },
-    "S": {
-      "item": "minecraft:slime_ball"
-    }
+    "C": "#c:claws",
+    "E": "biomancy:living_flesh",
+    "M": "#biomancy:raw_meats",
+    "S": "minecraft:slime_ball"
   },
   "pattern": [
     "C C",
@@ -21,7 +13,6 @@
     "MEM"
   ],
   "result": {
-    "count": 1,
     "id": "biomancy:bio_forge"
   }
 }

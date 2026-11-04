@@ -3,11 +3,11 @@
   "input": {
     "0": {
       "count": 4,
-      "id": "biomancy:flesh_bits"
+      "ingredient": "biomancy:flesh_bits"
     },
     "1": {
       "count": 4,
-      "id": "biomancy:bone_fragments"
+      "ingredient": "biomancy:bone_fragments"
     }
   },
   "output": {

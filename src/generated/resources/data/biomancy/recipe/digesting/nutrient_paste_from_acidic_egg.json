@@ -1,8 +1,6 @@
 {
   "type": "biomancy:digesting",
-  "ingredient": {
-    "item": "biomancy:acidic_egg"
-  },
+  "ingredient": "biomancy:acidic_egg",
   "nutrientsCost": 2,
   "processingTime": 220,
   "result": {

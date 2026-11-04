@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "minecraft:sea_pickle"
+      "ingredient": "minecraft:sea_pickle"
     }
   },
   "output": {

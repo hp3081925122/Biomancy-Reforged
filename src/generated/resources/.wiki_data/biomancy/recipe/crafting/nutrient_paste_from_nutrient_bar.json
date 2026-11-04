@@ -2,9 +2,7 @@
   "type": "minecraft:crafting_shapeless",
   "category": "misc",
   "ingredients": [
-    {
-      "item": "biomancy:nutrient_bar"
-    }
+    "biomancy:nutrient_bar"
   ],
   "result": {
     "count": 9,

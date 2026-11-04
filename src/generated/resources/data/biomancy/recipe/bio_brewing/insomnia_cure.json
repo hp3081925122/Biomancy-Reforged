@@ -2,17 +2,15 @@
   "type": "biomancy:bio_brewing",
   "ingredients": [
     {
-      "item": "minecraft:sugar"
+      "ingredient": "minecraft:sugar"
     },
     {
-      "item": "biomancy:bile"
+      "ingredient": "biomancy:bile"
     }
   ],
   "nutrientsCost": 2,
   "processingTime": 160,
-  "reactant": {
-    "item": "biomancy:exotic_compound"
-  },
+  "reactant": "biomancy:exotic_compound",
   "result": {
     "id": "biomancy:insomnia_cure"
   }

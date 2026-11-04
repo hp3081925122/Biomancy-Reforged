@@ -2,36 +2,17 @@
   "type": "minecraft:crafting_shapeless",
   "category": "misc",
   "ingredients": [
-    {
-      "item": "biomancy:nutrient_paste"
-    },
-    {
-      "item": "biomancy:nutrient_paste"
-    },
-    {
-      "item": "biomancy:nutrient_paste"
-    },
-    {
-      "item": "biomancy:nutrient_paste"
-    },
-    {
-      "item": "biomancy:nutrient_paste"
-    },
-    {
-      "item": "biomancy:nutrient_paste"
-    },
-    {
-      "item": "biomancy:nutrient_paste"
-    },
-    {
-      "item": "biomancy:nutrient_paste"
-    },
-    {
-      "item": "biomancy:nutrient_paste"
-    }
+    "biomancy:nutrient_paste",
+    "biomancy:nutrient_paste",
+    "biomancy:nutrient_paste",
+    "biomancy:nutrient_paste",
+    "biomancy:nutrient_paste",
+    "biomancy:nutrient_paste",
+    "biomancy:nutrient_paste",
+    "biomancy:nutrient_paste",
+    "biomancy:nutrient_paste"
   ],
   "result": {
-    "count": 1,
     "id": "biomancy:nutrient_bar"
   }
 }

@@ -2,17 +2,21 @@ package com.github.elenterius.biomancy.util.explosion;
 
 import com.google.common.collect.Sets;
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
+import net.minecraft.util.RandomSource;
+import net.minecraft.util.Util;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.level.Explosion;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.EntityBasedExplosionDamageCalculator;
 import net.minecraft.world.level.ExplosionDamageCalculator;
-import net.minecraft.world.level.Level;
+import net.minecraft.world.level.ServerExplosion;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.level.material.FluidState;
@@ -21,33 +25,60 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.event.EventHooks;
 import org.jspecify.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-public abstract class GenericExplosion extends Explosion {
+public abstract class GenericExplosion extends ServerExplosion {
 
-	public GenericExplosion(Level level, @Nullable Entity source, double x, double y, double z, float radius, List<BlockPos> positions) {
-		super(level, source, x, y, z, radius, positions, BlockInteraction.DESTROY_WITH_DECAY, ParticleTypes.EXPLOSION, ParticleTypes.EXPLOSION_EMITTER, SoundEvents.GENERIC_EXPLODE);
-	}
+	private static final ExplosionDamageCalculator DEFAULT_DAMAGE_CALCULATOR = new ExplosionDamageCalculator();
 
-	public GenericExplosion(Level level, @Nullable Entity source, double x, double y, double z, float radius, boolean fire, BlockInteraction blockInteraction, List<BlockPos> positions) {
-		super(level, source, x, y, z, radius, fire, blockInteraction, positions);
-	}
+	protected final ServerLevel level;
+	protected final RandomSource random;
+	protected final @Nullable Entity source;
+	protected final DamageSource damageSource;
+	protected final ExplosionDamageCalculator damageCalculator;
+	protected final double x;
+	protected final double y;
+	protected final double z;
+	protected final float radius;
+	protected final boolean fire;
+	protected final BlockInteraction blockInteraction;
+	protected final List<BlockPos> toBlow = new ArrayList<>();
 
-	public GenericExplosion(Level level, @Nullable Entity source, double x, double y, double z, float radius, boolean fire, BlockInteraction blockInteraction) {
-		super(level, source, x, y, z, radius, fire, blockInteraction);
-	}
-
-	public GenericExplosion(Level level, @Nullable Entity source, @Nullable DamageSource damageSource, @Nullable ExplosionDamageCalculator damageCalculator, double x, double y, double z, float radius, boolean fire, BlockInteraction blockInteraction) {
-		super(level, source, damageSource, damageCalculator, x, y, z, radius, fire, blockInteraction, ParticleTypes.EXPLOSION, ParticleTypes.EXPLOSION_EMITTER, SoundEvents.GENERIC_EXPLODE);
+	public GenericExplosion(ServerLevel level, @Nullable Entity source, @Nullable DamageSource damageSource, @Nullable ExplosionDamageCalculator damageCalculator, double x, double y, double z, float radius, boolean fire, BlockInteraction blockInteraction) {
+		super(level, source, damageSource, damageCalculator, new Vec3(x, y, z), radius, fire, blockInteraction);
+		this.level = level;
+		this.random = level.getRandom();
+		this.source = source;
+		this.damageSource = getDamageSource();
+		this.damageCalculator = damageCalculator != null ? damageCalculator : (source == null ? DEFAULT_DAMAGE_CALCULATOR : new EntityBasedExplosionDamageCalculator(source));
+		this.x = x;
+		this.y = y;
+		this.z = z;
+		this.radius = radius;
+		this.fire = fire;
+		this.blockInteraction = blockInteraction;
 	}
 
 	@Override
-	public void explode() {
+	public int explode() {
 		level.gameEvent(source, GameEvent.EXPLODE, new Vec3(x, y, z));
 		gatherBlocksToBlow();
 		explodeEntities();
+		finalizeExplosion();
+		return toBlow.size();
+	}
+
+	protected abstract void finalizeExplosion();
+
+	public List<BlockPos> getToBlow() {
+		return toBlow;
+	}
+
+	public boolean interactsWithBlocks() {
+		return blockInteraction != BlockInteraction.KEEP;
 	}
 
 	protected void gatherBlocksToBlow() {
@@ -66,7 +97,7 @@ public abstract class GenericExplosion extends Explosion {
 						d1 /= distance;
 						d2 /= distance;
 
-						float damage = radius * (0.7f + level.random.nextFloat() * 0.6f);
+						float damage = radius * (0.7f + random.nextFloat() * 0.6f);
 						double posX = x;
 						double posY = y;
 						double posZ = z;
@@ -111,7 +142,7 @@ public abstract class GenericExplosion extends Explosion {
 		int maxZ = Mth.floor(z + diameter + 1d);
 
 		List<Entity> entities = level.getEntities(source, new AABB(minX, minY, minZ, maxX, maxY, maxZ));
-		EventHooks.onExplosionDetonate(level, this, entities, diameter);
+		EventHooks.onExplosionDetonate(level, this, entities, toBlow);
 
 		Vec3 position = center();
 
@@ -132,15 +163,16 @@ public abstract class GenericExplosion extends Explosion {
 
 			Vec3 direction = new Vec3(deltaX, deltaY, deltaZ).normalize();
 			if (direction == Vec3.ZERO) {
-				direction = new Vec3(level.random.nextGaussian(), level.random.nextGaussian(), level.random.nextGaussian()).normalize();
+				direction = new Vec3(random.nextGaussian(), random.nextGaussian(), random.nextGaussian()).normalize();
 			}
 
 			Vec3 knockback = direction.scale(getKnockbackStrength(entity, nearPercent));
+			knockback = EventHooks.getExplosionKnockback(level, this, entity, knockback, toBlow);
 			entity.setDeltaMovement(entity.getDeltaMovement().add(knockback));
 
 			if (entity instanceof Player player) {
 				if (!player.isSpectator() && (!player.isCreative() || !player.getAbilities().flying)) {
-					hitPlayers.put(player, knockback);
+					getHitPlayers().put(player, knockback);
 				}
 			}
 		}
@@ -155,7 +187,53 @@ public abstract class GenericExplosion extends Explosion {
 	}
 
 	protected void hurtEntity(Entity entity, float amount) {
-		entity.hurt(damageSource, amount);
+		entity.hurtServer(level, damageSource, amount);
+	}
+
+	protected void destroyBlocks() {
+		List<StackCollector> drops = new ArrayList<>();
+
+		Util.shuffle(toBlow, random);
+
+		for (BlockPos pos : toBlow) {
+			BlockState state = level.getBlockState(pos);
+			if (!destroyBlock(pos, state, drops)) {
+				state.onExplosionHit(level, pos, this, (stack, dropPos) -> addOrAppendStack(drops, stack, dropPos));
+			}
+		}
+
+		for (StackCollector collector : drops) {
+			Block.popResource(level, collector.pos, collector.stack);
+		}
+	}
+
+	protected boolean destroyBlock(BlockPos pos, BlockState state, List<StackCollector> drops) {
+		return false;
+	}
+
+	protected static void addOrAppendStack(List<StackCollector> drops, ItemStack stack, BlockPos pos) {
+		for (StackCollector collector : drops) {
+			collector.tryMerge(stack);
+			if (stack.isEmpty()) return;
+		}
+
+		drops.add(new StackCollector(pos.immutable(), stack));
+	}
+
+	protected static class StackCollector {
+		private final BlockPos pos;
+		private ItemStack stack;
+
+		private StackCollector(BlockPos pos, ItemStack stack) {
+			this.pos = pos;
+			this.stack = stack;
+		}
+
+		public void tryMerge(ItemStack input) {
+			if (ItemEntity.areMergable(stack, input)) {
+				stack = ItemEntity.merge(stack, input, 16);
+			}
+		}
 	}
 
 }

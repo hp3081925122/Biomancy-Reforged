@@ -1,5 +1,9 @@
 package com.github.elenterius.biomancy.block.membrane;
 
+import com.github.elenterius.biomancy.block.base.BlockTooltipProvider;
+import net.minecraft.core.UUIDUtil;
+import net.minecraft.world.item.component.TooltipDisplay;
+import java.util.function.Consumer;
 import com.github.elenterius.biomancy.util.BlockItemUtil;
 import net.minecraft.world.item.Item;
 import com.github.elenterius.biomancy.init.ModBlockEntities;
@@ -14,7 +18,6 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -25,7 +28,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-public class BiometricMembraneBlock extends MembraneBlock implements EntityBlock {
+public class BiometricMembraneBlock extends MembraneBlock implements BlockTooltipProvider, EntityBlock {
 
 	public BiometricMembraneBlock(Properties properties) {
 		super(properties, IgnoreEntityCollisionPredicate.IS_VALID_FOR_BLOCK_ENTITY_MEMBRANE);
@@ -35,7 +38,7 @@ public class BiometricMembraneBlock extends MembraneBlock implements EntityBlock
 		CompoundTag tag = new CompoundTag();
 
 		if (entityUUID != null) {
-			tag.putUUID(BiometricMembraneBlockEntity.ENTITY_UUID_KEY, entityUUID);
+			tag.store(BiometricMembraneBlockEntity.ENTITY_UUID_KEY, UUIDUtil.CODEC, entityUUID);
 		}
 		else if (entityType != null) {
 			tag.putString(BiometricMembraneBlockEntity.ENTITY_TYPE_KEY, EntityType.getKey(entityType).toString());
@@ -52,23 +55,23 @@ public class BiometricMembraneBlock extends MembraneBlock implements EntityBlock
 		CompoundTag compoundTag = new CompoundTag();
 		compoundTag.put(BiometricMembraneBlockEntity.MEMBRANE_KEY, tag);
 		ItemStack stack = new ItemStack(ModItems.BIOMETRIC_MEMBRANE.get());
-		BlockItem.setBlockEntityData(stack, ModBlockEntities.BIOMETRIC_MEMBRANE.get(), compoundTag);
+		BlockItemUtil.setBlockEntityData(stack, ModBlockEntities.BIOMETRIC_MEMBRANE.get(), compoundTag);
 		return stack;
 	}
 
 	public static int getTintColor(ItemStack stack, int tintIndex) {
 		CompoundTag compoundTag = BlockItemUtil.getBlockEntityData(stack);
 		if (compoundTag == null || !compoundTag.contains(BiometricMembraneBlockEntity.MEMBRANE_KEY)) return 0xFFFF_FFFF;
-		CompoundTag tag = compoundTag.getCompound(BiometricMembraneBlockEntity.MEMBRANE_KEY);
+		CompoundTag tag = compoundTag.getCompoundOrEmpty(BiometricMembraneBlockEntity.MEMBRANE_KEY);
 
-		if (tag.contains(BiometricMembraneBlockEntity.ENTITY_COLORS_KEY, Tag.TAG_INT_ARRAY)) {
-			return tag.getIntArray(BiometricMembraneBlockEntity.ENTITY_COLORS_KEY)[tintIndex];
+		if (tag.getIntArray(BiometricMembraneBlockEntity.ENTITY_COLORS_KEY).isPresent()) {
+			return tag.getIntArray(BiometricMembraneBlockEntity.ENTITY_COLORS_KEY).orElseThrow()[tintIndex];
 		}
 
 		return 0xFFFF_FFFF;
 	}
 
-	public static int getTintColor(BlockState state, @Nullable BlockAndTintGetter level, @Nullable BlockPos pos, int tintIndex) {
+	public static int getTintColor(BlockState state, @Nullable BlockGetter level, @Nullable BlockPos pos, int tintIndex) {
 		if (level == null || pos == null) return 0xFFFF_FFFF;
 
 		if (level.getBlockEntity(pos) instanceof BiometricMembraneBlockEntity membrane) {
@@ -84,21 +87,20 @@ public class BiometricMembraneBlock extends MembraneBlock implements EntityBlock
 		return ModBlockEntities.BIOMETRIC_MEMBRANE.get().create(pos, state);
 	}
 
-	@Override
-	public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
-		super.appendHoverText(stack, context, tooltip, flag);
+	
+	public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag flag) {
 
 		CompoundTag compoundTag = BlockItemUtil.getBlockEntityData(stack);
 		if (compoundTag == null || !compoundTag.contains(BiometricMembraneBlockEntity.MEMBRANE_KEY)) return;
-		CompoundTag tag = compoundTag.getCompound(BiometricMembraneBlockEntity.MEMBRANE_KEY);
+		CompoundTag tag = compoundTag.getCompoundOrEmpty(BiometricMembraneBlockEntity.MEMBRANE_KEY);
 
-		if (tag.hasUUID(BiometricMembraneBlockEntity.ENTITY_UUID_KEY)) {
-			UUID entityUUID = tag.getUUID(BiometricMembraneBlockEntity.ENTITY_UUID_KEY);
-			tooltip.add(ComponentUtil.literal("UUID: " + entityUUID).withStyle(ChatFormatting.GRAY));
+		if (tag.read(BiometricMembraneBlockEntity.ENTITY_UUID_KEY, UUIDUtil.CODEC).isPresent()) {
+			UUID entityUUID = tag.read(BiometricMembraneBlockEntity.ENTITY_UUID_KEY, UUIDUtil.CODEC).orElseThrow();
+			tooltip.accept(ComponentUtil.literal("UUID: " + entityUUID).withStyle(ChatFormatting.GRAY));
 		}
 		else {
-			Optional<EntityType<?>> optional = EntityType.byString(tag.getString(BiometricMembraneBlockEntity.ENTITY_TYPE_KEY));
-			optional.ifPresent(entityType -> tooltip.add(ComponentUtil.literal("Type: ").append(entityType.getDescription()).withStyle(ChatFormatting.GRAY)));
+			Optional<EntityType<?>> optional = EntityType.byString(tag.getStringOr(BiometricMembraneBlockEntity.ENTITY_TYPE_KEY, ""));
+			optional.ifPresent(entityType -> tooltip.accept(ComponentUtil.literal("Type: ").append(entityType.getDescription()).withStyle(ChatFormatting.GRAY)));
 		}
 	}
 

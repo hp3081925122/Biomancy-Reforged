@@ -127,7 +127,7 @@ public class FollowOwnerGoal<T extends Mob & OwnableMob & ControllableMob> exten
 			return false;
 		}
 
-		entity.moveTo(x + 0.5d, y, z + 0.5d, entity.getYRot(), entity.getXRot());
+		entity.snapTo(x + 0.5d, y, z + 0.5d, entity.getYRot(), entity.getXRot());
 		navigator.stop();
 		return true;
 	}

@@ -3,8 +3,8 @@ package com.github.elenterius.biomancy.datagen.loot;
 import com.github.elenterius.biomancy.init.ModEntityTypes;
 import com.github.elenterius.biomancy.init.ModItems;
 import com.github.elenterius.biomancy.init.ModLoot;
-import net.minecraft.advancements.critereon.EntityFlagsPredicate;
-import net.minecraft.advancements.critereon.EntityPredicate;
+import net.minecraft.advancements.criterion.EntityFlagsPredicate;
+import net.minecraft.advancements.criterion.EntityPredicate;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.loot.EntityLootSubProvider;
 import net.minecraft.world.entity.EntityType;
@@ -42,7 +42,7 @@ public class ModEntityLoot extends EntityLootSubProvider {
 	private LootTable.Builder fleshBlobLootTableBuilderWithDrop(int rolls) {
 		return LootTable.lootTable()
 				.withPool(LootPool.lootPool().setRolls(ConstantValue.exactly(rolls)).add(LootItem.lootTableItem(ModItems.LIVING_FLESH.get())))
-				.withPool(LootPool.lootPool().setRolls(ConstantValue.exactly(1)).add(NestedLootTable.lootTableReference(ModEntityTypes.FLESH_BLOB.get().getDefaultLootTable())));
+				.withPool(LootPool.lootPool().setRolls(ConstantValue.exactly(1)).add(NestedLootTable.lootTableReference(ModEntityTypes.FLESH_BLOB.get().getDefaultLootTable().orElseThrow())));
 	}
 
 	private LootTable.Builder fleshBlobLootTable() {
@@ -79,7 +79,7 @@ public class ModEntityLoot extends EntityLootSubProvider {
 						.apply(SetItemCountFunction.setCount(UniformGenerator.between(0, 2)))))
 				.withPool(LootPool.lootPool().setRolls(ConstantValue.exactly(1)).add(LootItem.lootTableItem(Items.STRING)
 						.apply(SetItemCountFunction.setCount(UniformGenerator.between(0, 2)))))
-				.withPool(LootPool.lootPool().setRolls(ConstantValue.exactly(1)).add(NestedLootTable.lootTableReference(ModEntityTypes.FLESH_SHEEP.get().getDefaultLootTable())));
+				.withPool(LootPool.lootPool().setRolls(ConstantValue.exactly(1)).add(NestedLootTable.lootTableReference(ModEntityTypes.FLESH_SHEEP.get().getDefaultLootTable().orElseThrow())));
 	}
 
 	private LootTable.Builder sheepLootTable() {

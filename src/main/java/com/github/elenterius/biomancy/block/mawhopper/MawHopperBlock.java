@@ -1,9 +1,13 @@
 package com.github.elenterius.biomancy.block.mawhopper;
 
+import net.minecraft.world.entity.InsideBlockEffectApplier;
+import net.minecraft.world.level.redstone.Orientation;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.ScheduledTickAccess;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.world.item.ItemStack;
 import com.github.elenterius.biomancy.util.InteractionUtil;
-import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.InteractionResult;
 import com.github.elenterius.biomancy.block.property.DirectedConnection;
 import com.github.elenterius.biomancy.block.property.VertexType;
 import com.github.elenterius.biomancy.init.ModBlockEntities;
@@ -67,12 +71,12 @@ public class MawHopperBlock extends BaseEntityBlock implements SimpleWaterlogged
 		return blockState.getValue(WATERLOGGED);
 	}
 
-	private static boolean isOutgoingConnected(LevelAccessor level, BlockPos pos, DirectedConnection connection) {
+	private static boolean isOutgoingConnected(LevelReader level, BlockPos pos, DirectedConnection connection) {
 		BlockState blockStateAtOutgoingPos = level.getBlockState(pos.relative(connection.outgoing));
 		return blockStateAtOutgoingPos.getBlock() instanceof MawHopperBlock && getConnection(blockStateAtOutgoingPos).ingoing.getOpposite() == connection.outgoing;
 	}
 
-	private static boolean isIngoingConnected(LevelAccessor level, BlockPos pos, DirectedConnection connection) {
+	private static boolean isIngoingConnected(LevelReader level, BlockPos pos, DirectedConnection connection) {
 		BlockState blockStateAtOutgoingPos = level.getBlockState(pos.relative(connection.ingoing));
 		return blockStateAtOutgoingPos.getBlock() instanceof MawHopperBlock && getConnection(blockStateAtOutgoingPos).outgoing.getOpposite() == connection.ingoing;
 	}
@@ -124,9 +128,9 @@ public class MawHopperBlock extends BaseEntityBlock implements SimpleWaterlogged
 	}
 
 	@Override
-	public BlockState updateShape(BlockState ourState, Direction updateDirection, BlockState theirState, LevelAccessor level, BlockPos ourPos, BlockPos theirPos) {
+	public BlockState updateShape(BlockState ourState, LevelReader level, ScheduledTickAccess ticks, BlockPos ourPos, Direction updateDirection, BlockPos theirPos, BlockState theirState, RandomSource random) {
 		if (isWaterlogged(ourState)) {
-			level.scheduleTick(ourPos, Fluids.WATER, Fluids.WATER.getTickDelay(level));
+			ticks.scheduleTick(ourPos, Fluids.WATER, Fluids.WATER.getTickDelay(level));
 		}
 
 		DirectedConnection ourConnection = getConnection(ourState);
@@ -188,8 +192,8 @@ public class MawHopperBlock extends BaseEntityBlock implements SimpleWaterlogged
 	}
 
 	@Override
-	public void neighborChanged(BlockState state, Level level, BlockPos pos, Block block, BlockPos fromPos, boolean isMoving) {
-		super.neighborChanged(state, level, pos, block, fromPos, isMoving);
+	public void neighborChanged(BlockState state, Level level, BlockPos pos, Block block, @Nullable Orientation orientation, boolean isMoving) {
+		super.neighborChanged(state, level, pos, block, orientation, isMoving);
 	}
 
 	@Override
@@ -197,23 +201,13 @@ public class MawHopperBlock extends BaseEntityBlock implements SimpleWaterlogged
 	}
 
 	@Override
-	public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
-		if (!state.is(newState.getBlock())) {
-			if (!level.isClientSide && level.getBlockEntity(pos) instanceof MawHopperBlockEntity blockEntity) {
-				blockEntity.dropInventoryContents(level, pos);
-			}
-			super.onRemove(state, level, pos, newState, isMoving);
-		}
-	}
-
-	@Override
-	protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+	protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
 		return InteractionUtil.toItemInteractionResult(use(state, level, pos, player, hand, hit));
 	}
 
 	protected InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
 		if (player.getItemInHand(hand).isEmpty() && level.getBlockEntity(pos) instanceof MawHopperBlockEntity blockEntity) {
-			if (level.isClientSide) return InteractionResult.SUCCESS;
+			if (level.isClientSide()) return InteractionResult.SUCCESS;
 			blockEntity.giveInventoryContentsTo(level, pos, player);
 			return InteractionResult.CONSUME;
 		}
@@ -234,11 +228,11 @@ public class MawHopperBlock extends BaseEntityBlock implements SimpleWaterlogged
 	@Nullable
 	@Override
 	public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> blockEntityType) {
-		return level.isClientSide ? null : createTickerHelper(blockEntityType, ModBlockEntities.MAW_HOPPER.get(), MawHopperBlockEntity::serverTick);
+		return level.isClientSide() ? null : createTickerHelper(blockEntityType, ModBlockEntities.MAW_HOPPER.get(), MawHopperBlockEntity::serverTick);
 	}
 
 	@Override
-	public void entityInside(BlockState state, Level level, BlockPos pos, Entity entity) {
+	public void entityInside(BlockState state, Level level, BlockPos pos, Entity entity, InsideBlockEffectApplier effectApplier, boolean isPrecise) {
 		if (getVertexType(state) != VertexType.SOURCE) return;
 
 		BlockEntity blockentity = level.getBlockEntity(pos);

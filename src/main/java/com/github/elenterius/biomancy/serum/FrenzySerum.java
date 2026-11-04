@@ -1,5 +1,7 @@
 package com.github.elenterius.biomancy.serum;
 
+import net.minecraft.core.component.DataComponents;
+import java.util.function.Consumer;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import java.util.ArrayList;
 import com.mojang.datafixers.util.Pair;
@@ -25,7 +27,7 @@ import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
 import net.minecraft.world.entity.ai.goal.WrappedGoal;
-import net.minecraft.world.entity.animal.Rabbit;
+import net.minecraft.world.entity.animal.rabbit.Rabbit;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.monster.RangedAttackMob;
 import net.minecraft.world.item.ItemStack;
@@ -48,7 +50,7 @@ public class FrenzySerum extends BasicSerum {
 	@Override
 	public void affectEntity(ServerLevel level, CompoundTag tag, @Nullable LivingEntity source, LivingEntity target) {
 		if (target instanceof Rabbit rabbit && rabbit.getVariant() != Rabbit.Variant.EVIL) {
-			rabbit.setVariant(Rabbit.Variant.EVIL);
+			rabbit.setComponent(DataComponents.RABBIT_VARIANT, Rabbit.Variant.EVIL);
 			return;
 		}
 
@@ -65,24 +67,24 @@ public class FrenzySerum extends BasicSerum {
 	}
 
 	@Override
-	public void appendTooltip(CompoundTag tag, @Nullable Level level, List<Component> tooltip, TooltipFlag flagIn) {
-		tooltip.add(ComponentUtil.translatable(getDescriptionTranslationKey()).withStyle(TextStyles.LORE));
-		tooltip.add(ComponentUtil.EMPTY_LINE);
+	public void appendTooltip(CompoundTag tag, @Nullable Level level, Consumer<Component> tooltip, TooltipFlag flagIn) {
+		tooltip.accept(ComponentUtil.translatable(getDescriptionTranslationKey()).withStyle(TextStyles.LORE));
+		tooltip.accept(ComponentUtil.EMPTY_LINE);
 		float tickRate = level != null ? level.tickRateManager().tickrate() : 20f;
 		addEffectToClientTooltip(tooltip, ModMobEffects.FRENZY, 0, DEFAULT_DURATION_TICKS, tickRate);
 	}
 
-	public void addEffectToClientTooltip(List<Component> tooltip, Holder<MobEffect> effectHolder, int amplifier, int duration, float tickRate) {
+	public void addEffectToClientTooltip(Consumer<Component> tooltip, Holder<MobEffect> effectHolder, int amplifier, int duration, float tickRate) {
 		MobEffect effect = effectHolder.value();
 		MutableComponent effectText = ComponentUtil.translatable(effect.getDescriptionId());
 		if (amplifier > 0) effectText = ComponentUtil.translatable("potion.withAmplifier", effectText, ComponentUtil.translatable("potion.potency." + amplifier));
 		if (duration > 20) effectText = ComponentUtil.translatable("potion.withDuration", effectText, StringUtil.formatTickDuration(duration, tickRate));
-		tooltip.add(effectText.withStyle(effect.getCategory().getTooltipFormatting()));
+		tooltip.accept(effectText.withStyle(effect.getCategory().getTooltipFormatting()));
 
 		List<Pair<Holder<Attribute>, AttributeModifier>> effectModifiers = new ArrayList<>();
 		effect.createModifiers(amplifier, (attribute, modifier) -> effectModifiers.add(Pair.of(attribute, modifier)));
 		if (!effectModifiers.isEmpty()) {
-			tooltip.add(ComponentUtil.EMPTY_LINE);
+			tooltip.accept(ComponentUtil.EMPTY_LINE);
 
 			for (Pair<Holder<Attribute>, AttributeModifier> entry : effectModifiers) {
 				AttributeModifier modifier = entry.getSecond();
@@ -92,11 +94,11 @@ public class FrenzySerum extends BasicSerum {
 
 				MutableComponent attributeText = ComponentUtil.translatable(entry.getFirst().value().getDescriptionId());
 				if (value > 0) {
-					tooltip.add((ComponentUtil.translatable("attribute.modifier.plus." + operation.id(), ItemAttributeModifiers.ATTRIBUTE_MODIFIER_FORMAT.format(amount), attributeText)).withStyle(ChatFormatting.BLUE));
+					tooltip.accept((ComponentUtil.translatable("attribute.modifier.plus." + operation.id(), ItemAttributeModifiers.ATTRIBUTE_MODIFIER_FORMAT.format(amount), attributeText)).withStyle(ChatFormatting.BLUE));
 				}
 				else if (value < 0) {
 					amount = amount * -1d;
-					tooltip.add((ComponentUtil.translatable("attribute.modifier.take." + operation.id(), ItemAttributeModifiers.ATTRIBUTE_MODIFIER_FORMAT.format(amount), attributeText)).withStyle(ChatFormatting.RED));
+					tooltip.accept((ComponentUtil.translatable("attribute.modifier.take." + operation.id(), ItemAttributeModifiers.ATTRIBUTE_MODIFIER_FORMAT.format(amount), attributeText)).withStyle(ChatFormatting.RED));
 				}
 			}
 		}

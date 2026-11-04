@@ -9,7 +9,9 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.TraceableEntity;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.ExplosionDamageCalculator;
-import net.minecraft.world.level.GameRules;
+import net.minecraft.world.level.gamerules.GameRule;
+import net.minecraft.world.level.gamerules.GameRules;
+import net.minecraft.world.level.ServerExplosion;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.event.EventHooks;
 import org.jspecify.annotations.Nullable;
@@ -29,28 +31,27 @@ public class ExplosionUtil {
 	}
 
 	public static void explode(ExplosionType explosionType, Level level, @Nullable Entity source, @Nullable DamageSource damageSource, @Nullable ExplosionDamageCalculator damageCalculator, double x, double y, double z, float radius, boolean fire, Level.ExplosionInteraction explosionInteraction, boolean spawnParticles) {
+		if (!(level instanceof ServerLevel serverLevel)) return;
+
 		Explosion.BlockInteraction blockInteraction = switch (explosionInteraction) {
 			case NONE -> Explosion.BlockInteraction.KEEP;
-			case BLOCK -> getDestroyType(level, GameRules.RULE_BLOCK_EXPLOSION_DROP_DECAY);
-			case MOB -> EventHooks.canEntityGrief(level, source) ? getDestroyType(level, GameRules.RULE_MOB_EXPLOSION_DROP_DECAY) : Explosion.BlockInteraction.KEEP;
-			case TNT -> getDestroyType(level, GameRules.RULE_TNT_EXPLOSION_DROP_DECAY);
+			case BLOCK -> getDestroyType(serverLevel, GameRules.BLOCK_EXPLOSION_DROP_DECAY);
+			case MOB -> EventHooks.canEntityGrief(serverLevel, source) ? getDestroyType(serverLevel, GameRules.MOB_EXPLOSION_DROP_DECAY) : Explosion.BlockInteraction.KEEP;
+			case TNT -> getDestroyType(serverLevel, GameRules.TNT_EXPLOSION_DROP_DECAY);
 			case TRIGGER -> Explosion.BlockInteraction.TRIGGER_BLOCK;
 		};
 
-		Explosion explosion = explosionType.serverFactory.create(level, source, damageSource, damageCalculator, x, y, z, radius, fire, blockInteraction);
+		ServerExplosion explosion = explosionType.serverFactory.create(serverLevel, source, damageSource, damageCalculator, x, y, z, radius, fire, blockInteraction);
 
-		if (EventHooks.onExplosionStart(level, explosion)) return;
+		if (EventHooks.onExplosionStart(serverLevel, explosion)) return;
 
 		explosion.explode();
-		explosion.finalizeExplosion(spawnParticles);
 
-		if (level instanceof ServerLevel serverLevel) {
-			ModNetworkHandler.sendCustomExplosionToClients(serverLevel, explosionType, explosion);
-		}
+		ModNetworkHandler.sendCustomExplosionToClients(serverLevel, explosionType, explosion, spawnParticles);
 	}
 
-	private static Explosion.BlockInteraction getDestroyType(Level level, GameRules.Key<GameRules.BooleanValue> gameRule) {
-		return level.getGameRules().getBoolean(gameRule) ? Explosion.BlockInteraction.DESTROY_WITH_DECAY : Explosion.BlockInteraction.DESTROY;
+	private static Explosion.BlockInteraction getDestroyType(ServerLevel level, GameRule<Boolean> gameRule) {
+		return level.getGameRules().get(gameRule) ? Explosion.BlockInteraction.DESTROY_WITH_DECAY : Explosion.BlockInteraction.DESTROY;
 	}
 
 	public static @Nullable LivingEntity getIndirectSourceEntity(@Nullable Entity source) {

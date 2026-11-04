@@ -1,7 +1,7 @@
 {
   "type": "biomancy:decomposing",
   "ingredient": {
-    "item": "biomancy:smooth_primal_flesh_wall"
+    "ingredient": "biomancy:smooth_primal_flesh_wall"
   },
   "nutrientsCost": 1,
   "processingTime": 36,

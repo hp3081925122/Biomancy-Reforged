@@ -1,5 +1,10 @@
 package com.github.elenterius.biomancy.block.decomposer;
 
+import net.neoforged.neoforge.items.IItemHandlerModifiable;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.core.HolderLookup;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.api.nutrients.FuelHandler;
@@ -22,7 +27,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.Container;
@@ -35,21 +40,23 @@ import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.transfer.ResourceHandler;
+import net.neoforged.neoforge.transfer.fluid.FluidResource;
 import net.neoforged.neoforge.items.IItemHandler;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import org.jspecify.annotations.Nullable;
-import software.bernie.geckolib.animatable.GeoBlockEntity;
-import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.animation.AnimatableManager;
-import software.bernie.geckolib.animation.AnimationController;
-import software.bernie.geckolib.animation.AnimationState;
-import software.bernie.geckolib.animation.RawAnimation;
-import software.bernie.geckolib.animation.keyframe.event.SoundKeyframeEvent;
-import software.bernie.geckolib.animation.PlayState;
-import software.bernie.geckolib.util.GeckoLibUtil;
+import com.geckolib.animatable.GeoBlockEntity;
+import com.geckolib.animatable.instance.AnimatableInstanceCache;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.animation.AnimationController;
+import com.geckolib.animation.state.AnimationTest;
+import com.geckolib.animation.RawAnimation;
+import com.geckolib.animation.state.KeyFrameEvent;
+import com.geckolib.cache.animation.keyframeevent.SoundKeyframeData;
+import com.geckolib.animation.object.PlayState;
+import com.geckolib.util.GeckoLibUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -93,7 +100,7 @@ public class DecomposerBlockEntity extends MachineBlockEntity<DecomposingRecipe,
 
 	@Override
 	public void onLoad() {
-		if (level != null && level.isClientSide) {
+		if (level != null && level.isClientSide()) {
 			loopingSoundHelper = SoundUtil.Client.createLoopingSoundHandler();
 		}
 	}
@@ -155,11 +162,11 @@ public class DecomposerBlockEntity extends MachineBlockEntity<DecomposingRecipe,
 
 	DecomposerRecipeResult getComputedRecipeResult(DecomposingRecipe craftingGoal) {
 		if (computedRecipeResult == null || computedRecipeResult.recipe != craftingGoal) {
-			ResourceLocation recipeId = stateData.getCraftingGoalRecipe(level)
+			Identifier recipeId = stateData.getCraftingGoalRecipe(level)
 					.filter(holder -> holder.value() == craftingGoal)
-					.map(RecipeHolder::id)
+					.map(holder -> holder.id().identifier())
 					.orElse(null);
-			return DecomposerRecipeResult.computeRecipeResult(recipeId, craftingGoal, level.random.nextInt());
+			return DecomposerRecipeResult.computeRecipeResult(recipeId, craftingGoal, level.getRandom().nextInt());
 		}
 
 		return computedRecipeResult;
@@ -176,29 +183,29 @@ public class DecomposerBlockEntity extends MachineBlockEntity<DecomposingRecipe,
 	}
 
 	@Override
-	protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-		super.saveAdditional(tag, registries);
-		stateData.serialize(tag);
+	protected void saveAdditional(ValueOutput output) {
+		super.saveAdditional(output);
+		stateData.serialize(output);
 		if (computedRecipeResult != null) {
-			tag.put("ComputedRecipeResult", computedRecipeResult.serialize());
+			computedRecipeResult.serialize(output.child("ComputedRecipeResult"));
 		}
-		tag.put("Fuel", fuelHandler.serializeNBT(registries));
-		tag.put("FuelSlots", fuelInventory.serializeNBT(registries));
-		tag.put("InputSlots", inputInventory.serializeNBT(registries));
-		tag.put("OutputSlots", outputInventory.serializeNBT(registries));
+		fuelHandler.serialize(output.child("Fuel"));
+		fuelInventory.serialize(output.child("FuelSlots"));
+		inputInventory.serialize(output.child("InputSlots"));
+		outputInventory.serialize(output.child("OutputSlots"));
 	}
 
 	@Override
-	protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-		super.loadAdditional(tag, registries);
-		stateData.deserialize(tag);
-		if (level != null && tag.contains("ComputedRecipeResult")) {
-			computedRecipeResult = DecomposerRecipeResult.deserialize(tag.getCompound("ComputedRecipeResult"), level.getRecipeManager());
+	protected void loadAdditional(ValueInput input) {
+		super.loadAdditional(input);
+		stateData.deserialize(input);
+		if (level instanceof ServerLevel serverLevel) {
+			input.child("ComputedRecipeResult").ifPresent(resultInput -> computedRecipeResult = DecomposerRecipeResult.deserialize(resultInput, serverLevel.recipeAccess()));
 		}
-		fuelHandler.deserializeNBT(registries, tag.getCompound("Fuel"));
-		fuelInventory.deserializeNBT(registries, tag.getCompound("FuelSlots"));
-		inputInventory.deserializeNBT(registries, tag.getCompound("InputSlots"));
-		outputInventory.deserializeNBT(registries, tag.getCompound("OutputSlots"));
+		fuelHandler.deserialize(input.childOrEmpty("Fuel"));
+		fuelInventory.deserialize(input.childOrEmpty("FuelSlots"));
+		inputInventory.deserialize(input.childOrEmpty("InputSlots"));
+		outputInventory.deserialize(input.childOrEmpty("OutputSlots"));
 	}
 
 	@Override
@@ -226,21 +233,21 @@ public class DecomposerBlockEntity extends MachineBlockEntity<DecomposingRecipe,
 		return true;
 	}
 
-	private <T extends DecomposerBlockEntity> void onSoundKeyframe(final SoundKeyframeEvent<T> event) {
-		if (event.getKeyframeData().getSound().equals("eat") && level != null && !isRemoved()) {
+	private <T extends DecomposerBlockEntity> void onSoundKeyframe(final KeyFrameEvent<T, SoundKeyframeData> event) {
+		if (event.keyframeData().getSound().equals("eat") && level != null && !isRemoved()) {
 			SoundUtil.Client.playBlockSound(level, getBlockPos(), ModSoundEvents.DECOMPOSER_EAT);
 		}
 	}
 
-	private <T extends DecomposerBlockEntity> PlayState handleAnimationState(final AnimationState<T> event) {
-		Boolean isCrafting = event.getAnimatable().getBlockState().getValue(MachineBlock.CRAFTING);
+	private <T extends DecomposerBlockEntity> PlayState handleAnimationState(final AnimationTest<T> event) {
+		Boolean isCrafting = event.animatable().getBlockState().getValue(MachineBlock.CRAFTING);
 
 		if (Boolean.TRUE.equals(isCrafting)) {
-			event.getController().setAnimation(WORKING_ANIM);
+			event.controller().setAnimation(WORKING_ANIM);
 			loopingSoundHelper.startLoop(this, ModSoundEvents.DECOMPOSER_CRAFTING.get(), 0.65f);
 		}
 		else {
-			event.getController().setAnimation(IDLE_ANIM);
+			event.controller().setAnimation(IDLE_ANIM);
 			loopingSoundHelper.stopLoop();
 		}
 
@@ -249,7 +256,7 @@ public class DecomposerBlockEntity extends MachineBlockEntity<DecomposingRecipe,
 
 	@Override
 	public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-		AnimationController<DecomposerBlockEntity> controller = new AnimationController<>(this, "controller", 10, this::handleAnimationState);
+		AnimationController<DecomposerBlockEntity> controller = new AnimationController<>("controller", 10, this::handleAnimationState);
 		controller.setSoundKeyframeHandler(this::onSoundKeyframe);
 		controllers.add(controller);
 	}
@@ -261,29 +268,28 @@ public class DecomposerBlockEntity extends MachineBlockEntity<DecomposingRecipe,
 
 	@Override
 	public void setRemoved() {
-		if (level != null && level.isClientSide) {
+		if (level != null && level.isClientSide()) {
 			loopingSoundHelper.clear();
 		}
 		super.setRemoved();
 	}
 
-	record DecomposerRecipeResult(@Nullable ResourceLocation recipeId, DecomposingRecipe recipe, int seed, List<ItemStack> items) {
+	record DecomposerRecipeResult(@Nullable Identifier recipeId, DecomposingRecipe recipe, int seed, List<ItemStack> items) {
 
 		@Nullable
-		public static DecomposerRecipeResult deserialize(CompoundTag tag, RecipeManager recipeManager) {
-			String id = tag.getString("recipeId");
-			ResourceLocation recipeId = ResourceLocation.tryParse(id);
+		public static DecomposerRecipeResult deserialize(ValueInput input, RecipeManager recipeManager) {
+			Identifier recipeId = input.getString("recipeId").map(Identifier::tryParse).orElse(null);
 			if (recipeId == null) return null;
 
-			Optional<RecipeHolder<?>> holder = recipeManager.byKey(recipeId);
+			Optional<RecipeHolder<?>> holder = recipeManager.byKey(ResourceKey.create(Registries.RECIPE, recipeId));
 			if (holder.isPresent() && holder.get().value() instanceof DecomposingRecipe decomposingRecipe) {
-				return computeRecipeResult(recipeId, decomposingRecipe, tag.getInt("seed"));
+				return computeRecipeResult(recipeId, decomposingRecipe, input.getIntOr("seed", 0));
 			}
 
 			return null;
 		}
 
-		public static DecomposerRecipeResult computeRecipeResult(@Nullable ResourceLocation recipeId, DecomposingRecipe recipe, int seed) {
+		public static DecomposerRecipeResult computeRecipeResult(@Nullable Identifier recipeId, DecomposingRecipe recipe, int seed) {
 			RandomSource random = RandomSource.create(seed);
 
 			List<ItemStack> items = new ArrayList<>();
@@ -295,23 +301,21 @@ public class DecomposerBlockEntity extends MachineBlockEntity<DecomposingRecipe,
 			return new DecomposerRecipeResult(recipeId, recipe, seed, items);
 		}
 
-		public CompoundTag serialize() {
-			CompoundTag tag = new CompoundTag();
-			if (recipeId != null) tag.putString("recipeId", recipeId.toString());
-			tag.putInt("seed", seed);
-			return tag;
+		public void serialize(ValueOutput output) {
+			if (recipeId != null) output.putString("recipeId", recipeId.toString());
+			output.putInt("seed", seed);
 		}
 
 	}
 
-	public @Nullable IItemHandler getItemHandler(@Nullable Direction side) {
+	public @Nullable IItemHandlerModifiable getItemHandler(@Nullable Direction side) {
 		if (isRemoved()) return null;
 		if (side == null || side == Direction.DOWN) return outputInventory;
 		if (side == Direction.UP) return inputInventory;
 		return fuelInventory;
 	}
 
-	public @Nullable IFluidHandler getFluidHandler(@Nullable Direction side) {
+	public @Nullable ResourceHandler<FluidResource> getFluidHandler(@Nullable Direction side) {
 		if (isRemoved()) return null;
 		return fuelHandler.getFluidConsumer();
 	}

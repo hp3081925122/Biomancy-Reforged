@@ -40,10 +40,10 @@ public class EnhancedIntegerProperty {
 	}
 
 	public int getMin() {
-		return ((IntegerPropertyAccessor) property).biomancy$getMin();
+		return ((IntegerPropertyAccessor) (Object) property).biomancy$getMin();
 	}
 
 	public int getMax() {
-		return ((IntegerPropertyAccessor) property).biomancy$getMax();
+		return ((IntegerPropertyAccessor) (Object) property).biomancy$getMax();
 	}
 }

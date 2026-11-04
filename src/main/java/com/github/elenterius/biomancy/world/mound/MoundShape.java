@@ -8,7 +8,7 @@ import com.github.elenterius.spatialdb.type.ShapeSerializers;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -102,7 +102,7 @@ public class MoundShape implements Shape, MobSpawnFilter {
 	}
 
 	@Override
-	public boolean isMobAllowedToSpawn(Mob mob, MobSpawnType spawnReason, LevelAccessor level, double x, double y, double z) {
+	public boolean isMobAllowedToSpawn(Mob mob, EntitySpawnReason spawnReason, LevelAccessor level, double x, double y, double z) {
 		return false;
 	}
 
@@ -130,16 +130,16 @@ public class MoundShape implements Shape, MobSpawnFilter {
 		}
 
 		public static ProcGenValues readFrom(CompoundTag tag) {
-			long seed = tag.getLong("Seed");
+			long seed = tag.getLongOr("Seed", 0L);
 
-			byte extraRadius = tag.getByte("Radius");
-			byte height = tag.getByte("Height");
-			byte subSpires = tag.getByte("SubSpires");
+			byte extraRadius = tag.getByteOr("Radius", (byte) 0);
+			byte height = tag.getByteOr("Height", (byte) 0);
+			byte subSpires = tag.getByteOr("SubSpires", (byte) 0);
 
-			int maxBuildHeight = tag.getInt("MaxBuildHeight");
-			int seaLevel = tag.getInt("SeaLevel");
-			float biomeTemperature = tag.getFloat("BiomeTemperature");
-			float biomeHumidity = tag.getFloat("BiomeHumidity");
+			int maxBuildHeight = tag.getIntOr("MaxBuildHeight", 0);
+			int seaLevel = tag.getIntOr("SeaLevel", 0);
+			float biomeTemperature = tag.getFloatOr("BiomeTemperature", 0f);
+			float biomeHumidity = tag.getFloatOr("BiomeHumidity", 0f);
 
 			return new ProcGenValues(seed, extraRadius, height, subSpires, maxBuildHeight, seaLevel, biomeTemperature, biomeHumidity);
 		}
@@ -157,7 +157,7 @@ public class MoundShape implements Shape, MobSpawnFilter {
 
 		@Override
 		public MoundShape read(CompoundTag tag) {
-			BlockPos origin = BlockPos.of(tag.getLong("Origin"));
+			BlockPos origin = BlockPos.of(tag.getLongOr("Origin", 0L));
 			ProcGenValues procGenValues = ProcGenValues.readFrom(tag);
 			return MoundGenerator.constructShape(origin, procGenValues);
 		}

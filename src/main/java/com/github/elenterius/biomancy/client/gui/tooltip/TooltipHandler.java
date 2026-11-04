@@ -11,7 +11,7 @@ import com.github.elenterius.biomancy.util.ComponentUtil;
 import com.mojang.datafixers.util.Either;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
@@ -34,7 +34,7 @@ public final class TooltipHandler {
 	private TooltipHandler() {}
 
 	@SubscribeEvent
-	public static void onRenderTooltipColor(final RenderTooltipEvent.Color tooltipEvent) {
+	public static void onRenderTooltipColor(final RenderTooltipEvent.Texture tooltipEvent) {
 		ItemStack stack = tooltipEvent.getItemStack();
 
 		if (stack.isEmpty() && Minecraft.getInstance().screen instanceof ScreenTooltipStyleProvider styleProvider) {
@@ -97,15 +97,10 @@ public final class TooltipHandler {
 		}
 	}
 
-	public static void onPostRenderTooltip(ItemStack stack, List<ClientTooltipComponent> components, Font font, GuiGraphics guiGraphics, int posX, int posY, int tooltipWidth, int tooltipHeight) {
-		if (!components.isEmpty()) {
-			int y = posY;
-			for (int i = 0; i < components.size(); i++) {
-				ClientTooltipComponent clientComponent = components.get(i);
-				if (clientComponent instanceof HrTooltipClientComponent hrComponent) {
-					hrComponent.renderLine(guiGraphics, posX, y, tooltipWidth, i);
-				}
-				y += clientComponent.getHeight() + (i == 0 ? 2 : 0);
+	public static void onPreRenderTooltip(List<ClientTooltipComponent> components) {
+		for (int i = 0; i < components.size(); i++) {
+			if (components.get(i) instanceof HrTooltipClientComponent hrComponent) {
+				hrComponent.setLineNumber(i);
 			}
 		}
 	}

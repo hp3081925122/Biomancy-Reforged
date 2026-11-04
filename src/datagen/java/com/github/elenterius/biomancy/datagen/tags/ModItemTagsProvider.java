@@ -9,22 +9,21 @@ import com.github.elenterius.biomancy.item.injector.InjectorItem;
 import com.github.elenterius.biomancy.item.weapon.ClawsItem;
 import com.github.elenterius.biomancy.item.weapon.gun.GunbladeItem;
 import net.minecraft.world.item.ProjectileWeaponItem;
-import net.minecraft.world.item.SwordItem;
+import com.github.elenterius.biomancy.item.weapon.DespoilingSwordItem;
 import com.github.elenterius.biomancy.init.tags.ModItemTags;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
-import net.minecraft.data.tags.ItemTagsProvider;
+import net.neoforged.neoforge.common.data.ItemTagsProvider;
 import net.minecraft.data.tags.TagsProvider;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
-import net.minecraft.world.item.ArmorItem;
+import net.minecraft.world.item.equipment.ArmorType;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.ShulkerBoxBlock;
 import net.neoforged.neoforge.common.Tags;
-import net.neoforged.neoforge.common.data.ExistingFileHelper;
 import net.minecraft.core.registries.BuiltInRegistries;
 import org.apache.commons.lang3.StringUtils;
 import org.jspecify.annotations.Nullable;
@@ -38,12 +37,12 @@ import static net.minecraft.world.item.Items.*;
 
 public class ModItemTagsProvider extends ItemTagsProvider {
 
-	public ModItemTagsProvider(PackOutput output, CompletableFuture<HolderLookup.Provider> lookupProvider, CompletableFuture<TagsProvider.TagLookup<Block>> blockTagLookupProvider, @Nullable ExistingFileHelper existingFileHelper) {
-		super(output, lookupProvider, blockTagLookupProvider, BiomancyMod.MOD_ID, existingFileHelper);
+	public ModItemTagsProvider(PackOutput output, CompletableFuture<HolderLookup.Provider> lookupProvider) {
+		super(output, lookupProvider, BiomancyMod.MOD_ID);
 	}
 
 	private static TagKey<Item> conventionalTag(String path) {
-		return ItemTags.create(ResourceLocation.fromNamespaceAndPath("c", path));
+		return ItemTags.create(Identifier.fromNamespaceAndPath("c", path));
 	}
 
 	private static TagKey<Item> biomancyTag(String path) {
@@ -51,7 +50,7 @@ public class ModItemTagsProvider extends ItemTagsProvider {
 	}
 
 	protected EnhancedTagAppender<Item> createTag(TagKey<Item> tag) {
-		return new EnhancedTagAppender<>(tag(tag), BuiltInRegistries.ITEM);
+		return new EnhancedTagAppender<>(tag(tag), getOrCreateRawBuilder(tag), BuiltInRegistries.ITEM, modId);
 	}
 
 	@Override
@@ -64,16 +63,10 @@ public class ModItemTagsProvider extends ItemTagsProvider {
 	}
 
 	private void addBiomancyTags() {
-		class FarmersDelightItems extends vectorwing.farmersdelight.common.registry.ModItems {}
-
 		createTag(ModItemTags.SUGARS)
 				.addTag(conventionalTag("foods/cookie"), conventionalTag("foods/candy"))
 				.add(SUGAR, CAKE, HONEYCOMB, HONEY_BLOCK, HONEYCOMB_BLOCK, HONEY_BOTTLE, SWEET_BERRIES, COCOA_BEANS, APPLE)
-				.add(
-						FarmersDelightItems.HOT_COCOA.get(),
-						FarmersDelightItems.GLOW_BERRY_CUSTARD.get(), FarmersDelightItems.MELON_JUICE.get(),
-						FarmersDelightItems.CAKE_SLICE.get(), FarmersDelightItems.APPLE_PIE_SLICE.get(), FarmersDelightItems.CHOCOLATE_PIE_SLICE.get(), FarmersDelightItems.SWEET_BERRY_CHEESECAKE_SLICE.get()
-				)
+				.addOptional("farmersdelight:hot_cocoa", "farmersdelight:glow_berry_custard", "farmersdelight:melon_juice", "farmersdelight:cake_slice", "farmersdelight:apple_pie_slice", "farmersdelight:chocolate_pie_slice", "farmersdelight:sweet_berry_cheesecake_slice")
 				.addOptional("create:sweet_roll", "create:chocolate_glazed_berries", "create:honeyed_apple", "create:bar_of_chocolate")
 				.addOptional("createaddition:chocolate_cake");
 
@@ -225,6 +218,9 @@ public class ModItemTagsProvider extends ItemTagsProvider {
 
 		createTag(ItemTags.MEAT)
 				.add(ModItems.VOLATILE_GLAND.get(), ModItems.TOXIN_GLAND.get(), ModItems.GENERIC_MOB_GLAND.get(), ModItems.LIVING_FLESH.get());
+
+		createTag(ItemTags.LOOM_PATTERNS)
+				.add(ModItems.MASCOT_BANNER_PATTERNS.get());
 	}
 
 	private void addForgeTags() {
@@ -249,10 +245,10 @@ public class ModItemTagsProvider extends ItemTagsProvider {
 				.addTag(swordsTag)
 				.add(ModItems.INJECTOR.get(), ModItems.ESSENCE_EXTRACTOR.get());
 
-		createTag(conventionalTag("armors/helmets")).add(ModItems.stream().filter(item -> item instanceof ArmorItem armor && armor.getType() == ArmorItem.Type.HELMET));
-		createTag(conventionalTag("armors/chestplates")).add(ModItems.stream().filter(item -> item instanceof ArmorItem armor && armor.getType() == ArmorItem.Type.CHESTPLATE));
-		createTag(conventionalTag("armors/leggings")).add(ModItems.stream().filter(item -> item instanceof ArmorItem armor && armor.getType() == ArmorItem.Type.LEGGINGS));
-		createTag(conventionalTag("armors/boots")).add(ModItems.stream().filter(item -> item instanceof ArmorItem armor && armor.getType() == ArmorItem.Type.BOOTS));
+		createTag(conventionalTag("armors/helmets")).add(ModItems.stream().filter(item -> item instanceof LivingArmorItem armor && armor.getType() == ArmorType.HELMET));
+		createTag(conventionalTag("armors/chestplates")).add(ModItems.stream().filter(item -> item instanceof LivingArmorItem armor && armor.getType() == ArmorType.CHESTPLATE));
+		createTag(conventionalTag("armors/leggings")).add(ModItems.stream().filter(item -> item instanceof LivingArmorItem armor && armor.getType() == ArmorType.LEGGINGS));
+		createTag(conventionalTag("armors/boots")).add(ModItems.stream().filter(item -> item instanceof LivingArmorItem armor && armor.getType() == ArmorType.BOOTS));
 
 		createTag(Tags.Items.CHESTS).add(ModItems.FLESHKIN_CHEST.get());
 
@@ -273,9 +269,9 @@ public class ModItemTagsProvider extends ItemTagsProvider {
 				.addOptionalTag(ModItemTags.C_TOOLS_KNIFE.location())
 				.add(ModItems.stream().filter(ClawsItem.class::isInstance));
 
-		createTag(ItemTags.SWORDS).add(ModItems.stream().filter(SwordItem.class::isInstance));
+		createTag(ItemTags.SWORDS).add(ModItems.stream().filter(DespoilingSwordItem.class::isInstance));
 
-		createTag(ItemTags.SWORD_ENCHANTABLE).add(ModItems.stream().filter(ClawsItem.class::isInstance));
+		createTag(ItemTags.SWEEPING_ENCHANTABLE).add(ModItems.stream().filter(ClawsItem.class::isInstance));
 		createTag(ItemTags.SHARP_WEAPON_ENCHANTABLE).add(ModItems.stream().filter(ClawsItem.class::isInstance));
 		createTag(ItemTags.FIRE_ASPECT_ENCHANTABLE).add(ModItems.stream().filter(ClawsItem.class::isInstance));
 		createTag(ItemTags.DURABILITY_ENCHANTABLE).add(ModItems.stream().filter(item -> item instanceof ClawsItem && !(item instanceof LivingTool)));
@@ -284,22 +280,20 @@ public class ModItemTagsProvider extends ItemTagsProvider {
 		createTag(ItemTags.BOW_ENCHANTABLE).add(ModItems.stream().filter(ProjectileWeaponItem.class::isInstance));
 
 		createTag(ItemTags.ARMOR_ENCHANTABLE).add(ModItems.stream().filter(LivingArmorItem.class::isInstance));
-		addLivingArmor(ArmorItem.Type.HELMET, ItemTags.HEAD_ARMOR, ItemTags.HEAD_ARMOR_ENCHANTABLE);
-		addLivingArmor(ArmorItem.Type.CHESTPLATE, ItemTags.CHEST_ARMOR, ItemTags.CHEST_ARMOR_ENCHANTABLE);
-		addLivingArmor(ArmorItem.Type.LEGGINGS, ItemTags.LEG_ARMOR, ItemTags.LEG_ARMOR_ENCHANTABLE);
-		addLivingArmor(ArmorItem.Type.BOOTS, ItemTags.FOOT_ARMOR, ItemTags.FOOT_ARMOR_ENCHANTABLE);
+		addLivingArmor(ArmorType.HELMET, ItemTags.HEAD_ARMOR, ItemTags.HEAD_ARMOR_ENCHANTABLE);
+		addLivingArmor(ArmorType.CHESTPLATE, ItemTags.CHEST_ARMOR, ItemTags.CHEST_ARMOR_ENCHANTABLE);
+		addLivingArmor(ArmorType.LEGGINGS, ItemTags.LEG_ARMOR, ItemTags.LEG_ARMOR_ENCHANTABLE);
+		addLivingArmor(ArmorType.BOOTS, ItemTags.FOOT_ARMOR, ItemTags.FOOT_ARMOR_ENCHANTABLE);
 
 		createTag(ModItemTags.C_WITHER_BONES);
 	}
 
-	private void addLivingArmor(ArmorItem.Type type, TagKey<Item> armorTag, TagKey<Item> enchantableTag) {
+	private void addLivingArmor(ArmorType type, TagKey<Item> armorTag, TagKey<Item> enchantableTag) {
 		createTag(armorTag).add(ModItems.stream().filter(item -> item instanceof LivingArmorItem armor && armor.getType() == type));
 		createTag(enchantableTag).add(ModItems.stream().filter(item -> item instanceof LivingArmorItem armor && armor.getType() == type));
 	}
 
 	private void addConventionalTags() {
-		class FarmersDelightItems extends vectorwing.farmersdelight.common.registry.ModItems {}
-
 		createTag(ModItemTags.C_CLAWS)
 				.add(ModItems.MOB_CLAW.get());
 
@@ -312,18 +306,18 @@ public class ModItemTagsProvider extends ItemTagsProvider {
 		createTag(conventionalTag("foods/cookie"))
 				.addOptionalTag("c:foods/cookies", "c:cookies", "c:cookie")
 				.add(COOKIE)
-				.add(FarmersDelightItems.SWEET_BERRY_COOKIE.get(), FarmersDelightItems.HONEY_COOKIE.get());
+				.addOptional("farmersdelight:sweet_berry_cookie", "farmersdelight:honey_cookie");
 
 		createTag(ModItemTags.C_RAW_PORK)
 				.addOptionalTag("c:raw_pork")
-				.add(FarmersDelightItems.HAM.get());
+				.addOptional("farmersdelight:ham");
 
 		createTag(conventionalTag("foods/raw_meat"))
 				.addOptionalTag("c:foods/raw_meats", "c:raw_meats", "c:raw_meat")
 				.addOptionalTag("c:raw_bacon", "c:raw_beef", "c:raw_chicken", "c:raw_pork", "c:raw_mutton")
 				.addTag(ModItemTags.C_RAW_PORK)
 				.add(BEEF, PORKCHOP, CHICKEN, RABBIT, MUTTON)
-				.add(FarmersDelightItems.HAM.get())
+				.addOptional("farmersdelight:ham")
 				.addOptional("createfa:ground_chicken", "createfa:ground_beef")
 				.addOptional("rats:raw_rat")
 				.addOptional("circus:clown")
@@ -332,7 +326,7 @@ public class ModItemTagsProvider extends ItemTagsProvider {
 		createTag(conventionalTag("foods/cooked_meat"))
 				.addOptionalTag("c:foods/cooked_meats", "c:cooked_meat", "c:cooked_meats")
 				.add(COOKED_BEEF, COOKED_PORKCHOP, COOKED_CHICKEN, COOKED_RABBIT, COOKED_MUTTON)
-				.add(FarmersDelightItems.SMOKED_HAM.get())
+				.addOptional("farmersdelight:smoked_ham")
 				.addOptional("createfa:schnitzel", "createfa:meatballs", "createfa:chicken_nuggets")
 				.addOptional("rats:cooked_rat");
 

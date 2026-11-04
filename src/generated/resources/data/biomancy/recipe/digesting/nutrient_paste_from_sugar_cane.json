@@ -1,8 +1,6 @@
 {
   "type": "biomancy:digesting",
-  "ingredient": {
-    "item": "minecraft:sugar_cane"
-  },
+  "ingredient": "minecraft:sugar_cane",
   "nutrientsCost": 2,
   "processingTime": 220,
   "result": {

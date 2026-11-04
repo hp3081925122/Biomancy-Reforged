@@ -1,5 +1,7 @@
 package com.github.elenterius.biomancy.serum;
 
+import net.minecraft.nbt.NbtOps;
+import java.util.function.Consumer;
 import com.github.elenterius.biomancy.api.serum.Serum;
 import com.github.elenterius.biomancy.init.ModSerums;
 import com.github.elenterius.biomancy.util.ComponentUtil;
@@ -10,7 +12,7 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffect;
@@ -39,8 +41,7 @@ public class PotionSerum implements Serum {
 
 	@Override
 	public int getColor(CompoundTag tag) {
-		if (!tag.contains(COLOR_TAG, Tag.TAG_INT)) return Serum.EMPTY_COLOR;
-		return tag.getInt(COLOR_TAG);
+		return tag.getIntOr(COLOR_TAG, Serum.EMPTY_COLOR);
 	}
 
 	@Override
@@ -69,7 +70,7 @@ public class PotionSerum implements Serum {
 		for (MobEffectInstance effectInstance : effects) {
 			MobEffect effect = effectInstance.getEffect().value();
 			if (effect.isInstantenous()) {
-				effect.applyInstantenousEffect(source, source, target, effectInstance.getAmplifier(), 1);
+				effect.applyInstantenousEffect(level, source, source, target, effectInstance.getAmplifier(), 1);
 			}
 			else {
 				target.addEffect(new MobEffectInstance(effectInstance), source);
@@ -99,13 +100,13 @@ public class PotionSerum implements Serum {
 
 	@Override
 	public MutableComponent getDisplayName(CompoundTag tag) {
-		String translationKey = tag.contains(NAME_TAG, Tag.TAG_STRING) ? tag.getString(NAME_TAG) : getNameTranslationKey();
+		String translationKey = tag.getStringOr(NAME_TAG, getNameTranslationKey());
 		return ComponentUtil.translatable(translationKey);
 	}
 
-	public void appendTooltip(CompoundTag tag, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
+	public void appendTooltip(CompoundTag tag, @Nullable Level level, Consumer<Component> tooltip, TooltipFlag flag) {
 		float tickRate = level != null ? level.tickRateManager().tickrate() : 20f;
-		PotionContents.addPotionTooltip(getAllEffects(tag), tooltip::add, 1f, tickRate);
+		PotionContents.addPotionTooltip(getAllEffects(tag), tooltip, 1f, tickRate);
 	}
 
 	@Override
@@ -154,9 +155,9 @@ public class PotionSerum implements Serum {
 	}
 
 	public static @Nullable Holder<Potion> getPotion(CompoundTag tag) {
-		ResourceLocation id = ResourceLocation.tryParse(tag.getString(POTION_TAG));
+		Identifier id = Identifier.tryParse(tag.getStringOr(POTION_TAG, ""));
 		if (id == null) return null;
-		return BuiltInRegistries.POTION.getHolder(id).orElse(null);
+		return BuiltInRegistries.POTION.get(id).orElse(null);
 	}
 
 	public static List<MobEffectInstance> getPotionEffects(@Nullable Holder<Potion> potion) {
@@ -169,7 +170,7 @@ public class PotionSerum implements Serum {
 		ListTag list = new ListTag();
 
 		for (MobEffectInstance mobeffectinstance : effects) {
-			list.add(mobeffectinstance.save());
+			list.add(MobEffectInstance.CODEC.encodeStart(NbtOps.INSTANCE, mobeffectinstance).getOrThrow());
 		}
 
 		tag.put(STATUS_EFFECTS_TAG, list);
@@ -178,23 +179,23 @@ public class PotionSerum implements Serum {
 	public static void addStatusEffects(CompoundTag tag, Collection<MobEffectInstance> effects) {
 		if (effects.isEmpty()) return;
 
-		ListTag list = tag.getList(STATUS_EFFECTS_TAG, Tag.TAG_LIST);
+		ListTag list = tag.getListOrEmpty(STATUS_EFFECTS_TAG);
 
 		for (MobEffectInstance mobeffectinstance : effects) {
-			list.add(mobeffectinstance.save());
+			list.add(MobEffectInstance.CODEC.encodeStart(NbtOps.INSTANCE, mobeffectinstance).getOrThrow());
 		}
 
 		tag.put(STATUS_EFFECTS_TAG, list);
 	}
 
 	public static List<MobEffectInstance> getStatusEffects(CompoundTag tag) {
-		if (!tag.contains(STATUS_EFFECTS_TAG, Tag.TAG_LIST)) return new ArrayList<>();
+		if (!tag.contains(STATUS_EFFECTS_TAG)) return new ArrayList<>();
 
 		List<MobEffectInstance> list = new ArrayList<>();
 
-		ListTag tagList = tag.getList(STATUS_EFFECTS_TAG, Tag.TAG_COMPOUND);
+		ListTag tagList = tag.getListOrEmpty(STATUS_EFFECTS_TAG);
 		for (int i = 0; i < tagList.size(); i++) {
-			MobEffectInstance instance = MobEffectInstance.load(tagList.getCompound(i));
+			MobEffectInstance instance = MobEffectInstance.CODEC.parse(NbtOps.INSTANCE, tagList.getCompoundOrEmpty(i)).result().orElse(null);
 			if (instance != null) list.add(instance);
 		}
 
@@ -208,7 +209,7 @@ public class PotionSerum implements Serum {
 	}
 
 	public static int computeColor(List<MobEffectInstance> allEffects) {
-		return PotionContents.getColor(allEffects);
+		return PotionContents.getColorOptional(allEffects).orElse(PotionContents.BASE_POTION_COLOR);
 	}
 
 	@Nullable

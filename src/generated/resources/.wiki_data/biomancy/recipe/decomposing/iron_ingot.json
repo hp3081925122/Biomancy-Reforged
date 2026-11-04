@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "minecraft:iron_ingot"
+      "ingredient": "minecraft:iron_ingot"
     }
   },
   "output": {

@@ -10,19 +10,19 @@
   "ingredients": [
     {
       "count": 9,
-      "item": "biomancy:flesh_bits"
+      "ingredient": "biomancy:flesh_bits"
     },
     {
       "count": 9,
-      "item": "biomancy:bone_fragments"
+      "ingredient": "biomancy:bone_fragments"
     },
     {
       "count": 6,
-      "item": "biomancy:elastic_fibers"
+      "ingredient": "biomancy:elastic_fibers"
     },
     {
       "count": 3,
-      "item": "biomancy:tough_fibers"
+      "ingredient": "biomancy:tough_fibers"
     }
   ],
   "nutrientsCost": 1,

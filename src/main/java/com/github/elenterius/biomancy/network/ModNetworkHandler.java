@@ -2,7 +2,6 @@ package com.github.elenterius.biomancy.network;
 
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.crafting.recipe.BioForgingRecipe;
-import com.github.elenterius.biomancy.mixin.accessor.ExplosionAccessor;
 import com.github.elenterius.biomancy.util.ItemStackFilterList;
 import com.github.elenterius.biomancy.util.explosion.ExplosionType;
 import net.minecraft.server.level.ServerLevel;
@@ -12,9 +11,10 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.crafting.RecipeHolder;
-import net.minecraft.world.level.Explosion;
+import net.minecraft.world.level.ServerExplosion;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
@@ -32,32 +32,28 @@ public final class ModNetworkHandler {
 	}
 
 	public static void sendKeyBindPressToServer(EquipmentSlot slot, byte flag) {
-		PacketDistributor.sendToServer(new KeyPressMessage(slot.getFilterFlag(), flag));
+		ClientPacketDistributor.sendToServer(new KeyPressMessage(slot.getFilterBit(0), flag));
 	}
 
 	public static void sendKeyBindPressToServer(int slotIndex, byte flag) {
-		PacketDistributor.sendToServer(new KeyPressMessage(slotIndex, flag));
+		ClientPacketDistributor.sendToServer(new KeyPressMessage(slotIndex, flag));
 	}
 
 	public static void sendBioForgeRecipeToServer(int containerId, RecipeHolder<BioForgingRecipe> recipe) {
-		PacketDistributor.sendToServer(new BioForgeRecipeMessage(containerId, recipe.id()));
+		ClientPacketDistributor.sendToServer(new BioForgeRecipeMessage(containerId, recipe.id().identifier()));
 	}
 
 	public static void sendBioLabFilterToClient(ServerPlayer player, int containerId, ItemStackFilterList filters) {
 		PacketDistributor.sendToPlayer(player, new BioLabFilterMessage(containerId, filters));
 	}
 
-	public static void sendCustomExplosionToClients(ServerLevel level, ExplosionType explosionType, Explosion explosion) {
-		if (!explosion.interactsWithBlocks()) {
-			explosion.clearToBlow();
-		}
-
-		double radius = Math.min(((ExplosionAccessor) explosion).getRadius() + 64d, 64d + 32d);
+	public static void sendCustomExplosionToClients(ServerLevel level, ExplosionType explosionType, ServerExplosion explosion, boolean spawnParticles) {
+		double radius = Math.min(explosion.radius() + 64d, 64d + 32d);
 		double radiusSqr = radius * radius;
 
 		for (ServerPlayer player : level.players()) {
 			if (player.distanceToSqr(explosion.center()) < radiusSqr) {
-				PacketDistributor.sendToPlayer(player, new CustomExplosionMessage(explosionType, explosion, player));
+				PacketDistributor.sendToPlayer(player, new CustomExplosionMessage(explosionType, explosion, player, spawnParticles));
 			}
 		}
 	}

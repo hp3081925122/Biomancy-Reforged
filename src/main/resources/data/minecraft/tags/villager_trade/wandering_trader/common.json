@@ -1,0 +1,10 @@
+{
+  "replace": false,
+  "values": [
+    "biomancy:wandering_trader/emerald_acid_extract",
+    "biomancy:wandering_trader/emerald_gelling_agent",
+    "biomancy:wandering_trader/nutrient_bar_emerald",
+    "biomancy:wandering_trader/emerald_and_compass_small_worm_map",
+    "biomancy:wandering_trader/emerald_and_compass_lab_map"
+  ]
+}

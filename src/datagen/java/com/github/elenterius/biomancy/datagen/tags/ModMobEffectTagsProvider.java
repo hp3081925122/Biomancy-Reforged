@@ -8,11 +8,10 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.PackOutput;
 import net.minecraft.data.tags.IntrinsicHolderTagsProvider;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffects;
-import net.neoforged.neoforge.common.data.ExistingFileHelper;
 import org.apache.commons.lang3.StringUtils;
 import org.jspecify.annotations.Nullable;
 
@@ -20,12 +19,12 @@ import java.util.concurrent.CompletableFuture;
 
 public class ModMobEffectTagsProvider extends IntrinsicHolderTagsProvider<MobEffect> {
 
-	public ModMobEffectTagsProvider(PackOutput output, CompletableFuture<HolderLookup.Provider> lookupProvider, @Nullable ExistingFileHelper existingFileHelper) {
-		super(output, Registries.MOB_EFFECT, lookupProvider, mobEffect -> BuiltInRegistries.MOB_EFFECT.getResourceKey(mobEffect).orElseThrow(), BiomancyMod.MOD_ID, existingFileHelper);
+	public ModMobEffectTagsProvider(PackOutput output, CompletableFuture<HolderLookup.Provider> lookupProvider) {
+		super(output, Registries.MOB_EFFECT, lookupProvider, mobEffect -> BuiltInRegistries.MOB_EFFECT.getResourceKey(mobEffect).orElseThrow(), BiomancyMod.MOD_ID);
 	}
 
 	private static TagKey<MobEffect> neoforgeTag(String path) {
-		return TagKey.create(Registries.MOB_EFFECT, ResourceLocation.fromNamespaceAndPath("neoforge", path));
+		return TagKey.create(Registries.MOB_EFFECT, Identifier.fromNamespaceAndPath("neoforge", path));
 	}
 
 	@Override
@@ -51,7 +50,7 @@ public class ModMobEffectTagsProvider extends IntrinsicHolderTagsProvider<MobEff
 		);
 
 		tag(ModMobEffectTags.CRADLE_LIFE_ENERGY_SOURCE).add(
-				MobEffects.HEAL.value(),
+				MobEffects.INSTANT_HEALTH.value(),
 				MobEffects.REGENERATION.value(),
 				MobEffects.HEALTH_BOOST.value(),
 				MobEffects.ABSORPTION.value()
@@ -72,9 +71,9 @@ public class ModMobEffectTagsProvider extends IntrinsicHolderTagsProvider<MobEff
 
 		tag(ModMobEffectTags.CRADLE_HOSTILITY_SOURCE).add(
 				MobEffects.HUNGER.value(),
-				MobEffects.CONFUSION.value(),
+				MobEffects.NAUSEA.value(),
 				MobEffects.BLINDNESS.value(),
-				MobEffects.HARM.value(),
+				MobEffects.INSTANT_DAMAGE.value(),
 				MobEffects.WITHER.value(),
 				MobEffects.POISON.value(),
 				ModMobEffects.BLEED.get()

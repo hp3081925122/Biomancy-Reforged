@@ -8,5 +8,5 @@ import org.spongepowered.asm.mixin.gen.Invoker;
 @Mixin(Biome.class)
 public interface BiomeAccessor {
 	@Invoker("getTemperature")
-	float biomancy$getTemperature(BlockPos pos);
+	float biomancy$getTemperature(BlockPos pos, int seaLevel);
 }

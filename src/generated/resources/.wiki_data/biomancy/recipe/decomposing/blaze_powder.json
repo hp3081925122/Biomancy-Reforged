@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "minecraft:blaze_powder"
+      "ingredient": "minecraft:blaze_powder"
     }
   },
   "output": {

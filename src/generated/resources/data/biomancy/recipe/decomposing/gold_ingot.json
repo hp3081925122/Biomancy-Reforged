@@ -1,7 +1,7 @@
 {
   "type": "biomancy:decomposing",
   "ingredient": {
-    "item": "minecraft:gold_ingot"
+    "ingredient": "minecraft:gold_ingot"
   },
   "nutrientsCost": 3,
   "processingTime": 360,

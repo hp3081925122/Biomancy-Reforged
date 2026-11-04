@@ -2,27 +2,13 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "key": {
-    "#": {
-      "item": "minecraft:ender_pearl"
-    },
-    "B": {
-      "item": "minecraft:beef"
-    },
-    "C": {
-      "item": "minecraft:chicken"
-    },
-    "E": {
-      "item": "minecraft:spider_eye"
-    },
-    "F": {
-      "item": "minecraft:rotten_flesh"
-    },
-    "M": {
-      "item": "minecraft:mutton"
-    },
-    "P": {
-      "item": "minecraft:porkchop"
-    }
+    "#": "minecraft:ender_pearl",
+    "B": "minecraft:beef",
+    "C": "minecraft:chicken",
+    "E": "minecraft:spider_eye",
+    "F": "minecraft:rotten_flesh",
+    "M": "minecraft:mutton",
+    "P": "minecraft:porkchop"
   },
   "pattern": [
     "PFB",
@@ -30,7 +16,6 @@
     "CFM"
   ],
   "result": {
-    "count": 1,
     "id": "biomancy:primordial_core"
   }
 }

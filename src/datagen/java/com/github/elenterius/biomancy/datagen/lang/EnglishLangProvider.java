@@ -139,14 +139,14 @@ public class EnglishLangProvider extends AbstractLangProvider {
 
 		add(container.getSerum(stack), serumName);
 
-		add(item.getDescriptionId(stack), serumName);
+		add(item.getDescriptionId(), serumName);
 		add(container.getTooltipKey(stack), tooltip);
 		itemsToTranslate.remove(item);
 	}
 
 	private void addEnchantment(ResourceKey<Enchantment> key, String name, String tooltip) {
 		addEnchantment(key, name);
-		add(key.location().toLanguageKey("enchantment") + ".desc", tooltip);
+		add(key.identifier().toLanguageKey("enchantment") + ".desc", tooltip);
 	}
 
 	@Override
@@ -158,7 +158,7 @@ public class EnglishLangProvider extends AbstractLangProvider {
 
 	@Override
 	public void add(ItemStack stack, String name) {
-		add(stack.getDescriptionId(), name);
+		add(stack.getItem().getDescriptionId(), name);
 
 		itemsToTranslate.remove(stack.getItem());
 	}
@@ -184,7 +184,7 @@ public class EnglishLangProvider extends AbstractLangProvider {
 		add(ModCreativeModeTabs.DEV.get().getDisplayName(), "Biomancy: Dev Tools");
 		add(ModCreativeModeTabs.DEV_STRUCTURES.get().getDisplayName(), "Biomancy: Dev Structures");
 
-		add(ModKeyBindings.MAIN_CATEGORY, "Biomancy Mod");
+		add(ModKeyBindings.MAIN_CATEGORY.label(), "Biomancy Mod");
 		add(ModKeyBindings.MAIN_HAND_ITEM_ACTION.getName(), "Main-Hand Item Action");
 		add(ModKeyBindings.OFF_HAND_ITEM_ACTION.getName(), "Off-Hand Item Action");
 		add(ModKeyBindings.EQUIPPED_ARMOR_ACTION.getName(), "Equipped Armor Action");
@@ -610,8 +610,8 @@ public class EnglishLangProvider extends AbstractLangProvider {
 
 		addSerumItem(ModItems.AGEING_SERUM, "Aging Serum", "Forces the maturation of young Mobs into Adults. Some rare Mobs may even turn into Elders.");
 		addSerumItem(ModItems.REJUVENATION_SERUM, "Rejuvenation Serum", "Promotes cellular regeneration, reversing the maturation of Mobs and in most cases turning them into children.");
-		addSerumItem(ModItems.ENLARGEMENT_SERUM, "Enlargement Serum", "Induces growth in Slimes, Magma Cubes and Flesh Blobs.\n\n(If Pehkui is installed you can enlarge yourself and all Mobs)");
-		addSerumItem(ModItems.SHRINKING_SERUM, "Shrinking Serum", "Shrinks Slimes, Magma Cubes and Flesh Blobs.\n\n(If Pehkui is installed you can shrink yourself and all Mobs)");
+		addSerumItem(ModItems.ENLARGEMENT_SERUM, "Enlargement Serum", "Induces growth in Slimes, Magma Cubes and Flesh Blobs.");
+		addSerumItem(ModItems.SHRINKING_SERUM, "Shrinking Serum", "Shrinks Slimes, Magma Cubes and Flesh Blobs.");
 		addSerumItem(ModItems.CLEANSING_SERUM, "Cleansing Serum", "Burns away all foreign substances inside a creature.\nVery effective on sticky status effects that refuse to be healed with milk.");
 		addSerumItem(ModItems.BREEDING_STIMULANT, "Breeding Stimulant", "Potent drug that temporarily forces animals into a state of hyper-fertility, allowing them to reproduce repeatedly for a short time.\nUse with caution, as this stimulant may lead to undesirable mutations in the offspring.");
 		addSerumItem(ModItems.ABSORPTION_BOOST, "Absorption Stimulant", "Grants %1$s stackable absorption hearts up to a maximum of %2$s hearts");

@@ -2,7 +2,7 @@ package com.github.elenterius.biomancy.init.tags;
 
 import com.github.elenterius.biomancy.BiomancyMod;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.damagesource.DamageType;
 import net.neoforged.neoforge.common.Tags;
@@ -32,7 +32,7 @@ public final class ModDamageTypeTags {
 	}
 
 	private static TagKey<DamageType> conventionalTag(String name) {
-		return TagKey.create(Registries.DAMAGE_TYPE, ResourceLocation.fromNamespaceAndPath("c", name));
+		return TagKey.create(Registries.DAMAGE_TYPE, Identifier.fromNamespaceAndPath("c", name));
 	}
 
 }

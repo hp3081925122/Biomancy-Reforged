@@ -33,6 +33,8 @@ import net.neoforged.neoforge.event.entity.living.LivingFallEvent;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
+import com.github.elenterius.biomancy.serum.AbsorptionSerum;
 
 @EventBusSubscriber(modid = BiomancyMod.MOD_ID)
 public final class LivingEventHandler {
@@ -61,7 +63,7 @@ public final class LivingEventHandler {
 	@SubscribeEvent
 	public static void onPlayerTickPre(final PlayerTickEvent.Pre event) {
 		Player player = event.getEntity();
-		if (player.level().isClientSide && player.tickCount % 9 == 0) {
+		if (player.level().isClientSide() && player.tickCount % 9 == 0) {
 			Fonts.PrimordialRunes.updateTranslatable(player);
 		}
 	}
@@ -69,12 +71,17 @@ public final class LivingEventHandler {
 	@SubscribeEvent
 	public static void onPlayerTickPost(final PlayerTickEvent.Post event) {
 		Player player = event.getEntity();
-		if (player.level().isClientSide) return;
+		if (player.level().isClientSide()) return;
 
 		if (player.tickCount % 30 == 0) {
 			SelfFeeding.repairLivingItems(player);
 			ParasiticMetabolism.repairLivingItems(player);
 		}
+	}
+
+	@SubscribeEvent
+	public static void onLivingDamagePost(final LivingDamageEvent.Post event) {
+		AbsorptionSerum.removeMaxAbsorptionIfDepleted(event.getEntity());
 	}
 
 	@SubscribeEvent(priority = EventPriority.LOWEST)
@@ -142,7 +149,7 @@ public final class LivingEventHandler {
 	@SubscribeEvent(priority = EventPriority.LOWEST)
 	public static void onLivingJump(final LivingEvent.LivingJumpEvent event) {
 		LivingEntity livingEntity = event.getEntity();
-		if (livingEntity.level().isClientSide) return;
+		if (livingEntity.level().isClientSide()) return;
 
 		ItemStack stack = livingEntity.getItemBySlot(EquipmentSlot.LEGS);
 		if (stack.getItem() instanceof WarriorArmorItem armor) {
@@ -151,7 +158,7 @@ public final class LivingEventHandler {
 	}
 
 	public static boolean onAutoSpinHorizontalCollision(final LivingEntity livingEntity) {
-		if (livingEntity.level().isClientSide) return false;
+		if (livingEntity.level().isClientSide()) return false;
 
 		if (livingEntity.onGround() && livingEntity.isShiftKeyDown()) {
 			ItemStack stack = livingEntity.getItemBySlot(EquipmentSlot.LEGS);

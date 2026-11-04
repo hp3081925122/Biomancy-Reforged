@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "minecraft:skeleton_skull"
+      "ingredient": "minecraft:skeleton_skull"
     }
   },
   "output": {

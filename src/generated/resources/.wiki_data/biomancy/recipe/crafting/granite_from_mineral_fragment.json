@@ -2,18 +2,11 @@
   "type": "minecraft:crafting_shapeless",
   "category": "building",
   "ingredients": [
-    {
-      "item": "minecraft:diorite"
-    },
-    {
-      "item": "biomancy:mineral_fragment"
-    },
-    {
-      "item": "biomancy:mineral_fragment"
-    }
+    "minecraft:diorite",
+    "biomancy:mineral_fragment",
+    "biomancy:mineral_fragment"
   ],
   "result": {
-    "count": 1,
     "id": "minecraft:granite"
   }
 }

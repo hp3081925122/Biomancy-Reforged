@@ -1,5 +1,9 @@
 package com.github.elenterius.biomancy.datagen.recipes;
 
+import net.minecraft.world.item.crafting.CookingBookCategory;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
+import java.util.function.Supplier;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.crafting.recipe.AcolyteHelmetUpgradeRecipe;
 import com.github.elenterius.biomancy.crafting.recipe.BiometricMembraneRecipe;
@@ -12,12 +16,12 @@ import com.github.elenterius.biomancy.init.ModItems;
 import com.github.elenterius.biomancy.init.tags.ModItemTags;
 import com.github.elenterius.biomancy.item.SimpleBlockItem;
 import net.minecraft.advancements.Criterion;
-import net.minecraft.advancements.critereon.InventoryChangeTrigger;
+import net.minecraft.advancements.criterion.InventoryChangeTrigger;
 import net.minecraft.data.recipes.RecipeCategory;
 import net.minecraft.data.recipes.SimpleCookingRecipeBuilder;
 import net.minecraft.data.recipes.SingleItemRecipeBuilder;
 import net.minecraft.data.recipes.SpecialRecipeBuilder;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
@@ -42,7 +46,7 @@ public class VanillaRecipeProvider {
 	}
 
 	protected static String getItemName(ItemLike itemLike) {
-		ResourceLocation key = BuiltInRegistries.ITEM.getKey(itemLike.asItem());
+		Identifier key = BuiltInRegistries.ITEM.getKey(itemLike.asItem());
 		return key != null ? key.getPath() : "unknown";
 	}
 
@@ -53,10 +57,10 @@ public class VanillaRecipeProvider {
 		buildFoodRecipes(consumer);
 		buildMiscRecipes(consumer);
 
-		special(consumer, ModItems.BIOMETRIC_MEMBRANE.get(), BiometricMembraneRecipe::new);
-		special(consumer, Items.PLAYER_HEAD, PlayerHeadRecipe::new);
-		special(consumer, ModItems.PRIMORDIAL_CRADLE.get(), CradleCleansingRecipe::new);
-		special(consumer, ModItems.ACOLYTE_ARMOR_HELMET.get(), AcolyteHelmetUpgradeRecipe::new);
+		special(consumer, ModItems.BIOMETRIC_MEMBRANE.get(), () -> BiometricMembraneRecipe.INSTANCE);
+		special(consumer, Items.PLAYER_HEAD, () -> PlayerHeadRecipe.INSTANCE);
+		special(consumer, ModItems.PRIMORDIAL_CRADLE.get(), () -> CradleCleansingRecipe.INSTANCE);
+		special(consumer, ModItems.ACOLYTE_ARMOR_HELMET.get(), () -> AcolyteHelmetUpgradeRecipe.INSTANCE);
 	}
 
 	private void buildPrimaryRecipes(Consumer<FinishedRecipe> consumer) {
@@ -191,8 +195,8 @@ public class VanillaRecipeProvider {
 	}
 
 	private void buildMiscRecipes(Consumer<FinishedRecipe> consumer) {
-		SimpleCookingRecipeBuilder.blasting(Ingredient.of(ModItems.STONE_POWDER.get()), RecipeCategory.BUILDING_BLOCKS, Items.GLASS_PANE, 0.01f, 100)
-				.unlockedBy(hasName(ModItems.STONE_POWDER.get()), has(ModItems.STONE_POWDER.get())).save(FinishedRecipeOutput.of(consumer), getBlastingRecipeId(Items.GLASS_PANE));
+		SimpleCookingRecipeBuilder.blasting(Ingredient.of(ModItems.STONE_POWDER.get()), RecipeCategory.BUILDING_BLOCKS, CookingBookCategory.BLOCKS, Items.GLASS_PANE, 0.01f, 100)
+				.unlockedBy(hasName(ModItems.STONE_POWDER.get()), has(ModItems.STONE_POWDER.get())).save(FinishedRecipeOutput.of(consumer), recipeKey(getBlastingRecipeId(Items.GLASS_PANE)));
 
 		WorkbenchRecipeBuilder.shapeless(RecipeCategory.BUILDING_BLOCKS, Items.DIORITE)
 				.requires(Items.COBBLESTONE)
@@ -381,36 +385,40 @@ public class VanillaRecipeProvider {
 				.save(consumer, getConversionRecipeId(membrane, pane));
 	}
 
-	protected ResourceLocation getSpecialCraftingRecipeId(ItemLike itemLike) {
+	protected Identifier getSpecialCraftingRecipeId(ItemLike itemLike) {
 		return BiomancyMod.rl("special_crafting/" + getItemName(itemLike));
 	}
 
-	protected ResourceLocation getCraftingRecipeId(ItemLike itemLike) {
+	protected Identifier getCraftingRecipeId(ItemLike itemLike) {
 		return BiomancyMod.rl("crafting/" + getItemName(itemLike));
 	}
 
-	protected ResourceLocation getRecipeId(ItemLike itemLike) {
+	protected Identifier getRecipeId(ItemLike itemLike) {
 		return BiomancyMod.rl(getItemName(itemLike));
 	}
 
-	protected ResourceLocation getConversionRecipeId(ItemLike result, ItemLike ingredient) {
+	protected Identifier getConversionRecipeId(ItemLike result, ItemLike ingredient) {
 		return BiomancyMod.rl(getItemName(result) + "_from_" + getItemName(ingredient));
 	}
 
-	protected ResourceLocation getStoneCuttingRecipeId(ItemLike result, ItemLike ingredient) {
+	protected Identifier getStoneCuttingRecipeId(ItemLike result, ItemLike ingredient) {
 		return BiomancyMod.rl("stonecutting/" + getItemName(result) + "_from_" + getItemName(ingredient));
 	}
 
-	protected ResourceLocation getSmeltingRecipeId(ItemLike itemLike) {
+	protected Identifier getSmeltingRecipeId(ItemLike itemLike) {
 		return BiomancyMod.rl("smelting/" + getItemName(itemLike));
 	}
 
-	protected ResourceLocation getBlastingRecipeId(ItemLike itemLike) {
+	protected static ResourceKey<Recipe<?>> recipeKey(Identifier id) {
+		return ResourceKey.create(Registries.RECIPE, id);
+	}
+
+	protected Identifier getBlastingRecipeId(ItemLike itemLike) {
 		return BiomancyMod.rl("blasting/" + getItemName(itemLike));
 	}
 
-	protected void special(Consumer<FinishedRecipe> consumer, ItemLike result, Function<CraftingBookCategory, Recipe<?>> factory) {
-		SpecialRecipeBuilder.special(factory).save(FinishedRecipeOutput.of(consumer), getSpecialCraftingRecipeId(result));
+	protected void special(Consumer<FinishedRecipe> consumer, ItemLike result, Supplier<Recipe<?>> factory) {
+		SpecialRecipeBuilder.special(factory).save(FinishedRecipeOutput.of(consumer), recipeKey(getSpecialCraftingRecipeId(result)));
 	}
 
 	protected void polished(Consumer<FinishedRecipe> consumer, ItemLike result, ItemLike ingredient) {
@@ -435,8 +443,8 @@ public class VanillaRecipeProvider {
 
 	protected void stonecutting(Consumer<FinishedRecipe> consumer, ItemLike result, ItemLike ingredient, int count) {
 		SingleItemRecipeBuilder builder = SingleItemRecipeBuilder.stonecutting(Ingredient.of(ingredient), RecipeCategory.BUILDING_BLOCKS, result, count).unlockedBy(hasName(ingredient), has(ingredient));
-		ResourceLocation recipeName = getStoneCuttingRecipeId(result, ingredient);
-		builder.save(FinishedRecipeOutput.of(consumer), recipeName);
+		Identifier recipeName = getStoneCuttingRecipeId(result, ingredient);
+		builder.save(FinishedRecipeOutput.of(consumer), recipeKey(recipeName));
 	}
 
 	protected void blockFromSlabs(Consumer<FinishedRecipe> consumer, Item result, Item slab) {

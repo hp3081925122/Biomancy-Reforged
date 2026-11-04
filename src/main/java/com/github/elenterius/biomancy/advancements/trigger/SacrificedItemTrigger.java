@@ -1,13 +1,15 @@
 package com.github.elenterius.biomancy.advancements.trigger;
 
+import com.github.elenterius.biomancy.util.ItemHolders;
 import com.github.elenterius.biomancy.init.ModTriggers;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.advancements.Criterion;
-import net.minecraft.advancements.critereon.ContextAwarePredicate;
-import net.minecraft.advancements.critereon.EntityPredicate;
-import net.minecraft.advancements.critereon.ItemPredicate;
-import net.minecraft.advancements.critereon.SimpleCriterionTrigger;
+import net.minecraft.advancements.criterion.ContextAwarePredicate;
+import net.minecraft.advancements.criterion.EntityPredicate;
+import net.minecraft.advancements.criterion.ItemPredicate;
+import net.minecraft.advancements.criterion.SimpleCriterionTrigger;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
@@ -35,15 +37,15 @@ public class SacrificedItemTrigger extends SimpleCriterionTrigger<SacrificedItem
 		).apply(instance, TriggerInstance::new));
 
 		public static Criterion<TriggerInstance> sacrificedItems(ItemLike... items) {
-			return create(Optional.of(ItemPredicate.Builder.item().of(items).build()));
+			return create(Optional.of(ItemPredicate.Builder.item().of(ItemHolders.LOOKUP, items).build()));
 		}
 
 		public static Criterion<TriggerInstance> sacrificedItem(ItemLike item) {
-			return create(Optional.of(ItemPredicate.Builder.item().of(item).build()));
+			return create(Optional.of(ItemPredicate.Builder.item().of(ItemHolders.LOOKUP, item).build()));
 		}
 
 		public static Criterion<TriggerInstance> sacrificedItem(TagKey<Item> tag) {
-			return create(Optional.of(ItemPredicate.Builder.item().of(tag).build()));
+			return create(Optional.of(ItemPredicate.Builder.item().of(ItemHolders.LOOKUP, tag).build()));
 		}
 
 		public static Criterion<TriggerInstance> sacrificedItem() {

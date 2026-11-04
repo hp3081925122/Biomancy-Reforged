@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.datagen.recipes.builder;
 
+import com.github.elenterius.biomancy.util.ItemHolders;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.crafting.IngredientStack;
 import com.github.elenterius.biomancy.crafting.recipe.BioBrewingRecipe;
@@ -14,7 +15,7 @@ import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.advancements.Criterion;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.recipes.RecipeCategory;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -34,7 +35,7 @@ public final class BioBrewingRecipeBuilder implements RecipeBuilder<BioBrewingRe
 
 	public static final String RECIPE_SUB_FOLDER = ModRecipes.BIO_BREWING_RECIPE_TYPE.getId().getPath();
 
-	private final ResourceLocation recipeId;
+	private final Identifier recipeId;
 	private final List<ICondition> conditions = new ArrayList<>();
 	private final ItemData result;
 	private final List<IngredientStack> ingredients = new ArrayList<>();
@@ -43,27 +44,27 @@ public final class BioBrewingRecipeBuilder implements RecipeBuilder<BioBrewingRe
 	private int craftingTimeTicks = -1;
 	private int craftingCostNutrients = -1;
 
-	private BioBrewingRecipeBuilder(ResourceLocation recipeId, ItemData result) {
-		this.recipeId = ResourceLocation.fromNamespaceAndPath(recipeId.getNamespace(), RECIPE_SUB_FOLDER + "/" + recipeId.getPath());
+	private BioBrewingRecipeBuilder(Identifier recipeId, ItemData result) {
+		this.recipeId = Identifier.fromNamespaceAndPath(recipeId.getNamespace(), RECIPE_SUB_FOLDER + "/" + recipeId.getPath());
 		this.result = result;
 	}
 
-	public static BioBrewingRecipeBuilder create(ResourceLocation recipeId, ItemData result) {
+	public static BioBrewingRecipeBuilder create(Identifier recipeId, ItemData result) {
 		return new BioBrewingRecipeBuilder(recipeId, result);
 	}
 
 	public static BioBrewingRecipeBuilder create(String modId, String outputName, ItemData result) {
-		ResourceLocation rl = ResourceLocation.fromNamespaceAndPath(modId, outputName);
+		Identifier rl = Identifier.fromNamespaceAndPath(modId, outputName);
 		return new BioBrewingRecipeBuilder(rl, result);
 	}
 
 	public static BioBrewingRecipeBuilder create(String outputName, ItemData result) {
-		ResourceLocation rl = BiomancyMod.rl(outputName);
+		Identifier rl = BiomancyMod.rl(outputName);
 		return new BioBrewingRecipeBuilder(rl, result);
 	}
 
 	public static BioBrewingRecipeBuilder create(ItemData result) {
-		ResourceLocation rl = BiomancyMod.rl(result.getItemPath());
+		Identifier rl = BiomancyMod.rl(result.getItemPath());
 		return new BioBrewingRecipeBuilder(rl, result);
 	}
 
@@ -109,11 +110,11 @@ public final class BioBrewingRecipeBuilder implements RecipeBuilder<BioBrewingRe
 	}
 
 	public BioBrewingRecipeBuilder setReactant(TagKey<Item> tag) {
-		return setReactant(Ingredient.of(tag));
+		return setReactant(ItemHolders.ingredient(tag));
 	}
 
 	public BioBrewingRecipeBuilder setReactant(ItemStack stack) {
-		return setReactant(Ingredient.of(stack));
+		return setReactant(Ingredient.of(stack.getItem()));
 	}
 
 	public BioBrewingRecipeBuilder setReactant(Ingredient ingredient) {
@@ -122,11 +123,11 @@ public final class BioBrewingRecipeBuilder implements RecipeBuilder<BioBrewingRe
 	}
 
 	public BioBrewingRecipeBuilder addIngredient(TagKey<Item> tag) {
-		return addIngredient(Ingredient.of(tag));
+		return addIngredient(ItemHolders.ingredient(tag));
 	}
 
 	public BioBrewingRecipeBuilder addIngredient(TagKey<Item> tag, int quantity) {
-		return addIngredient(Ingredient.of(tag), quantity);
+		return addIngredient(ItemHolders.ingredient(tag), quantity);
 	}
 
 	public BioBrewingRecipeBuilder addIngredient(ItemLike item) {
@@ -134,7 +135,7 @@ public final class BioBrewingRecipeBuilder implements RecipeBuilder<BioBrewingRe
 	}
 
 	public BioBrewingRecipeBuilder addIngredient(ItemStack stack) {
-		return addIngredient(Ingredient.of(stack), 1);
+		return addIngredient(Ingredient.of(stack.getItem()), 1);
 	}
 
 	public BioBrewingRecipeBuilder addIngredient(Ingredient ingredient) {
@@ -170,7 +171,7 @@ public final class BioBrewingRecipeBuilder implements RecipeBuilder<BioBrewingRe
 		}
 
 		String folderName = RecipeBuilder.getRecipeFolderName(category, BiomancyMod.MOD_ID);
-		ResourceLocation advancementId = ResourceLocation.fromNamespaceAndPath(recipeId.getNamespace(), "recipes/%s/%s".formatted(folderName, recipeId.getPath()));
+		Identifier advancementId = Identifier.fromNamespaceAndPath(recipeId.getNamespace(), "recipes/%s/%s".formatted(folderName, recipeId.getPath()));
 
 		consumer.accept(new Result(this, advancement.build(recipeId, advancementId)));
 	}
@@ -182,7 +183,7 @@ public final class BioBrewingRecipeBuilder implements RecipeBuilder<BioBrewingRe
 	}
 
 	public static class Result implements FinishedRecipe, WikiRecipe {
-		private final ResourceLocation id;
+		private final Identifier id;
 		private final List<IngredientStack> ingredients;
 		private final Ingredient reactant;
 		private final ItemData result;
@@ -239,7 +240,7 @@ public final class BioBrewingRecipeBuilder implements RecipeBuilder<BioBrewingRe
 		}
 
 		@Override
-		public ResourceLocation getId() {
+		public Identifier getId() {
 			return id;
 		}
 

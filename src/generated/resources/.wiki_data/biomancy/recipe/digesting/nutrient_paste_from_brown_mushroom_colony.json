@@ -1,9 +1,7 @@
 {
   "type": "biomancy:digesting",
   "input": {
-    "0": {
-      "id": "farmersdelight:brown_mushroom_colony"
-    }
+    "0": "farmersdelight:brown_mushroom_colony"
   },
   "output": {
     "0": {

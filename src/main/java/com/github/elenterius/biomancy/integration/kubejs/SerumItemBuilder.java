@@ -1,5 +1,7 @@
 package com.github.elenterius.biomancy.integration.kubejs;
 
+import net.minecraft.world.item.component.TooltipDisplay;
+import java.util.function.Consumer;
 import com.github.elenterius.biomancy.api.serum.Serum;
 import com.github.elenterius.biomancy.api.serum.SerumContainer;
 import com.github.elenterius.biomancy.client.util.ClientTextUtil;
@@ -8,7 +10,7 @@ import com.github.elenterius.biomancy.item.ItemTooltipStyleProvider;
 import dev.latvian.mods.kubejs.item.ItemBuilder;
 import dev.latvian.mods.kubejs.typings.Info;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
@@ -19,15 +21,15 @@ import java.util.List;
 
 public class SerumItemBuilder extends ItemBuilder {
 
-	public transient ResourceLocation serumId;
+	public transient Identifier serumId;
 
-	protected SerumItemBuilder(ResourceLocation i) {
+	protected SerumItemBuilder(Identifier i) {
 		super(i);
 		maxStackSize(16);
 	}
 
 	@Info("Set the serum of this item.")
-	public SerumItemBuilder serum(ResourceLocation serumId) {
+	public SerumItemBuilder serum(Identifier serumId) {
 		this.serumId = serumId;
 		return this;
 	}
@@ -39,10 +41,10 @@ public class SerumItemBuilder extends ItemBuilder {
 
 	public static class SerumItemKJS extends Item implements SerumContainer, ItemTooltipStyleProvider {
 
-		private final ResourceLocation serumId;
+		private final Identifier serumId;
 		private Serum serum = null;
 
-		protected SerumItemKJS(Properties properties, ResourceLocation serumId) {
+		protected SerumItemKJS(Properties properties, Identifier serumId) {
 			super(properties);
 			this.serumId = serumId;
 		}
@@ -50,7 +52,7 @@ public class SerumItemBuilder extends ItemBuilder {
 		@Override
 		public Serum getSerum(ItemStack stack) {
 			if (serum == null) {
-				serum = ModSerums.REGISTRY.get(serumId);
+				serum = ModSerums.REGISTRY.getValue(serumId);
 			}
 
 			if (serum == null) {
@@ -66,8 +68,8 @@ public class SerumItemBuilder extends ItemBuilder {
 		}
 
 		@Override
-		public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag isAdvanced) {
-			tooltip.addAll(ClientTextUtil.getItemInfoTooltip(stack));
+		public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag isAdvanced) {
+			ClientTextUtil.getItemInfoTooltip(stack).forEach(tooltip);
 		}
 
 		@Override

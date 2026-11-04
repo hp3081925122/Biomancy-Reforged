@@ -1,7 +1,7 @@
 package com.github.elenterius.biomancy.inventory;
 
-import net.minecraft.core.HolderLookup;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
 
@@ -78,31 +78,29 @@ public class LargeSingleItemStackHandler extends SingleItemStackHandler {
 	}
 
 	@Override
-	public void serializeItemAmount(CompoundTag tag) {
-		tag.putShort(ITEM_AMOUNT_TAG, itemAmount);
+	public void serializeItemAmount(ValueOutput output) {
+		output.putShort(ITEM_AMOUNT_TAG, itemAmount);
 	}
 
 	@Override
-	public int deserializeItemAmount(CompoundTag tag) {
-		itemAmount = tag.getShort(ITEM_AMOUNT_TAG);
+	public int deserializeItemAmount(ValueInput input) {
+		itemAmount = (short) input.getShortOr(ITEM_AMOUNT_TAG, (short) 0);
 		return itemAmount;
 	}
 
 	@Override
-	public CompoundTag serializeNBT(HolderLookup.Provider provider) {
-		CompoundTag tag = new CompoundTag();
+	public void serialize(ValueOutput output) {
 		if (!cachedStack.isEmpty()) {
-			serializeItemAmount(tag);
-			tag.put(ITEM_TAG, cachedStack.copyWithCount(Math.min(itemAmount, cachedStack.getMaxStackSize())).save(provider));
+			serializeItemAmount(output);
+			output.store(ITEM_TAG, ItemStack.CODEC, cachedStack.copyWithCount(Math.min(itemAmount, cachedStack.getMaxStackSize())));
 		}
-		return tag;
 	}
 
 	@Override
-	public void deserializeNBT(HolderLookup.Provider provider, CompoundTag tag) {
-		cachedStack = tag.contains(ITEM_TAG) ? ItemStack.parseOptional(provider, tag.getCompound(ITEM_TAG)) : ItemStack.EMPTY;
+	public void deserialize(ValueInput input) {
+		cachedStack = input.read(ITEM_TAG, ItemStack.OPTIONAL_CODEC).orElse(ItemStack.EMPTY);
 		if (!cachedStack.isEmpty()) {
-			cachedStack.setCount(deserializeItemAmount(tag));
+			cachedStack.setCount(deserializeItemAmount(input));
 		}
 	}
 

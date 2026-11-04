@@ -24,7 +24,7 @@ public class ReturnToHomePosGoal<T extends PathfinderMob & ControllableMob> exte
 		ControllableMob.Command command = entity.getActiveCommand();
 		if (command == ControllableMob.Command.HOLD_POSITION || command == ControllableMob.Command.PATROL_AREA) {
 			BlockPos pos = mob.blockPosition();
-			return !pos.equals(mob.getRestrictCenter()) && super.canUse();
+			return !pos.equals(mob.getHomePosition()) && super.canUse();
 		}
 
 		return false;
@@ -34,14 +34,14 @@ public class ReturnToHomePosGoal<T extends PathfinderMob & ControllableMob> exte
 	@Nullable
 	protected Vec3 getPosition() {
 		BlockPos pos = mob.blockPosition();
-		if (!pos.equals(mob.getRestrictCenter())) {
+		if (!pos.equals(mob.getHomePosition())) {
 			ControllableMob.Command command = entity.getActiveCommand();
 			if (command == ControllableMob.Command.PATROL_AREA) {
-				return LandRandomPos.getPosTowards(mob, 10, 7, Vec3.atBottomCenterOf(mob.getRestrictCenter()));
+				return LandRandomPos.getPosTowards(mob, 10, 7, Vec3.atBottomCenterOf(mob.getHomePosition()));
 			}
 
 			if (command == ControllableMob.Command.HOLD_POSITION) {
-				return Vec3.atBottomCenterOf(mob.getRestrictCenter());
+				return Vec3.atBottomCenterOf(mob.getHomePosition());
 			}
 		}
 		return null;

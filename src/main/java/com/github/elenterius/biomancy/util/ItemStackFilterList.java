@@ -1,16 +1,16 @@
 package com.github.elenterius.biomancy.util;
 
-import net.minecraft.core.HolderLookup;
-import net.minecraft.nbt.ListTag;
+import com.mojang.serialization.Codec;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.common.util.INBTSerializable;
 
 import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
 
-public class ItemStackFilterList extends AbstractList<ItemStackFilter> implements INBTSerializable<ListTag> {
+public class ItemStackFilterList extends AbstractList<ItemStackFilter> {
+
+	public static final Codec<ItemStackFilterList> CODEC = ItemStackFilter.CODEC.listOf().xmap(ItemStackFilterList::new, list -> list.filters);
 
 	private final List<ItemStackFilter> filters;
 
@@ -58,22 +58,9 @@ public class ItemStackFilterList extends AbstractList<ItemStackFilter> implement
 		return filters.get(index).test(stack);
 	}
 
-	@Override
-	public void deserializeNBT(HolderLookup.Provider provider, ListTag listTag) {
+	public void replaceWith(ItemStackFilterList other) {
 		filters.clear();
-		for (int i = 0; i < listTag.size(); i++) {
-			filters.add(ItemStackFilter.of(provider, listTag.getCompound(i)));
-		}
-	}
-
-	@Override
-	public ListTag serializeNBT(HolderLookup.Provider provider) {
-		ListTag listTag = new ListTag();
-		for (ItemStackFilter filter : filters) {
-			listTag.add(filter.serializeNBT(provider));
-		}
-
-		return listTag;
+		filters.addAll(other.filters);
 	}
 
 }

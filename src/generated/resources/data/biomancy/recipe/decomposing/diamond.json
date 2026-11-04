@@ -1,7 +1,7 @@
 {
   "type": "biomancy:decomposing",
   "ingredient": {
-    "item": "minecraft:diamond"
+    "ingredient": "minecraft:diamond"
   },
   "nutrientsCost": 2,
   "processingTime": 400,

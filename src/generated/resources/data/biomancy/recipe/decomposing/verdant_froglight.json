@@ -1,7 +1,7 @@
 {
   "type": "biomancy:decomposing",
   "ingredient": {
-    "item": "minecraft:verdant_froglight"
+    "ingredient": "minecraft:verdant_froglight"
   },
   "nutrientsCost": 2,
   "processingTime": 258,

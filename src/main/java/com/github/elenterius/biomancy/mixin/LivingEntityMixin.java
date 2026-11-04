@@ -3,19 +3,23 @@ package com.github.elenterius.biomancy.mixin;
 import com.github.elenterius.biomancy.entity.misc.LivingEntityData;
 import com.github.elenterius.biomancy.event.LivingEventHandler;
 import com.github.elenterius.biomancy.init.ModMobEffects;
-import com.github.elenterius.biomancy.init.tags.ModItemTags;
 import com.github.elenterius.biomancy.item.ShieldBlockingListener;
 import com.github.elenterius.biomancy.serum.FrenzySerum;
 import com.github.elenterius.biomancy.statuseffect.StatusEffectHandler;
+import com.github.elenterius.biomancy.item.shield.LivingShieldItem;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.component.BlocksAttacks;
 import com.llamalad7.mixinextras.sugar.Share;
 import com.llamalad7.mixinextras.sugar.ref.LocalRef;
 import net.minecraft.core.Holder;
-import net.minecraft.core.component.DataComponents;
-import net.minecraft.tags.ItemTags;
-import net.neoforged.neoforge.common.EffectCure;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.AreaEffectCloud;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -23,9 +27,8 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeMap;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.projectile.Arrow;
-import net.minecraft.world.entity.projectile.ThrownPotion;
-import net.minecraft.world.food.FoodProperties;
+import net.minecraft.world.entity.projectile.arrow.Arrow;
+import net.minecraft.world.entity.projectile.throwableitemprojectile.AbstractThrownPotion;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
@@ -103,77 +106,54 @@ public abstract class LivingEntityMixin extends Entity implements LivingEntityDa
 		}
 	}
 
-	@Inject(method = "blockUsingShield", at = @At(value = "HEAD"))
-	private void onBlockUsingShield(LivingEntity attacker, CallbackInfo ci) {
+	@Inject(method = "applyItemBlocking", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/LivingEntity;blockUsingItem(Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/world/entity/LivingEntity;)V"))
+	private void onBlockUsingShield(ServerLevel level, DamageSource source, float damage, CallbackInfoReturnable<Float> cir, @Local LivingEntity attacker) {
 		if (useItem.getItem() instanceof ShieldBlockingListener listener) {
 			listener.onShieldBlocking(useItem, (LivingEntity) (Object) this, attacker);
 		}
 	}
 
+	@WrapOperation(method = "applyItemBlocking", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/item/component/BlocksAttacks;hurtBlockingItem(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/world/entity/LivingEntity;Lnet/minecraft/world/InteractionHand;FI)V"))
+	private void onHurtBlockingItem(BlocksAttacks blocksAttacks, Level level, ItemStack item, LivingEntity user, InteractionHand hand, float damage, int fixedDamage, Operation<Void> original) {
+		if (user instanceof Player && item.getItem() instanceof LivingShieldItem livingShield) {
+			if (!level.isClientSide() && damage >= 3f) {
+				livingShield.damageCurrentlyUsedLivingShield(item, damage, user);
+			}
+			return;
+		}
+		original.call(blocksAttacks, level, item, user, hand, damage, fixedDamage);
+	}
+
 	@Inject(method = "addEffect(Lnet/minecraft/world/effect/MobEffectInstance;Lnet/minecraft/world/entity/Entity;)Z", at = @At(value = "HEAD"), cancellable = true)
 	private void onAddEffect(MobEffectInstance effectInstance, @Nullable Entity source, CallbackInfoReturnable<Boolean> cir) {
-		if (source instanceof AreaEffectCloud || source instanceof ThrownPotion || source instanceof Arrow) {
+		if (source instanceof AreaEffectCloud || source instanceof AbstractThrownPotion || source instanceof Arrow) {
 			if (!StatusEffectHandler.canApplySplashEffectIfAllowed(effectInstance.getEffect(), biomancy$self(), StatusEffectHandler.CONSUME_ONE_NUTRIENT_PER_ARMOR_PIECE)) {
 				cir.setReturnValue(false);
 			}
 		}
 	}
 
-	@Inject(method = "eat(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/world/food/FoodProperties;)Lnet/minecraft/world/item/ItemStack;", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/LivingEntity;addEatEffect(Lnet/minecraft/world/food/FoodProperties;)V", shift = At.Shift.AFTER))
-	private void onAddEatEffect(Level level, ItemStack food, FoodProperties foodProperties, CallbackInfoReturnable<ItemStack> cir) {
-		LivingEntity livingEntity = biomancy$self();
-		if (!level.isClientSide && biomancy$getRawMeatNutrition(food) > 2 && livingEntity.getRandom().nextFloat() < 0.2f) {
-			livingEntity.addEffect(new MobEffectInstance(ModMobEffects.PRIMORDIAL_INFESTATION, 20 * 8, 0));
-		}
-	}
-
-	@ModifyArg(
-			method = "removeEffectsCuredBy",
-			at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/LivingEntity;onEffectRemoved(Lnet/minecraft/world/effect/MobEffectInstance;)V")
-	)
-	private MobEffectInstance onCurePotionEffects(MobEffectInstance effectInstance, @Share("removedFrenzy") LocalRef<MobEffectInstance> removedFrenzyRef) {
-		if (effectInstance.getEffect().is(ModMobEffects.FRENZY)) {
-			removedFrenzyRef.set(effectInstance);
-		}
-		return effectInstance;
-	}
-
-	@Inject(method = "removeEffectsCuredBy", at = @At(value = "TAIL"))
-	private void onPostCurePotionEffects(EffectCure cure, CallbackInfoReturnable<Boolean> cir, @Share("removedFrenzy") LocalRef<MobEffectInstance> removedFrenzyRef) {
-		if (level().isClientSide) return;
-
-		MobEffectInstance removedFrenzyEffect = removedFrenzyRef.get();
-		if (removedFrenzyEffect == null) return;
-
-		StatusEffectHandler.addWithdrawalAfterFrenzy(biomancy$self(), removedFrenzyEffect);
-	}
-
 	@ModifyArg(
 			method = "tickEffects",
-			at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/LivingEntity;onEffectRemoved(Lnet/minecraft/world/effect/MobEffectInstance;)V")
+			at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/LivingEntity;onEffectsRemoved(Ljava/util/Collection;)V")
 	)
-	private MobEffectInstance onTickEffects(MobEffectInstance effectInstance, @Share("expiredFrenzy") LocalRef<MobEffectInstance> expiredFrenzyRef) {
-		if (effectInstance.getEffect().is(ModMobEffects.FRENZY)) {
-			expiredFrenzyRef.set(effectInstance);
+	private Collection<MobEffectInstance> onTickEffects(Collection<MobEffectInstance> effectInstances, @Share("expiredFrenzy") LocalRef<MobEffectInstance> expiredFrenzyRef) {
+		for (MobEffectInstance effectInstance : effectInstances) {
+			if (effectInstance.getEffect().is(ModMobEffects.FRENZY)) {
+				expiredFrenzyRef.set(effectInstance);
+			}
 		}
-		return effectInstance;
+		return effectInstances;
 	}
 
 	@Inject(method = "tickEffects", at = @At(value = "TAIL"))
 	private void onPostTickEffects(CallbackInfo ci, @Share("expiredFrenzy") LocalRef<MobEffectInstance> expiredFrenzyRef) {
-		if (level().isClientSide) return;
+		if (level().isClientSide()) return;
 
 		MobEffectInstance removedFrenzyEffect = expiredFrenzyRef.get();
 		if (removedFrenzyEffect == null) return;
 
 		StatusEffectHandler.addWithdrawalAfterFrenzy(biomancy$self(), removedFrenzyEffect);
-	}
-
-	@Unique
-	private static int biomancy$getRawMeatNutrition(ItemStack itemStack) {
-		if (!itemStack.has(DataComponents.FOOD)) return 0;
-		FoodProperties food = itemStack.getFoodProperties(null);
-		return food != null && itemStack.is(ItemTags.MEAT) && itemStack.is(ModItemTags.FRESH_RAW_MEATS) ? food.nutrition() : 0;
 	}
 
 	@Unique

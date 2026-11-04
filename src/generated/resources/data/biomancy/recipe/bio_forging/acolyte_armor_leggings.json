@@ -3,23 +3,23 @@
   "bio_forge_tab": "biomancy:tools",
   "ingredients": [
     {
-      "item": "biomancy:living_flesh"
+      "ingredient": "biomancy:living_flesh"
     },
     {
       "count": 10,
-      "item": "biomancy:flesh_bits"
+      "ingredient": "biomancy:flesh_bits"
     },
     {
       "count": 32,
-      "item": "biomancy:tough_fibers"
+      "ingredient": "biomancy:tough_fibers"
     },
     {
       "count": 24,
-      "item": "biomancy:mineral_fragment"
+      "ingredient": "biomancy:mineral_fragment"
     },
     {
       "count": 8,
-      "item": "biomancy:bone_fragments"
+      "ingredient": "biomancy:bone_fragments"
     }
   ],
   "nutrientsCost": 250,

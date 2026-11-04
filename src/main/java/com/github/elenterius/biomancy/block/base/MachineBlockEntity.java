@@ -44,7 +44,7 @@ public abstract class MachineBlockEntity<R extends ProcessingRecipe, S extends R
 	}
 
 	protected void onInventoryChanged() {
-		if (level != null && !level.isClientSide) setChanged();
+		if (level != null && !level.isClientSide()) setChanged();
 	}
 
 	public int getTicks() {
@@ -163,7 +163,7 @@ public abstract class MachineBlockEntity<R extends ProcessingRecipe, S extends R
 
 	private ItemStack getItemToCraft(ServerLevel level, R craftingGoal) {
 		if (craftingGoal.isSpecial()) {
-			return craftingGoal.assemble(getInputInventory().getRecipeWrapper(), level.registryAccess());
+			return craftingGoal.assemble(getInputInventory().getRecipeWrapper());
 		}
 		return craftingGoal.getResultItem(level.registryAccess());
 	}
@@ -191,4 +191,10 @@ public abstract class MachineBlockEntity<R extends ProcessingRecipe, S extends R
 		}
 	}
 
+	@Override
+	public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+		if (level != null) {
+			dropAllInvContents(level, pos);
+		}
+	}
 }

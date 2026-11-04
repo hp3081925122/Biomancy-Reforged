@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "biomancy:withered_mob_marrow"
+      "ingredient": "biomancy:withered_mob_marrow"
     }
   },
   "output": {

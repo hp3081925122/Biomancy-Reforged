@@ -1,9 +1,7 @@
 {
   "type": "biomancy:digesting",
   "input": {
-    "0": {
-      "id": "minecraft:pumpkin"
-    }
+    "0": "minecraft:pumpkin"
   },
   "output": {
     "0": {

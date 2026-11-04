@@ -1,7 +1,7 @@
 {
   "type": "biomancy:decomposing",
   "ingredient": {
-    "item": "biomancy:nutrient_paste"
+    "ingredient": "biomancy:nutrient_paste"
   },
   "nutrientsCost": 1,
   "processingTime": 120,

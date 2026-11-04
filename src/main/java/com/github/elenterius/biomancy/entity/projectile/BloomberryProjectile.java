@@ -15,10 +15,10 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
-import software.bernie.geckolib.animatable.GeoEntity;
-import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.animation.AnimatableManager;
-import software.bernie.geckolib.util.GeckoLibUtil;
+import com.geckolib.animatable.GeoEntity;
+import com.geckolib.animatable.instance.AnimatableInstanceCache;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.util.GeckoLibUtil;
 
 public class BloomberryProjectile extends BaseProjectile implements GeoEntity {
 
@@ -34,7 +34,7 @@ public class BloomberryProjectile extends BaseProjectile implements GeoEntity {
 	}
 
 	@Override
-	public boolean hurt(DamageSource source, float amount) {
+	public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
 		return false;
 	}
 

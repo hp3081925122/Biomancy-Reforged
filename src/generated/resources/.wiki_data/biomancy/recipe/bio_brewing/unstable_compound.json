@@ -1,11 +1,9 @@
 {
   "type": "biomancy:bio_brewing",
   "input": {
-    "0": {
-      "id": "biomancy:organic_compound"
-    },
+    "0": "biomancy:organic_compound",
     "1": {
-      "id": "biomancy:volatile_fluid"
+      "ingredient": "biomancy:volatile_fluid"
     }
   },
   "output": {

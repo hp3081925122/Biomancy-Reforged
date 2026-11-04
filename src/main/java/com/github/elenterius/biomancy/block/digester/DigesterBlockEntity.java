@@ -1,6 +1,10 @@
 package com.github.elenterius.biomancy.block.digester;
 
-import net.minecraft.world.food.FoodProperties;
+import net.neoforged.neoforge.items.IItemHandlerModifiable;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.component.UseRemainder;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.BuiltInRegistries;
 import com.github.elenterius.biomancy.BiomancyMod;
@@ -32,20 +36,21 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.transfer.ResourceHandler;
+import net.neoforged.neoforge.transfer.fluid.FluidResource;
 import net.neoforged.neoforge.items.IItemHandler;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import org.jspecify.annotations.Nullable;
-import software.bernie.geckolib.animatable.GeoBlockEntity;
-import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.animation.AnimatableManager;
-import software.bernie.geckolib.animation.AnimationController;
-import software.bernie.geckolib.animation.AnimationState;
-import software.bernie.geckolib.animation.RawAnimation;
-import software.bernie.geckolib.animation.PlayState;
-import software.bernie.geckolib.util.GeckoLibUtil;
+import com.geckolib.animatable.GeoBlockEntity;
+import com.geckolib.animatable.instance.AnimatableInstanceCache;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.animation.AnimationController;
+import com.geckolib.animation.state.AnimationTest;
+import com.geckolib.animation.RawAnimation;
+import com.geckolib.animation.object.PlayState;
+import com.geckolib.util.GeckoLibUtil;
 
 import java.util.Objects;
 
@@ -84,7 +89,7 @@ public class DigesterBlockEntity extends MachineBlockEntity<DigestingRecipe, Dig
 
 	@Override
 	public void onLoad() {
-		if (level != null && level.isClientSide) {
+		if (level != null && level.isClientSide()) {
 			loopingSoundHelper = SoundUtil.Client.createLoopingSoundHandler();
 		}
 	}
@@ -155,7 +160,7 @@ public class DigesterBlockEntity extends MachineBlockEntity<DigestingRecipe, Dig
 
 	@Override
 	protected boolean craftRecipe(DigestingRecipe recipeToCraft, Level level) {
-		ItemStack result = recipeToCraft.assemble(inputInventory.getRecipeWrapper(), level.registryAccess());
+		ItemStack result = recipeToCraft.assemble(inputInventory.getRecipeWrapper());
 
 		if (!result.isEmpty() && doesRecipeResultFitIntoOutputInv(recipeToCraft, result)) {
 			ItemStack craftingRemainder = getCraftingRemainder();
@@ -179,12 +184,12 @@ public class DigesterBlockEntity extends MachineBlockEntity<DigestingRecipe, Dig
 	private ItemStack getCraftingRemainder() {
 		ItemStack stack = inputInventory.getStackInSlot(0);
 
-		if (stack.hasCraftingRemainingItem()) {
-			return stack.getCraftingRemainingItem();
+		if (stack.getCraftingRemainder() != null) {
+			return stack.getCraftingRemainder().create();
 		}
 
-		FoodProperties food = stack.getFoodProperties(null);
-		if (food != null && food.usingConvertsTo().filter(container -> container.is(Items.BOWL)).isPresent()) {
+		UseRemainder useRemainder = stack.get(DataComponents.USE_REMAINDER);
+		if (stack.has(DataComponents.FOOD) && useRemainder != null && useRemainder.convertInto().is(Items.BOWL)) {
 			return new ItemStack(Items.BOWL);
 		}
 
@@ -196,23 +201,23 @@ public class DigesterBlockEntity extends MachineBlockEntity<DigestingRecipe, Dig
 	}
 
 	@Override
-	protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-		super.saveAdditional(tag, registries);
-		stateData.serialize(tag);
-		tag.put("Fuel", fuelHandler.serializeNBT(registries));
-		tag.put("FuelSlots", fuelInventory.serializeNBT(registries));
-		tag.put("InputSlots", inputInventory.serializeNBT(registries));
-		tag.put("OutputSlots", outputInventory.serializeNBT(registries));
+	protected void saveAdditional(ValueOutput output) {
+		super.saveAdditional(output);
+		stateData.serialize(output);
+		fuelHandler.serialize(output.child("Fuel"));
+		fuelInventory.serialize(output.child("FuelSlots"));
+		inputInventory.serialize(output.child("InputSlots"));
+		outputInventory.serialize(output.child("OutputSlots"));
 	}
 
 	@Override
-	protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-		super.loadAdditional(tag, registries);
-		stateData.deserialize(tag);
-		fuelHandler.deserializeNBT(registries, tag.getCompound("Fuel"));
-		fuelInventory.deserializeNBT(registries, tag.getCompound("FuelSlots"));
-		inputInventory.deserializeNBT(registries, tag.getCompound("InputSlots"));
-		outputInventory.deserializeNBT(registries, tag.getCompound("OutputSlots"));
+	protected void loadAdditional(ValueInput input) {
+		super.loadAdditional(input);
+		stateData.deserialize(input);
+		fuelHandler.deserialize(input.childOrEmpty("Fuel"));
+		fuelInventory.deserialize(input.childOrEmpty("FuelSlots"));
+		inputInventory.deserialize(input.childOrEmpty("InputSlots"));
+		outputInventory.deserialize(input.childOrEmpty("OutputSlots"));
 	}
 
 	@Override
@@ -222,27 +227,27 @@ public class DigesterBlockEntity extends MachineBlockEntity<DigestingRecipe, Dig
 		ItemHandlerUtil.dropContents(level, pos, outputInventory);
 	}
 
-	public @Nullable IItemHandler getItemHandler(@Nullable Direction side) {
+	public @Nullable IItemHandlerModifiable getItemHandler(@Nullable Direction side) {
 		if (isRemoved()) return null;
 		if (side == null || side == Direction.DOWN) return outputInventory;
 		if (side == Direction.UP) return inputInventory;
 		return fuelInventory;
 	}
 
-	public @Nullable IFluidHandler getFluidHandler(@Nullable Direction side) {
+	public @Nullable ResourceHandler<FluidResource> getFluidHandler(@Nullable Direction side) {
 		if (isRemoved()) return null;
 		return fuelHandler.getFluidConsumer();
 	}
 
-	private <E extends DigesterBlockEntity> PlayState handleAnimationState(AnimationState<E> event) {
+	private <E extends DigesterBlockEntity> PlayState handleAnimationState(AnimationTest<E> event) {
 		Boolean isCrafting = getBlockState().getValue(MachineBlock.CRAFTING);
 
 		if (Boolean.TRUE.equals(isCrafting)) {
-			event.getController().setAnimation(WORKING_ANIM);
+			event.controller().setAnimation(WORKING_ANIM);
 			loopingSoundHelper.startLoop(this, ModSoundEvents.DIGESTER_CRAFTING.get(), 0.65f);
 		}
 		else {
-			event.getController().setAnimation(IDLE_ANIM);
+			event.controller().setAnimation(IDLE_ANIM);
 			loopingSoundHelper.stopLoop();
 		}
 
@@ -251,7 +256,7 @@ public class DigesterBlockEntity extends MachineBlockEntity<DigestingRecipe, Dig
 
 	@Override
 	public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-		controllers.add(new AnimationController<>(this, "controller", 0, this::handleAnimationState));
+		controllers.add(new AnimationController<DigesterBlockEntity>("controller", 0, this::handleAnimationState));
 	}
 
 	@Override
@@ -261,7 +266,7 @@ public class DigesterBlockEntity extends MachineBlockEntity<DigestingRecipe, Dig
 
 	@Override
 	public void setRemoved() {
-		if (level != null && level.isClientSide) {
+		if (level != null && level.isClientSide()) {
 			loopingSoundHelper.clear();
 		}
 		super.setRemoved();

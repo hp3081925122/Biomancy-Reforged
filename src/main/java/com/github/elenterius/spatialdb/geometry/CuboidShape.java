@@ -75,7 +75,7 @@ public class CuboidShape implements Shape {
 
 		@Override
 		public CuboidShape read(CompoundTag tag) {
-			long[] minMax = tag.getLongArray("MinMax");
+			long[] minMax = tag.getLongArray("MinMax").orElse(new long[0]);
 			double minX = Double.longBitsToDouble(minMax[0]);
 			double minY = Double.longBitsToDouble(minMax[1]);
 			double minZ = Double.longBitsToDouble(minMax[2]);

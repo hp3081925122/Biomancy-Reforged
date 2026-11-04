@@ -1,8 +1,14 @@
 package com.github.elenterius.biomancy.block.ownable;
 
+import com.github.elenterius.biomancy.block.base.BlockTooltipProvider;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.ScheduledTickAccess;
+import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.item.component.TooltipDisplay;
+import java.util.function.Consumer;
 import net.minecraft.world.item.Item;
 import com.github.elenterius.biomancy.util.InteractionUtil;
-import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.InteractionResult;
 import com.github.elenterius.biomancy.block.property.UserSensitivity;
 import com.github.elenterius.biomancy.init.ModBlockEntities;
 import com.github.elenterius.biomancy.init.ModBlockProperties;
@@ -40,7 +46,7 @@ import org.jspecify.annotations.Nullable;
 import java.util.List;
 import java.util.function.Predicate;
 
-public class OwnablePressurePlateBlock extends PressurePlateBlock implements OwnableEntityBlock {
+public class OwnablePressurePlateBlock extends PressurePlateBlock implements BlockTooltipProvider, OwnableEntityBlock {
 
 	public static final EnumProperty<UserSensitivity> USER_SENSITIVITY = ModBlockProperties.USER_SENSITIVITY;
 	public static final Predicate<Entity> ENTITY_SELECTOR = entity -> !entity.isSpectator() && !entity.isIgnoringBlockTriggers();
@@ -71,12 +77,12 @@ public class OwnablePressurePlateBlock extends PressurePlateBlock implements Own
 	}
 
 	@Override
-	public BlockState updateShape(BlockState state, Direction facing, BlockState facingState, LevelAccessor level, BlockPos currentPos, BlockPos facingPos) {
+	public BlockState updateShape(BlockState state, LevelReader level, ScheduledTickAccess ticks, BlockPos currentPos, Direction facing, BlockPos facingPos, BlockState facingState, RandomSource random) {
 		return state;
 	}
 
 	@Override
-	protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+	protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
 		return InteractionUtil.toItemInteractionResult(use(state, level, pos, player, hand, hit));
 	}
 
@@ -85,25 +91,25 @@ public class OwnablePressurePlateBlock extends PressurePlateBlock implements Own
 
 			ItemStack stack = player.getItemInHand(hand);
 			if (stack.getItem() instanceof EssenceItem essenceItem) {
-				if (level.isClientSide) return InteractionResult.SUCCESS;
+				if (level.isClientSide()) return InteractionResult.SUCCESS;
 
 				if (restrictedBlock.isActionAllowed(player, Actions.CONFIGURE)) {
 					boolean success = essenceItem.getEntityUUID(stack).map(restrictedBlock::addUser).orElse(false);
 					if (success) {
 						stack.shrink(1);
-						level.playSound(null, pos, ModSoundEvents.FLESHKIN_EAT.get(), SoundSource.BLOCKS, 1f, level.random.nextFloat() * 0.1f + 0.9f);
+						level.playSound(null, pos, ModSoundEvents.FLESHKIN_EAT.get(), SoundSource.BLOCKS, 1f, level.getRandom().nextFloat() * 0.1f + 0.9f);
 						return InteractionResult.SUCCESS;
 					}
 				}
 
-				level.playSound(null, pos, ModSoundEvents.FLESHKIN_NO.get(), SoundSource.BLOCKS, 1f, level.random.nextFloat() * 0.1f + 0.9f);
+				level.playSound(null, pos, ModSoundEvents.FLESHKIN_NO.get(), SoundSource.BLOCKS, 1f, level.getRandom().nextFloat() * 0.1f + 0.9f);
 				return InteractionResult.CONSUME;
 			}
 
 			if (player.isShiftKeyDown()) {
 				state = state.setValue(USER_SENSITIVITY, state.getValue(USER_SENSITIVITY).cycle());
 				level.setBlock(pos, state, Block.UPDATE_CLIENTS);
-				return InteractionResult.sidedSuccess(level.isClientSide);
+				return InteractionResult.SUCCESS;
 			}
 		}
 
@@ -153,9 +159,8 @@ public class OwnablePressurePlateBlock extends PressurePlateBlock implements Own
 		return PushReaction.BLOCK;
 	}
 
-	@Override
-	public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
-		super.appendHoverText(stack, context, tooltip, flag);
+	
+	public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag flag) {
 		OwnableEntityBlock.appendUserListToTooltip(stack, tooltip);
 	}
 

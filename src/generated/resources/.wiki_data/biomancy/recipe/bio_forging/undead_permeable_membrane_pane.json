@@ -2,14 +2,14 @@
   "type": "biomancy:bio_forging",
   "input": {
     "0": {
-      "id": "biomancy:impermeable_membrane"
+      "ingredient": "biomancy:impermeable_membrane"
     },
     "1": {
       "count": 4,
-      "id": "biomancy:bile"
+      "ingredient": "biomancy:bile"
     },
     "2": {
-      "id": "minecraft:phantom_membrane"
+      "ingredient": "minecraft:phantom_membrane"
     }
   },
   "output": {

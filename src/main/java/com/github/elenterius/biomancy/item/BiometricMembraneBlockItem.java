@@ -1,5 +1,7 @@
 package com.github.elenterius.biomancy.item;
 
+import net.minecraft.network.chat.Component;
+import net.minecraft.core.UUIDUtil;
 import com.github.elenterius.biomancy.util.BlockItemUtil;
 import com.github.elenterius.biomancy.block.membrane.BiometricMembraneBlockEntity;
 import net.minecraft.nbt.CompoundTag;
@@ -13,18 +15,18 @@ public class BiometricMembraneBlockItem extends SimpleBlockItem {
 	}
 
 	@Override
-	public String getDescriptionId(ItemStack stack) {
+	public Component getName(ItemStack stack) {
 		CompoundTag compoundTag = BlockItemUtil.getBlockEntityData(stack);
 		if (compoundTag == null || !compoundTag.contains(BiometricMembraneBlockEntity.MEMBRANE_KEY)) {
-			return getDescriptionId();
+			return super.getName(stack);
 		}
 
-		CompoundTag tag = compoundTag.getCompound(BiometricMembraneBlockEntity.MEMBRANE_KEY);
+		CompoundTag tag = compoundTag.getCompoundOrEmpty(BiometricMembraneBlockEntity.MEMBRANE_KEY);
 
-		String inverted = tag.getBoolean(BiometricMembraneBlockEntity.IS_INVERTED_KEY) ? ".inverted" : "";
-		String unique = tag.hasUUID(BiometricMembraneBlockEntity.ENTITY_UUID_KEY) ? ".unique" : "";
+		String inverted = tag.getBooleanOr(BiometricMembraneBlockEntity.IS_INVERTED_KEY, false) ? ".inverted" : "";
+		String unique = tag.read(BiometricMembraneBlockEntity.ENTITY_UUID_KEY, UUIDUtil.CODEC).isPresent() ? ".unique" : "";
 
-		return getDescriptionId() + inverted + unique;
+		return Component.translatable(getDescriptionId() + inverted + unique);
 	}
 
 }

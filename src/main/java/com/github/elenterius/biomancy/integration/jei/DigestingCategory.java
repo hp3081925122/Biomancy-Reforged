@@ -2,6 +2,7 @@ package com.github.elenterius.biomancy.integration.jei;
 
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.block.digester.DigesterBlockEntity;
+import com.github.elenterius.biomancy.crafting.IngredientStack;
 import com.github.elenterius.biomancy.crafting.recipe.DigestingRecipe;
 import com.github.elenterius.biomancy.init.ModItems;
 import com.github.elenterius.biomancy.init.ModRecipes;
@@ -19,10 +20,10 @@ import mezz.jei.api.recipe.RecipeType;
 import mezz.jei.api.recipe.category.IRecipeCategory;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.neoforged.neoforge.items.ItemStackHandler;
@@ -43,7 +44,7 @@ public class DigestingCategory implements IRecipeCategory<DigestingRecipe> {
 
 	public DigestingCategory(IGuiHelper guiHelper) {
 		icon = guiHelper.createDrawableIngredient(VanillaTypes.ITEM_STACK, new ItemStack(ModItems.DIGESTER.get()));
-		ResourceLocation texture = BiomancyMod.rl("textures/gui/jei/digester_recipe.png");
+		Identifier texture = BiomancyMod.rl("textures/gui/jei/digester_recipe.png");
 		background = guiHelper.drawableBuilder(texture, 0, 0, 80, 47).setTextureSize(80, 47).addPadding(0, 4, 0, 0).build();
 
 		inputInventory = new ItemStackHandler(DigesterBlockEntity.INPUT_SLOTS);
@@ -61,8 +62,13 @@ public class DigestingCategory implements IRecipeCategory<DigestingRecipe> {
 	}
 
 	@Override
-	public IDrawable getBackground() {
-		return background;
+	public int getWidth() {
+		return background.getWidth();
+	}
+
+	@Override
+	public int getHeight() {
+		return background.getHeight();
 	}
 
 	@Override
@@ -81,9 +87,9 @@ public class DigestingCategory implements IRecipeCategory<DigestingRecipe> {
 			builder.addSlot(RecipeIngredientRole.INPUT, 1, 4).addIngredients(ingredient);
 
 			List<ItemStack> possibleOutputs = new ArrayList<>();
-			for (ItemStack ingredientItem : ingredient.getItems()) {
+			for (ItemStack ingredientItem : IngredientStack.getItems(ingredient)) {
 				inputInventory.setStackInSlot(0, ingredientItem);
-				ItemStack result = recipe.assemble(inputInventoryWrapper, level.registryAccess());
+				ItemStack result = recipe.assemble(inputInventoryWrapper);
 				possibleOutputs.add(result);
 			}
 
@@ -96,7 +102,8 @@ public class DigestingCategory implements IRecipeCategory<DigestingRecipe> {
 	}
 
 	@Override
-	public void draw(DigestingRecipe recipe, IRecipeSlotsView recipeSlotsView, GuiGraphics guiGraphics, double mouseX, double mouseY) {
+	public void draw(DigestingRecipe recipe, IRecipeSlotsView recipeSlotsView, GuiGraphicsExtractor guiGraphics, double mouseX, double mouseY) {
+		background.draw(guiGraphics);
 		Font font = Minecraft.getInstance().font;
 
 		IRecipeSlotView slotView = recipeSlotsView.getSlotViews(RecipeIngredientRole.INPUT).get(0);
@@ -106,10 +113,10 @@ public class DigestingCategory implements IRecipeCategory<DigestingRecipe> {
 		int ticks = recipe.getCraftingTimeTicks(inputInventoryWrapper);
 		int seconds = ticks > 0 ? ticks / 20 : 0;
 		Component timeText = ComponentUtil.translatable("gui.jei.category.smelting.time.seconds", seconds);
-		guiGraphics.drawString(font, timeText, 48, 44 - font.lineHeight, ColorStyles.WHITE_ARGB);
+		guiGraphics.text(font, timeText, 48, 44 - font.lineHeight, ColorStyles.WHITE_ARGB);
 
 		Component costText = ComponentUtil.literal("-" + recipe.getCraftingCostNutrients(inputInventoryWrapper));
-		guiGraphics.drawString(font, costText, 15, 44 - font.lineHeight, ColorStyles.WHITE_ARGB);
+		guiGraphics.text(font, costText, 15, 44 - font.lineHeight, ColorStyles.WHITE_ARGB);
 	}
 
 }

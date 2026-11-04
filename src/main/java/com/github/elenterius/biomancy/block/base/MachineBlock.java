@@ -51,23 +51,6 @@ public abstract class MachineBlock extends BaseEntityBlock {
 		}
 	}
 
-	@Override
-	public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
-		if (!state.is(newState.getBlock())) {
-			if (Boolean.TRUE.equals(state.getValue(POWERED))) {
-				updateNeighbors(level, pos);
-			}
-			BlockEntity blockEntity = level.getBlockEntity(pos);
-			if (blockEntity instanceof MachineBlockEntity<?, ?> machine) {
-				machine.dropAllInvContents(level, pos);
-			}
-			if (Boolean.TRUE.equals(state.getValue(CRAFTING))) {
-				level.updateNeighbourForOutputSignal(pos, this);
-			}
-			super.onRemove(state, level, pos, newState, isMoving);
-		}
-	}
-
 	public void powerBlock(Level level, BlockPos pos, BlockState state) {
 		level.setBlock(pos, state.setValue(POWERED, Boolean.TRUE), Block.UPDATE_ALL);
 		updateNeighbors(level, pos);
@@ -95,8 +78,18 @@ public abstract class MachineBlock extends BaseEntityBlock {
 	}
 
 	@Override
-	public int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos) {
+	public int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos, Direction direction) {
 		return Boolean.TRUE.equals(state.getValue(CRAFTING)) ? 15 : 0;
 	}
 
+	@Override
+	protected void affectNeighborsAfterRemoval(BlockState state, ServerLevel level, BlockPos pos, boolean movedByPiston) {
+		if (Boolean.TRUE.equals(state.getValue(POWERED))) {
+			updateNeighbors(level, pos);
+		}
+		if (Boolean.TRUE.equals(state.getValue(CRAFTING))) {
+			level.updateNeighbourForOutputSignal(pos, this);
+		}
+		super.affectNeighborsAfterRemoval(state, level, pos, movedByPiston);
+	}
 }

@@ -1,7 +1,7 @@
 {
   "type": "biomancy:decomposing",
   "ingredient": {
-    "item": "biomancy:fibrous_flesh"
+    "ingredient": "biomancy:fibrous_flesh"
   },
   "nutrientsCost": 2,
   "processingTime": 108,

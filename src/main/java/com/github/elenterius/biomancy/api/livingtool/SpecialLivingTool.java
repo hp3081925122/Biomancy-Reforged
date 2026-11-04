@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.api.livingtool;
 
+import java.util.function.Consumer;
 import com.github.elenterius.biomancy.init.ModDataComponents;
 import com.github.elenterius.biomancy.init.ModSoundEvents;
 import com.github.elenterius.biomancy.sounds.SoundUtil;
@@ -84,9 +85,9 @@ public interface SpecialLivingTool extends LivingTool {
 				.orElse(0);
 	}
 
-	default void appendLivingToolTooltip(ItemStack stack, List<Component> tooltip) {
-		tooltip.add(getLivingToolState(stack).getTooltip().withStyle(TextStyles.ITALIC_GRAY));
-		tooltip.add(ComponentUtil.EMPTY_LINE);
+	default void appendLivingToolTooltip(ItemStack stack, Consumer<Component> tooltip) {
+		tooltip.accept(getLivingToolState(stack).getTooltip().withStyle(TextStyles.ITALIC_GRAY));
+		tooltip.accept(ComponentUtil.EMPTY_LINE);
 		LivingTool.super.appendLivingToolTooltip(stack, tooltip);
 	}
 

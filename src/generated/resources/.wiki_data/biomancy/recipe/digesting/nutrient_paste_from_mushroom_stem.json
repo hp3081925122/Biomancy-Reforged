@@ -1,9 +1,7 @@
 {
   "type": "biomancy:digesting",
   "input": {
-    "0": {
-      "id": "minecraft:mushroom_stem"
-    }
+    "0": "minecraft:mushroom_stem"
   },
   "output": {
     "0": {

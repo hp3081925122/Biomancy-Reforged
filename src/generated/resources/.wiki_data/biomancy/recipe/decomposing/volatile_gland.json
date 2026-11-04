@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "biomancy:volatile_gland"
+      "ingredient": "biomancy:volatile_gland"
     }
   },
   "output": {

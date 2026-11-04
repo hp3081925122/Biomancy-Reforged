@@ -1,9 +1,7 @@
 {
   "type": "biomancy:digesting",
   "input": {
-    "0": {
-      "id": "#c:mushrooms"
-    }
+    "0": "#c:mushrooms"
   },
   "output": {
     "0": {

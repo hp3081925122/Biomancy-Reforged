@@ -3,20 +3,22 @@
   "bio_forge_tab": "biomancy:components",
   "ingredients": [
     {
-      "type": "biomancy:essence",
-      "entity_type": "minecraft:phantom"
+      "ingredient": {
+        "neoforge:ingredient_type": "biomancy:essence",
+        "entity_type": "minecraft:phantom"
+      }
     },
     {
       "count": 14,
-      "item": "biomancy:tough_fibers"
+      "ingredient": "biomancy:tough_fibers"
     },
     {
       "count": 4,
-      "item": "biomancy:mineral_fragment"
+      "ingredient": "biomancy:mineral_fragment"
     },
     {
       "count": 6,
-      "item": "biomancy:exotic_dust"
+      "ingredient": "biomancy:exotic_dust"
     }
   ],
   "nutrientsCost": 1,

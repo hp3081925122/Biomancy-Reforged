@@ -1,5 +1,11 @@
 package com.github.elenterius.biomancy.item.shield;
 
+import com.github.elenterius.biomancy.item.ConditionalEnchantable;
+import net.minecraft.world.item.ItemInstance;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.item.component.TooltipDisplay;
+import net.minecraft.world.item.Item;
+import java.util.function.Consumer;
 import net.minecraft.core.Holder;
 import com.github.elenterius.biomancy.api.livingtool.SimpleLivingTool;
 import com.github.elenterius.biomancy.init.ModSoundEvents;
@@ -11,7 +17,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.SlotAccess;
 import net.minecraft.world.entity.player.Player;
@@ -26,7 +31,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
-public class LivingShieldItem extends SimpleShieldItem implements SimpleLivingTool {
+public class LivingShieldItem extends SimpleShieldItem implements ConditionalEnchantable, SimpleLivingTool {
 
 	private final int maxNutrients;
 
@@ -36,26 +41,21 @@ public class LivingShieldItem extends SimpleShieldItem implements SimpleLivingTo
 	}
 
 	@Override
-	public boolean canPerformAction(ItemStack stack, ItemAbility itemAbility) {
-		return super.canPerformAction(stack, itemAbility) && hasNutrients(stack);
-	}
-
-	@Override
-	public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+	public InteractionResult use(Level level, Player player, InteractionHand hand) {
 		ItemStack stack = player.getItemInHand(hand);
 
-		if (player.isUsingItem()) return InteractionResultHolder.fail(stack);
+		if (player.isUsingItem()) return InteractionResult.FAIL;
 
 		if (!hasNutrients(stack)) {
 			if (level.isClientSide()) {
-				player.displayClientMessage(TextComponentUtil.getFailureMsgText("not_enough_nutrients"), true);
+				player.sendOverlayMessage(TextComponentUtil.getFailureMsgText("not_enough_nutrients"));
 				player.playSound(ModSoundEvents.FLESHKIN_NO.get(), 0.8f, 0.8f + player.level().getRandom().nextFloat() * 0.4f);
 			}
-			return InteractionResultHolder.fail(stack);
+			return InteractionResult.FAIL;
 		}
 
 		player.startUsingItem(hand);
-		return InteractionResultHolder.consume(stack);
+		return InteractionResult.CONSUME.heldItemTransformedTo(stack);
 	}
 
 	@Override
@@ -103,14 +103,14 @@ public class LivingShieldItem extends SimpleShieldItem implements SimpleLivingTo
 	}
 
 	@Override
-	public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag isAdvanced) {
-		super.appendHoverText(stack, context, tooltip, isAdvanced);
-		tooltip.add(ComponentUtil.EMPTY_LINE);
+	public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag isAdvanced) {
+		super.appendHoverText(stack, context, display, tooltip, isAdvanced);
+		tooltip.accept(ComponentUtil.EMPTY_LINE);
 
 		appendLivingToolTooltip(stack, tooltip);
 
 		if (stack.isEnchanted()) {
-			tooltip.add(ComponentUtil.EMPTY_LINE);
+			tooltip.accept(ComponentUtil.EMPTY_LINE);
 		}
 	}
 

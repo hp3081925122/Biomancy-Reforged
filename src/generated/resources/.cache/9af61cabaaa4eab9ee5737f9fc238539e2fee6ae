@@ -1,4 +1,4 @@
-// 1.21.1	2026-11-04T01:41:32.202717	Biomancy Tags for minecraft:item mod id biomancy
+// 26.1.2	2026-11-04T22:45:15.2839108	Biomancy Tags for minecraft:item mod id biomancy
 8ed600b9a6956e7a25077fc43a427a0c42ff1e35 data/biomancy/tags/item/advanced_type.json
 444e04abf546dcef22aab8fd6b5b7b8fdf0bcc2d data/biomancy/tags/item/cannot_be_digested_in_acid.json
 bec4c37f77e6492f4c9c90e537f2454d1f7f676a data/biomancy/tags/item/cannot_be_eaten_by_cradle.json
@@ -44,11 +44,12 @@ d34ade0b6e44a9c68f1c80722bb29a95945cd525 data/minecraft/tags/item/enchantable/fo
 3b8373d255c2373f52d8f2bb305b27adcd9934da data/minecraft/tags/item/enchantable/head_armor.json
 0c269109893ce55bfb4b5af2702d3597fc024a7d data/minecraft/tags/item/enchantable/leg_armor.json
 e82228a1bf235df9f71c22a3439f5412f36c8ce8 data/minecraft/tags/item/enchantable/sharp_weapon.json
-e82228a1bf235df9f71c22a3439f5412f36c8ce8 data/minecraft/tags/item/enchantable/sword.json
+e82228a1bf235df9f71c22a3439f5412f36c8ce8 data/minecraft/tags/item/enchantable/sweeping.json
 c81347cfa27db184073d797db8f3b9a8dded26af data/minecraft/tags/item/enchantable/vanishing.json
 d34ade0b6e44a9c68f1c80722bb29a95945cd525 data/minecraft/tags/item/foot_armor.json
 3b8373d255c2373f52d8f2bb305b27adcd9934da data/minecraft/tags/item/head_armor.json
 0c269109893ce55bfb4b5af2702d3597fc024a7d data/minecraft/tags/item/leg_armor.json
+9a395d95a876eb4f9ce1492acd2ec8ea70787f09 data/minecraft/tags/item/loom_patterns.json
 64ed90d1c5c6b1b7ce601166b6a3d3642691809d data/minecraft/tags/item/meat.json
 237654e65d354ff1fad99d0f3109b4f0ef60307e data/minecraft/tags/item/swords.json
 050ebd20b37f33be768d562fcf62d866323c9a07 data/minecraft/tags/item/trapdoors.json

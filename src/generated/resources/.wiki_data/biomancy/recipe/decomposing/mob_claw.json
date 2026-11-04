@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "biomancy:mob_claw"
+      "ingredient": "biomancy:mob_claw"
     }
   },
   "output": {

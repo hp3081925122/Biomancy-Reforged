@@ -4,19 +4,19 @@
   "ingredients": [
     {
       "count": 4,
-      "item": "biomancy:flesh_bits"
+      "ingredient": "biomancy:flesh_bits"
     },
     {
       "count": 3,
-      "item": "biomancy:bone_fragments"
+      "ingredient": "biomancy:bone_fragments"
     },
     {
       "count": 2,
-      "item": "biomancy:exotic_dust"
+      "ingredient": "biomancy:exotic_dust"
     },
     {
       "count": 15,
-      "item": "biomancy:nutrients"
+      "ingredient": "biomancy:nutrients"
     }
   ],
   "nutrientsCost": 1,

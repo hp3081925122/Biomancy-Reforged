@@ -1,8 +1,6 @@
 {
   "type": "biomancy:digesting",
-  "ingredient": {
-    "item": "minecraft:shroomlight"
-  },
+  "ingredient": "minecraft:shroomlight",
   "nutrientsCost": 3,
   "processingTime": 464,
   "result": {

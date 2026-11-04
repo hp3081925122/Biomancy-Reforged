@@ -3,7 +3,7 @@ package com.github.elenterius.biomancy.block.modularlarynx;
 import com.github.elenterius.biomancy.mixin.accessor.LivingEntityAccessor;
 import com.github.elenterius.biomancy.mixin.accessor.MobEntityAccessor;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.StringRepresentable;
@@ -34,16 +34,16 @@ public enum MobSoundType implements StringRepresentable {
 
 	public void putSound(CompoundTag tag, @Nullable SoundEvent soundEvent) {
 		if (soundEvent != null) {
-			tag.putString(name, soundEvent.getLocation().toString());
+			tag.putString(name, soundEvent.location().toString());
 		}
 		else tag.remove(name);
 	}
 
 	@Nullable
 	public SoundEvent getSound(CompoundTag tag) {
-		ResourceLocation soundId = ResourceLocation.tryParse(tag.getString(name));
+		Identifier soundId = Identifier.tryParse(tag.getStringOr(name, ""));
 		if (soundId != null) {
-			return BuiltInRegistries.SOUND_EVENT.get(soundId);
+			return BuiltInRegistries.SOUND_EVENT.getValue(soundId);
 		}
 		return null;
 	}

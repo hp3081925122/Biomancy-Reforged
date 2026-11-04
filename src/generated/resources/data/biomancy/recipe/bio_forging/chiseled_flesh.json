@@ -4,11 +4,11 @@
   "ingredients": [
     {
       "count": 4,
-      "item": "biomancy:flesh_bits"
+      "ingredient": "biomancy:flesh_bits"
     },
     {
       "count": 2,
-      "item": "biomancy:bone_fragments"
+      "ingredient": "biomancy:bone_fragments"
     }
   ],
   "nutrientsCost": 1,

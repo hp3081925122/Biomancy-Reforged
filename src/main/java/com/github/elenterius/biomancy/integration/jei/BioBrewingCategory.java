@@ -21,10 +21,10 @@ import mezz.jei.api.recipe.RecipeType;
 import mezz.jei.api.recipe.category.IRecipeCategory;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.items.ItemStackHandler;
 import net.neoforged.neoforge.items.wrapper.RecipeWrapper;
@@ -43,7 +43,7 @@ public class BioBrewingCategory implements IRecipeCategory<BioBrewingRecipe> {
 
 	public BioBrewingCategory(IGuiHelper guiHelper) {
 		icon = guiHelper.createDrawableIngredient(VanillaTypes.ITEM_STACK, new ItemStack(ModItems.BIO_LAB.get()));
-		ResourceLocation texture = BiomancyMod.rl("textures/gui/jei/bio_lab_recipe.png");
+		Identifier texture = BiomancyMod.rl("textures/gui/jei/bio_lab_recipe.png");
 		background = guiHelper.drawableBuilder(texture, 0, 0, 134, 54).setTextureSize(134, 54).addPadding(0, 4, 0, 0).build();
 
 		inputInventory = new ItemStackHandler(BioLabBlockEntity.INPUT_SLOTS);
@@ -61,8 +61,13 @@ public class BioBrewingCategory implements IRecipeCategory<BioBrewingRecipe> {
 	}
 
 	@Override
-	public IDrawable getBackground() {
-		return background;
+	public int getWidth() {
+		return background.getWidth();
+	}
+
+	@Override
+	public int getHeight() {
+		return background.getHeight();
 	}
 
 	@Override
@@ -82,7 +87,8 @@ public class BioBrewingCategory implements IRecipeCategory<BioBrewingRecipe> {
 		addInputSlot(builder, 1, 1 + 18, ingredientQuantities, 2);
 		addInputSlot(builder, 19, 1 + 18, ingredientQuantities, 3);
 
-		builder.addSlot(RecipeIngredientRole.INPUT, 55, 10).addIngredients(recipe.getReactant());
+		IRecipeSlotBuilder reactantSlot = builder.addSlot(RecipeIngredientRole.INPUT, 55, 10);
+		recipe.getReactant().ifPresent(reactantSlot::addIngredients);
 
 		builder.addSlot(RecipeIngredientRole.OUTPUT, 113, 10).addItemStack(recipe.getResultItem(level.registryAccess()));
 	}
@@ -98,7 +104,8 @@ public class BioBrewingCategory implements IRecipeCategory<BioBrewingRecipe> {
 	}
 
 	@Override
-	public void draw(BioBrewingRecipe recipe, IRecipeSlotsView recipeSlotsView, GuiGraphics guiGraphics, double mouseX, double mouseY) {
+	public void draw(BioBrewingRecipe recipe, IRecipeSlotsView recipeSlotsView, GuiGraphicsExtractor guiGraphics, double mouseX, double mouseY) {
+		background.draw(guiGraphics);
 		Font font = Minecraft.getInstance().font;
 
 		List<IRecipeSlotView> slotViews = recipeSlotsView.getSlotViews(RecipeIngredientRole.INPUT);
@@ -111,10 +118,10 @@ public class BioBrewingCategory implements IRecipeCategory<BioBrewingRecipe> {
 		int ticks = recipe.getCraftingTimeTicks(inputInventoryWrapper);
 		int seconds = ticks > 0 ? ticks / 20 : 0;
 		Component timeText = ComponentUtil.translatable("gui.jei.category.smelting.time.seconds", seconds);
-		guiGraphics.drawString(font, timeText, 102, 50 - font.lineHeight, ColorStyles.WHITE_ARGB);
+		guiGraphics.text(font, timeText, 102, 50 - font.lineHeight, ColorStyles.WHITE_ARGB);
 
 		Component costText = ComponentUtil.literal("-" + recipe.getCraftingCostNutrients(inputInventoryWrapper));
-		guiGraphics.drawString(font, costText, 69, 50 - font.lineHeight, ColorStyles.WHITE_ARGB);
+		guiGraphics.text(font, costText, 69, 50 - font.lineHeight, ColorStyles.WHITE_ARGB);
 	}
 
 }

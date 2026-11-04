@@ -26,7 +26,8 @@ public final class RecipeJson {
 
 	public static JsonElement ingredientStack(IngredientStack stack, DynamicOps<JsonElement> ops) {
 		if (stack.ingredient().isCustom() && stack.ingredient().getCustomIngredient() instanceof DatagenIngredient datagenIngredient) {
-			JsonObject json = datagenIngredient.toJson();
+			JsonObject json = new JsonObject();
+			json.add(IngredientStack.INGREDIENT_KEY, datagenIngredient.toJson());
 			if (stack.count() > 1) json.addProperty(IngredientStack.COUNT_KEY, stack.count());
 			return json;
 		}

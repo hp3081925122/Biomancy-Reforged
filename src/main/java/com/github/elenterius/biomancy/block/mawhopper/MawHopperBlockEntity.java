@@ -1,5 +1,10 @@
 package com.github.elenterius.biomancy.block.mawhopper;
 
+import net.neoforged.neoforge.transfer.ResourceHandler;
+import net.neoforged.neoforge.transfer.item.ItemResource;
+import net.neoforged.neoforge.items.IItemHandlerModifiable;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.core.HolderLookup;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.block.property.DirectedConnection;
@@ -25,14 +30,14 @@ import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.items.IItemHandler;
 import org.jspecify.annotations.Nullable;
-import software.bernie.geckolib.animatable.GeoBlockEntity;
-import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.animation.AnimatableManager;
-import software.bernie.geckolib.animation.AnimationController;
-import software.bernie.geckolib.animation.AnimationState;
-import software.bernie.geckolib.animation.RawAnimation;
-import software.bernie.geckolib.animation.PlayState;
-import software.bernie.geckolib.util.GeckoLibUtil;
+import com.geckolib.animatable.GeoBlockEntity;
+import com.geckolib.animatable.instance.AnimatableInstanceCache;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.animation.AnimationController;
+import com.geckolib.animation.state.AnimationTest;
+import com.geckolib.animation.RawAnimation;
+import com.geckolib.animation.object.PlayState;
+import com.geckolib.util.GeckoLibUtil;
 
 import java.util.List;
 import java.util.function.Predicate;
@@ -76,26 +81,26 @@ public class MawHopperBlockEntity extends BlockEntity implements GeoBlockEntity 
 		if (state.hasBlockEntity()) {
 			BlockEntity blockEntity = level.getBlockEntity(pos);
 			if (blockEntity != null) {
-				IItemHandler capability = level.getCapability(Capabilities.ItemHandler.BLOCK, pos, state, blockEntity, direction);
-				if (capability != null) return capability;
+				ResourceHandler<ItemResource> capability = level.getCapability(Capabilities.Item.BLOCK, pos, state, blockEntity, direction);
+				if (capability != null) return IItemHandler.of(capability);
 			}
 		}
 
 		List<Entity> list = level.getEntities((Entity) null, new AABB(pos), CONTAINER_ENTITY_SELECTOR);
 		if (!list.isEmpty()) {
-			int index = level.random.nextInt(list.size());
+			int index = level.getRandom().nextInt(list.size());
 			return ItemHandlerUtil.getEntityItemHandler(list.get(index), direction);
 		}
 
 		return null;
 	}
 
-	public IItemHandler getItemHandler(@Nullable Direction side) {
+	public IItemHandlerModifiable getItemHandler(@Nullable Direction side) {
 		return inventory;
 	}
 
 	public static void entityInside(Level level, BlockPos pos, BlockState state, MawHopperBlockEntity blockEntity, Entity entity) {
-		if (level.isClientSide) return;
+		if (level.isClientSide()) return;
 
 		if (entity instanceof ItemEntity itemEntity) {
 			AABB aabb = new AABB(pos.relative(MawHopperBlock.getConnection(state).ingoing));
@@ -204,25 +209,25 @@ public class MawHopperBlockEntity extends BlockEntity implements GeoBlockEntity 
 	}
 
 	@Override
-	protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-		super.saveAdditional(tag, registries);
-		tag.put(INVENTORY_TAG, inventory.serializeNBT(registries));
+	protected void saveAdditional(ValueOutput output) {
+		super.saveAdditional(output);
+		inventory.serialize(output.child(INVENTORY_TAG));
 	}
 
 	@Override
-	protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-		super.loadAdditional(tag, registries);
-		inventory.deserializeNBT(registries, tag.getCompound(INVENTORY_TAG));
+	protected void loadAdditional(ValueInput input) {
+		super.loadAdditional(input);
+		inventory.deserialize(input.childOrEmpty(INVENTORY_TAG));
 	}
 
-	private <E extends MawHopperBlockEntity> PlayState handleAnim(AnimationState<E> event) {
-		event.getController().setAnimation(PUMPING_ANIM);
+	private <E extends MawHopperBlockEntity> PlayState handleAnim(AnimationTest<E> event) {
+		event.controller().setAnimation(PUMPING_ANIM);
 		return PlayState.CONTINUE;
 	}
 
 	@Override
 	public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-		controllers.add(new AnimationController<>(this, "main", 0, this::handleAnim));
+		controllers.add(new AnimationController<MawHopperBlockEntity>("main", 0, this::handleAnim));
 	}
 
 	@Override
@@ -230,4 +235,10 @@ public class MawHopperBlockEntity extends BlockEntity implements GeoBlockEntity 
 		return cache;
 	}
 
+	@Override
+	public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+		if (level != null) {
+			dropInventoryContents(level, pos);
+		}
+	}
 }

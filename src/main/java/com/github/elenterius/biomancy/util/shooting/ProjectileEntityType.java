@@ -1,8 +1,11 @@
 package com.github.elenterius.biomancy.util.shooting;
 
+import net.minecraft.world.level.storage.loot.LootTable;
+import net.minecraft.resources.ResourceKey;
+import java.util.Optional;
 import com.github.elenterius.biomancy.entity.projectile.BaseProjectile;
 import com.google.common.collect.ImmutableSet;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.util.datafix.fixes.References;
 import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
@@ -30,11 +33,11 @@ public class ProjectileEntityType<T extends BaseProjectile> extends EntityType<T
 			EntityType.EntityFactory<T> factory, boolean serialize, boolean summon,
 			boolean fireImmune, ImmutableSet<Block> immuneTo,
 			EntityDimensions dimensions,
-			int clientTrackingRange, int updateInterval, FeatureFlagSet requiredFeatures,
+			int clientTrackingRange, int updateInterval, String descriptionId, Optional<ResourceKey<LootTable>> lootTable, FeatureFlagSet requiredFeatures,
 			final Predicate<EntityType<?>> velocityUpdateSupplier, final ToIntFunction<EntityType<?>> trackingRangeSupplier, final ToIntFunction<EntityType<?>> updateIntervalSupplier,
 			float airDrag, float waterDrag, float gravity
 	) {
-		super(factory, MobCategory.MISC, serialize, summon, fireImmune, true, immuneTo, dimensions, 1f, clientTrackingRange, updateInterval, requiredFeatures, velocityUpdateSupplier, trackingRangeSupplier, updateIntervalSupplier);
+		super(factory, MobCategory.MISC, serialize, summon, fireImmune, true, immuneTo, dimensions, 1f, clientTrackingRange, updateInterval, descriptionId, lootTable, requiredFeatures, true, velocityUpdateSupplier, trackingRangeSupplier, updateIntervalSupplier, false);
 		if (airDrag < 0f || airDrag > 1f) throw new IllegalArgumentException("Drag is outside of valid range");
 		if (waterDrag < 0f || waterDrag > 1f) throw new IllegalArgumentException("WaterDrag is outside of valid range");
 
@@ -159,15 +162,16 @@ public class ProjectileEntityType<T extends BaseProjectile> extends EntityType<T
 			return this;
 		}
 
-		public ProjectileEntityType<T> build(String key) {
+		public ProjectileEntityType<T> build(ResourceKey<EntityType<?>> key) {
 			if (serialize) {
-				Util.fetchChoiceType(References.ENTITY_TREE, key);
+				Util.fetchChoiceType(References.ENTITY_TREE, key.identifier().toString());
 			}
 
 			return new ProjectileEntityType<>(
 					factory, serialize, summon,
 					fireImmune, immuneTo, dimensions,
-					clientTrackingRange, updateInterval, requiredFeatures,
+					clientTrackingRange, updateInterval,
+					Util.makeDescriptionId("entity", key.identifier()), Optional.empty(), requiredFeatures,
 					velocityUpdateSupplier, trackingRangeSupplier, updateIntervalSupplier,
 					airDrag, waterDrag, gravity
 			);

@@ -1,5 +1,10 @@
 package com.github.elenterius.biomancy.item.weapon;
 
+import com.github.elenterius.biomancy.init.ModItemAbilities;
+import com.github.elenterius.biomancy.item.ConditionalEnchantable;
+import net.minecraft.world.item.component.TooltipDisplay;
+import net.minecraft.world.item.Item;
+import java.util.function.Consumer;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.core.Holder;
 import com.github.elenterius.biomancy.api.livingtool.LivingToolState;
@@ -23,8 +28,9 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ClickAction;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.SwordItem;
-import net.minecraft.world.item.Tier;
+import net.minecraft.world.item.ToolMaterial;
+import net.minecraft.world.item.ItemInstance;
+import com.github.elenterius.biomancy.init.ModTiers;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.level.Level;
@@ -35,26 +41,36 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
-public class LivingSwordItem extends SwordItem implements ItemTooltipStyleProvider, SpecialLivingTool, KeyPressListener {
+public class LivingSwordItem extends Item implements ConditionalEnchantable, ItemTooltipStyleProvider, SpecialLivingTool, KeyPressListener {
 
 	private final int maxNutrients;
 	private final ItemAttributeModifiers defaultAttributeModifiers;
 
-	public LivingSwordItem(Tier tier, int damageModifier, float attackSpeedModifier, int maxNutrients, Properties properties) {
-		super(tier, properties);
+	public LivingSwordItem(ToolMaterial material, int damageModifier, float attackSpeedModifier, int maxNutrients, Properties properties) {
+		super(ModTiers.applySwordProperties(material, properties));
 		this.maxNutrients = maxNutrients;
-		defaultAttributeModifiers = SwordItem.createAttributes(tier, damageModifier, attackSpeedModifier);
+		defaultAttributeModifiers = ModTiers.createSwordAttributes(material, damageModifier, attackSpeedModifier);
 	}
 
 	@Override
-	public ItemAttributeModifiers getDefaultAttributeModifiers() {
+	public ItemAttributeModifiers getDefaultAttributeModifiers(ItemStack stack) {
 		return defaultAttributeModifiers;
+	}
+
+	@Override
+	public boolean canPerformAction(ItemInstance stack, ItemAbility itemAbility) {
+		return ModItemAbilities.DEFAULT_SWORD_ACTIONS.contains(itemAbility);
+	}
+
+	@Override
+	public boolean canDestroyBlock(ItemStack stack, BlockState state, Level level, BlockPos pos, LivingEntity user) {
+		return !(user instanceof Player player && player.isCreative());
 	}
 
 	@Override
 	public KeyPressResult onClientKeyPress(ItemStack stack, Level level, Player player, EquipmentSlot slot, byte flags) {
 		if (!hasNutrients(stack)) {
-			player.displayClientMessage(TextComponentUtil.getFailureMsgText("not_enough_nutrients"), true);
+			player.sendOverlayMessage(TextComponentUtil.getFailureMsgText("not_enough_nutrients"));
 			player.playSound(ModSoundEvents.FLESHKIN_NO.get(), 0.8f, 0.8f + player.level().getRandom().nextFloat() * 0.4f);
 			return KeyPressResult.fail();
 		}
@@ -68,17 +84,16 @@ public class LivingSwordItem extends SwordItem implements ItemTooltipStyleProvid
 	}
 
 	@Override
-	public boolean hurtEnemy(ItemStack stack, LivingEntity target, LivingEntity attacker) {
+	public void hurtEnemy(ItemStack stack, LivingEntity target, LivingEntity attacker) {
 		if (!MobUtil.isCreativePlayer(attacker)) {
 			consumeNutrients(stack, getLivingToolActionCost(stack, ItemAbilities.SWORD_SWEEP));
 		}
-		return true;
 	}
 
 	@Override
 	public boolean mineBlock(ItemStack stack, Level level, BlockState state, BlockPos pos, LivingEntity entity) {
 		if (!level.isClientSide() && state.getDestroySpeed(level, pos) != 0f && !MobUtil.isCreativePlayer(entity)) {
-			consumeNutrients(stack, getLivingToolActionCost(stack, ItemAbilities.SWORD_DIG));
+			consumeNutrients(stack, getLivingToolActionCost(stack, ModItemAbilities.SWORD_DIG));
 		}
 		return true;
 	}
@@ -119,7 +134,7 @@ public class LivingSwordItem extends SwordItem implements ItemTooltipStyleProvid
 	@Override
 	public int getLivingToolActionCost(ItemStack stack, LivingToolState state, ItemAbility itemAbility) {
 		int baseCost = 0;
-		if (itemAbility == ItemAbilities.SWORD_DIG) baseCost = 2;
+		if (itemAbility == ModItemAbilities.SWORD_DIG) baseCost = 2;
 		if (itemAbility == ItemAbilities.SWORD_SWEEP) baseCost = 1;
 
 		return switch (state) {
@@ -170,17 +185,17 @@ public class LivingSwordItem extends SwordItem implements ItemTooltipStyleProvid
 	}
 
 	@Override
-	public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag isAdvanced) {
-		tooltip.addAll(ClientTextUtil.getItemInfoTooltip(stack));
-		tooltip.add(ComponentUtil.EMPTY_LINE);
+	public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag isAdvanced) {
+		ClientTextUtil.getItemInfoTooltip(stack).forEach(tooltip);
+		tooltip.accept(ComponentUtil.EMPTY_LINE);
 
 		appendLivingToolTooltip(stack, tooltip);
 
-		tooltip.add(ComponentUtil.EMPTY_LINE);
-		tooltip.add(ClientTextUtil.pressButtonTo(ClientTextUtil.getDefaultKey(), TextComponentUtil.getActionText("cycle")));
+		tooltip.accept(ComponentUtil.EMPTY_LINE);
+		tooltip.accept(ClientTextUtil.pressButtonTo(ClientTextUtil.getDefaultKey(), TextComponentUtil.getActionText("cycle")));
 
 		if (stack.isEnchanted()) {
-			tooltip.add(ComponentUtil.EMPTY_LINE);
+			tooltip.accept(ComponentUtil.EMPTY_LINE);
 		}
 	}
 

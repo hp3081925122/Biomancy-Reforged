@@ -1,10 +1,7 @@
 {
   "type": "minecraft:stonecutting",
-  "ingredient": {
-    "item": "biomancy:fibrous_flesh"
-  },
+  "ingredient": "biomancy:fibrous_flesh",
   "result": {
-    "count": 1,
     "id": "biomancy:fibrous_flesh_wall"
   }
 }

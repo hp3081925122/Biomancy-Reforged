@@ -1,5 +1,7 @@
 package com.github.elenterius.biomancy.item.weapon;
 
+import net.minecraft.world.item.component.TooltipDisplay;
+import java.util.function.Consumer;
 import com.github.elenterius.biomancy.init.ModDataComponents;
 import com.github.elenterius.biomancy.client.util.ClientTextUtil;
 import com.github.elenterius.biomancy.entity.mob.ControllableMob;
@@ -39,7 +41,7 @@ public class ControlStaffItem extends Item implements KeyPressListener, ItemTool
 		if (slot != EquipmentSlot.MAINHAND) return KeyPressResult.fail();
 
 		ControllableMob.Command command = getCommand(stack).cycle();
-		player.playSound(SoundEvents.GENERIC_HURT, 0.8f, 0.25f + level.random.nextFloat() * 0.25f);
+		player.playSound(SoundEvents.GENERIC_HURT, 0.8f, 0.25f + level.getRandom().nextFloat() * 0.25f);
 		return KeyPressResult.success(command.serialize());
 	}
 
@@ -52,7 +54,7 @@ public class ControlStaffItem extends Item implements KeyPressListener, ItemTool
 	@Override
 	public InteractionResult onItemUseFirst(ItemStack stack, UseOnContext context) {
 		Player player = context.getPlayer();
-		if (context.getLevel().isClientSide || player == null) return InteractionResult.FAIL;
+		if (context.getLevel().isClientSide() || player == null) return InteractionResult.FAIL;
 
 		List<Mob> mobs = context.getLevel().getEntitiesOfClass(Mob.class, player.getBoundingBox().inflate(16d),
 				mob -> mob instanceof ControllableMob && mob instanceof OwnableMob ownable && ownable.isOwner(player));
@@ -60,7 +62,7 @@ public class ControlStaffItem extends Item implements KeyPressListener, ItemTool
 		int size = mobs.size();
 		if (size == 0) {
 			MutableComponent component = ComponentUtil.literal("Couldn't find any controllable mobs nearby!").withStyle(ChatFormatting.RED);
-			player.displayClientMessage(component, true);
+			player.sendOverlayMessage(component);
 			return InteractionResult.FAIL;
 		}
 
@@ -85,11 +87,11 @@ public class ControlStaffItem extends Item implements KeyPressListener, ItemTool
 	}
 
 	@Override
-	public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag isAdvanced) {
-		tooltip.addAll(ClientTextUtil.getItemInfoTooltip(stack));
-		tooltip.add(ComponentUtil.EMPTY_LINE);
-		tooltip.add(TextComponentUtil.getTooltipText("command").append(": ").withStyle().withStyle(ChatFormatting.GRAY).append(ComponentUtil.literal(getCommand(stack).toString()).withStyle(ChatFormatting.AQUA)));
-		tooltip.add(ClientTextUtil.pressButtonTo(ClientTextUtil.getDefaultKey(), TextComponentUtil.getActionText("cycle")).withStyle(ChatFormatting.DARK_GRAY));
+	public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag isAdvanced) {
+		ClientTextUtil.getItemInfoTooltip(stack).forEach(tooltip);
+		tooltip.accept(ComponentUtil.EMPTY_LINE);
+		tooltip.accept(TextComponentUtil.getTooltipText("command").append(": ").withStyle().withStyle(ChatFormatting.GRAY).append(ComponentUtil.literal(getCommand(stack).toString()).withStyle(ChatFormatting.AQUA)));
+		tooltip.accept(ClientTextUtil.pressButtonTo(ClientTextUtil.getDefaultKey(), TextComponentUtil.getActionText("cycle")).withStyle(ChatFormatting.DARK_GRAY));
 	}
 
 }

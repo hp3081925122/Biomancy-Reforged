@@ -6,7 +6,6 @@ import net.minecraft.world.level.block.CactusBlock;
 import net.minecraft.world.level.block.BushBlock;
 import net.minecraft.world.level.block.BambooStalkBlock;
 import com.github.elenterius.biomancy.block.property.BlockPropertyUtil;
-import com.github.elenterius.biomancy.integration.ModsCompatHandler;
 import com.github.elenterius.biomancy.util.PillarPlantUtil;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -38,9 +37,6 @@ public class FertilizerItem extends SimpleItem {
 		BlockState state = level.getBlockState(pos);
 		Block block = state.getBlock();
 
-		if (ModsCompatHandler.getOverweightFarmingHelper().canGrowOverweight(level, pos, state)) {
-			return growOverweightCrop(level, pos, state);
-		}
 		if (block instanceof BonemealableBlock bonemealableBlock) {
 			return growBonmealableBlock(level, pos, state, bonemealableBlock);
 		}
@@ -73,7 +69,7 @@ public class FertilizerItem extends SimpleItem {
 
 		if (stateBelow.is(Blocks.END_STONE)) {
 			if (!level.isClientSide()) {
-				ChorusFlowerBlock.generatePlant(level, pos, level.random, 8);
+				ChorusFlowerBlock.generatePlant(level, pos, level.getRandom(), 8);
 			}
 			return true;
 		}
@@ -86,7 +82,7 @@ public class FertilizerItem extends SimpleItem {
 
 		if (isAttachedToChorusPlant) {
 			if (!level.isClientSide()) {
-				ChorusFlowerBlock.generatePlant(level, pos, level.random, 8);
+				ChorusFlowerBlock.generatePlant(level, pos, level.getRandom(), 8);
 			}
 			return true;
 		}
@@ -117,7 +113,7 @@ public class FertilizerItem extends SimpleItem {
 						queue.accept(pos.offset(0, -1, -1));
 					},
 					pos -> {
-						if (pos.equals(startPos)) return true;
+						if (pos.equals(startPos)) return BlockPos.TraversalNodeStatus.ACCEPT;
 
 						BlockState currentState = serverLevel.getBlockState(pos);
 						boolean isAirAbove = serverLevel.getBlockState(pos.above()).isAir();
@@ -125,10 +121,10 @@ public class FertilizerItem extends SimpleItem {
 						if (currentState.is(Blocks.DIRT) && isAirAbove) {
 							serverLevel.setBlockAndUpdate(pos, Blocks.GRASS_BLOCK.defaultBlockState());
 							serverLevel.sendParticles(ParticleTypes.HAPPY_VILLAGER, pos.getX() + 0.5d, pos.getY() + 1.25d, pos.getZ() + 0.5d, 5, 0.25, 0.25, 0.25, 0);
-							return true;
+							return BlockPos.TraversalNodeStatus.ACCEPT;
 						}
 
-						return (currentState.is(BlockTags.DIRT) || currentState.is(Blocks.GRASS_BLOCK)) && isAirAbove;
+						return (currentState.is(BlockTags.DIRT) || currentState.is(Blocks.GRASS_BLOCK)) && isAirAbove ? BlockPos.TraversalNodeStatus.ACCEPT : BlockPos.TraversalNodeStatus.SKIP;
 					}
 			);
 		}
@@ -156,7 +152,7 @@ public class FertilizerItem extends SimpleItem {
 						queue.accept(pos.offset(0, -1, -1));
 					},
 					pos -> {
-						if (pos.equals(startPos)) return true;
+						if (pos.equals(startPos)) return BlockPos.TraversalNodeStatus.ACCEPT;
 
 						BlockState currentState = serverLevel.getBlockState(pos);
 						boolean isAirAbove = serverLevel.getBlockState(pos.above()).isAir();
@@ -164,10 +160,10 @@ public class FertilizerItem extends SimpleItem {
 						if ((currentState.is(Blocks.DIRT) || currentState.is(Blocks.GRASS_BLOCK)) && isAirAbove) {
 							serverLevel.setBlockAndUpdate(pos, Blocks.MYCELIUM.defaultBlockState());
 							serverLevel.sendParticles(ParticleTypes.HAPPY_VILLAGER, pos.getX() + 0.5d, pos.getY() + 1.25d, pos.getZ() + 0.5d, 5, 0.25, 0.25, 0.25, 0);
-							return true;
+							return BlockPos.TraversalNodeStatus.ACCEPT;
 						}
 
-						return (currentState.is(BlockTags.DIRT) || currentState.is(Blocks.MYCELIUM)) && isAirAbove;
+						return (currentState.is(BlockTags.DIRT) || currentState.is(Blocks.MYCELIUM)) && isAirAbove ? BlockPos.TraversalNodeStatus.ACCEPT : BlockPos.TraversalNodeStatus.SKIP;
 					}
 			);
 			return visited > 1;
@@ -228,18 +224,9 @@ public class FertilizerItem extends SimpleItem {
 		if (state != prevState) {
 			serverLevel.setBlock(pos, state, Block.UPDATE_CLIENTS);
 		}
-		block.performBonemeal(serverLevel, serverLevel.random, pos, state);
+		block.performBonemeal(serverLevel, serverLevel.getRandom(), pos, state);
 
 		serverLevel.levelEvent(LevelEvent.PARTICLES_AND_SOUND_PLANT_GROWTH, pos, 5);
-
-		return true;
-	}
-
-	private static boolean growOverweightCrop(Level level, BlockPos pos, BlockState state) {
-		if (level instanceof ServerLevel serverLevel) {
-			ModsCompatHandler.getOverweightFarmingHelper().growOverweight(serverLevel, pos, state, serverLevel.random);
-			serverLevel.levelEvent(LevelEvent.PARTICLES_AND_SOUND_PLANT_GROWTH, pos, 5);
-		}
 
 		return true;
 	}
@@ -255,11 +242,11 @@ public class FertilizerItem extends SimpleItem {
 		BlockPos clickedPos = context.getClickedPos();
 		ItemStack stack = context.getItemInHand();
 		if (applyFertilizer(stack, level, clickedPos, context.getClickedFace())) {
-			if (!level.isClientSide) {
+			if (!level.isClientSide()) {
 				stack.shrink(1);
 				level.playSound(null, clickedPos, SoundEvents.BONE_MEAL_USE, SoundSource.BLOCKS, 1.2f, 1f);
 			}
-			return InteractionResult.sidedSuccess(level.isClientSide);
+			return InteractionResult.SUCCESS;
 		}
 
 		return InteractionResult.PASS;

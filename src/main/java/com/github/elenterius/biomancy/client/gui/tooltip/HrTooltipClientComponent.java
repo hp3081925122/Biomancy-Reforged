@@ -1,44 +1,37 @@
 package com.github.elenterius.biomancy.client.gui.tooltip;
 
 import com.github.elenterius.biomancy.tooltip.HrTooltipComponent;
-import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 
-/**
- * Horizontal Line element for Tooltips
- */
 public class HrTooltipClientComponent implements ClientTooltipComponent {
 
 	private final int colorARGB;
+	private int lineNumber;
 
 	public HrTooltipClientComponent(HrTooltipComponent component) {
 		this.colorARGB = component.colorARGB();
 	}
 
+	void setLineNumber(int lineNumber) {
+		this.lineNumber = lineNumber;
+	}
+
 	@Override
-	public int getHeight() {
+	public int getHeight(Font font) {
 		return 8;
 	}
 
 	@Override
 	public int getWidth(Font font) {
-		return 1; //placeholder
+		return 1;
 	}
 
-	/**
-	 * @param tooltipWidth inner width
-	 * @param lineNumber   zero-indexed
-	 * @param color        colorARGB
-	 */
-	public void renderLine(GuiGraphics guiGraphics, int posX, int posY, int tooltipWidth, int lineNumber) {
-		RenderSystem.setShaderColor(1, 1, 1, 1);
-		int yOffset = lineNumber == 1 ? 0 : 2; //handle 2px bottom margin of the first line
-		guiGraphics.pose().pushPose();
-		guiGraphics.pose().translate(0, 0, 400);
-		guiGraphics.fill(posX, posY + yOffset, posX + tooltipWidth, posY + yOffset + 4, colorARGB);
-		guiGraphics.pose().popPose();
+	@Override
+	public void extractImage(Font font, int x, int y, int width, int height, GuiGraphicsExtractor guiGraphics) {
+		int yOffset = lineNumber == 1 ? 0 : 2;
+		guiGraphics.fill(x, y + yOffset, x + width, y + yOffset + 4, colorARGB);
 	}
 
 }

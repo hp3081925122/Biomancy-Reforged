@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.init;
 
+import net.minecraft.core.registries.Registries;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.api.livingtool.LivingToolState;
 import com.github.elenterius.biomancy.component.*;
@@ -11,7 +12,7 @@ import com.mojang.serialization.Codec;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.component.CustomData;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -21,7 +22,7 @@ import java.util.UUID;
 
 public final class ModDataComponents {
 
-	public static final DeferredRegister.DataComponents DATA_COMPONENTS = DeferredRegister.createDataComponents(BiomancyMod.MOD_ID);
+	public static final DeferredRegister.DataComponents DATA_COMPONENTS = DeferredRegister.createDataComponents(Registries.DATA_COMPONENT_TYPE, BiomancyMod.MOD_ID);
 
 	public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> NUTRIENTS = DATA_COMPONENTS.registerComponentType("nutrients",
 			builder -> builder.persistent(Codec.INT).networkSynchronized(ByteBufCodecs.VAR_INT));
@@ -83,8 +84,8 @@ public final class ModDataComponents {
 	public static final DeferredHolder<DataComponentType<?>, DataComponentType<BulletJumpState>> BULLET_JUMP = DATA_COMPONENTS.registerComponentType("bullet_jump",
 			builder -> builder.persistent(BulletJumpState.CODEC).networkSynchronized(BulletJumpState.STREAM_CODEC));
 
-	public static final DeferredHolder<DataComponentType<?>, DataComponentType<List<ResourceLocation>>> ARMOR_UPGRADES = DATA_COMPONENTS.registerComponentType("armor_upgrades",
-			builder -> builder.persistent(ResourceLocation.CODEC.listOf()).networkSynchronized(ResourceLocation.STREAM_CODEC.apply(ByteBufCodecs.list())));
+	public static final DeferredHolder<DataComponentType<?>, DataComponentType<List<Identifier>>> ARMOR_UPGRADES = DATA_COMPONENTS.registerComponentType("armor_upgrades",
+			builder -> builder.persistent(Identifier.CODEC.listOf()).networkSynchronized(Identifier.STREAM_CODEC.apply(ByteBufCodecs.list())));
 
 	public static final DeferredHolder<DataComponentType<?>, DataComponentType<ControllableMob.Command>> CONTROL_STAFF_COMMAND = DATA_COMPONENTS.registerComponentType("command",
 			builder -> builder.persistent(Codec.BYTE.xmap(ControllableMob.Command::deserialize, ControllableMob.Command::serialize))

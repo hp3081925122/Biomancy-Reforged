@@ -1,13 +1,9 @@
 package com.github.elenterius.biomancy.statuseffect;
 
+import net.minecraft.server.level.ServerLevel;
 import com.github.elenterius.biomancy.init.ModDamageSources;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.effect.MobEffectInstance;
-import net.neoforged.neoforge.common.EffectCure;
-import net.neoforged.neoforge.common.EffectCures;
-
-import java.util.Set;
 
 public class ToxinEffect extends StatusEffect {
 
@@ -16,7 +12,7 @@ public class ToxinEffect extends StatusEffect {
 	}
 
 	@Override
-	public boolean applyEffectTick(LivingEntity livingEntity, int amplifier) {
+	public boolean applyEffectTick(ServerLevel serverLevel, LivingEntity livingEntity, int amplifier) {
 		livingEntity.hurt(ModDamageSources.toxin(livingEntity.level(), null), 1f);
 
 		return true;
@@ -33,9 +29,8 @@ public class ToxinEffect extends StatusEffect {
 	}
 
 	@Override
-	public void fillEffectCures(Set<EffectCure> cures, MobEffectInstance effectInstance) {
-		cures.add(EffectCures.HONEY);
-		cures.add(EffectCures.PROTECTED_BY_TOTEM);
+	public boolean isCuredByMilk() {
+		return false;
 	}
 
 }

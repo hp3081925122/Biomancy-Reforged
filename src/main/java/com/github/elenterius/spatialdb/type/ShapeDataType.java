@@ -84,7 +84,7 @@ public class ShapeDataType extends BasicDataType<Shape> {
 			buffer.get(data);
 			CompoundTag nbt = readCompressed(data);
 
-			String serializerId = nbt.getString("Serializer");
+			String serializerId = nbt.getStringOr("Serializer", "");
 			NBTSerializer<Shape> serializer = ShapeSerializers.get(serializerId);
 			if (serializer != null) {
 				Shape shape = serializer.read(nbt);

@@ -1,24 +1,25 @@
 package com.github.elenterius.biomancy.client.gui;
 
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.renderer.RenderPipelines;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.client.gui.tooltip.ScreenNutrientFuelConsumer;
 import com.github.elenterius.biomancy.client.gui.tooltip.ScreenTooltipStyleProvider;
 import com.github.elenterius.biomancy.client.util.GuiRenderUtil;
 import com.github.elenterius.biomancy.client.util.GuiUtil;
 import com.github.elenterius.biomancy.menu.BioLabMenu;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Inventory;
 
 public class BioLabScreen extends AbstractContainerScreen<BioLabMenu> implements ScreenTooltipStyleProvider, ScreenNutrientFuelConsumer {
 
-	private static final ResourceLocation BACKGROUND_TEXTURE = BiomancyMod.rl("textures/gui/menu_bio_lab.png");
+	private static final Identifier BACKGROUND_TEXTURE = BiomancyMod.rl("textures/gui/menu_bio_lab.png");
 
 	public BioLabScreen(BioLabMenu menu, Inventory playerInventory, Component title) {
-		super(menu, playerInventory, title);
-		imageHeight = 219;
+		super(menu, playerInventory, title, 176, 219);
 	}
 
 	@Override
@@ -27,7 +28,10 @@ public class BioLabScreen extends AbstractContainerScreen<BioLabMenu> implements
 	}
 
 	@Override
-	public boolean mouseClicked(double mouseX, double mouseY, int button) {
+	public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+		double mouseX = event.x();
+		double mouseY = event.y();
+		int button = event.button();
 		int x = leftPos + 130;
 		int y = topPos + 34;
 		if (GuiUtil.isInRect(x, y, 8, 10, mouseX, mouseY)) {
@@ -35,22 +39,22 @@ public class BioLabScreen extends AbstractContainerScreen<BioLabMenu> implements
 			return true;
 		}
 
-		return super.mouseClicked(mouseX, mouseY, button);
+		return super.mouseClicked(event, doubleClick);
 	}
 
 	@Override
-	protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+	protected void extractLabels(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY) {
 	}
 
 	@Override
-	public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-		super.render(guiGraphics, mouseX, mouseY, partialTick);
-		renderTooltip(guiGraphics, mouseX, mouseY);
+	public void extractRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
+		super.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
 	}
 
 	@Override
-	protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
-		guiGraphics.blit(BACKGROUND_TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight);
+	public void extractBackground(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
+		super.extractBackground(guiGraphics, mouseX, mouseY, partialTick);
+		guiGraphics.blit(RenderPipelines.GUI_TEXTURED, BACKGROUND_TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight, 256, 256);
 		drawProgressBar(guiGraphics, menu.getCraftingProgressNormalized());
 		drawFuelBar(guiGraphics, menu.getFuelAmountNormalized());
 
@@ -58,14 +62,14 @@ public class BioLabScreen extends AbstractContainerScreen<BioLabMenu> implements
 		drawLock(guiGraphics, menu.isFilterLocked());
 	}
 
-	private void drawProgressBar(GuiGraphics guiGraphics, float craftingPct) {
+	private void drawProgressBar(GuiGraphicsExtractor guiGraphics, float craftingPct) {
 		int vHeight = (int) (craftingPct * 20) + (craftingPct > 0 ? 1 : 0);
-		guiGraphics.blit(BACKGROUND_TEXTURE, leftPos + 68, topPos + 78, 176, 0, 40, vHeight);
+		guiGraphics.blit(RenderPipelines.GUI_TEXTURED, BACKGROUND_TEXTURE, leftPos + 68, topPos + 78, 176, 0, 40, vHeight, 256, 256);
 	}
 
-	private void drawFuelBar(GuiGraphics guiGraphics, float fuelPct) {
+	private void drawFuelBar(GuiGraphicsExtractor guiGraphics, float fuelPct) {
 		int vHeight = (int) (fuelPct * 36) + (fuelPct > 0 ? 1 : 0);
-		guiGraphics.blit(BACKGROUND_TEXTURE, leftPos + 36, topPos + 48 + 36 - vHeight, 178, 58 - vHeight, 5, vHeight);
+		guiGraphics.blit(RenderPipelines.GUI_TEXTURED, BACKGROUND_TEXTURE, leftPos + 36, topPos + 48 + 36 - vHeight, 178, 58 - vHeight, 5, vHeight, 256, 256);
 
 		int cost = menu.getFuelCost();
 		if (cost <= menu.getFuelAmount()) return;
@@ -77,13 +81,13 @@ public class BioLabScreen extends AbstractContainerScreen<BioLabMenu> implements
 		guiGraphics.fill(x + 5 + 3 + 1, y - 1, x + 5 + 3 + 2, y + 2, 0xff_ff0000);
 	}
 
-	private void drawLock(GuiGraphics guiGraphics, boolean isLocked) {
+	private void drawLock(GuiGraphicsExtractor guiGraphics, boolean isLocked) {
 		int offset = isLocked ? 0 : 8;
-		guiGraphics.blit(BACKGROUND_TEXTURE, leftPos + 130, topPos + 34, 178 + offset, 58 + 2, 8, 10);
+		guiGraphics.blit(RenderPipelines.GUI_TEXTURED, BACKGROUND_TEXTURE, leftPos + 130, topPos + 34, 178 + offset, 58 + 2, 8, 10, 256, 256);
 	}
 
 	@Override
-	protected void renderTooltip(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+	protected void extractTooltip(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY) {
 		if (menu.getCarried().isEmpty()) {
 			if (GuiUtil.isInRect(leftPos + 36, topPos + 48, 5, 36, mouseX, mouseY)) {
 				drawFuelTooltip(guiGraphics, mouseX, mouseY);
@@ -91,10 +95,10 @@ public class BioLabScreen extends AbstractContainerScreen<BioLabMenu> implements
 			}
 		}
 
-		super.renderTooltip(guiGraphics, mouseX, mouseY);
+		super.extractTooltip(guiGraphics, mouseX, mouseY);
 	}
 
-	private void drawFuelTooltip(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+	private void drawFuelTooltip(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY) {
 		int maxFuel = menu.getMaxFuelAmount();
 		int fuelAmount = menu.getFuelAmount();
 		int totalFuelCost = menu.getFuelCost();

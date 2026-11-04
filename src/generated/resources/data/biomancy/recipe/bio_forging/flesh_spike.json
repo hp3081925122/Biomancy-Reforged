@@ -3,14 +3,14 @@
   "bio_forge_tab": "biomancy:tools",
   "ingredients": [
     {
-      "item": "biomancy:mob_fang"
+      "ingredient": "biomancy:mob_fang"
     },
     {
       "count": 2,
-      "item": "biomancy:tough_fibers"
+      "ingredient": "biomancy:tough_fibers"
     },
     {
-      "item": "biomancy:flesh_bits"
+      "ingredient": "biomancy:flesh_bits"
     }
   ],
   "nutrientsCost": 1,

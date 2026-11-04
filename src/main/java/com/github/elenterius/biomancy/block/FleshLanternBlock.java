@@ -1,5 +1,7 @@
 package com.github.elenterius.biomancy.block;
 
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.ScheduledTickAccess;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -83,16 +85,16 @@ public class FleshLanternBlock extends Block implements SimpleWaterloggedBlock {
 	}
 
 	@Override
-	public BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor level, BlockPos currentPos, BlockPos neighborPos) {
+	public BlockState updateShape(BlockState state, LevelReader level, ScheduledTickAccess ticks, BlockPos currentPos, Direction direction, BlockPos neighborPos, BlockState neighborState, RandomSource random) {
 		if (isWaterlogged(state)) {
-			level.scheduleTick(currentPos, Fluids.WATER, Fluids.WATER.getTickDelay(level));
+			ticks.scheduleTick(currentPos, Fluids.WATER, Fluids.WATER.getTickDelay(level));
 		}
 
 		if (getConnectedDirection(state).getOpposite() == direction && !state.canSurvive(level, currentPos)) {
 			return Blocks.AIR.defaultBlockState();
 		}
 
-		return super.updateShape(state, direction, neighborState, level, currentPos, neighborPos);
+		return super.updateShape(state, level, ticks, currentPos, direction, neighborPos, neighborState, random);
 	}
 
 	@Override

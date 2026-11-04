@@ -13,11 +13,10 @@ public record TooltipContents(TooltipComponent component) implements ComponentCo
 			Encoder.<TooltipContents>error("TooltipContents is a client-side placeholder and can't be serialized").fieldOf("tooltip"),
 			Decoder.<TooltipContents>error("TooltipContents is a client-side placeholder and can't be deserialized").fieldOf("tooltip")
 	);
-	public static final ComponentContents.Type<TooltipContents> TYPE = new ComponentContents.Type<>(CODEC, "biomancy_tooltip");
 
 	@Override
-	public Type<?> type() {
-		return TYPE;
+	public MapCodec<TooltipContents> codec() {
+		return CODEC;
 	}
 
 	@Override

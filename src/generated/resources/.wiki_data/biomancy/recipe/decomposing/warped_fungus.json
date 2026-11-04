@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "minecraft:warped_fungus"
+      "ingredient": "minecraft:warped_fungus"
     }
   },
   "output": {

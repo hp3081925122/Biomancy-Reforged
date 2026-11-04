@@ -1,5 +1,7 @@
 package com.github.elenterius.biomancy.item.weapon;
 
+import com.github.elenterius.biomancy.init.ModItemAbilities;
+import net.minecraft.world.item.ItemInstance;
 import com.github.elenterius.biomancy.BiomancyMod;
 import net.minecraft.core.BlockPos;
 import net.minecraft.tags.BlockTags;
@@ -8,15 +10,19 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.EquipmentSlotGroup;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Tier;
-import net.minecraft.world.item.TieredItem;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ToolMaterial;
+import net.minecraft.world.item.component.Weapon;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.server.level.ServerLevel;
+import com.github.elenterius.biomancy.init.ModTiers;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
@@ -28,14 +34,14 @@ import net.neoforged.neoforge.common.util.Lazy;
 
 import java.util.List;
 
-public class ClawsItem extends TieredItem {
+public class ClawsItem extends Item {
 
-	protected static final ResourceLocation BASE_ATTACK_RANGE_ID = BiomancyMod.rl("base_attack_range");
+	protected static final Identifier BASE_ATTACK_RANGE_ID = BiomancyMod.rl("base_attack_range");
 	protected final Lazy<ItemAttributeModifiers> defaultAttributeModifiers;
 
-	public ClawsItem(Tier tier, float baseAttackDamage, float attackSpeedModifier, float attackRangeModifier, Properties properties) {
-		super(tier, properties);
-		float attackDamageModifier = baseAttackDamage + tier.getAttackDamageBonus();
+	public ClawsItem(ToolMaterial material, float baseAttackDamage, float attackSpeedModifier, float attackRangeModifier, Properties properties) {
+		super(ModTiers.applyCommonProperties(material, properties).component(DataComponents.WEAPON, new Weapon(1)));
+		float attackDamageModifier = baseAttackDamage + material.attackDamageBonus();
 		defaultAttributeModifiers = Lazy.of(() -> createDefaultAttributeModifiers(attackDamageModifier, attackSpeedModifier, attackRangeModifier).build());
 	}
 
@@ -47,29 +53,23 @@ public class ClawsItem extends TieredItem {
 	}
 
 	@Override
-	public ItemAttributeModifiers getDefaultAttributeModifiers() {
+	public ItemAttributeModifiers getDefaultAttributeModifiers(ItemStack stack) {
 		return defaultAttributeModifiers.get();
 	}
 
 	@Override
-	public boolean canPerformAction(ItemStack stack, ItemAbility itemAbility) {
-		return ItemAbilities.DEFAULT_SWORD_ACTIONS.contains(itemAbility);
+	public boolean canPerformAction(ItemInstance stack, ItemAbility itemAbility) {
+		return ModItemAbilities.DEFAULT_SWORD_ACTIONS.contains(itemAbility);
 	}
 
 	@Override
-	public boolean canAttackBlock(BlockState state, Level level, BlockPos pos, Player player) {
-		return !player.isCreative();
+	public boolean canDestroyBlock(ItemStack stack, BlockState state, Level level, BlockPos pos, LivingEntity user) {
+		return !(user instanceof Player player && player.isCreative());
 	}
 
 	@Override
 	public float getDestroySpeed(ItemStack stack, BlockState state) {
 		return getDestroySpeed(state);
-	}
-
-	@Override
-	public boolean hurtEnemy(ItemStack stack, LivingEntity target, LivingEntity attacker) {
-		stack.hurtAndBreak(1, attacker, EquipmentSlot.MAINHAND);
-		return true;
 	}
 
 	@Override
@@ -105,14 +105,15 @@ public class ClawsItem extends TieredItem {
 
 			if (shearingTarget.isShearable(player, stack, targetEntity.level(), pos)) {
 				List<ItemStack> drops = shearingTarget.onSheared(player, stack, targetEntity.level(), pos);
+				if (!(targetEntity.level() instanceof ServerLevel serverLevel)) return true;
 				RandomSource rand = player.getRandom();
 				drops.forEach(lootStack -> {
-					ItemEntity itemEntity = targetEntity.spawnAtLocation(lootStack, 1f);
+					ItemEntity itemEntity = targetEntity.spawnAtLocation(serverLevel, lootStack, 1f);
 					if (itemEntity != null) {
 						itemEntity.setDeltaMovement(itemEntity.getDeltaMovement().add((rand.nextFloat() - rand.nextFloat()) * 0.1f, rand.nextFloat() * 0.05f, (rand.nextFloat() - rand.nextFloat()) * 0.1f));
 					}
 				});
-				stack.hurtAndBreak(1, targetEntity, LivingEntity.getSlotForHand(usedHand));
+				stack.hurtAndBreak(1, targetEntity, usedHand);
 			}
 			return true;
 		}

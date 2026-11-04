@@ -2,7 +2,6 @@ package com.github.elenterius.biomancy.serum;
 
 import net.minecraft.core.Holder;
 import com.github.elenterius.biomancy.init.tags.ModMobEffectTags;
-import com.github.elenterius.biomancy.integration.ModsCompatHandler;
 import com.github.elenterius.biomancy.mixin.accessor.ZombieVillagerMixinAccessor;
 import com.github.elenterius.biomancy.util.MobUtil;
 import net.minecraft.nbt.CompoundTag;
@@ -13,8 +12,8 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.monster.WitherSkeleton;
-import net.minecraft.world.entity.monster.ZombieVillager;
+import net.minecraft.world.entity.monster.skeleton.WitherSkeleton;
+import net.minecraft.world.entity.monster.zombie.ZombieVillager;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.event.EventHooks;
 import org.jspecify.annotations.Nullable;
@@ -31,7 +30,6 @@ public class CleansingSerum extends BasicSerum {
 	public void affectEntity(ServerLevel level, CompoundTag tag, @Nullable LivingEntity source, LivingEntity target) {
 		clearPotionEffects(target);
 		clearAbsorption(target);
-		resetPehkuiSize(target);
 
 		if (target instanceof ZombieVillager) {
 			if (EventHooks.canLivingConvert(target, EntityType.VILLAGER, timer -> {})) {
@@ -51,15 +49,10 @@ public class CleansingSerum extends BasicSerum {
 		}
 	}
 
-	private void resetPehkuiSize(LivingEntity target) {
-		ModsCompatHandler.getPehkuiHelper().resetSize(target);
-	}
-
 	@Override
 	public void affectPlayerSelf(ServerLevel level, CompoundTag tag, ServerPlayer targetSelf) {
 		clearPotionEffects(targetSelf);
 		clearAbsorption(targetSelf);
-		resetPehkuiSize(targetSelf);
 
 		targetSelf.causeFoodExhaustion(40);
 	}

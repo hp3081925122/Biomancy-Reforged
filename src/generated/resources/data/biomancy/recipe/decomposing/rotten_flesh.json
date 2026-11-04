@@ -1,7 +1,7 @@
 {
   "type": "biomancy:decomposing",
   "ingredient": {
-    "item": "minecraft:rotten_flesh"
+    "ingredient": "minecraft:rotten_flesh"
   },
   "nutrientsCost": 1,
   "processingTime": 64,

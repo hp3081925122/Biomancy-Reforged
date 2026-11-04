@@ -2,9 +2,7 @@
   "type": "minecraft:crafting_shaped",
   "category": "building",
   "key": {
-    "#": {
-      "item": "biomancy:porous_primal_flesh"
-    }
+    "#": "biomancy:porous_primal_flesh"
   },
   "pattern": [
     "#  ",

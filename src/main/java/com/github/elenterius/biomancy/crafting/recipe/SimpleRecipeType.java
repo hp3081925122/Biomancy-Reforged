@@ -1,6 +1,8 @@
 package com.github.elenterius.biomancy.crafting.recipe;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.Recipe;
@@ -10,7 +12,7 @@ import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 import org.jspecify.annotations.Nullable;
 
-import java.util.List;
+import java.util.Collection;
 import java.util.Optional;
 
 public abstract class SimpleRecipeType<T extends Recipe<RecipeInput>> implements RecipeType<T> {
@@ -36,16 +38,16 @@ public abstract class SimpleRecipeType<T extends Recipe<RecipeInput>> implements
 			super(identifier);
 		}
 
-		private List<RecipeHolder<R>> getAllRecipes(Level level) {
-			return level.getRecipeManager().getAllRecipesFor(this);
+		public Collection<RecipeHolder<R>> getAllRecipes(Level level) {
+			return RecipeMaps.get(level).byType(this);
 		}
 
-		public Optional<RecipeHolder<R>> getRecipeById(Level level, ResourceLocation id) {
-			return level.getRecipeManager().byKey(id).flatMap(this::castRecipe);
+		public Optional<RecipeHolder<R>> getRecipeById(Level level, Identifier id) {
+			return Optional.ofNullable(RecipeMaps.get(level).byKey(ResourceKey.create(Registries.RECIPE, id))).flatMap(this::castRecipe);
 		}
 
 		public Optional<RecipeHolder<R>> getFirstRecipeFor(Level level, RecipeInput input) {
-			return level.getRecipeManager().getRecipeFor(this, input, level);
+			return RecipeMaps.get(level).getRecipesFor(this, input, level).findFirst();
 		}
 
 		public Optional<RecipeHolder<R>> getBestRecipeFor(Level level, RecipeInput input) {
@@ -72,7 +74,7 @@ public abstract class SimpleRecipeType<T extends Recipe<RecipeInput>> implements
 		}
 
 		private boolean matches(R recipe, ItemStack stack) {
-			for (Ingredient ingredient : recipe.getIngredients()) {
+			for (Ingredient ingredient : RecipeWithMatchPriority.getIngredientsOf(recipe)) {
 				if (ingredient.test(stack)) return true;
 			}
 			return false;
@@ -88,7 +90,7 @@ public abstract class SimpleRecipeType<T extends Recipe<RecipeInput>> implements
 			return getBestRecipeForIngredient(level, stack, null);
 		}
 
-		public Optional<RecipeHolder<R>> getFirstRecipeForIngredient(Level level, ItemStack stack, @Nullable ResourceLocation lastRecipeId) {
+		public Optional<RecipeHolder<R>> getFirstRecipeForIngredient(Level level, ItemStack stack, @Nullable Identifier lastRecipeId) {
 			if (lastRecipeId != null) {
 				Optional<RecipeHolder<R>> last = getRecipeById(level, lastRecipeId).filter(holder -> matches(holder.value(), stack));
 				if (last.isPresent()) return last;
@@ -97,7 +99,7 @@ public abstract class SimpleRecipeType<T extends Recipe<RecipeInput>> implements
 			return getFirstRecipeForIngredient(level, stack);
 		}
 
-		public Optional<RecipeHolder<R>> getBestRecipeForIngredient(Level level, ItemStack stack, @Nullable ResourceLocation lastRecipeId) {
+		public Optional<RecipeHolder<R>> getBestRecipeForIngredient(Level level, ItemStack stack, @Nullable Identifier lastRecipeId) {
 			if (lastRecipeId != null) {
 				Optional<RecipeHolder<R>> last = getRecipeById(level, lastRecipeId).filter(holder -> matches(holder.value(), stack));
 				if (last.isPresent()) return last;

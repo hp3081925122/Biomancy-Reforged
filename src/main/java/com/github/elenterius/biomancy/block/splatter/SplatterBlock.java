@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.block.splatter;
 
+import net.minecraft.world.entity.InsideBlockEffectApplier;
 import com.github.elenterius.biomancy.util.EnhancedIntegerProperty;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
@@ -40,7 +41,7 @@ public abstract class SplatterBlock extends MultifaceBlock {
 	protected final MultifaceSpreader spreader = new MultifaceSpreader(this);
 
 	protected SplatterBlock(Properties properties) {
-		super(properties.randomTicks().noOcclusion().noCollission().instabreak().replaceable().pushReaction(PushReaction.DESTROY));
+		super(properties.randomTicks().noOcclusion().noCollision().instabreak().replaceable().pushReaction(PushReaction.DESTROY));
 		registerDefaultState(defaultBlockState().setValue(AGE.get(), AGE.getMin()));
 	}
 
@@ -85,7 +86,7 @@ public abstract class SplatterBlock extends MultifaceBlock {
 	}
 
 	@Override
-	public void entityInside(BlockState state, Level level, BlockPos pos, Entity entity) {
+	public void entityInside(BlockState state, Level level, BlockPos pos, Entity entity, InsideBlockEffectApplier effectApplier, boolean isPrecise) {
 		if (entity.tickCount % 5 == 0 && isEntityInsideBoundingBox(level, pos, state, entity)) {
 			entityInsideBoundingBox(level, pos, state, entity);
 		}
@@ -104,13 +105,12 @@ public abstract class SplatterBlock extends MultifaceBlock {
 		return !context.getItemInHand().is(asItem()) || super.canBeReplaced(state, context);
 	}
 
-	@Override
 	public MultifaceSpreader getSpreader() {
 		return spreader;
 	}
 
 	@Override
-	public boolean propagatesSkylightDown(BlockState state, BlockGetter level, BlockPos pos) {
+	public boolean propagatesSkylightDown(BlockState state) {
 		return true;
 	}
 

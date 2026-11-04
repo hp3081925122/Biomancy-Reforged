@@ -1,5 +1,7 @@
 package com.github.elenterius.biomancy.block.base;
 
+import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.level.storage.ValueInput;
 import com.github.elenterius.biomancy.init.ModBlockEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -20,7 +22,7 @@ public class BlockEntityDelegator extends SimpleSyncedBlockEntity implements IBl
 	}
 
 	@Override
-	protected void saveForSyncToClient(CompoundTag tag, HolderLookup.Provider registries) {}
+	protected void saveForSyncToClient(ValueOutput output) {}
 
 	@Override
 	public BlockPos getDelegatePos() {
@@ -57,20 +59,20 @@ public class BlockEntityDelegator extends SimpleSyncedBlockEntity implements IBl
 	}
 
 	@Override
-	protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-		super.loadAdditional(tag, registries);
+	protected void loadAdditional(ValueInput input) {
+		super.loadAdditional(input);
 		isValid = false;
-		if (tag.contains("DelegatePos")) {
-			delegatePos = BlockPos.of(tag.getLong("DelegatePos"));
+		input.getLong("DelegatePos").ifPresent(pos -> {
+			delegatePos = BlockPos.of(pos);
 			isValid = true;
-		}
+		});
 	}
 
 	@Override
-	protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-		super.saveAdditional(tag, registries);
+	protected void saveAdditional(ValueOutput output) {
+		super.saveAdditional(output);
 		if (isValid) {
-			tag.putLong("DelegatePos", delegatePos.asLong());
+			output.putLong("DelegatePos", delegatePos.asLong());
 		}
 	}
 

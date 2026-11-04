@@ -1,29 +1,13 @@
 package com.github.elenterius.biomancy.client.render.entity.projectile.acidblob;
 
+import com.github.elenterius.biomancy.client.render.entity.projectile.TranslucentGeoProjectileRenderer;
 import com.github.elenterius.biomancy.entity.projectile.AcidBlobProjectile;
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.math.Axis;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
-import net.minecraft.util.Mth;
-import software.bernie.geckolib.cache.object.BakedGeoModel;
-import software.bernie.geckolib.renderer.GeoEntityRenderer;
 
-public class AcidBlobProjectileRenderer extends GeoEntityRenderer<AcidBlobProjectile> {
+public class AcidBlobProjectileRenderer extends TranslucentGeoProjectileRenderer<AcidBlobProjectile> {
 
-	public AcidBlobProjectileRenderer(EntityRendererProvider.Context renderManager) {
-		super(renderManager, new AcidBlobModel());
-	}
-
-	@Override
-	public void actuallyRender(PoseStack poseStack, AcidBlobProjectile animatable, BakedGeoModel model, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, int colour) {
-
-		poseStack.mulPose(Axis.YP.rotationDegrees(Mth.lerp(partialTick, animatable.yRotO, animatable.getYRot())));
-		poseStack.mulPose(Axis.XP.rotationDegrees(-Mth.lerp(partialTick, animatable.xRotO, animatable.getXRot())));
-
-		super.actuallyRender(poseStack, animatable, model, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, colour);
+	public AcidBlobProjectileRenderer(EntityRendererProvider.Context context) {
+		super(context, new AcidBlobModel());
 	}
 
 }

@@ -1,5 +1,13 @@
 package com.github.elenterius.biomancy.datagen.recipes;
 
+import net.minecraft.world.item.crafting.StonecutterRecipe;
+import net.minecraft.world.item.crafting.SmithingTransformRecipe;
+import net.minecraft.world.item.crafting.ShapelessRecipe;
+import net.minecraft.world.item.crafting.ShapedRecipe;
+import net.minecraft.world.item.crafting.SmokingRecipe;
+import net.minecraft.world.item.crafting.CampfireCookingRecipe;
+import net.minecraft.world.item.crafting.BlastingRecipe;
+import net.minecraft.world.item.crafting.SmeltingRecipe;
 import com.github.elenterius.biomancy.datagen.recipes.builder.FinishedRecipe;
 import com.github.elenterius.biomancy.datagen.recipes.builder.WikiRecipe;
 import com.google.common.collect.Sets;
@@ -11,7 +19,7 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.data.CachedOutput;
 import net.minecraft.data.DataProvider;
 import net.minecraft.data.PackOutput;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 
@@ -24,9 +32,9 @@ import java.util.concurrent.CompletableFuture;
 public class WikiRecipesProvider implements DataProvider {
 
 	public static Set<RecipeSerializer<? extends Recipe<?>>> SUPPORTED_VANILLA_RECIPES = Set.of(
-			RecipeSerializer.SMELTING_RECIPE, RecipeSerializer.BLASTING_RECIPE, RecipeSerializer.CAMPFIRE_COOKING_RECIPE,
-			RecipeSerializer.SMOKING_RECIPE, RecipeSerializer.SHAPED_RECIPE, RecipeSerializer.SHAPELESS_RECIPE,
-			RecipeSerializer.SMITHING_TRANSFORM, RecipeSerializer.STONECUTTER
+			SmeltingRecipe.SERIALIZER, BlastingRecipe.SERIALIZER, CampfireCookingRecipe.SERIALIZER,
+			SmokingRecipe.SERIALIZER, ShapedRecipe.SERIALIZER, ShapelessRecipe.SERIALIZER,
+			SmithingTransformRecipe.SERIALIZER, StonecutterRecipe.SERIALIZER
 	);
 
 	private final ModRecipeProvider recipeProvider;
@@ -39,7 +47,7 @@ public class WikiRecipesProvider implements DataProvider {
 		basePath = output.getOutputFolder().resolve(".wiki_data");
 	}
 
-	public Path resolveJsonPath(ResourceLocation location) {
+	public Path resolveJsonPath(Identifier location) {
 		return basePath.resolve(location.getNamespace()).resolve("recipe").resolve(location.getPath() + ".json");
 	}
 
@@ -47,7 +55,7 @@ public class WikiRecipesProvider implements DataProvider {
 	public CompletableFuture<?> run(CachedOutput output) {
 		return registries.thenCompose(lookup -> {
 			DynamicOps<JsonElement> ops = lookup.createSerializationContext(JsonOps.INSTANCE);
-			Set<ResourceLocation> set = Sets.newHashSet();
+			Set<Identifier> set = Sets.newHashSet();
 			List<CompletableFuture<?>> list = new ArrayList<>();
 
 			recipeProvider.buildRecipes(finishedRecipe -> {
@@ -74,7 +82,7 @@ public class WikiRecipesProvider implements DataProvider {
 
 		if (SUPPORTED_VANILLA_RECIPES.contains(type)) {
 
-			if (type != RecipeSerializer.STONECUTTER && type != RecipeSerializer.BLASTING_RECIPE) {
+			if (type != StonecutterRecipe.SERIALIZER && type != BlastingRecipe.SERIALIZER) {
 				if (json.has("ingredient")) {
 					WikiRecipe.transform(json.get("ingredient"));
 				}

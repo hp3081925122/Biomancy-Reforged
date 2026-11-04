@@ -1,5 +1,10 @@
 package com.github.elenterius.biomancy.block.cradle;
 
+import com.github.elenterius.biomancy.util.MobUtil;
+import net.minecraft.world.entity.EntitySpawnReason;
+import com.github.elenterius.biomancy.util.GeoAnimUtil;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.core.HolderLookup;
 import com.github.elenterius.biomancy.BiomancyConfig;
 import com.github.elenterius.biomancy.api.tribute.SacrificeHandler;
@@ -39,17 +44,18 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.transfer.ResourceHandler;
+import net.neoforged.neoforge.transfer.fluid.FluidResource;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import org.jspecify.annotations.Nullable;
-import software.bernie.geckolib.animatable.GeoBlockEntity;
-import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.animation.AnimatableManager;
-import software.bernie.geckolib.animation.AnimationController;
-import software.bernie.geckolib.animation.AnimationState;
-import software.bernie.geckolib.animation.RawAnimation;
-import software.bernie.geckolib.animation.PlayState;
-import software.bernie.geckolib.util.GeckoLibUtil;
+import com.geckolib.animatable.GeoBlockEntity;
+import com.geckolib.animatable.instance.AnimatableInstanceCache;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.animation.AnimationController;
+import com.geckolib.animation.state.AnimationTest;
+import com.geckolib.animation.RawAnimation;
+import com.geckolib.animation.object.PlayState;
+import com.geckolib.util.GeckoLibUtil;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -99,7 +105,7 @@ public class PrimordialCradleBlockEntity extends SimpleSyncedBlockEntity impleme
 				if (procGenValues != null) {
 					return MoundGenerator.constructShape(worldPosition, procGenValues);
 				}
-				return MoundGenerator.constructShape(level, worldPosition, level.random.nextLong());
+				return MoundGenerator.constructShape(level, worldPosition, level.getRandom().nextLong());
 			});
 
 			if (shape instanceof MoundShape moundShape) {
@@ -128,36 +134,36 @@ public class PrimordialCradleBlockEntity extends SimpleSyncedBlockEntity impleme
 
 		if (tribute.successModifier() < 0) {
 			int n = tribute.successModifier() < -99 ? 2 : 0;
-			int particleCount = level.random.nextInt(1 + n, 3 + n);
+			int particleCount = level.getRandom().nextInt(1 + n, 3 + n);
 			sendParticlesToClient(level, pos, ParticleTypes.ANGRY_VILLAGER, particleCount);
 		}
 		else if (tribute.successModifier() > 0) {
 			int n = Mth.clamp(Math.round(tribute.lifeEnergy() / 100f) * 8, 1, 8);
-			int particleCount = level.random.nextInt(n, n + 2);
+			int particleCount = level.getRandom().nextInt(n, n + 2);
 			sendParticlesToClient(level, pos, ModParticleTypes.LIGHT_GREEN_GLOW.get(), particleCount);
 		}
 
 		if (tribute.lifeEnergy() > 0) {
 			int n = Mth.clamp(Math.round(tribute.lifeEnergy() / 100f) * 8, 1, 8);
-			int particleCount = level.random.nextInt(n, n + 2);
+			int particleCount = level.getRandom().nextInt(n, n + 2);
 			sendParticlesToClient(level, pos, ModParticleTypes.PINK_GLOW.get(), particleCount);
 		}
 
 		if (tribute.anomalyModifier() > 0) {
 			int n = Mth.clamp(Math.round(tribute.anomalyModifier() / 100f) * 5, 1, 5);
-			int particleCount = level.random.nextInt(n, n + 4);
+			int particleCount = level.getRandom().nextInt(n, n + 4);
 			sendParticlesToClient(level, pos, ModParticleTypes.BIOHAZARD.get(), particleCount);
 		}
 
 		if (tribute.hostileModifier() > 0) {
 			int n = Mth.clamp(Math.round(tribute.hostileModifier() / 100f) * 5, 1, 5);
-			int particleCount = level.random.nextInt(n, n + 4);
+			int particleCount = level.getRandom().nextInt(n, n + 4);
 			sendParticlesToClient(level, pos, ModParticleTypes.HOSTILE.get(), particleCount);
 		}
 
 		if (tribute.diseaseModifier() > 0) {
 			int n = Mth.clamp(Math.round(tribute.diseaseModifier() / 100f) * 8, 1, 8);
-			int particleCount = level.random.nextInt(n, n + 4);
+			int particleCount = level.getRandom().nextInt(n, n + 4);
 			sendParticlesToClient(level, pos, ParticleTypes.MYCELIUM, particleCount);
 		}
 	}
@@ -206,7 +212,7 @@ public class PrimordialCradleBlockEntity extends SimpleSyncedBlockEntity impleme
 
 	protected void markChunkAsUnsaved() {
 		if (level != null && level.hasChunkAt(worldPosition)) {
-			level.getChunkAt(worldPosition).setUnsaved(true);
+			level.getChunkAt(worldPosition).markUnsaved();
 		}
 	}
 
@@ -224,7 +230,7 @@ public class PrimordialCradleBlockEntity extends SimpleSyncedBlockEntity impleme
 			);
 
 			for (Player player : nearbyPlayers) {
-				for (ItemStack armor : player.getArmorSlots()) {
+				for (ItemStack armor : MobUtil.getArmorSlots(player)) {
 					if (armor.getItem() instanceof AcolyteArmorItem) {
 						sacrificeHandler.addSuccess(1);
 						sacrificeHandler.addHostile(-5);
@@ -246,8 +252,8 @@ public class PrimordialCradleBlockEntity extends SimpleSyncedBlockEntity impleme
 		float successChance = sacrificeHandler.getSuccessChance();
 		float energyMultiplier = sacrificeHandler.getLifeEnergyPct();
 
-		if (canSpawnMob && level.random.nextFloat() < successChance) {
-			if (level.random.nextFloat() < sacrificeHandler.getAnomalyChance()) {
+		if (canSpawnMob && level.getRandom().nextFloat() < successChance) {
+			if (level.getRandom().nextFloat() < sacrificeHandler.getAnomalyChance()) {
 				spawnPrimordialFleshBlob(level, pos, sacrificeHandler, nearbyPlayers);
 				addPrimalEnergy(Math.round(4096 * energyMultiplier));
 			}
@@ -292,7 +298,7 @@ public class PrimordialCradleBlockEntity extends SimpleSyncedBlockEntity impleme
 			PrimordialEcosystem.spreadMalignantVeinsFromSource(level, pos, PrimordialEcosystem.MAX_CHARGE_SUPPLIER);
 
 			addPrimalEnergy(Math.round(3072 * energyMultiplier));
-			SoundUtil.Server.playBlockSound(level, pos, ModSoundEvents.FLESH_BLOCK_STEP.get(), 1f, 0.15f + level.random.nextFloat() * 0.5f);
+			SoundUtil.Server.playBlockSound(level, pos, ModSoundEvents.FLESH_BLOCK_STEP.get(), 1f, 0.15f + level.getRandom().nextFloat() * 0.5f);
 		}
 
 		resetState();
@@ -346,14 +352,14 @@ public class PrimordialCradleBlockEntity extends SimpleSyncedBlockEntity impleme
 	}
 
 	public void spawnPrimordialFleshBlob(ServerLevel level, BlockPos pos, SacrificeHandler sacrificeHandler, List<ServerPlayer> nearbyPlayers) {
-		EntityType<? extends FleshBlob> entityType = level.random.nextFloat() < sacrificeHandler.getHostileChance() ? ModEntityTypes.PRIMORDIAL_HUNGRY_FLESH_BLOB.get() : ModEntityTypes.PRIMORDIAL_FLESH_BLOB.get();
+		EntityType<? extends FleshBlob> entityType = level.getRandom().nextFloat() < sacrificeHandler.getHostileChance() ? ModEntityTypes.PRIMORDIAL_HUNGRY_FLESH_BLOB.get() : ModEntityTypes.PRIMORDIAL_FLESH_BLOB.get();
 		spawnPrimordialFleshBlob(level, pos, entityType, nearbyPlayers);
 	}
 
 	public void spawnPrimordialFleshBlob(ServerLevel level, BlockPos pos, EntityType<? extends FleshBlob> fleshBlobType, List<ServerPlayer> nearbyPlayers) {
-		FleshBlob fleshBlob = fleshBlobType.create(level);
+		FleshBlob fleshBlob = fleshBlobType.create(level, EntitySpawnReason.MOB_SUMMONED);
 		if (fleshBlob != null) {
-			fleshBlob.restrictTo(pos, 32);
+			fleshBlob.setHomeTo(pos, 32);
 			fleshBlob.setPersistenceRequired();
 			spawnMob(level, pos, fleshBlob, nearbyPlayers);
 		}
@@ -364,15 +370,15 @@ public class PrimordialCradleBlockEntity extends SimpleSyncedBlockEntity impleme
 	}
 
 	public void spawnFleshBlob(ServerLevel level, BlockPos pos, SacrificeHandler sacrificeHandler, List<ServerPlayer> nearbyPlayers) {
-		EntityType<? extends FleshBlob> entityType = level.random.nextFloat() < sacrificeHandler.getHostileChance() ? ModEntityTypes.HUNGRY_FLESH_BLOB.get() : ModEntityTypes.FLESH_BLOB.get();
+		EntityType<? extends FleshBlob> entityType = level.getRandom().nextFloat() < sacrificeHandler.getHostileChance() ? ModEntityTypes.HUNGRY_FLESH_BLOB.get() : ModEntityTypes.FLESH_BLOB.get();
 		spawnFleshBlob(level, pos, sacrificeHandler, entityType, nearbyPlayers);
 	}
 
 	public void spawnFleshBlob(ServerLevel level, BlockPos pos, SacrificeHandler sacrificeHandler, EntityType<? extends FleshBlob> fleshBlobType, List<ServerPlayer> nearbyPlayers) {
-		FleshBlob fleshBlob = fleshBlobType.create(level);
+		FleshBlob fleshBlob = fleshBlobType.create(level, EntitySpawnReason.MOB_SUMMONED);
 		if (fleshBlob != null) {
 			fleshBlob.setTumors(sacrificeHandler.getTumorFactor());
-			fleshBlob.restrictTo(pos, 24);
+			fleshBlob.setHomeTo(pos, 24);
 			fleshBlob.setPersistenceRequired();
 			spawnMob(level, pos, fleshBlob, nearbyPlayers);
 		}
@@ -382,10 +388,10 @@ public class PrimordialCradleBlockEntity extends SimpleSyncedBlockEntity impleme
 		mobToSpawn = PrimordialCradleEvents.triggerOnSpawnMob(level, this, mobToSpawn, nearbyPlayers);
 
 		float yaw = PrimordialCradleBlock.getYRotation(getBlockState());
-		mobToSpawn.moveTo(pos.getX() + 0.5f, pos.getY() + 4f / 16f, pos.getZ() + 0.5f, yaw, 0);
+		mobToSpawn.snapTo(pos.getX() + 0.5f, pos.getY() + 4f / 16f, pos.getZ() + 0.5f, yaw, 0);
 		mobToSpawn.yHeadRot = mobToSpawn.getYRot();
 		mobToSpawn.yBodyRot = mobToSpawn.getYRot();
-		mobToSpawn.push(level.random.nextGaussian() * 0.02d, 0.5d, level.random.nextGaussian() * 0.02d);
+		mobToSpawn.push(level.getRandom().nextGaussian() * 0.02d, 0.5d, level.getRandom().nextGaussian() * 0.02d);
 		level.addFreshEntity(mobToSpawn);
 
 		DeferredHolder<SoundEvent, SoundEvent> soundEvent = mobToSpawn instanceof PrimordialFleshkin ? ModSoundEvents.CRADLE_SPAWN_PRIMORDIAL_MOB : ModSoundEvents.CRADLE_SPAWN_MOB;
@@ -417,45 +423,41 @@ public class PrimordialCradleBlockEntity extends SimpleSyncedBlockEntity impleme
 	}
 
 	@Override
-	protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-		super.saveAdditional(tag, registries);
-		tag.put(SACRIFICE_KEY, sacrificeHandler.serializeNBT(registries));
-		tag.putInt(PRIMAL_ENERGY_KEY, primalEnergy);
+	protected void saveAdditional(ValueOutput output) {
+		super.saveAdditional(output);
+		sacrificeHandler.serialize(output.child(SACRIFICE_KEY));
+		output.putInt(PRIMAL_ENERGY_KEY, primalEnergy);
 
 		if (procGenValues != null) {
 			CompoundTag tagProcGen = new CompoundTag();
 			procGenValues.writeTo(tagProcGen);
-			tag.put(PROC_GEN_VALUES_KEY, tagProcGen);
+			output.store(PROC_GEN_VALUES_KEY, CompoundTag.CODEC, tagProcGen);
 		}
 	}
 
 	@Override
-	protected void saveForSyncToClient(CompoundTag tag, HolderLookup.Provider registries) {
-		tag.put(SACRIFICE_KEY, sacrificeHandler.serializeNBT(registries));
+	protected void saveForSyncToClient(ValueOutput output) {
+		sacrificeHandler.serialize(output.child(SACRIFICE_KEY));
 	}
 
 	@Override
-	protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-		super.loadAdditional(tag, registries);
-		if (tag.contains(SACRIFICE_KEY)) {
-			sacrificeHandler.deserializeNBT(registries, tag.getCompound(SACRIFICE_KEY));
-		}
+	protected void loadAdditional(ValueInput input) {
+		super.loadAdditional(input);
+		input.child(SACRIFICE_KEY).ifPresent(sacrificeHandler::deserialize);
 
-		primalEnergy = tag.getInt(PRIMAL_ENERGY_KEY);
+		primalEnergy = input.getIntOr(PRIMAL_ENERGY_KEY, 0);
 
-		if (tag.contains(PROC_GEN_VALUES_KEY)) {
-			procGenValues = MoundShape.ProcGenValues.readFrom(tag.getCompound(PROC_GEN_VALUES_KEY));
-		}
+		input.read(PROC_GEN_VALUES_KEY, CompoundTag.CODEC).ifPresent(tag -> procGenValues = MoundShape.ProcGenValues.readFrom(tag));
 	}
 
 	protected void broadcastAnimation(TriggerableAnimation animation) {
 		triggerAnim(animation.controller(), animation.name());
 	}
 
-	protected <T extends PrimordialCradleBlockEntity> PlayState handleAnimationState(AnimationState<T> state) {
+	protected <T extends PrimordialCradleBlockEntity> PlayState handleAnimationState(AnimationTest<T> state) {
 
-		if (state.getController().getAnimationState() == AnimationController.State.STOPPED) {
-			state.getController().setAnimation(Animations.IDLE.rawAnimation());
+		if (GeoAnimUtil.isStopped(state.controller())) {
+			state.controller().setAnimation(Animations.IDLE.rawAnimation());
 		}
 
 		return PlayState.CONTINUE;
@@ -463,7 +465,7 @@ public class PrimordialCradleBlockEntity extends SimpleSyncedBlockEntity impleme
 
 	@Override
 	public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-		AnimationController<PrimordialCradleBlockEntity> controller = new AnimationController<>(this, Animations.MAIN_CONTROLLER, 0, this::handleAnimationState);
+		AnimationController<PrimordialCradleBlockEntity> controller = new AnimationController<>(Animations.MAIN_CONTROLLER, 0, this::handleAnimationState);
 		Animations.registerTriggerableAnimations(controller);
 		controllers.add(controller);
 	}
@@ -497,7 +499,7 @@ public class PrimordialCradleBlockEntity extends SimpleSyncedBlockEntity impleme
 		}
 	}
 
-	public @Nullable IFluidHandler getFluidHandler(@Nullable Direction side) {
+	public @Nullable ResourceHandler<FluidResource> getFluidHandler(@Nullable Direction side) {
 		if (isRemoved()) return null;
 		return sacrificeHandler.getFluidConsumer();
 	}

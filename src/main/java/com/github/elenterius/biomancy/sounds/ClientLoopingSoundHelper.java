@@ -32,7 +32,7 @@ final class ClientLoopingSoundHelper implements LoopingSoundHelper {
 			soundInstance = SoundUtil.Client.createLoopingSoundInstance(soundEvent, volume, blockEntity.getBlockPos());
 			Minecraft.getInstance().getSoundManager().play(soundInstance);
 		}
-		else if (!soundInstance.getLocation().equals(soundEvent.getLocation())) {
+		else if (!soundInstance.getIdentifier().equals(soundEvent.location())) {
 			Minecraft.getInstance().getSoundManager().stop(soundInstance);
 			soundInstance = SoundUtil.Client.createLoopingSoundInstance(soundEvent, volume, blockEntity.getBlockPos());
 			Minecraft.getInstance().getSoundManager().play(soundInstance);

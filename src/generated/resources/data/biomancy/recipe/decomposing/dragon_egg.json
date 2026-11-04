@@ -1,7 +1,7 @@
 {
   "type": "biomancy:decomposing",
   "ingredient": {
-    "item": "minecraft:dragon_egg"
+    "ingredient": "minecraft:dragon_egg"
   },
   "nutrientsCost": 10,
   "processingTime": 7160,

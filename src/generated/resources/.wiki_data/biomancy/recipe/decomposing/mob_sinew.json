@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "biomancy:mob_sinew"
+      "ingredient": "biomancy:mob_sinew"
     }
   },
   "output": {

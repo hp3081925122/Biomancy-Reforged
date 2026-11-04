@@ -1,7 +1,7 @@
 {
   "type": "biomancy:decomposing",
   "ingredient": {
-    "item": "minecraft:rabbit_hide"
+    "ingredient": "minecraft:rabbit_hide"
   },
   "nutrientsCost": 1,
   "processingTime": 30,

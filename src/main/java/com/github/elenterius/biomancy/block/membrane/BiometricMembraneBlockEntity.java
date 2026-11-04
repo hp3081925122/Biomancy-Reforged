@@ -1,5 +1,8 @@
 package com.github.elenterius.biomancy.block.membrane;
 
+import net.minecraft.core.UUIDUtil;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.core.HolderLookup;
 import com.github.elenterius.biomancy.block.base.SimpleSyncedBlockEntity;
 import com.github.elenterius.biomancy.init.ModBlockEntities;
@@ -92,17 +95,17 @@ public class BiometricMembraneBlockEntity extends SimpleSyncedBlockEntity implem
 	}
 
 	@Override
-	protected void saveForSyncToClient(CompoundTag compoundTag, HolderLookup.Provider registries) {
-		save(compoundTag);
+	protected void saveForSyncToClient(ValueOutput output) {
+		save(output);
 	}
 
 	@Override
-	protected void saveAdditional(CompoundTag compoundTag, HolderLookup.Provider registries) {
-		super.saveAdditional(compoundTag, registries);
-		save(compoundTag);
+	protected void saveAdditional(ValueOutput output) {
+		super.saveAdditional(output);
+		save(output);
 	}
 
-	protected void save(CompoundTag compoundTag) {
+	protected void save(ValueOutput output) {
 		CompoundTag tag = new CompoundTag();
 
 		if (entityType != null) {
@@ -110,7 +113,7 @@ public class BiometricMembraneBlockEntity extends SimpleSyncedBlockEntity implem
 		}
 
 		if (entityUUID != null) {
-			tag.putUUID(ENTITY_UUID_KEY, entityUUID);
+			tag.store(ENTITY_UUID_KEY, UUIDUtil.CODEC, entityUUID);
 		}
 
 		if (entityColors != DEFAULT_COLORS && !(entityColors[0] == 0xFFFF_FFFF && entityColors[1] == 0xFFFF_FFFF)) {
@@ -119,19 +122,19 @@ public class BiometricMembraneBlockEntity extends SimpleSyncedBlockEntity implem
 
 		if (isInverted) tag.putBoolean(IS_INVERTED_KEY, true);
 
-		compoundTag.put(MEMBRANE_KEY, tag);
+		output.store(MEMBRANE_KEY, CompoundTag.CODEC, tag);
 	}
 
 	@Override
-	protected void loadAdditional(CompoundTag compoundTag, HolderLookup.Provider registries) {
-		super.loadAdditional(compoundTag, registries);
+	protected void loadAdditional(ValueInput input) {
+		super.loadAdditional(input);
 
-		CompoundTag tag = compoundTag.getCompound(MEMBRANE_KEY);
+		CompoundTag tag = input.read(MEMBRANE_KEY, CompoundTag.CODEC).orElseGet(CompoundTag::new);
 
-		entityType = EntityType.byString(tag.getString(ENTITY_TYPE_KEY)).orElse(null);
-		entityUUID = tag.hasUUID(ENTITY_UUID_KEY) ? tag.getUUID(ENTITY_UUID_KEY) : null;
-		entityColors = tag.contains(ENTITY_COLORS_KEY, Tag.TAG_INT_ARRAY) ? tag.getIntArray(ENTITY_COLORS_KEY) : DEFAULT_COLORS;
-		isInverted = tag.getBoolean(IS_INVERTED_KEY);
+		entityType = EntityType.byString(tag.getStringOr(ENTITY_TYPE_KEY, "")).orElse(null);
+		entityUUID = tag.read(ENTITY_UUID_KEY, UUIDUtil.CODEC).isPresent() ? tag.read(ENTITY_UUID_KEY, UUIDUtil.CODEC).orElseThrow() : null;
+		entityColors = tag.getIntArray(ENTITY_COLORS_KEY).isPresent() ? tag.getIntArray(ENTITY_COLORS_KEY).orElseThrow() : DEFAULT_COLORS;
+		isInverted = tag.getBooleanOr(IS_INVERTED_KEY, false);
 	}
 
 	public int[] getColors() {

@@ -1,7 +1,7 @@
 {
   "type": "biomancy:decomposing",
   "ingredient": {
-    "tag": "c:feathers"
+    "ingredient": "#c:feathers"
   },
   "nutrientsCost": 1,
   "processingTime": 70,

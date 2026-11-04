@@ -35,12 +35,12 @@ public class MembranePaneBlock extends PaneBlock implements Membrane {
 	}
 
 	@Override
-	public boolean propagatesSkylightDown(BlockState state, BlockGetter level, BlockPos pos) {
+	public boolean propagatesSkylightDown(BlockState state) {
 		return true;
 	}
 
 	@Override
-	public void fallOn(Level level, BlockState state, BlockPos pos, Entity entity, float fallDistance) {
+	public void fallOn(Level level, BlockState state, BlockPos pos, Entity entity, double fallDistance) {
 		entity.causeFallDamage(fallDistance, 0.2f, level.damageSources().fall());
 	}
 

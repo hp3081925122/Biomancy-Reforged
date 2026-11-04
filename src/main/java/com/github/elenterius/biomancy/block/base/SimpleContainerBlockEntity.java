@@ -1,10 +1,11 @@
 package com.github.elenterius.biomancy.block.base;
 
+import net.minecraft.network.chat.ComponentSerialization;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.level.storage.ValueInput;
 import com.github.elenterius.biomancy.util.PlayerInteractionPredicate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.Nameable;
@@ -54,19 +55,15 @@ public abstract class SimpleContainerBlockEntity extends BlockEntity implements 
 	public abstract Component getDefaultName();
 
 	@Override
-	protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-		super.saveAdditional(tag, registries);
-		if (name != null) {
-			tag.putString("CustomName", Component.Serializer.toJson(name, registries));
-		}
+	protected void saveAdditional(ValueOutput output) {
+		super.saveAdditional(output);
+		output.storeNullable("CustomName", ComponentSerialization.CODEC, name);
 	}
 
 	@Override
-	protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-		super.loadAdditional(tag, registries);
-		if (tag.contains("CustomName", Tag.TAG_STRING)) {
-			name = parseCustomNameSafe(tag.getString("CustomName"), registries);
-		}
+	protected void loadAdditional(ValueInput input) {
+		super.loadAdditional(input);
+		name = parseCustomNameSafe(input, "CustomName");
 	}
 
 	public abstract void dropContainerContents(Level level, BlockPos pos);

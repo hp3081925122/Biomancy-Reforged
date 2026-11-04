@@ -1,5 +1,9 @@
 package com.github.elenterius.biomancy.block.veins;
 
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.ItemStackTemplate;
+import net.minecraft.world.entity.InsideBlockEffectApplier;
+import net.minecraft.world.level.ScheduledTickAccess;
 import com.mojang.serialization.MapCodec;
 import com.github.elenterius.biomancy.block.bloom.BloomBlock;
 import com.github.elenterius.biomancy.block.cradle.PrimalEnergyHandler;
@@ -129,7 +133,7 @@ public class FleshVeinsBlock extends MultifaceBlock implements SimpleWaterlogged
 
 	protected static boolean convertInsideChamber(ServerLevel level, BlockPos pos, int directNeighbors, MoundShape mound, MoundChamber chamber, float nearBoundingCenterPct, Bit32Set facesSet, @Nullable PrimalEnergyHandler energyHandler) {
 		Direction[] axisDirections = Arrays.stream(facesSet.getIndices()).mapToObj(i -> Direction.from3DDataValue(5 - i)).toArray(Direction[]::new);
-		ArrayUtil.shuffle(axisDirections, level.random);
+		ArrayUtil.shuffle(axisDirections, level.getRandom());
 
 		for (Direction axisDirection : axisDirections) {
 			BlockPos closeOffsetPos = pos.relative(axisDirection);
@@ -173,11 +177,11 @@ public class FleshVeinsBlock extends MultifaceBlock implements SimpleWaterlogged
 
 				if (PrimordialEcosystem.isReplaceable(farOffsetState) && farOffsetState.isCollisionShapeFullBlock(level, farOffsetPos)) {
 					BlockState replacementState;
-					if (level.random.nextFloat() < nearBoundingCenterPct) {
-						replacementState = level.random.nextFloat() < 0.75f ? ModBlocks.PRIMAL_FLESH.get().defaultBlockState() : ModBlocks.SMOOTH_PRIMAL_FLESH.get().defaultBlockState();
+					if (level.getRandom().nextFloat() < nearBoundingCenterPct) {
+						replacementState = level.getRandom().nextFloat() < 0.75f ? ModBlocks.PRIMAL_FLESH.get().defaultBlockState() : ModBlocks.SMOOTH_PRIMAL_FLESH.get().defaultBlockState();
 					}
 					else {
-						replacementState = level.random.nextFloat() < 0.75f ? ModBlocks.MALIGNANT_FLESH.get().defaultBlockState() : ModBlocks.POROUS_PRIMAL_FLESH.get().defaultBlockState();
+						replacementState = level.getRandom().nextFloat() < 0.75f ? ModBlocks.MALIGNANT_FLESH.get().defaultBlockState() : ModBlocks.POROUS_PRIMAL_FLESH.get().defaultBlockState();
 					}
 					return level.setBlock(farOffsetPos, replacementState, Block.UPDATE_CLIENTS);
 				}
@@ -401,7 +405,7 @@ public class FleshVeinsBlock extends MultifaceBlock implements SimpleWaterlogged
 	@Override
 	protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
 		super.createBlockStateDefinition(builder);
-		builder.add(WATERLOGGED, CHARGE.get());
+		builder.add(CHARGE.get());
 	}
 
 	@Override
@@ -423,9 +427,9 @@ public class FleshVeinsBlock extends MultifaceBlock implements SimpleWaterlogged
 	}
 
 	@Override
-	public BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor level, BlockPos currentPos, BlockPos neighborPos) {
+	public BlockState updateShape(BlockState state, LevelReader level, ScheduledTickAccess ticks, BlockPos currentPos, Direction direction, BlockPos neighborPos, BlockState neighborState, RandomSource random) {
 		if (Boolean.TRUE.equals(state.getValue(WATERLOGGED))) {
-			level.scheduleTick(currentPos, Fluids.WATER, Fluids.WATER.getTickDelay(level));
+			ticks.scheduleTick(currentPos, Fluids.WATER, Fluids.WATER.getTickDelay(level));
 		}
 
 		if (!hasAnyFace(state)) {
@@ -481,13 +485,13 @@ public class FleshVeinsBlock extends MultifaceBlock implements SimpleWaterlogged
 	}
 
 	@Override
-	public boolean propagatesSkylightDown(BlockState state, BlockGetter level, BlockPos pos) {
+	public boolean propagatesSkylightDown(BlockState state) {
 		return state.getFluidState().isEmpty();
 	}
 
 	@Override
-	public void entityInside(BlockState state, Level level, BlockPos pos, Entity entity) {
-		if (level.isClientSide) return;
+	public void entityInside(BlockState state, Level level, BlockPos pos, Entity entity, InsideBlockEffectApplier effectApplier, boolean isPrecise) {
+		if (level.isClientSide()) return;
 
 		if (entity instanceof ItemEntity itemEntity) {
 			int charge = CHARGE.getValue(state);
@@ -501,25 +505,26 @@ public class FleshVeinsBlock extends MultifaceBlock implements SimpleWaterlogged
 
 			int optimalAmount = Mth.ceil((CHARGE.getMax() - (float) charge) / nutrition);
 			int amount = Math.min(stack.getCount(), optimalAmount);
+			ItemParticleOption particle = new ItemParticleOption(ParticleTypes.ITEM, ItemStackTemplate.fromNonEmptyStack(stack));
 			stack.shrink(amount);
 			charge += amount * nutrition;
 			setCharge(level, pos, state, charge);
 
-			Vec3 motion = new Vec3((level.random.nextFloat() - 0.5d) * 0.1d, level.random.nextFloat() * 0.1d + 0.15d, (level.random.nextFloat() - 0.5d) * 0.1d);
-			((ServerLevel) level).sendParticles(new ItemParticleOption(ParticleTypes.ITEM, stack), itemEntity.getX(), itemEntity.getY(), itemEntity.getZ(), 8, motion.x, motion.y, motion.z, 0.05f);
+			Vec3 motion = new Vec3((level.getRandom().nextFloat() - 0.5d) * 0.1d, level.getRandom().nextFloat() * 0.1d + 0.15d, (level.getRandom().nextFloat() - 0.5d) * 0.1d);
+			((ServerLevel) level).sendParticles(particle, itemEntity.getX(), itemEntity.getY(), itemEntity.getZ(), 8, motion.x, motion.y, motion.z, 0.05f);
 
-			level.playSound(null, pos, ModSoundEvents.DECOMPOSER_EAT.get(), SoundSource.BLOCKS, 0.6f, 0.15f + level.random.nextFloat() * 0.5f);
+			level.playSound(null, pos, ModSoundEvents.DECOMPOSER_EAT.get(), SoundSource.BLOCKS, 0.6f, 0.15f + level.getRandom().nextFloat() * 0.5f);
 		}
 	}
 
 	static int getRawMeatNutrition(ItemStack itemStack) {
-		FoodProperties food = itemStack.getFoodProperties(null);
+		FoodProperties food = itemStack.get(DataComponents.FOOD);
 		return food != null && itemStack.is(ItemTags.MEAT) && itemStack.is(ModItemTags.FRESH_RAW_MEATS) ? food.nutrition() : 0;
 	}
 
 	@Override
 	public void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
-		if (level.random.nextFloat() >= 0.5f) return;
+		if (level.getRandom().nextFloat() >= 0.5f) return;
 		if (!level.isAreaLoaded(pos, 2)) return;
 
 		PrimalEnergyHandler energyHandler = null;
@@ -651,7 +656,6 @@ public class FleshVeinsBlock extends MultifaceBlock implements SimpleWaterlogged
 		return null;
 	}
 
-	@Override
 	public MultifaceSpreader getSpreader() {
 		return spreader;
 	}

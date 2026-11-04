@@ -4,7 +4,7 @@ import com.google.common.hash.Hashing;
 import com.google.common.hash.HashingOutputStream;
 import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonWriter;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.core.Holder;
 import net.minecraft.data.CachedOutput;
 import net.minecraft.data.DataProvider;
@@ -12,13 +12,13 @@ import net.minecraft.data.PackOutput;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.decoration.PaintingVariant;
+import net.minecraft.world.entity.decoration.painting.PaintingVariant;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -149,11 +149,11 @@ public abstract class AbstractLangProvider implements DataProvider, LangProvider
 	}
 
 	public void add(ItemStack stack, String name) {
-		add(stack.getDescriptionId(), name);
+		add(stack.getItem().getDescriptionId(), name);
 	}
 
 	public void addEnchantment(ResourceKey<Enchantment> key, String name) {
-		add(key.location().toLanguageKey("enchantment"), name);
+		add(key.identifier().toLanguageKey("enchantment"), name);
 	}
 
 	public void addEffect(Holder<? extends MobEffect> holder, String name) {
@@ -189,14 +189,14 @@ public abstract class AbstractLangProvider implements DataProvider, LangProvider
 	}
 
 	public void addPainting(ResourceKey<PaintingVariant> key, String title, String author) {
-		ResourceLocation id = key.location();
+		Identifier id = key.identifier();
 		add(id.toLanguageKey("painting", "title"), title);
 		add(id.toLanguageKey("painting", "author"), author);
 	}
 
 	@SuppressWarnings("deprecation")
 	public void addBannerPattern(ResourceKey<BannerPattern> key, String name) {
-		ResourceLocation rl = ResourceLocation.parse(key.location().toShortLanguageKey());
+		Identifier rl = Identifier.parse(key.identifier().toShortLanguageKey());
 		for (DyeColor dyeColor : DyeColor.values()) {
 			String dyeColorName = WordUtils.capitalize(dyeColor.getName().replace("_", " "));
 			add("block.%s.banner.%s.%s".formatted(rl.getNamespace(), rl.getPath(), dyeColor.getName()), dyeColorName + " " + name);
@@ -204,18 +204,18 @@ public abstract class AbstractLangProvider implements DataProvider, LangProvider
 	}
 
 	public void addDeathMessage(ResourceKey<DamageType> damageType, String causedByDefault) {
-		add(damageType.location().toLanguageKey("death.attack"), causedByDefault);
+		add(damageType.identifier().toLanguageKey("death.attack"), causedByDefault);
 	}
 
 	public void addDeathMessage(ResourceKey<DamageType> damageType, String causedByDefault, String causedByMobOrPlayer, String causedByItem) {
-		ResourceLocation damageTypeId = damageType.location();
+		Identifier damageTypeId = damageType.identifier();
 		add(damageTypeId.toLanguageKey("death.attack"), causedByDefault);
 		add(damageTypeId.toLanguageKey("death.attack", "player"), causedByMobOrPlayer);
 		add(damageTypeId.toLanguageKey("death.attack", "item"), causedByItem);
 	}
 
 	public void addSound(Supplier<SoundEvent> supplier, String text) {
-		ResourceLocation rl = supplier.get().getLocation();
+		Identifier rl = supplier.get().location();
 		add("sounds.%s.%s".formatted(rl.getNamespace(), rl.getPath()), text);
 	}
 

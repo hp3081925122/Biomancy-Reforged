@@ -40,8 +40,8 @@ public final class SelfFeeding {
 		nutrientsContainer.increaseNutrients(stack, Nutrients.getRepairValue(repairItemStack));
 
 		if (!player.getAbilities().instabuild) {
-			if (repairItemStack.hasCraftingRemainingItem()) {
-				ItemStack craftingRemainder = repairItemStack.getCraftingRemainingItem();
+			if (repairItemStack.getCraftingRemainder() != null) {
+				ItemStack craftingRemainder = repairItemStack.getCraftingRemainder().create();
 				repairItemStack.shrink(1);
 				if (!craftingRemainder.isEmpty() && !player.addItem(craftingRemainder)) {
 					player.drop(craftingRemainder, false);
@@ -56,7 +56,7 @@ public final class SelfFeeding {
 	}
 
 	static ItemStack getBestRepairItem(Player player, int neededRepairValue, int maxError) {
-		NonNullList<ItemStack> items = player.getInventory().items;
+		NonNullList<ItemStack> items = player.getInventory().getNonEquipmentItems();
 
 		ItemStack repairItemStack = ItemStack.EMPTY;
 		int minError = Math.max(maxError, 0) + 1;

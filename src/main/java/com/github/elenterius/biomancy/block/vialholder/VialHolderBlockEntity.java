@@ -1,5 +1,7 @@
 package com.github.elenterius.biomancy.block.vialholder;
 
+import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.core.HolderLookup;
 import com.github.elenterius.biomancy.api.serum.Serum;
 import com.github.elenterius.biomancy.api.serum.SerumContainer;
@@ -66,21 +68,21 @@ public class VialHolderBlockEntity extends SimpleSyncedBlockEntity {
 	}
 
 	@Override
-	protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-		super.saveAdditional(tag, registries);
-		tag.put(INVENTORY_TAG, inventory.serializeNBT(registries));
+	protected void saveAdditional(ValueOutput output) {
+		super.saveAdditional(output);
+		inventory.serialize(output.child(INVENTORY_TAG));
 	}
 
 	@Override
-	protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-		super.loadAdditional(tag, registries);
-		inventory.deserializeNBT(registries, tag.getCompound(INVENTORY_TAG));
+	protected void loadAdditional(ValueInput input) {
+		super.loadAdditional(input);
+		inventory.deserialize(input.childOrEmpty(INVENTORY_TAG));
 		updateBlockStateDelayed();
 	}
 
 	@Override
-	protected void saveForSyncToClient(CompoundTag tag, HolderLookup.Provider registries) {
-		tag.put(INVENTORY_TAG, inventory.serializeNBT(registries));
+	protected void saveForSyncToClient(ValueOutput output) {
+		inventory.serialize(output.child(INVENTORY_TAG));
 	}
 
 	public void dropInventoryContents(Level level, BlockPos pos, boolean removeWithoutUpdate) {
@@ -147,4 +149,10 @@ public class VialHolderBlockEntity extends SimpleSyncedBlockEntity {
 		return Serum.EMPTY_COLOR;
 	}
 
+	@Override
+	public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+		if (level != null) {
+			dropInventoryContents(level, pos, true);
+		}
+	}
 }

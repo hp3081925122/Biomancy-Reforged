@@ -1,15 +1,22 @@
 package com.github.elenterius.biomancy.api.tribute.fluid;
 
-import net.minecraft.core.HolderLookup;
 import com.github.elenterius.biomancy.api.tribute.SacrificeHandler;
 import com.github.elenterius.biomancy.inventory.Notify;
-import net.minecraft.nbt.CompoundTag;
+import com.mojang.serialization.Codec;
 import net.minecraft.util.Mth;
-import net.neoforged.neoforge.common.util.INBTSerializable;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.neoforged.neoforge.common.util.ValueIOSerializable;
 import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.transfer.ResourceHandler;
+import net.neoforged.neoforge.transfer.TransferPreconditions;
+import net.neoforged.neoforge.transfer.fluid.FluidResource;
+import net.neoforged.neoforge.transfer.transaction.SnapshotJournal;
+import net.neoforged.neoforge.transfer.transaction.TransactionContext;
 
-public class FluidTributeConsumerHandler implements IFluidHandler, INBTSerializable<CompoundTag> {
+import java.util.stream.LongStream;
+
+public class FluidTributeConsumerHandler implements ResourceHandler<FluidResource>, ValueIOSerializable {
 
 	public static final String MILLI_TRIBUTE_BUFFER_KEY = "MilliTributeBuffer";
 
@@ -17,29 +24,74 @@ public class FluidTributeConsumerHandler implements IFluidHandler, INBTSerializa
 	private final Notify onChange;
 	private final long[] milliTributeBuffer = new long[6];
 
+	private final SnapshotJournal<Snapshot> journal = new SnapshotJournal<>() {
+		@Override
+		protected Snapshot createSnapshot() {
+			return new Snapshot(sacrificeHandler.captureState(), milliTributeBuffer.clone());
+		}
+
+		@Override
+		protected void revertToSnapshot(Snapshot snapshot) {
+			sacrificeHandler.restoreState(snapshot.state());
+			System.arraycopy(snapshot.buffer(), 0, milliTributeBuffer, 0, milliTributeBuffer.length);
+		}
+
+		@Override
+		protected void onRootCommit(Snapshot originalState) {
+			if (sacrificeHandler.isDirty()) {
+				onChange.invoke();
+				sacrificeHandler.setDirty(false);
+			}
+		}
+	};
+
 	public FluidTributeConsumerHandler(SacrificeHandler sacrificeHandler, Notify onChange) {
 		this.sacrificeHandler = sacrificeHandler;
 		this.onChange = onChange;
 	}
 
 	@Override
-	public boolean isFluidValid(int tank, FluidStack resource) {
-		return !sacrificeHandler.isFull() && FluidTributes.isValid(resource);
+	public int size() {
+		return 1;
 	}
 
 	@Override
-	public int fill(FluidStack resource, FluidAction action) {
-		if (resource.isEmpty()) return 0;
+	public FluidResource getResource(int index) {
+		return FluidResource.EMPTY;
+	}
+
+	@Override
+	public long getAmountAsLong(int index) {
+		return 0;
+	}
+
+	@Override
+	public long getCapacityAsLong(int index, FluidResource resource) {
+		return 250;
+	}
+
+	@Override
+	public boolean isValid(int index, FluidResource resource) {
+		return !resource.isEmpty() && !sacrificeHandler.isFull() && FluidTributes.isValid(resource.toStack(1));
+	}
+
+	@Override
+	public int insert(int index, FluidResource resource, int amount, TransactionContext transaction) {
+		TransferPreconditions.checkNonEmptyNonNegative(resource, amount);
+		if (amount == 0) return 0;
 		if (sacrificeHandler.isFull()) return 0;
 
-		FluidToTributeConversion conversion = FluidTributes.getConversion(resource);
+		FluidStack stack = resource.toStack(amount);
+		FluidToTributeConversion conversion = FluidTributes.getConversion(stack);
 		if (conversion == null) return 0;
 
-		FluidTribute fluidTribute = conversion.getTributePerUnit(resource);
+		FluidTribute fluidTribute = conversion.getTributePerUnit(stack);
 		if (fluidTribute.isEmpty()) return 0;
 		if (fluidTribute.biomass() > 0 && sacrificeHandler.isBiomassFull()) return 0;
 
-		long amountToConsume = resource.getAmount();
+		long amountToConsume = amount;
+
+		journal.updateSnapshots(transaction);
 
 		int biomassYield = (int) ((milliTributeBuffer[0] + fluidTribute.biomass() * amountToConsume) / FluidTribute.UNIT_SCALE);
 		int biomassToFill = Math.min(sacrificeHandler.getMaxBiomass() - sacrificeHandler.getBiomassAmount(), biomassYield);
@@ -48,15 +100,11 @@ public class FluidTributeConsumerHandler implements IFluidHandler, INBTSerializa
 			long biomassMissing = biomassToFill * FluidTribute.UNIT_SCALE - milliTributeBuffer[0];
 			amountToConsume = Mth.ceil((float) biomassMissing / fluidTribute.biomass());
 
-			if (action.simulate()) return (int) amountToConsume;
-
 			sacrificeHandler.addBiomass(biomassToFill);
 
 			long remainder = (fluidTribute.biomass() * amountToConsume - biomassMissing);
 			milliTributeBuffer[0] = remainder;
 		}
-
-		if (action.simulate()) return (int) amountToConsume;
 
 		int yield;
 
@@ -85,50 +133,27 @@ public class FluidTributeConsumerHandler implements IFluidHandler, INBTSerializa
 		sacrificeHandler.addAnomaly(yield);
 		milliTributeBuffer[5] -= yield * FluidTribute.UNIT_SCALE;
 
-		if (sacrificeHandler.isDirty()) {
-			onChange.invoke();
-			sacrificeHandler.setDirty(false);
-		}
-
 		return (int) amountToConsume;
 	}
 
 	@Override
-	public int getTanks() {
-		return 1;
+	public int extract(int index, FluidResource resource, int amount, TransactionContext transaction) {
+		return 0;
 	}
 
 	@Override
-	public FluidStack getFluidInTank(int tank) {
-		return FluidStack.EMPTY;
+	public void serialize(ValueOutput output) {
+		output.store(MILLI_TRIBUTE_BUFFER_KEY, Codec.LONG_STREAM, LongStream.of(milliTributeBuffer));
 	}
 
 	@Override
-	public int getTankCapacity(int tank) {
-		return 250;
+	public void deserialize(ValueInput input) {
+		input.read(MILLI_TRIBUTE_BUFFER_KEY, Codec.LONG_STREAM).ifPresent(stream -> {
+			long[] buffer = stream.toArray();
+			System.arraycopy(buffer, 0, milliTributeBuffer, 0, Math.min(buffer.length, milliTributeBuffer.length));
+		});
 	}
 
-	@Override
-	public FluidStack drain(FluidStack resource, FluidAction action) {
-		return FluidStack.EMPTY;
-	}
-
-	@Override
-	public FluidStack drain(int maxDrain, FluidAction action) {
-		return FluidStack.EMPTY;
-	}
-
-	@Override
-	public CompoundTag serializeNBT(HolderLookup.Provider provider) {
-		CompoundTag tag = new CompoundTag();
-		tag.putLongArray(MILLI_TRIBUTE_BUFFER_KEY, milliTributeBuffer);
-		return tag;
-	}
-
-	@Override
-	public void deserializeNBT(HolderLookup.Provider provider, CompoundTag tag) {
-		long[] buffer = tag.getLongArray(MILLI_TRIBUTE_BUFFER_KEY);
-		System.arraycopy(buffer, 0, milliTributeBuffer, 0, milliTributeBuffer.length);
-	}
+	private record Snapshot(int[] state, long[] buffer) {}
 
 }

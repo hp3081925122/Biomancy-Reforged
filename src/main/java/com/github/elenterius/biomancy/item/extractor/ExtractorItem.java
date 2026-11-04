@@ -1,9 +1,11 @@
 package com.github.elenterius.biomancy.item.extractor;
 
+import com.github.elenterius.biomancy.util.animation.GeoRenderProviders;
+import com.github.elenterius.biomancy.util.MobUtil;
+import net.minecraft.world.item.component.TooltipDisplay;
 import com.github.elenterius.biomancy.util.EnchantmentUtil;
 import net.minecraft.core.Holder;
 import com.github.elenterius.biomancy.BiomancyMod;
-import com.github.elenterius.biomancy.client.render.item.extractor.ExtractorRenderer;
 import com.github.elenterius.biomancy.client.util.ClientTextUtil;
 import com.github.elenterius.biomancy.init.ModEnchantments;
 import com.github.elenterius.biomancy.init.ModMobEffects;
@@ -19,10 +21,9 @@ import com.github.elenterius.biomancy.util.CombatUtil;
 import com.github.elenterius.biomancy.util.ComponentUtil;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
@@ -41,16 +42,16 @@ import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
-import software.bernie.geckolib.animatable.client.GeoRenderProvider;
+import com.geckolib.animatable.client.GeoRenderProvider;
 import org.jspecify.annotations.Nullable;
-import software.bernie.geckolib.animatable.GeoItem;
-import software.bernie.geckolib.constant.DataTickets;
-import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.animation.AnimatableManager;
-import software.bernie.geckolib.animation.AnimationController;
-import software.bernie.geckolib.animation.RawAnimation;
-import software.bernie.geckolib.animation.PlayState;
-import software.bernie.geckolib.util.GeckoLibUtil;
+import com.geckolib.animatable.GeoItem;
+import com.geckolib.constant.DataTickets;
+import com.geckolib.animatable.instance.AnimatableInstanceCache;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.animation.AnimationController;
+import com.geckolib.animation.RawAnimation;
+import com.geckolib.animation.object.PlayState;
+import com.geckolib.util.GeckoLibUtil;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -66,7 +67,7 @@ public class ExtractorItem extends Item implements KeyPressListener, ItemTooltip
 	public static boolean tryExtractEssence(ServerLevel level, BlockPos pos, ItemStack stack) {
 		List<LivingEntity> entities = level.getEntitiesOfClass(LivingEntity.class, new AABB(pos), EntitySelector.NO_SPECTATORS);
 		if (!entities.isEmpty() && extractEssence(stack, null, entities.get(0))) {
-			level.playSound(null, pos, ModSoundEvents.INJECTOR_INJECT.get(), SoundSource.BLOCKS, 0.8f, 1f / (level.random.nextFloat() * 0.5f + 1f) + 0.2f);
+			level.playSound(null, pos, ModSoundEvents.INJECTOR_INJECT.get(), SoundSource.BLOCKS, 0.8f, 1f / (level.getRandom().nextFloat() * 0.5f + 1f) + 0.2f);
 			return true;
 		}
 		return false;
@@ -92,7 +93,7 @@ public class ExtractorItem extends Item implements KeyPressListener, ItemTooltip
 					}
 
 					float damagePct = 1f;
-					for (ItemStack itemStack : targetEntity.getArmorSlots()) {
+					for (ItemStack itemStack : MobUtil.getArmorSlots(targetEntity)) {
 						if (itemStack.getItem() instanceof AcolyteArmorItem armor && armor.hasNutrients(itemStack)) {
 							damagePct -= 0.25f;
 						}
@@ -166,40 +167,28 @@ public class ExtractorItem extends Item implements KeyPressListener, ItemTooltip
 	}
 
 	@Override
-	public int getEnchantmentValue() {
-		return 15;
-	}
-
-	@Override
 	public boolean isFoil(ItemStack stack) {
 		return false;
 	}
 
 	@Override
-	public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag isAdvanced) {
-		tooltip.addAll(ClientTextUtil.getItemInfoTooltip(stack));
-		tooltip.add(ClientTextUtil.pressButtonTo(ClientTextUtil.getDefaultKey(), TextComponentUtil.getActionText("self_extract")).withStyle(ChatFormatting.DARK_GRAY));
+	public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag isAdvanced) {
+		ClientTextUtil.getItemInfoTooltip(stack).forEach(tooltip);
+		tooltip.accept(ClientTextUtil.pressButtonTo(ClientTextUtil.getDefaultKey(), TextComponentUtil.getActionText("self_extract")).withStyle(ChatFormatting.DARK_GRAY));
 
-		if (stack.isEnchanted()) tooltip.add(ComponentUtil.EMPTY_LINE);
+		if (stack.isEnchanted()) tooltip.accept(ComponentUtil.EMPTY_LINE);
 	}
 
 	@Override
 	public void createGeoRenderer(Consumer<GeoRenderProvider> consumer) {
-		consumer.accept(new GeoRenderProvider() {
-			private final ExtractorRenderer renderer = new ExtractorRenderer();
-
-			@Override
-			public BlockEntityWithoutLevelRenderer getGeoItemRenderer() {
-				return renderer;
-			}
-		});
+		GeoRenderProviders.accept(this, consumer);
 	}
 
 	@Override
 	public void registerControllers(AnimatableManager.ControllerRegistrar registrar) {
-		AnimationController<ExtractorItem> controller = new AnimationController<>(this, "main", 5, state -> {
+		AnimationController<ExtractorItem> controller = new AnimationController<>("main", 5, state -> {
 
-			if (state.isCurrentAnimation(Animations.EXTRACT) && state.getController().isPlayingTriggeredAnimation()) return PlayState.CONTINUE;
+			if (state.isCurrentAnimation(Animations.EXTRACT) && state.controller().isPlayingTriggeredAnimation()) return PlayState.CONTINUE;
 
 			boolean isFirstPerson = state.getData(DataTickets.ITEM_RENDER_PERSPECTIVE).firstPerson();
 			boolean isPlayerLookingAtMob = isFirstPerson && Minecraft.getInstance().crosshairPickEntity instanceof LivingEntity;
@@ -223,10 +212,10 @@ public class ExtractorItem extends Item implements KeyPressListener, ItemTooltip
 		return cache;
 	}
 
-	protected static final ResourceLocation CROSSHAIR = BiomancyMod.rl("textures/gui/extractor_crosshair.png");
+	protected static final Identifier CROSSHAIR = BiomancyMod.rl("textures/gui/extractor_crosshair.png");
 
 	@Override
-	public ResourceLocation getCrosshairTexture(ItemStack stack, Player player) {
+	public Identifier getCrosshairTexture(ItemStack stack, Player player) {
 		return CROSSHAIR;
 	}
 

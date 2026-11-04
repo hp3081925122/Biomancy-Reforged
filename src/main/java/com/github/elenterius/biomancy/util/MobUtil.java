@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.util;
 
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.core.Holder;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.init.tags.ModEntityTags;
@@ -16,10 +17,10 @@ import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
-import net.minecraft.world.entity.animal.horse.SkeletonHorse;
+import net.minecraft.world.entity.animal.equine.SkeletonHorse;
 import net.minecraft.world.entity.boss.wither.WitherBoss;
-import net.minecraft.world.entity.monster.AbstractSkeleton;
-import net.minecraft.world.entity.monster.WitherSkeleton;
+import net.minecraft.world.entity.monster.skeleton.AbstractSkeleton;
+import net.minecraft.world.entity.monster.skeleton.WitherSkeleton;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -28,6 +29,10 @@ import net.neoforged.neoforge.event.EventHooks;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 
+import net.minecraft.world.item.ItemStack;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
@@ -39,7 +44,17 @@ public final class MobUtil {
 	private MobUtil() {}
 
 	public static boolean isResizable(LivingEntity entity) {
-		return !entity.getType().is(ModEntityTags.RESIZING_NOT_ALLOWED);
+		return !entity.is(ModEntityTags.RESIZING_NOT_ALLOWED);
+	}
+
+	public static List<ItemStack> getArmorSlots(LivingEntity entity) {
+		List<ItemStack> armor = new ArrayList<>(4);
+		for (EquipmentSlot slot : EquipmentSlot.values()) {
+			if (slot.getType() == EquipmentSlot.Type.HUMANOID_ARMOR) {
+				armor.add(entity.getItemBySlot(slot));
+			}
+		}
+		return armor;
 	}
 
 	public static boolean isCreativePlayer(LivingEntity entity) {
@@ -51,11 +66,11 @@ public final class MobUtil {
 	}
 
 	public static boolean isBoss(EntityType<?> entityType) {
-		return entityType.is(ModEntityTags.C_BOSSES);
+		return entityType.builtInRegistryHolder().is(ModEntityTags.C_BOSSES);
 	}
 
 	public static boolean isSkeleton(LivingEntity entity) {
-		return entity instanceof AbstractSkeleton || entity instanceof SkeletonHorse || entity.getType().is(EntityTypeTags.SKELETONS);
+		return entity instanceof AbstractSkeleton || entity instanceof SkeletonHorse || entity.is(EntityTypeTags.SKELETONS);
 	}
 
 	public static boolean isWithered(LivingEntity entity) {
@@ -63,7 +78,7 @@ public final class MobUtil {
 	}
 
 	public static boolean isUndead(LivingEntity entity) {
-		return entity.getType().is(EntityTypeTags.UNDEAD);
+		return entity.is(EntityTypeTags.UNDEAD);
 	}
 
 	public static boolean isNotUndead(LivingEntity entity) {
@@ -71,7 +86,7 @@ public final class MobUtil {
 	}
 
 	public static boolean isCloneable(EntityType<?> entityType) {
-		return !entityType.is(ModEntityTags.NOT_CLONEABLE);
+		return !entityType.builtInRegistryHolder().is(ModEntityTags.NOT_CLONEABLE);
 	}
 
 	public static float getVolume(EntityType<?> entityType) {
@@ -154,9 +169,9 @@ public final class MobUtil {
 
 	public static <E extends Mob, T extends Mob> boolean convertMobTo(ServerLevel world, E oldMob, EntityType<T> outcomeMobType, boolean copyEquipment, BiConsumer<E, T> onConvert) {
 		if (EventHooks.canLivingConvert(oldMob, outcomeMobType, timer -> {})) {
-			T newMob = oldMob.convertTo(outcomeMobType, copyEquipment);
+			T newMob = oldMob.convertTo(outcomeMobType, ConversionParams.single(oldMob, copyEquipment, copyEquipment), converted -> {});
 			if (newMob != null) {
-				newMob.finalizeSpawn(world, world.getCurrentDifficultyAt(oldMob.blockPosition()), MobSpawnType.CONVERSION, null);
+				newMob.finalizeSpawn(world, world.getCurrentDifficultyAt(oldMob.blockPosition()), EntitySpawnReason.CONVERSION, null);
 				newMob.invulnerableTime = 60;
 				onConvert.accept(oldMob, newMob);
 				EventHooks.onLivingConvert(oldMob, newMob);
@@ -169,7 +184,7 @@ public final class MobUtil {
 	public static boolean convertLivingEntityTo(ServerLevel world, LivingEntity oldEntity, EntityType<?> outcomeType, Predicate<LivingEntity> validEntity) {
 		if (oldEntity.isRemoved()) return false;
 
-		Entity entity = outcomeType.create(world);
+		Entity entity = outcomeType.create(world, EntitySpawnReason.CONVERSION);
 		if (entity != null) {
 			if (entity instanceof LivingEntity livingEntity && validEntity.test(livingEntity)) {
 				EntityType<? extends LivingEntity> entityType = (EntityType<? extends LivingEntity>) outcomeType;
@@ -178,7 +193,7 @@ public final class MobUtil {
 					if (world.addFreshEntity(livingEntity)) {
 						oldEntity.discard();
 						if (livingEntity instanceof Mob mob) {
-							mob.finalizeSpawn(world, world.getCurrentDifficultyAt(oldEntity.blockPosition()), MobSpawnType.CONVERSION, null);
+							mob.finalizeSpawn(world, world.getCurrentDifficultyAt(oldEntity.blockPosition()), EntitySpawnReason.CONVERSION, null);
 						}
 						livingEntity.invulnerableTime = 60;
 						EventHooks.onLivingConvert(oldEntity, livingEntity);
@@ -193,7 +208,7 @@ public final class MobUtil {
 	}
 
 	public static Vec3 getAdjustedSpawnPositionFor(BlockPos pos, Vec3 clickLocation, Direction clickedFace, Entity entity) {
-		BlockPos offsetPos = pos.offset(clickedFace.getNormal());
+		BlockPos offsetPos = pos.offset(clickedFace.getUnitVec3i());
 		int down = entity.level().getBlockState(offsetPos.below()).isAir() ? 0 : 1;
 		int up = entity.level().getBlockState(offsetPos.above()).isAir() ? 0 : 1;
 		int north = entity.level().getBlockState(offsetPos.north()).isAir() ? 0 : 1;

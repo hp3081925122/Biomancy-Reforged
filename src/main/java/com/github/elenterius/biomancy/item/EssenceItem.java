@@ -1,5 +1,7 @@
 package com.github.elenterius.biomancy.item;
 
+import net.minecraft.world.item.component.TooltipDisplay;
+import java.util.function.Consumer;
 import com.github.elenterius.biomancy.util.EnchantmentUtil;
 import com.github.elenterius.biomancy.block.modularlarynx.MobSoundType;
 import com.github.elenterius.biomancy.client.util.ClientTextUtil;
@@ -12,7 +14,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
@@ -50,7 +52,7 @@ public class EssenceItem extends Item implements ItemTooltipStyleProvider {
 			if (tier >= 3 && livingEntity instanceof Player player) {
 				EssenceData essenceData = stack.get(ModDataComponents.ESSENCE);
 				if (essenceData != null) {
-					stack.set(ModDataComponents.ESSENCE, essenceData.withPlayerName(player.getGameProfile().getName()));
+					stack.set(ModDataComponents.ESSENCE, essenceData.withPlayerName(player.getGameProfile().name()));
 				}
 			}
 			return stack;
@@ -102,14 +104,12 @@ public class EssenceItem extends Item implements ItemTooltipStyleProvider {
 			return new int[]{0x00AFAF, 0x463AA5};
 		}
 
-		SpawnEggItem spawnEggItem = SpawnEggItem.byId(entityType);
-		if (spawnEggItem != null) {
-			int background = spawnEggItem.getColor(0);
-			int highlight = spawnEggItem.getColor(1);
-			return new int[]{background, highlight};
+		int[] eggColors = SpawnEggColors.get(EntityType.getKey(entityType));
+		if (eggColors != null) {
+			return new int[]{eggColors[0], eggColors[1]};
 		}
 		else {
-			ResourceLocation key = EntityType.getKey(entityType);
+			Identifier key = EntityType.getKey(entityType);
 			int background = key.hashCode() & 0xffffff;
 			int highlight = key.toString().hashCode() & 0xffffff;
 			return new int[]{background, highlight};
@@ -135,7 +135,7 @@ public class EssenceItem extends Item implements ItemTooltipStyleProvider {
 	public boolean setEssenceData(ItemStack stack, int tier, EntityType<?> entityType, @Nullable UUID entityUUID, int[] colors, @Nullable CompoundTag mobSounds) {
 		if (entityType != EntityType.PLAYER && !entityType.canSerialize()) return false;
 
-		ResourceLocation entityTypeId = EntityType.getKey(entityType);
+		Identifier entityTypeId = EntityType.getKey(entityType);
 
 		List<Integer> colorList = Arrays.stream(colors).boxed().toList();
 		EssenceData essenceData = new EssenceData(entityTypeId, entityType.getDescriptionId(), Optional.ofNullable(entityUUID), colorList, Math.max(tier, 0), Optional.ofNullable(mobSounds), Optional.empty());
@@ -185,30 +185,30 @@ public class EssenceItem extends Item implements ItemTooltipStyleProvider {
 	}
 
 	@Override
-	public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag isAdvanced) {
-		tooltip.addAll(ClientTextUtil.getItemInfoTooltip(stack));
+	public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag isAdvanced) {
+		ClientTextUtil.getItemInfoTooltip(stack).forEach(tooltip);
 
 		EssenceData essenceData = stack.get(ModDataComponents.ESSENCE);
 		if (essenceData == null) return;
 
 		if (essenceData.entityUUID().isPresent()) {
-			tooltip.add(ComponentUtil.EMPTY_LINE);
+			tooltip.accept(ComponentUtil.EMPTY_LINE);
 
 			UUID entityUUID = essenceData.entityUUID().get();
 
 			if (essenceData.name().equals(EntityType.PLAYER.getDescriptionId()) && essenceData.playerName().isPresent()) {
 				String name = essenceData.playerName().get();
-				tooltip.add(ComponentUtil.literal("Player: " + name).withStyle(ChatFormatting.GRAY));
+				tooltip.accept(ComponentUtil.literal("Player: " + name).withStyle(ChatFormatting.GRAY));
 			}
 			else {
-				tooltip.add(ComponentUtil.literal("UUID: " + entityUUID).withStyle(ChatFormatting.GRAY));
+				tooltip.accept(ComponentUtil.literal("UUID: " + entityUUID).withStyle(ChatFormatting.GRAY));
 			}
 		}
 
 		int tier = essenceData.tier();
 		if (tier > 0) {
-			tooltip.add(ComponentUtil.EMPTY_LINE);
-			tooltip.add(ComponentUtil.literal("Tier: " + tier));
+			tooltip.accept(ComponentUtil.EMPTY_LINE);
+			tooltip.accept(ComponentUtil.literal("Tier: " + tier));
 		}
 	}
 
@@ -217,16 +217,16 @@ public class EssenceItem extends Item implements ItemTooltipStyleProvider {
 		EssenceData essenceData = stack.get(ModDataComponents.ESSENCE);
 
 		if (essenceData == null) {
-			return Component.translatable(getDescriptionId(stack));
+			return Component.translatable(getDescriptionId());
 		}
 
 		MutableComponent entityName = ComponentUtil.translatable(essenceData.name());
 
 		if (essenceData.entityUUID().isPresent()) {
-			return Component.translatable(getDescriptionId(stack) + ".unique_mob", entityName);
+			return Component.translatable(getDescriptionId() + ".unique_mob", entityName);
 		}
 
-		return Component.translatable(getDescriptionId(stack) + ".mob", entityName);
+		return Component.translatable(getDescriptionId() + ".mob", entityName);
 	}
 
 }

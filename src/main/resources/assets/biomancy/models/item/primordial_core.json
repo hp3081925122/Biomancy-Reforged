@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "biomancy:item/primordial_core",
+    "layer1": {
+      "sprite": "biomancy:item/primordial_core_emissive",
+      "neoforge_data": {
+        "light_emission": 15
+      }
+    }
+  }
+}

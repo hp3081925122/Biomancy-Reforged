@@ -1,9 +1,10 @@
 package com.github.elenterius.biomancy.block.storagesac;
 
+import com.github.elenterius.biomancy.util.BlockItemUtil;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.component.DataComponents;
 import com.github.elenterius.biomancy.util.InteractionUtil;
-import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.InteractionResult;
 import com.github.elenterius.biomancy.block.base.WaterloggedFacingEntityBlock;
 import com.github.elenterius.biomancy.init.ModSoundEvents;
 import com.github.elenterius.biomancy.sounds.SoundUtil;
@@ -70,13 +71,13 @@ public class StorageSacBlock extends WaterloggedFacingEntityBlock {
 	}
 
 	@Override
-	protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+	protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
 		return InteractionUtil.toItemInteractionResult(use(state, level, pos, player, hand, hit));
 	}
 
 	protected InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
 		if (level.getBlockEntity(pos) instanceof StorageSacBlockEntity sac && sac.canPlayerInteract(player)) {
-			if (!level.isClientSide) {
+			if (!level.isClientSide()) {
 				player.openMenu(sac, buffer -> buffer.writeBlockPos(pos));
 				SoundUtil.Server.playBlockSound((ServerLevel) level, pos, ModSoundEvents.UI_STORAGE_SAC_OPEN);
 			}
@@ -88,9 +89,9 @@ public class StorageSacBlock extends WaterloggedFacingEntityBlock {
 
 	@Override
 	public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
-		if (!level.isClientSide && player.isCreative() && level.getBlockEntity(pos) instanceof StorageSacBlockEntity storage && !storage.isEmpty()) {
+		if (!level.isClientSide() && player.isCreative() && level.getBlockEntity(pos) instanceof StorageSacBlockEntity storage && !storage.isEmpty()) {
 			ItemStack stack = new ItemStack(this);
-			storage.saveToItem(stack, level.registryAccess());
+			BlockItemUtil.saveToItem(storage, stack, level.registryAccess());
 			if (storage.hasCustomName()) stack.set(DataComponents.CUSTOM_NAME, storage.getCustomName());
 			ItemEntity itemEntity = new ItemEntity(level, pos.getX() + 0.5d, pos.getY() + 0.5D, pos.getZ() + 0.5d, stack);
 			itemEntity.setDefaultPickUpDelay();

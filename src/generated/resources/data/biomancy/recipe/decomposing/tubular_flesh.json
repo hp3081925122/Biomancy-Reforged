@@ -1,7 +1,7 @@
 {
   "type": "biomancy:decomposing",
   "ingredient": {
-    "item": "biomancy:tubular_flesh"
+    "ingredient": "biomancy:tubular_flesh"
   },
   "nutrientsCost": 2,
   "processingTime": 108,

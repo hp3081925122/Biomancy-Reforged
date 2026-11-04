@@ -1,25 +1,29 @@
 package com.github.elenterius.biomancy.crafting.recipe;
 
-import net.minecraft.world.item.component.CustomData;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import com.mojang.serialization.MapCodec;
+import com.github.elenterius.biomancy.util.BlockItemUtil;
+import net.minecraft.world.item.component.TypedEntityData;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.core.component.DataComponents;
 import com.github.elenterius.biomancy.block.cradle.PrimordialCradleBlockEntity;
 import com.github.elenterius.biomancy.init.ModItems;
 import com.github.elenterius.biomancy.init.ModRecipes;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.CraftingBookCategory;
 import net.minecraft.world.item.crafting.CustomRecipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.Level;
 
 public class CradleCleansingRecipe extends CustomRecipe {
 
-	public CradleCleansingRecipe(CraftingBookCategory category) {
-		super(category);
-	}
+	public static final CradleCleansingRecipe INSTANCE = new CradleCleansingRecipe();
+	public static final MapCodec<CradleCleansingRecipe> MAP_CODEC = MapCodec.unit(INSTANCE);
+	public static final StreamCodec<RegistryFriendlyByteBuf, CradleCleansingRecipe> STREAM_CODEC = StreamCodec.unit(INSTANCE);
+	public static final RecipeSerializer<CradleCleansingRecipe> SERIALIZER = new RecipeSerializer<>(MAP_CODEC, STREAM_CODEC);
 
 	@Override
 	public boolean matches(CraftingInput inventory, Level level) {
@@ -50,7 +54,7 @@ public class CradleCleansingRecipe extends CustomRecipe {
 	}
 
 	@Override
-	public ItemStack assemble(CraftingInput inventory, HolderLookup.Provider registries) {
+	public ItemStack assemble(CraftingInput inventory) {
 		ItemStack cradle = ItemStack.EMPTY;
 		ItemStack cleansingSerum = ItemStack.EMPTY;
 
@@ -78,20 +82,21 @@ public class CradleCleansingRecipe extends CustomRecipe {
 	}
 
 	private ItemStack createItem(ItemStack stack) {
-		CustomData data = stack.get(DataComponents.BLOCK_ENTITY_DATA);
+		TypedEntityData<BlockEntityType<?>> data = stack.get(DataComponents.BLOCK_ENTITY_DATA);
 		if (data != null && data.contains(PrimordialCradleBlockEntity.PROC_GEN_VALUES_KEY)) {
-			CustomData.update(DataComponents.BLOCK_ENTITY_DATA, stack, tag -> tag.remove(PrimordialCradleBlockEntity.PROC_GEN_VALUES_KEY));
+			CompoundTag tag = data.copyTagWithoutId();
+			tag.remove(PrimordialCradleBlockEntity.PROC_GEN_VALUES_KEY);
+			BlockItemUtil.setBlockEntityData(stack, data.type(), tag);
 		}
 		return stack;
 	}
 
-	@Override
 	public boolean canCraftInDimensions(int width, int height) {
 		return width * height >= 2;
 	}
 
 	@Override
-	public RecipeSerializer<?> getSerializer() {
+	public RecipeSerializer<CradleCleansingRecipe> getSerializer() {
 		return ModRecipes.CRADLE_CLEANSING_SERIALIZER.get();
 	}
 

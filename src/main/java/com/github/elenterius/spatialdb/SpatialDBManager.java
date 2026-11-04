@@ -1,7 +1,7 @@
 package com.github.elenterius.spatialdb;
 
 import com.github.elenterius.biomancy.BiomancyMod;
-import com.github.elenterius.biomancy.mixin.accessor.DimensionDataStorageAccessor;
+import com.github.elenterius.biomancy.mixin.accessor.SavedDataStorageAccessor;
 import com.github.elenterius.spatialdb.mvstore.MVStoreFactory;
 import com.github.elenterius.spatialdb.mvstore.SpatialDB;
 import com.github.elenterius.spatialdb.mvstore.SpatialDBException;
@@ -45,7 +45,7 @@ public class SpatialDBManager {
 	static {
 		EXECUTOR_SERVICE = Executors.newSingleThreadExecutor();
 
-		if (FMLEnvironment.dist.isClient()) {
+		if (FMLEnvironment.getDist().isClient()) {
 			LOGGER.info(LOG_MARKER, "Registering shutdown hook...");
 			Runtime.getRuntime().addShutdownHook(new Thread(SpatialDBManager::shutdownAll, "SpatialDB/ShutdownHook"));
 		}
@@ -54,7 +54,7 @@ public class SpatialDBManager {
 	private SpatialDBManager() {}
 
 	private static SpatialDB openDB(MinecraftServer server, String worldName) {
-		Path dataFolder = ((DimensionDataStorageAccessor) server.overworld().getDataStorage()).biomancy$getDataFolder().toPath();
+		Path dataFolder = ((SavedDataStorageAccessor) server.overworld().getDataStorage()).biomancy$getDataFolder();
 		Path dbFilepath = dataFolder.resolve(FILE_NAME);
 		String dbName = "Biomancy-SpatialDB";
 		String dbOwnerName = "[World/%s]".formatted(worldName);
@@ -155,7 +155,7 @@ public class SpatialDBManager {
 
 	@SubscribeEvent
 	public static void onServerStop(final ServerStoppingEvent event) {
-		if (FMLEnvironment.dist.isDedicatedServer()) {
+		if (FMLEnvironment.getDist().isDedicatedServer()) {
 			shutdownAll();
 		}
 	}

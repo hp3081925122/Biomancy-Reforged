@@ -1,5 +1,9 @@
 package com.github.elenterius.biomancy.api.tribute;
 
+import java.util.ArrayList;
+import net.minecraft.world.item.consume_effects.ApplyStatusEffectsConsumeEffect;
+import net.minecraft.world.item.consume_effects.ConsumeEffect;
+import net.minecraft.world.item.component.Consumable;
 import com.github.elenterius.biomancy.init.tags.ModMobEffectTags;
 import com.github.elenterius.biomancy.item.PotionSerumItem;
 import com.github.elenterius.biomancy.serum.PotionSerum;
@@ -10,7 +14,6 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.PotionItem;
-import net.minecraft.world.item.SuspiciousStewItem;
 import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.item.component.SuspiciousStewEffects;
 import org.jetbrains.annotations.ApiStatus;
@@ -25,10 +28,10 @@ public record MobEffectTribute(int lifeEnergy, int successModifier, int diseaseM
 
 		boolean isPotionSerum = stack.getItem() instanceof PotionSerumItem;
 
-		boolean isSuspiciousStewItem = stack.getItem() instanceof SuspiciousStewItem;
+		boolean isSuspiciousStewItem = stack.has(DataComponents.SUSPICIOUS_STEW_EFFECTS);
 
-		FoodProperties food = stack.getFoodProperties(null);
-		boolean isFoodItem = food != null && !food.effects().isEmpty();
+		List<ApplyStatusEffectsConsumeEffect> foodEffects = getFoodEffects(stack);
+		boolean isFoodItem = !foodEffects.isEmpty();
 
 		if (!isPotionItem && !isSuspiciousStewItem && !isFoodItem && !isPotionSerum) return Tribute.EMPTY;
 
@@ -55,14 +58,28 @@ public record MobEffectTribute(int lifeEnergy, int successModifier, int diseaseM
 		}
 
 		if (isFoodItem) {
-			for (FoodProperties.PossibleEffect possibleEffect : food.effects()) {
-				MobEffectInstance effectInstance = possibleEffect.effect();
+			for (ApplyStatusEffectsConsumeEffect possibleEffect : foodEffects) {
 				float chance = possibleEffect.probability();
-				builder.addEffect(effectInstance, chance * 1.2f);
+				for (MobEffectInstance effectInstance : possibleEffect.effects()) {
+					builder.addEffect(effectInstance, chance * 1.2f);
+				}
 			}
 		}
 
 		return builder.build();
+	}
+
+	private static List<ApplyStatusEffectsConsumeEffect> getFoodEffects(ItemStack stack) {
+		if (!stack.has(DataComponents.FOOD)) return List.of();
+		Consumable consumable = stack.get(DataComponents.CONSUMABLE);
+		if (consumable == null) return List.of();
+		List<ApplyStatusEffectsConsumeEffect> effects = new ArrayList<>();
+		for (ConsumeEffect consumeEffect : consumable.onConsumeEffects()) {
+			if (consumeEffect instanceof ApplyStatusEffectsConsumeEffect applyEffects && !applyEffects.effects().isEmpty()) {
+				effects.add(applyEffects);
+			}
+		}
+		return effects;
 	}
 
 	public static Builder builder() {

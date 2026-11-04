@@ -1,7 +1,7 @@
 {
   "type": "biomancy:decomposing",
   "ingredient": {
-    "item": "minecraft:sniffer_egg"
+    "ingredient": "minecraft:sniffer_egg"
   },
   "nutrientsCost": 1,
   "processingTime": 580,

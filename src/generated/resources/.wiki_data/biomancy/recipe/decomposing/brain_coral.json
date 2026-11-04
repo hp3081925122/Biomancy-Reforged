@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "minecraft:brain_coral"
+      "ingredient": "minecraft:brain_coral"
     }
   },
   "output": {

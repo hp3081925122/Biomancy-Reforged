@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "minecraft:cake"
+      "ingredient": "minecraft:cake"
     }
   },
   "output": {

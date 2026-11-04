@@ -1,10 +1,14 @@
 package com.github.elenterius.biomancy.item.weapon;
 
+import com.github.elenterius.biomancy.util.animation.ModDataTickets;
+import com.github.elenterius.biomancy.util.animation.GeoRenderProviders;
+import net.minecraft.world.item.ItemInstance;
+import net.minecraft.world.item.component.TooltipDisplay;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.entity.EquipmentSlotGroup;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.api.livingtool.LivingToolState;
-import com.github.elenterius.biomancy.client.render.item.ravenousclaws.RavenousClawsRenderer;
 import com.github.elenterius.biomancy.client.util.ClientTextUtil;
 import com.github.elenterius.biomancy.init.ModDamageSources;
 import com.github.elenterius.biomancy.init.ModParticleTypes;
@@ -20,9 +24,8 @@ import com.github.elenterius.biomancy.util.ComponentUtil;
 import com.github.elenterius.biomancy.util.FormatUtil;
 import com.github.elenterius.biomancy.util.MobUtil;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
@@ -36,34 +39,38 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ClickAction;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Tier;
+import net.minecraft.world.item.ToolMaterial;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
-import software.bernie.geckolib.animatable.client.GeoRenderProvider;
+import com.geckolib.animatable.client.GeoRenderProvider;
 import net.neoforged.neoforge.common.ItemAbility;
 import net.neoforged.neoforge.common.ItemAbilities;
 import net.neoforged.neoforge.common.util.Lazy;
 import org.jspecify.annotations.Nullable;
-import software.bernie.geckolib.animatable.GeoItem;
-import software.bernie.geckolib.constant.DataTickets;
-import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.animation.*;
-import software.bernie.geckolib.animation.PlayState;
-import software.bernie.geckolib.util.GeckoLibUtil;
+import com.geckolib.animatable.GeoItem;
+import com.geckolib.constant.DataTickets;
+import com.geckolib.animatable.instance.AnimatableInstanceCache;
+import com.geckolib.animation.*;
+import com.geckolib.animation.state.AnimationPoint;
+import com.geckolib.animation.state.AnimationTest;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.github.elenterius.biomancy.util.CombatUtil;
+import com.geckolib.animation.object.PlayState;
+import com.geckolib.util.GeckoLibUtil;
 
 import java.text.DecimalFormat;
 import java.util.List;
 import java.util.function.Consumer;
 
 public class RavenousClawsItem extends LivingClawsItem implements GeoItem, ItemCharge, MeleeDamageSourceProviderItem, CrosshairProvider {
-	protected static final ResourceLocation BASE_ATTACK_KNOCKBACK_ID = BiomancyMod.rl("base_attack_knockback");
+	protected static final Identifier BASE_ATTACK_KNOCKBACK_ID = BiomancyMod.rl("base_attack_knockback");
 	private final Lazy<ItemAttributeModifiers> brokenAttributes;
 	private final Lazy<ItemAttributeModifiers> dormantAttributes;
 	private final Lazy<ItemAttributeModifiers> awakenedAttributes;
 	private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
-	public RavenousClawsItem(Tier tier, float attackDamage, float attackSpeed, int maxNutrients, Properties properties) {
-		super(tier, 0, 0, 0, maxNutrients, properties);
+	public RavenousClawsItem(ToolMaterial material, float attackDamage, float attackSpeed, int maxNutrients, Properties properties) {
+		super(material, 0, 0, 0, maxNutrients, properties);
 
 		float attackSpeedModifier = (float) (attackSpeed - Attributes.ATTACK_SPEED.value().getDefaultValue());
 		brokenAttributes = Lazy.of(() -> createDefaultAttributeModifiers(0, 0, -0.5f).build());
@@ -97,11 +104,6 @@ public class RavenousClawsItem extends LivingClawsItem implements GeoItem, ItemC
 	}
 
 	@Override
-	public ItemAttributeModifiers getDefaultAttributeModifiers() {
-		return dormantAttributes.get();
-	}
-
-	@Override
 	public ItemAttributeModifiers getDefaultAttributeModifiers(ItemStack stack) {
 		return switch (getLivingToolState(stack)) {
 			case BROKEN -> brokenAttributes.get();
@@ -118,7 +120,7 @@ public class RavenousClawsItem extends LivingClawsItem implements GeoItem, ItemC
 	@Override
 	public KeyPressResult onClientKeyPress(ItemStack stack, Level level, Player player, EquipmentSlot slot, byte flags) {
 		if (!hasCharge(stack)) {
-			player.displayClientMessage(TextComponentUtil.getFailureMsgText("not_enough_blood_charge"), true);
+			player.sendOverlayMessage(TextComponentUtil.getFailureMsgText("not_enough_blood_charge"));
 			player.playSound(ModSoundEvents.FLESHKIN_NO.get(), 1f, 1f + player.level().getRandom().nextFloat() * 0.4f);
 			return KeyPressResult.fail();
 		}
@@ -200,7 +202,7 @@ public class RavenousClawsItem extends LivingClawsItem implements GeoItem, ItemC
 	}
 
 	@Override
-	public boolean canPerformAction(ItemStack stack, ItemAbility itemAbility) {
+	public boolean canPerformAction(ItemInstance stack, ItemAbility itemAbility) {
 		if (itemAbility == ItemAbilities.SWORD_SWEEP) return false;
 		return super.canPerformAction(stack, itemAbility);
 	}
@@ -213,15 +215,15 @@ public class RavenousClawsItem extends LivingClawsItem implements GeoItem, ItemC
 			case BROKEN -> null;
 			case DORMANT, AWAKENED -> {
 				DamageSource damageSource = ModDamageSources.slash(attacker.level(), attacker);
-				if (target.isInvulnerableTo(damageSource)) yield null;
+				if (CombatUtil.isInvulnerableTo(target, damageSource)) yield null;
 				yield damageSource;
 			}
 		};
 	}
 
 	@Override
-	public boolean hurtEnemy(ItemStack stack, LivingEntity target, LivingEntity attacker) {
-		if (attacker.level().isClientSide) return true;
+	public void hurtEnemy(ItemStack stack, LivingEntity target, LivingEntity attacker) {
+		if (attacker.level().isClientSide()) return;
 
 		LivingToolState livingToolState = getLivingToolState(stack);
 		boolean isFullAttackStrength = !(attacker instanceof Player player) || player.getAttackStrengthScale(0.5f) >= 0.9f;
@@ -282,62 +284,61 @@ public class RavenousClawsItem extends LivingClawsItem implements GeoItem, ItemC
 			}
 		}
 
-		return true;
 	}
 
 	@Override
-	public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag isAdvanced) {
-		tooltip.addAll(ClientTextUtil.getItemInfoTooltip(stack));
-		tooltip.add(ComponentUtil.EMPTY_LINE);
+	public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag isAdvanced) {
+		ClientTextUtil.getItemInfoTooltip(stack).forEach(tooltip);
+		tooltip.accept(ComponentUtil.EMPTY_LINE);
 
 		appendLivingToolTooltip(stack, tooltip);
 
 		if (stack.isEnchanted()) {
-			tooltip.add(ComponentUtil.EMPTY_LINE);
+			tooltip.accept(ComponentUtil.EMPTY_LINE);
 		}
 	}
 
 	@Override
-	public void appendLivingToolTooltip(ItemStack stack, List<Component> tooltip) {
+	public void appendLivingToolTooltip(ItemStack stack, Consumer<Component> tooltip) {
 		LivingToolState livingToolState = getLivingToolState(stack);
 
 		switch (livingToolState) {
 			case BROKEN -> {
 			}
 			case DORMANT -> {
-				tooltip.add(TextComponentUtil.getAbilityText("bleed_proc").append(" (8% chance)").withStyle(ChatFormatting.GRAY));
-				tooltip.add(ComponentUtil.literal(" ").append(TextComponentUtil.getAbilityText("bleed_proc.desc")).withStyle(ChatFormatting.DARK_GRAY));
-				tooltip.add(ComponentUtil.EMPTY_LINE);
+				tooltip.accept(TextComponentUtil.getAbilityText("bleed_proc").append(" (8% chance)").withStyle(ChatFormatting.GRAY));
+				tooltip.accept(ComponentUtil.literal(" ").append(TextComponentUtil.getAbilityText("bleed_proc.desc")).withStyle(ChatFormatting.DARK_GRAY));
+				tooltip.accept(ComponentUtil.EMPTY_LINE);
 			}
 			case AWAKENED -> {
-				tooltip.add(TextComponentUtil.getAbilityText("bleed_proc").append(" (20% chance)").withStyle(ChatFormatting.GRAY));
-				tooltip.add(ComponentUtil.literal(" ").append(TextComponentUtil.getAbilityText("bleed_proc.desc")).withStyle(ChatFormatting.DARK_GRAY));
-				tooltip.add(TextComponentUtil.getAbilityText("blood_explosion").append(" (20% chance)").withStyle(ChatFormatting.GRAY));
-				tooltip.add(ComponentUtil.literal(" ").append(TextComponentUtil.getAbilityText("blood_explosion.desc")).withStyle(ChatFormatting.DARK_GRAY));
-				tooltip.add(ComponentUtil.EMPTY_LINE);
+				tooltip.accept(TextComponentUtil.getAbilityText("bleed_proc").append(" (20% chance)").withStyle(ChatFormatting.GRAY));
+				tooltip.accept(ComponentUtil.literal(" ").append(TextComponentUtil.getAbilityText("bleed_proc.desc")).withStyle(ChatFormatting.DARK_GRAY));
+				tooltip.accept(TextComponentUtil.getAbilityText("blood_explosion").append(" (20% chance)").withStyle(ChatFormatting.GRAY));
+				tooltip.accept(ComponentUtil.literal(" ").append(TextComponentUtil.getAbilityText("blood_explosion.desc")).withStyle(ChatFormatting.DARK_GRAY));
+				tooltip.accept(ComponentUtil.EMPTY_LINE);
 			}
 		}
 
 		DecimalFormat df = FormatUtil.getIntegerFormatter();
-		tooltip.add(TextComponentUtil.getTooltipText("nutrients_fuel").withStyle(ChatFormatting.GRAY));
-		tooltip.add(ComponentUtil.literal(" %s/%s".formatted(df.format(getNutrients(stack)), df.format(getMaxNutrients(stack)))).withStyle(TextStyles.NUTRIENTS));
-		tooltip.add(TextComponentUtil.getTooltipText("blood_charge").withStyle(ChatFormatting.GRAY));
-		tooltip.add(ComponentUtil.literal(" %s/%s".formatted(df.format(getCharge(stack)), df.format(getMaxCharge(stack)))).withStyle(TextStyles.ERROR));
+		tooltip.accept(TextComponentUtil.getTooltipText("nutrients_fuel").withStyle(ChatFormatting.GRAY));
+		tooltip.accept(ComponentUtil.literal(" %s/%s".formatted(df.format(getNutrients(stack)), df.format(getMaxNutrients(stack)))).withStyle(TextStyles.NUTRIENTS));
+		tooltip.accept(TextComponentUtil.getTooltipText("blood_charge").withStyle(ChatFormatting.GRAY));
+		tooltip.accept(ComponentUtil.literal(" %s/%s".formatted(df.format(getCharge(stack)), df.format(getMaxCharge(stack)))).withStyle(TextStyles.ERROR));
 
 		switch (livingToolState) {
 			case BROKEN -> {
-				tooltip.add(ComponentUtil.EMPTY_LINE);
-				tooltip.add(livingToolState.getTooltip());
+				tooltip.accept(ComponentUtil.EMPTY_LINE);
+				tooltip.accept(livingToolState.getTooltip());
 			}
 			case DORMANT -> {
-				tooltip.add(ComponentUtil.EMPTY_LINE);
-				tooltip.add(livingToolState.getTooltip().withStyle(TextStyles.ITALIC_GRAY));
-				tooltip.add(ClientTextUtil.pressButtonTo(ClientTextUtil.getDefaultKey(), TextComponentUtil.getActionText("enable_awakened_mode")));
+				tooltip.accept(ComponentUtil.EMPTY_LINE);
+				tooltip.accept(livingToolState.getTooltip().withStyle(TextStyles.ITALIC_GRAY));
+				tooltip.accept(ClientTextUtil.pressButtonTo(ClientTextUtil.getDefaultKey(), TextComponentUtil.getActionText("enable_awakened_mode")));
 			}
 			case AWAKENED -> {
-				tooltip.add(ComponentUtil.EMPTY_LINE);
-				tooltip.add(livingToolState.getTooltip().withStyle(TextStyles.ITALIC_GRAY));
-				tooltip.add(ClientTextUtil.pressButtonTo(ClientTextUtil.getDefaultKey(), TextComponentUtil.getActionText("disable_awakened_mode")));
+				tooltip.accept(ComponentUtil.EMPTY_LINE);
+				tooltip.accept(livingToolState.getTooltip().withStyle(TextStyles.ITALIC_GRAY));
+				tooltip.accept(ClientTextUtil.pressButtonTo(ClientTextUtil.getDefaultKey(), TextComponentUtil.getActionText("disable_awakened_mode")));
 			}
 		}
 	}
@@ -352,21 +353,14 @@ public class RavenousClawsItem extends LivingClawsItem implements GeoItem, ItemC
 
 	@Override
 	public void createGeoRenderer(Consumer<GeoRenderProvider> consumer) {
-		consumer.accept(new GeoRenderProvider() {
-			private final RavenousClawsRenderer renderer = new RavenousClawsRenderer();
-
-			@Override
-			public BlockEntityWithoutLevelRenderer getGeoItemRenderer() {
-				return renderer;
-			}
-		});
+		GeoRenderProviders.accept(this, consumer);
 	}
 
-	private PlayState handleAnimationState(AnimationState<RavenousClawsItem> animationState) {
-		ItemStack stack = animationState.getData(DataTickets.ITEMSTACK);
+	private PlayState handleAnimationState(AnimationTest<RavenousClawsItem> animationState) {
+		ItemStack stack = animationState.getData(ModDataTickets.ITEMSTACK);
 		LivingToolState toolState = stack != null ? getLivingToolState(stack) : LivingToolState.BROKEN;
 
-		AnimationController<RavenousClawsItem> controller = animationState.getController();
+		AnimationController<RavenousClawsItem> controller = animationState.controller();
 		switch (toolState) {
 			case DORMANT -> Animations.setDormant(controller);
 			case AWAKENED -> Animations.setAwakened(controller);
@@ -378,7 +372,7 @@ public class RavenousClawsItem extends LivingClawsItem implements GeoItem, ItemC
 
 	@Override
 	public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-		controllers.add(new AnimationController<>(this, Animations.MAIN_CONTROLLER, 1, this::handleAnimationState));
+		controllers.add(new AnimationController<>(Animations.MAIN_CONTROLLER, 1, this::handleAnimationState));
 	}
 
 	@Override
@@ -386,10 +380,10 @@ public class RavenousClawsItem extends LivingClawsItem implements GeoItem, ItemC
 		return cache;
 	}
 
-	protected static final ResourceLocation CROSSHAIR = BiomancyMod.rl("textures/gui/claws_crosshair.png");
+	protected static final Identifier CROSSHAIR = BiomancyMod.rl("textures/gui/claws_crosshair.png");
 
 	@Override
-	public ResourceLocation getCrosshairTexture(ItemStack stack, Player player) {
+	public Identifier getCrosshairTexture(ItemStack stack, Player player) {
 		return CROSSHAIR;
 	}
 
@@ -405,13 +399,13 @@ public class RavenousClawsItem extends LivingClawsItem implements GeoItem, ItemC
 		private Animations() {}
 
 		protected static void setDormant(AnimationController<?> controller) {
-			AnimationProcessor.QueuedAnimation queued = controller.getCurrentAnimation();
-			if (queued == null) {
+			AnimationPoint current = controller.getCurrentAnimationPoint();
+			if (current == null) {
 				controller.setAnimation(DORMANT);
 				return;
 			}
 
-			if (!queued.animation().name().equals("ravenous_claws.dormant")) {
+			if (!current.animation().name().equals("ravenous_claws.dormant")) {
 				controller.setAnimation(TO_SLEEP_TRANSITION);
 				return;
 			}
@@ -420,13 +414,13 @@ public class RavenousClawsItem extends LivingClawsItem implements GeoItem, ItemC
 		}
 
 		protected static void setAwakened(AnimationController<?> controller) {
-			AnimationProcessor.QueuedAnimation queued = controller.getCurrentAnimation();
-			if (queued == null) {
+			AnimationPoint current = controller.getCurrentAnimationPoint();
+			if (current == null) {
 				controller.setAnimation(AWAKENED);
 				return;
 			}
 
-			if (!queued.animation().name().equals("ravenous_claws.awakened")) {
+			if (!current.animation().name().equals("ravenous_claws.awakened")) {
 				controller.setAnimation(WAKEUP_TRANSITION);
 				return;
 			}

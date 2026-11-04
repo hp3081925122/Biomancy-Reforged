@@ -1,8 +1,12 @@
 package com.github.elenterius.biomancy.crafting.state;
 
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import com.github.elenterius.biomancy.crafting.recipe.ProcessingRecipe;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeHolder;
@@ -28,7 +32,7 @@ public abstract class RecipeCraftingStateData<T extends ProcessingRecipe> implem
 	public int nutrientsCost;
 
 	private CraftingState craftingState = CraftingState.NONE;
-	protected @Nullable ResourceLocation recipeId;
+	protected @Nullable Identifier recipeId;
 
 	public CraftingState getCraftingState() {
 		return craftingState;
@@ -55,8 +59,9 @@ public abstract class RecipeCraftingStateData<T extends ProcessingRecipe> implem
 	@SuppressWarnings("unchecked")
 	public Optional<RecipeHolder<T>> getCraftingGoalRecipe(Level level) {
 		if (recipeId == null) return Optional.empty();
+		if (!(level instanceof ServerLevel serverLevel)) return Optional.empty();
 
-		Optional<RecipeHolder<?>> optional = level.getRecipeManager().byKey(recipeId);
+		Optional<RecipeHolder<?>> optional = serverLevel.recipeAccess().byKey(ResourceKey.create(Registries.RECIPE, recipeId));
 		if (optional.isPresent() && isRecipeOfInstance(optional.get().value())) {
 			return Optional.of((RecipeHolder<T>) optional.get());
 		}
@@ -65,7 +70,7 @@ public abstract class RecipeCraftingStateData<T extends ProcessingRecipe> implem
 	}
 
 	public void setCraftingGoalRecipe(RecipeHolder<T> recipe, RecipeInput input) {
-		recipeId = recipe.id();
+		recipeId = recipe.id().identifier();
 		timeForCompletion = recipe.value().getCraftingTimeTicks(input);
 		nutrientsCost = recipe.value().getCraftingCostNutrients(input);
 		timeElapsed = 0;
@@ -81,26 +86,22 @@ public abstract class RecipeCraftingStateData<T extends ProcessingRecipe> implem
 		nutrientsCost = 0;
 	}
 
-	public void serialize(CompoundTag tag) {
-		CraftingState.toNBT(tag, craftingState);
+	public void serialize(ValueOutput output) {
+		CraftingState.toNBT(output, craftingState);
 		if (recipeId != null) {
-			tag.putString(RECIPE_ID_KEY, recipeId.toString());
+			output.putString(RECIPE_ID_KEY, recipeId.toString());
 		}
-		tag.putInt(TIME_ELAPSED_KEY, timeElapsed);
-		tag.putInt(TIME_FOR_COMPLETION_KEY, timeForCompletion);
-		tag.putInt(NUTRIENTS_COST_KEY, nutrientsCost);
+		output.putInt(TIME_ELAPSED_KEY, timeElapsed);
+		output.putInt(TIME_FOR_COMPLETION_KEY, timeForCompletion);
+		output.putInt(NUTRIENTS_COST_KEY, nutrientsCost);
 	}
 
-	public void deserialize(CompoundTag tag) {
-		craftingState = CraftingState.fromNBT(tag);
-		if (tag.contains(RECIPE_ID_KEY)) {
-			String id = tag.getString(RECIPE_ID_KEY);
-			recipeId = ResourceLocation.tryParse(id);
-		}
-		else recipeId = null;
-		timeElapsed = tag.getInt(TIME_ELAPSED_KEY);
-		timeForCompletion = tag.getInt(TIME_FOR_COMPLETION_KEY);
-		nutrientsCost = tag.getInt(NUTRIENTS_COST_KEY);
+	public void deserialize(ValueInput input) {
+		craftingState = CraftingState.fromNBT(input);
+		recipeId = input.getString(RECIPE_ID_KEY).map(Identifier::tryParse).orElse(null);
+		timeElapsed = input.getIntOr(TIME_ELAPSED_KEY, 0);
+		timeForCompletion = input.getIntOr(TIME_FOR_COMPLETION_KEY, 0);
+		nutrientsCost = input.getIntOr(NUTRIENTS_COST_KEY, 0);
 	}
 
 	protected void validateIndex(int index) {

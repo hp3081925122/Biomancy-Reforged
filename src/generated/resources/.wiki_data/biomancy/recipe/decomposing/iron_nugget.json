@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "minecraft:iron_nugget"
+      "ingredient": "minecraft:iron_nugget"
     }
   },
   "output": {

@@ -1,10 +1,9 @@
 package com.github.elenterius.biomancy.inventory;
 
-import net.minecraft.core.HolderLookup;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import com.github.elenterius.biomancy.util.ItemStackFilter;
 import com.github.elenterius.biomancy.util.ItemStackFilterList;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.items.IItemHandler;
 import org.jspecify.annotations.Nullable;
@@ -78,13 +77,13 @@ public interface BehavioralItemHandler extends IItemHandler {
 		}
 
 		@Override
-		public CompoundTag serializeNBT(HolderLookup.Provider provider) {
-			return itemHandler.serializeNBT(provider);
+		public void serialize(ValueOutput output) {
+			itemHandler.serialize(output);
 		}
 
 		@Override
-		public void deserializeNBT(HolderLookup.Provider provider, CompoundTag tag) {
-			itemHandler.deserializeNBT(provider, tag);
+		public void deserialize(ValueInput input) {
+			itemHandler.deserialize(input);
 		}
 
 		@Override
@@ -121,13 +120,13 @@ public interface BehavioralItemHandler extends IItemHandler {
 		}
 
 		@Override
-		public CompoundTag serializeNBT(HolderLookup.Provider provider) {
-			return itemHandler.serializeNBT(provider);
+		public void serialize(ValueOutput output) {
+			itemHandler.serialize(output);
 		}
 
 		@Override
-		public void deserializeNBT(HolderLookup.Provider provider, CompoundTag tag) {
-			itemHandler.deserializeNBT(provider, tag);
+		public void deserialize(ValueInput input) {
+			itemHandler.deserialize(input);
 		}
 
 		@Override
@@ -163,17 +162,15 @@ public interface BehavioralItemHandler extends IItemHandler {
 		}
 
 		@Override
-		public CompoundTag serializeNBT(HolderLookup.Provider provider) {
-			CompoundTag tag = new CompoundTag();
-			tag.put("Handler", itemHandler.serializeNBT(provider));
-			tag.put("Filters", filters.serializeNBT(provider));
-			return tag;
+		public void serialize(ValueOutput output) {
+			itemHandler.serialize(output.child("Handler"));
+			output.store("Filters", ItemStackFilterList.CODEC, filters);
 		}
 
 		@Override
-		public void deserializeNBT(HolderLookup.Provider provider, CompoundTag tag) {
-			itemHandler.deserializeNBT(provider, tag.getCompound("Handler"));
-			filters.deserializeNBT(provider, tag.getList("Filters", Tag.TAG_COMPOUND));
+		public void deserialize(ValueInput input) {
+			itemHandler.deserialize(input.childOrEmpty("Handler"));
+			input.read("Filters", ItemStackFilterList.CODEC).ifPresent(filters::replaceWith);
 		}
 
 		@Override
@@ -228,16 +225,15 @@ public interface BehavioralItemHandler extends IItemHandler {
 		}
 
 		@Override
-		public CompoundTag serializeNBT(HolderLookup.Provider provider) {
-			CompoundTag tag = super.serializeNBT(provider);
-			tag.putBoolean("Locked", locked);
-			return tag;
+		public void serialize(ValueOutput output) {
+			super.serialize(output);
+			output.putBoolean("Locked", locked);
 		}
 
 		@Override
-		public void deserializeNBT(HolderLookup.Provider provider, CompoundTag tag) {
-			super.deserializeNBT(provider, tag);
-			locked = tag.getBoolean("Locked");
+		public void deserialize(ValueInput input) {
+			super.deserialize(input);
+			locked = input.getBooleanOr("Locked", false);
 		}
 	}
 }

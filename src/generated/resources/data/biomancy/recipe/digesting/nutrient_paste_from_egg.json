@@ -1,8 +1,6 @@
 {
   "type": "biomancy:digesting",
-  "ingredient": {
-    "item": "minecraft:egg"
-  },
+  "ingredient": "minecraft:egg",
   "nutrientsCost": 2,
   "processingTime": 220,
   "result": {

@@ -1,10 +1,7 @@
 {
   "type": "minecraft:stonecutting",
-  "ingredient": {
-    "item": "biomancy:smooth_primal_flesh"
-  },
+  "ingredient": "biomancy:smooth_primal_flesh",
   "result": {
-    "count": 1,
     "id": "biomancy:smooth_primal_flesh_stairs"
   }
 }

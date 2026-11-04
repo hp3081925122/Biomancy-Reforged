@@ -3,26 +3,20 @@ package com.github.elenterius.biomancy.client.render.entity.projectile;
 import com.github.elenterius.biomancy.entity.projectile.AcidSprayProjectile;
 import com.github.elenterius.biomancy.init.ModMobEffects;
 import com.github.elenterius.biomancy.init.client.ModRenderTypes;
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.*;
-import net.minecraft.client.Camera;
-import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.client.renderer.MultiBufferSource;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.client.renderer.entity.state.EntityRenderState;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
-import org.joml.Matrix3f;
-import org.joml.Matrix4f;
 import org.joml.Vector3f;
+import org.jspecify.annotations.Nullable;
 
-public class AcidSprayRenderer extends EntityRenderer<AcidSprayProjectile> {
-
-	private static final Vector3f V_1 = new Vector3f();
-	private static final Vector3f V_2 = new Vector3f();
-	private static final Vector3f AXIS_1 = new Vector3f();
-	private static final Vector3f AXIS_2 = new Vector3f();
+public class AcidSprayRenderer extends EntityRenderer<AcidSprayProjectile, AcidSprayRenderer.AcidSprayRenderState> {
 
 	private static final Vector3f[] QUAD = new Vector3f[]{
 			new Vector3f(-1f, -1f, 0f),
@@ -37,44 +31,23 @@ public class AcidSprayRenderer extends EntityRenderer<AcidSprayProjectile> {
 	private static final float TRAIL_WIDTH = 0.25f;
 	private static final float MAX_SEGMENT_LENGTH_SQUARED = 5f;
 
-	private static final ResourceLocation TEXTURE = ResourceLocation.withDefaultNamespace("textures/particle/drip_hang.png");
+	private static final Identifier TEXTURE = Identifier.withDefaultNamespace("textures/particle/drip_hang.png");
 
 	public AcidSprayRenderer(EntityRendererProvider.Context context) {
 		super(context);
 	}
 
 	@Override
-	public void render(AcidSprayProjectile entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
-		int rgb = ModMobEffects.CORROSIVE.get().getColor();
-		float r = (rgb >> 16 & 255) / 255f;
-		float g = (rgb >> 8 & 255) / 255f;
-		float b = (rgb & 255) / 255f;
-		float alpha = 1f;
-		int lightMap = packedLight;
-
-		poseStack.pushPose();
-		poseStack.mulPose(entityRenderDispatcher.cameraOrientation());
-		poseStack.scale(0.5f, 0.5f, 0.5f);
-		poseStack.translate(0f, -(0.5f + Y_OFFSET), 0f);
-
-		RenderSystem.setShaderTexture(0, getTextureLocation(entity));
-		RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
-		Matrix4f m = poseStack.last().pose();
-
-		BufferBuilder consumer = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
-		consumer.addVertex(m, QUAD[0].x(), QUAD[0].y(), QUAD[0].z()).setUv(1f, 1f).setColor(r, g, b, alpha).setLight(lightMap);
-		consumer.addVertex(m, QUAD[1].x(), QUAD[1].y(), QUAD[1].z()).setUv(1f, 0f).setColor(r, g, b, alpha).setLight(lightMap);
-		consumer.addVertex(m, QUAD[2].x(), QUAD[2].y(), QUAD[2].z()).setUv(0f, 0f).setColor(r, g, b, alpha).setLight(lightMap);
-		consumer.addVertex(m, QUAD[3].x(), QUAD[3].y(), QUAD[3].z()).setUv(0f, 1f).setColor(r, g, b, alpha).setLight(lightMap);
-		BufferUploader.drawWithShader(consumer.buildOrThrow());
-		poseStack.popPose();
-
-		renderTrail(entity, poseStack, buffer, partialTick, r, g, b);
-
-		super.render(entity, entityYaw, partialTick, poseStack, buffer, packedLight);
+	public AcidSprayRenderState createRenderState() {
+		return new AcidSprayRenderState();
 	}
 
-	private void renderTrail(AcidSprayProjectile entity, PoseStack poseStack, MultiBufferSource buffer, float partialTick, float r, float g, float b) {
+	@Override
+	public void extractRenderState(AcidSprayProjectile entity, AcidSprayRenderState state, float partialTick) {
+		super.extractRenderState(entity, state, partialTick);
+		state.color = ModMobEffects.CORROSIVE.get().getColor();
+		state.trailPoints = null;
+
 		Vec3 motion = entity.getDeltaMovement();
 		if (motion.lengthSqr() < 1e-6d) return;
 
@@ -83,30 +56,56 @@ public class AcidSprayRenderer extends EntityRenderer<AcidSprayProjectile> {
 
 		Vec3 currentPos = entity.getPosition(partialTick);
 		Vec3 direction = motion.normalize();
-
 		double offsetDistance = TRAIL_WIDTH * 1.75f;
-		Vec3 startPos = currentPos.subtract(direction.scale(offsetDistance));
-
-		Vec3 cameraPos = entityRenderDispatcher.camera.getPosition();
-
-		poseStack.pushPose();
-		poseStack.translate(-cameraPos.x, -cameraPos.y + Y_OFFSET, -cameraPos.z);
 
 		Vec3[] points = new Vec3[trail.length + 1];
-		points[0] = startPos;
+		points[0] = currentPos.subtract(direction.scale(offsetDistance));
 		System.arraycopy(trail, 0, points, 1, trail.length);
 
-		float widthOffset = (float) Math.sin(entity.getId() * 13.37d) * 0.005f;
-		renderSegments(points, TRAIL_WIDTH + widthOffset, poseStack, buffer.getBuffer(ModRenderTypes.trail()), r, g, b, false);
-		renderSegments(points, TRAIL_WIDTH + widthOffset, poseStack, buffer.getBuffer(ModRenderTypes.trail()), r, g, b, true);
-
-		poseStack.popPose();
+		state.trailPoints = points;
+		state.trailWidth = TRAIL_WIDTH + (float) Math.sin(entity.getId() * 13.37d) * 0.005f;
 	}
 
-	private void renderSegments(Vec3[] points, float baseWidth, PoseStack poseStack, VertexConsumer consumer, float r, float g, float b, boolean useAxis2) {
-		Camera camera = entityRenderDispatcher.camera;
-		Matrix4f matrix = poseStack.last().pose();
-		PoseStack.Pose normal = poseStack.last();
+	@Override
+	public void submit(AcidSprayRenderState state, PoseStack poseStack, SubmitNodeCollector submitNodeCollector, CameraRenderState camera) {
+		float r = (state.color >> 16 & 255) / 255f;
+		float g = (state.color >> 8 & 255) / 255f;
+		float b = (state.color & 255) / 255f;
+
+		poseStack.pushPose();
+		poseStack.mulPose(camera.orientation);
+		poseStack.scale(0.5f, 0.5f, 0.5f);
+		poseStack.translate(0f, -(0.5f + Y_OFFSET), 0f);
+		submitNodeCollector.submitCustomGeometry(poseStack, ModRenderTypes.positionTexColor(TEXTURE), (pose, consumer) -> {
+			consumer.addVertex(pose, QUAD[0].x(), QUAD[0].y(), QUAD[0].z()).setUv(1f, 1f).setColor(r, g, b, 1f);
+			consumer.addVertex(pose, QUAD[1].x(), QUAD[1].y(), QUAD[1].z()).setUv(1f, 0f).setColor(r, g, b, 1f);
+			consumer.addVertex(pose, QUAD[2].x(), QUAD[2].y(), QUAD[2].z()).setUv(0f, 0f).setColor(r, g, b, 1f);
+			consumer.addVertex(pose, QUAD[3].x(), QUAD[3].y(), QUAD[3].z()).setUv(0f, 1f).setColor(r, g, b, 1f);
+		});
+		poseStack.popPose();
+
+		Vec3[] points = state.trailPoints;
+		if (points != null) {
+			Vector3f up = new Vector3f(0f, 1f, 0f).rotate(camera.orientation);
+			Vector3f left = new Vector3f(-1f, 0f, 0f).rotate(camera.orientation);
+
+			poseStack.pushPose();
+			poseStack.translate(-state.x, -state.y + Y_OFFSET, -state.z);
+			submitNodeCollector.submitCustomGeometry(poseStack, ModRenderTypes.trail(), (pose, consumer) -> {
+				renderSegments(points, state.trailWidth, pose, consumer, up, left, r, g, b, false);
+				renderSegments(points, state.trailWidth, pose, consumer, up, left, r, g, b, true);
+			});
+			poseStack.popPose();
+		}
+
+		super.submit(state, poseStack, submitNodeCollector, camera);
+	}
+
+	private static void renderSegments(Vec3[] points, float baseWidth, PoseStack.Pose pose, VertexConsumer consumer, Vector3f up, Vector3f left, float r, float g, float b, boolean useAxis2) {
+		Vector3f axis1 = new Vector3f();
+		Vector3f axis2 = new Vector3f();
+		Vector3f v1 = new Vector3f();
+		Vector3f v2 = new Vector3f();
 
 		int segments = points.length - 1;
 
@@ -124,30 +123,32 @@ public class AcidSprayRenderer extends EntityRenderer<AcidSprayProjectile> {
 			float width = Mth.lerp(t, baseWidth, baseWidth * 0.25f);
 			float alpha = Mth.lerp(t, 0.8f, 0.1f);
 
-			dir.cross(camera.getUpVector(), AXIS_1).normalize();
-			if (AXIS_1.lengthSquared() < ALMOST_ZERO) {
-				dir.cross(camera.getLeftVector(), AXIS_1).normalize();
+			dir.cross(up, axis1).normalize();
+			if (axis1.lengthSquared() < ALMOST_ZERO) {
+				dir.cross(left, axis1).normalize();
 			}
 
 			if (useAxis2) {
-				dir.cross(AXIS_1, AXIS_2).normalize();
-				AXIS_2.mul(width);
-				V_1.set(from.x, from.y, from.z).add(AXIS_2);
-				V_2.set(to.x, to.y, to.z).sub(AXIS_2);
+				dir.cross(axis1, axis2).normalize();
+				axis2.mul(width);
+				v1.set(from.x, from.y, from.z).add(axis2);
+				v2.set(to.x, to.y, to.z).sub(axis2);
 			}
 			else {
-				AXIS_1.mul(width);
-				V_1.set(from.x, from.y, from.z).add(AXIS_1);
-				V_2.set(to.x, to.y, to.z).sub(AXIS_1);
+				axis1.mul(width);
+				v1.set(from.x, from.y, from.z).add(axis1);
+				v2.set(to.x, to.y, to.z).sub(axis1);
 			}
 
-			consumer.addVertex(matrix, V_1.x, V_1.y, V_1.z).setColor(r, g, b, alpha).setNormal(normal, 0, 1, 0);
-			consumer.addVertex(matrix, V_2.x, V_2.y, V_2.z).setColor(r, g, b, alpha).setNormal(normal, 0, 1, 0);
+			consumer.addVertex(pose, v1.x, v1.y, v1.z).setColor(r, g, b, alpha);
+			consumer.addVertex(pose, v2.x, v2.y, v2.z).setColor(r, g, b, alpha);
 		}
 	}
 
-	@Override
-	public ResourceLocation getTextureLocation(AcidSprayProjectile entity) {
-		return TEXTURE;
+	public static class AcidSprayRenderState extends EntityRenderState {
+		public int color;
+		public Vec3 @Nullable [] trailPoints;
+		public float trailWidth;
 	}
+
 }

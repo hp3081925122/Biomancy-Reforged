@@ -33,7 +33,7 @@ public record GunSounds(@Nullable SoundEvent shoot,
 	}
 
 	public static void playLocal(Player player, SoundEvent soundEvent) {
-		if (!player.level().isClientSide) return;
+		if (!player.level().isClientSide()) return;
 		float volume = Mth.lerp(player.getRandom().nextFloat(), 0.75f, 0.85f);
 		float pitch = Mth.lerp(player.getRandom().nextFloat(), 0.86f, 1.2f);
 		player.level().playSound(player, player.getX(), player.getEyeY(), player.getZ(), soundEvent, player.getSoundSource(), volume, pitch);
@@ -56,7 +56,7 @@ public record GunSounds(@Nullable SoundEvent shoot,
 	}
 
 	public void playLocalFail(Level level, Player player) {
-		if (!level.isClientSide) return;
+		if (!level.isClientSide()) return;
 		playLocal(player, fail);
 	}
 

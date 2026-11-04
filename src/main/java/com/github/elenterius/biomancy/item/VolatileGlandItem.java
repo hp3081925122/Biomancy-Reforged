@@ -1,10 +1,10 @@
 package com.github.elenterius.biomancy.item;
 
+import net.minecraft.world.InteractionResult;
 import com.github.elenterius.biomancy.init.ModItems;
 import com.github.elenterius.biomancy.init.ModMobEffects;
 import com.github.elenterius.biomancy.util.explosion.ExplosionUtil;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.AreaEffectCloud;
@@ -23,19 +23,19 @@ public class VolatileGlandItem extends SimpleItem {
 	}
 
 	@Override
-	public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
-		return player.isDeadOrDying() ? InteractionResultHolder.fail(player.getItemInHand(usedHand)) : super.use(level, player, usedHand);
+	public InteractionResult use(Level level, Player player, InteractionHand usedHand) {
+		return player.isDeadOrDying() ? InteractionResult.FAIL : super.use(level, player, usedHand);
 	}
 
 	@Override
 	public ItemStack finishUsingItem(ItemStack stack, Level level, LivingEntity livingEntity) {
-		ItemStack result = livingEntity.eat(level, stack);
+		ItemStack result = super.finishUsingItem(stack, level, livingEntity);
 		explode(level, livingEntity);
 		return result;
 	}
 
 	private void explode(Level level, LivingEntity livingEntity) {
-		if (level.isClientSide) return;
+		if (level.isClientSide()) return;
 
 		DamageSource damageSource = level.damageSources().explosion(livingEntity, livingEntity);
 
@@ -61,14 +61,14 @@ public class VolatileGlandItem extends SimpleItem {
 
 	private void spawnFleshBits(Level level, double x, double y, double z) {
 		float force = 0.095f;
-		int n = level.random.nextInt(1, 6 + 1);
+		int n = level.getRandom().nextInt(1, 6 + 1);
 
 		for (int i = 0; i < n; i++) {
 			ItemEntity itemEntity = new ItemEntity(level, x, y, z, new ItemStack(ModItems.FLESH_BITS.get()));
 			itemEntity.setDefaultPickUpDelay();
-			double dX = level.random.nextGaussian() * force;
-			double dY = level.random.nextGaussian() * force;
-			double dZ = level.random.nextGaussian() * force;
+			double dX = level.getRandom().nextGaussian() * force;
+			double dY = level.getRandom().nextGaussian() * force;
+			double dZ = level.getRandom().nextGaussian() * force;
 			itemEntity.setDeltaMovement(dX, dY, dZ);
 			level.addFreshEntity(itemEntity);
 		}

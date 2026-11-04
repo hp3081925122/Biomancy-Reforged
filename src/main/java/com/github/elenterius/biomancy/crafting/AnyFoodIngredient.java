@@ -1,5 +1,9 @@
 package com.github.elenterius.biomancy.crafting;
 
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.Item;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.Holder;
 import com.github.elenterius.biomancy.init.ModRecipes;
 import com.mojang.serialization.MapCodec;
 import io.netty.buffer.ByteBuf;
@@ -33,14 +37,14 @@ public final class AnyFoodIngredient implements ICustomIngredient {
 	@Override
 	public boolean test(ItemStack stack) {
 		if (stack.isEmpty()) return false;
-		return hasNutrition(stack.getFoodProperties(null));
+		return hasNutrition(stack.get(DataComponents.FOOD));
 	}
 
 	@Override
-	public Stream<ItemStack> getItems() {
-		return BuiltInRegistries.ITEM.stream()
-				.map(ItemStack::new)
-				.filter(stack -> !stack.isEmpty() && hasNutrition(stack.getFoodProperties(null)));
+	public Stream<Holder<Item>> items() {
+		return BuiltInRegistries.ITEM.listElements()
+				.filter(holder -> holder.value() != Items.AIR && hasNutrition(holder.value().components().get(DataComponents.FOOD)))
+				.map(holder -> holder);
 	}
 
 	@Override

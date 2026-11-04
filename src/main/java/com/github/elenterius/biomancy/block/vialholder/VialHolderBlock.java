@@ -1,8 +1,9 @@
 package com.github.elenterius.biomancy.block.vialholder;
 
+import net.minecraft.world.level.block.state.properties.EnumProperty;
 import com.mojang.serialization.MapCodec;
 import com.github.elenterius.biomancy.util.InteractionUtil;
-import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.InteractionResult;
 import com.github.elenterius.biomancy.init.ModBlockEntities;
 import com.github.elenterius.biomancy.init.ModBlockProperties;
 import com.github.elenterius.biomancy.util.VoxelShapeUtil;
@@ -16,7 +17,6 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
-import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.*;
@@ -25,7 +25,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
-import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
@@ -39,7 +38,7 @@ public class VialHolderBlock extends BaseEntityBlock {
 
 	public static final MapCodec<VialHolderBlock> CODEC = simpleCodec(VialHolderBlock::new);
 
-	public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
+	public static final EnumProperty<Direction> FACING = BlockStateProperties.HORIZONTAL_FACING;
 
 	public static final BooleanProperty VIAL_0 = ModBlockProperties.VIAL_0;
 	public static final BooleanProperty VIAL_1 = ModBlockProperties.VIAL_1;
@@ -86,7 +85,7 @@ public class VialHolderBlock extends BaseEntityBlock {
 		return state.getValue(VIAL_PROPERTIES[index]);
 	}
 
-	public static int getTintColor(BlockState state, @Nullable BlockAndTintGetter level, @Nullable BlockPos pos, int tintIndex) {
+	public static int getTintColor(BlockState state, @Nullable BlockGetter level, @Nullable BlockPos pos, int tintIndex) {
 		if (level == null || pos == null || !hasVial(state, tintIndex)) return 0xFFFFFFFF;
 
 		if (level.getBlockEntity(pos) instanceof VialHolderBlockEntity vialHolder) {
@@ -128,7 +127,7 @@ public class VialHolderBlock extends BaseEntityBlock {
 	}
 
 	@Override
-	protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+	protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
 		return InteractionUtil.toItemInteractionResult(use(state, level, pos, player, hand, hit));
 	}
 
@@ -139,7 +138,7 @@ public class VialHolderBlock extends BaseEntityBlock {
 			boolean isHandEmpty = stackInHand.isEmpty();
 
 			if (player.isSecondaryUseActive()) {
-				if (!level.isClientSide) {
+				if (!level.isClientSide()) {
 					if (isHandEmpty) {
 						vialHolder.extractAllVials(player);
 					}
@@ -148,7 +147,7 @@ public class VialHolderBlock extends BaseEntityBlock {
 						player.setItemInHand(hand, remainder);
 					}
 				}
-				return InteractionResult.sidedSuccess(level.isClientSide);
+				return InteractionResult.SUCCESS;
 			}
 
 			Direction facing = getFacing(state);
@@ -181,31 +180,21 @@ public class VialHolderBlock extends BaseEntityBlock {
 			if (isHandEmpty) {
 				if (isVialSlotEmpty) return InteractionResult.FAIL;
 
-				if (!level.isClientSide) vialHolder.extractVial(player, index);
+				if (!level.isClientSide()) vialHolder.extractVial(player, index);
 			}
 			else {
 				if (!isVialSlotEmpty) return InteractionResult.FAIL;
 
-				if (!level.isClientSide) {
+				if (!level.isClientSide()) {
 					ItemStack remainder = vialHolder.insertVial(stackInHand, index);
 					player.setItemInHand(hand, remainder);
 				}
 			}
 
-			return InteractionResult.sidedSuccess(level.isClientSide);
+			return InteractionResult.SUCCESS;
 		}
 
 		return InteractionResult.PASS;
-	}
-
-	@Override
-	public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
-		if (!state.is(newState.getBlock())) {
-			if (level.getBlockEntity(pos) instanceof VialHolderBlockEntity vialHolder) {
-				vialHolder.dropInventoryContents(level, pos, true);
-			}
-			super.onRemove(state, level, pos, newState, isMoving);
-		}
 	}
 
 	@Override

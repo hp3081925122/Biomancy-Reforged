@@ -3,10 +3,10 @@
   "input": {
     "0": {
       "count": 8,
-      "id": "biomancy:tough_fibers"
+      "ingredient": "biomancy:tough_fibers"
     },
     "1": {
-      "id": "biomancy:elastic_fibers"
+      "ingredient": "biomancy:elastic_fibers"
     }
   },
   "output": {

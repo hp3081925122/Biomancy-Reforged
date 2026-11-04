@@ -21,8 +21,11 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.*;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.core.Holder;
-import net.neoforged.neoforge.common.DeferredSpawnEggItem;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.item.equipment.ArmorMaterial;
+import net.minecraft.world.item.equipment.ArmorType;
 import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
@@ -39,11 +42,11 @@ public final class ModItems {
 	public static final DeferredItem<SimpleItem> MOB_FANG = registerSimpleItem("mob_fang");
 	public static final DeferredItem<SimpleItem> MOB_CLAW = registerSimpleItem("mob_claw");
 	public static final DeferredItem<SimpleItem> MOB_SINEW = registerSimpleItem("mob_sinew", ModRarities.UNCOMMON);
-	public static final DeferredItem<BoneMarrowItem> MOB_MARROW = registerItem("mob_marrow", props -> new BoneMarrowItem(props.food(ModFoods.MARROW_FLUID).rarity(ModRarities.RARE)));
-	public static final DeferredItem<BoneMarrowItem> WITHERED_MOB_MARROW = registerItem("withered_mob_marrow", props -> new BoneMarrowItem(props.food(ModFoods.CORROSIVE_FLUID).rarity(ModRarities.VERY_RARE)));
-	public static final DeferredItem<SimpleItem> GENERIC_MOB_GLAND = registerItem("mob_gland", props -> new SimpleItem(props.food(ModFoods.POOR_FLESH).rarity(ModRarities.UNCOMMON)));
-	public static final DeferredItem<SimpleItem> TOXIN_GLAND = registerItem("toxin_gland", props -> new SimpleItem(props.food(ModFoods.TOXIN_GLAND).rarity(ModRarities.RARE)));
-	public static final DeferredItem<VolatileGlandItem> VOLATILE_GLAND = registerItem("volatile_gland", props -> new VolatileGlandItem(props.food(ModFoods.VOLATILE_GLAND).rarity(ModRarities.RARE)));
+	public static final DeferredItem<BoneMarrowItem> MOB_MARROW = registerItem("mob_marrow", props -> new BoneMarrowItem(ModFoods.MARROW_FLUID.apply(props).rarity(ModRarities.RARE)));
+	public static final DeferredItem<BoneMarrowItem> WITHERED_MOB_MARROW = registerItem("withered_mob_marrow", props -> new BoneMarrowItem(ModFoods.CORROSIVE_FLUID.apply(props).rarity(ModRarities.VERY_RARE)));
+	public static final DeferredItem<SimpleItem> GENERIC_MOB_GLAND = registerItem("mob_gland", props -> new SimpleItem(ModFoods.POOR_FLESH.apply(props).rarity(ModRarities.UNCOMMON)));
+	public static final DeferredItem<SimpleItem> TOXIN_GLAND = registerItem("toxin_gland", props -> new SimpleItem(ModFoods.TOXIN_GLAND.apply(props).rarity(ModRarities.RARE)));
+	public static final DeferredItem<VolatileGlandItem> VOLATILE_GLAND = registerItem("volatile_gland", props -> new VolatileGlandItem(ModFoods.VOLATILE_GLAND.apply(props).rarity(ModRarities.RARE)));
 	public static final DeferredItem<AcidicEggItem> ACIDIC_EGG = registerItem("acidic_egg", AcidicEggItem::new);
 	public static final DeferredItem<SimpleItem> FLESH_BITS = registerSimpleItem("flesh_bits");
 	public static final DeferredItem<SimpleItem> BONE_FRAGMENTS = registerSimpleItem("bone_fragments");
@@ -60,7 +63,7 @@ public final class ModItems {
 	public static final DeferredItem<SimpleItem> WITHERING_OOZE = registerSimpleItem("withering_ooze");
 	public static final DeferredItem<SimpleItem> HORMONE_SECRETION = registerSimpleItem("hormone_secretion");
 	public static final DeferredItem<SimpleItem> TOXIN_EXTRACT = registerSimpleItem("toxin_extract");
-	public static final DeferredItem<SimpleItem> ACID_EXTRACT = registerItem("acid_extract", properties -> new SimpleItem(properties.food(ModFoods.GASTRIC_JUICE)));
+	public static final DeferredItem<SimpleItem> ACID_EXTRACT = registerItem("acid_extract", properties -> new SimpleItem(ModFoods.GASTRIC_JUICE.apply(properties)));
 	public static final DeferredItem<SimpleItem> BILE = registerSimpleItem("bile");
 	public static final DeferredItem<SimpleItem> VOLATILE_FLUID = registerSimpleItem("volatile_fluid");
 	public static final DeferredItem<SimpleItem> VIAL = registerSimpleItem("vial");
@@ -81,11 +84,11 @@ public final class ModItems {
 	public static final DeferredItem<SerumItem> FRENZY_SERUM = registerSerumItem(ModSerums.FRENZY_SERUM);
 	public static final DeferredItem<PotionSerumItem> POTION_SERUM = registerItem("potion_serum", props -> new PotionSerumItem(props.stacksTo(16).rarity(ModRarities.UNCOMMON)));
 	public static final DeferredItem<SimpleItem> PRIMORDIAL_CORE = registerSimpleItem("primordial_core", ModRarities.VERY_RARE);
-	public static final DeferredItem<SimpleItem> LIVING_FLESH = registerItem("living_flesh", props -> new SimpleItem(props.food(ModFoods.LIVING_FLESH).rarity(ModRarities.VERY_RARE)));
+	public static final DeferredItem<SimpleItem> LIVING_FLESH = registerItem("living_flesh", props -> new SimpleItem(ModFoods.LIVING_FLESH.apply(props).rarity(ModRarities.VERY_RARE)));
 	public static final DeferredItem<EssenceItem> ESSENCE = registerItem("essence", EssenceItem::new);
 	public static final DeferredItem<DespoilingSwordItem> DESPOIL_SICKLE = registerItem("despoil_sickle", props -> SwordSmithy.forge(DespoilingSwordItem::new, ModTiers.PRIMAL_FLESH, 10, 1, props.rarity(ModRarities.VERY_RARE)));
-	public static final DeferredItem<ExtractorItem> ESSENCE_EXTRACTOR = registerItem("extractor", props -> new ExtractorItem(props.durability(200).rarity(ModRarities.RARE)));
-	public static final DeferredItem<InjectorItem> INJECTOR = registerItem("injector", props -> new InjectorItem(props.durability(200).rarity(ModRarities.RARE)));
+	public static final DeferredItem<ExtractorItem> ESSENCE_EXTRACTOR = registerItem("extractor", props -> new ExtractorItem(props.durability(200).enchantable(15).rarity(ModRarities.RARE)));
+	public static final DeferredItem<InjectorItem> INJECTOR = registerItem("injector", props -> new InjectorItem(props.durability(200).enchantable(15).rarity(ModRarities.RARE)));
 	public static final DeferredItem<RavenousClawsItem> RAVENOUS_CLAWS = registerItem("ravenous_claws", props -> new RavenousClawsItem(ModTiers.BIOFLESH, 4.5f, 3f, 250, props.stacksTo(1).rarity(ModRarities.VERY_RARE)));
 	public static final DeferredItem<CausticGunbladeItem> CAUSTIC_GUNBLADE = registerItem("caustic_gunblade", props -> new CausticGunbladeItem(250, props.stacksTo(1).rarity(ModRarities.VERY_RARE)));
 	public static final DeferredItem<ImpalerItem> IMPALER = registerItem("impaler", props -> new ImpalerItem(200, props.stacksTo(1).rarity(ModRarities.ULTRA_RARE)));
@@ -103,9 +106,9 @@ public final class ModItems {
 	public static final DeferredItem<WarriorArmorItem> WARRIOR_ARMOR_CHESTPLATE = registerLivingArmorChestplate("warrior_armor", ModArmorMaterials.WARRIOR, 250 * 2, WarriorArmorItem::new);
 	public static final DeferredItem<WarriorArmorItem> WARRIOR_ARMOR_LEGGINGS = registerLivingArmorLeggings("warrior_armor", ModArmorMaterials.WARRIOR, 250 * 2, WarriorArmorItem::new);
 	public static final DeferredItem<WarriorArmorItem> WARRIOR_ARMOR_BOOTS = registerLivingArmorBoots("warrior_armor", ModArmorMaterials.WARRIOR, 200 * 2, WarriorArmorItem::new);
-	public static final DeferredItem<EffectCureItem> NUTRIENT_PASTE = registerItem("nutrient_paste", props -> new EffectCureItem(props.food(ModFoods.NUTRIENT_PASTE)));
-	public static final DeferredItem<EffectCureItem> NUTRIENT_BAR = registerItem("nutrient_bar", props -> new EffectCureItem(props.food(ModFoods.NUTRIENT_BAR)));
-	public static final DeferredItem<BloomberryItem> BLOOMBERRY = registerItem("bloomberry", props -> new BloomberryItem(props.food(ModFoods.NUTRIENT_PASTE)));
+	public static final DeferredItem<EffectCureItem> NUTRIENT_PASTE = registerItem("nutrient_paste", props -> new EffectCureItem(ModFoods.NUTRIENT_PASTE.apply(props)));
+	public static final DeferredItem<EffectCureItem> NUTRIENT_BAR = registerItem("nutrient_bar", props -> new EffectCureItem(ModFoods.NUTRIENT_BAR.apply(props)));
+	public static final DeferredItem<BloomberryItem> BLOOMBERRY = registerItem("bloomberry", props -> new BloomberryItem(ModFoods.NUTRIENT_PASTE.apply(props)));
 	public static final DeferredItem<FertilizerItem> FERTILIZER = registerItem("fertilizer", props -> new FertilizerItem(props.rarity(ModRarities.UNCOMMON)));
 	public static final DeferredItem<SimpleItem> CREATOR_MIX = registerSimpleItem("creator_mix");
 	public static final DeferredItem<BucketItem> ACID_BUCKET = registerItem("acid_bucket", properties -> new BucketItem(ModFluids.ACID.get(), properties.craftRemainder(Items.BUCKET).stacksTo(1).rarity(Rarity.COMMON)));
@@ -114,7 +117,7 @@ public final class ModItems {
 	public static final DeferredItem<MaykerBannerPatternItem> MASCOT_BANNER_PATTERNS = registerItem("mascot_patterns", props -> new MaykerBannerPatternItem(ModBannerPatterns.TAG_MASCOT, props));
 	public static final DeferredItem<SimpleItem> TAB_ICON = registerSimpleItem("tab_icon");
 	public static final DeferredItem<GuideBookItem> DEV_GUIDE_BOOK = registerDevItem("guide_book", props -> new GuideBookItem(props.stacksTo(1).rarity(ModRarities.RARE)));
-	public static final DeferredItem<BEWLBlockItem> PRIMORDIAL_CRADLE = registerBlockItem(ModBlocks.PRIMORDIAL_CRADLE, block -> new BEWLBlockItem(block, createProperties().rarity(ModRarities.VERY_RARE)));
+	public static final DeferredItem<BEWLBlockItem> PRIMORDIAL_CRADLE = registerBlockItem(ModBlocks.PRIMORDIAL_CRADLE, BEWLBlockItem::new, ModRarities.VERY_RARE);
 	public static final DeferredItem<SimpleBlockItem> BIO_FORGE = registerSimpleBlockItem(ModBlocks.BIO_FORGE, ModRarities.RARE);
 	public static final DeferredItem<SimpleBlockItem> DECOMPOSER = registerSimpleBlockItem(ModBlocks.DECOMPOSER, ModRarities.RARE);
 	public static final DeferredItem<SimpleBlockItem> BIO_LAB = registerSimpleBlockItem(ModBlocks.BIO_LAB, ModRarities.RARE);
@@ -122,7 +125,7 @@ public final class ModItems {
 	public static final DeferredItem<SimpleBlockItem> TONGUE = registerSimpleBlockItem(ModBlocks.TONGUE, ModRarities.UNCOMMON);
 	public static final DeferredItem<SimpleBlockItem> MAW_HOPPER = registerSimpleBlockItem(ModBlocks.MAW_HOPPER, ModRarities.UNCOMMON);
 	public static final DeferredItem<FleshkinChestBlockItem> FLESHKIN_CHEST = registerBlockItem(ModBlocks.FLESHKIN_CHEST, FleshkinChestBlockItem::new, ModRarities.UNCOMMON);
-	public static final DeferredItem<StorageSacBlockItem> STORAGE_SAC = registerBlockItem(ModBlocks.STORAGE_SAC, block -> new StorageSacBlockItem(block, createProperties().stacksTo(1)));
+	public static final DeferredItem<StorageSacBlockItem> STORAGE_SAC = registerBlockItem(ModBlocks.STORAGE_SAC, (block, props) -> new StorageSacBlockItem(block, props.stacksTo(1)));
 	public static final DeferredItem<SimpleBlockItem> VIAL_HOLDER = registerSimpleBlockItem(ModBlocks.VIAL_HOLDER);
 	public static final DeferredItem<SimpleBlockItem> JUMP_PAD = registerSimpleBlockItem(ModBlocks.JUMP_PAD);
 	public static final DeferredItem<ChrysalisBlockItem> CHRYSALIS = registerBlockItem(ModBlocks.CHRYSALIS, ChrysalisBlockItem::new, ModRarities.VERY_RARE);
@@ -198,17 +201,17 @@ public final class ModItems {
 	public static final DeferredItem<SimpleBlockItem> BLOOMLIGHT = registerSimpleBlockItem(ModBlocks.BLOOMLIGHT);
 	public static final DeferredItem<SimpleBlockItem> PRIMAL_ORIFICE = registerSimpleBlockItem(ModBlocks.PRIMAL_ORIFICE);
 	public static final DeferredItem<SimpleBlockItem> PRIMAL_BONE = registerSimpleBlockItem(ModBlocks.PRIMAL_BONE);
-	public static final DeferredItem<DeferredSpawnEggItem> HUNGRY_FLESH_BLOB_SPAWN_EGG = registerSpawnEgg(ModEntityTypes.HUNGRY_FLESH_BLOB, 0xe9967a, 0xf6d2c6);
-	public static final DeferredItem<DeferredSpawnEggItem> FLESH_BLOB_SPAWN_EGG = registerSpawnEgg(ModEntityTypes.FLESH_BLOB, 0xe9967a, 0xf6d2c6);
-	public static final DeferredItem<DeferredSpawnEggItem> LEGACY_FLESH_BLOB_SPAWN_EGG = registerSpawnEgg(ModEntityTypes.LEGACY_FLESH_BLOB, 0xeec5da, 0xffc0cb);
-	public static final DeferredItem<DeferredSpawnEggItem> PRIMORDIAL_FLESH_BLOB_SPAWN_EGG = registerSpawnEgg(ModEntityTypes.PRIMORDIAL_FLESH_BLOB, 0xde6074, 0xc343fe);
-	public static final DeferredItem<DeferredSpawnEggItem> PRIMORDIAL_HUNGRY_FLESH_BLOB_SPAWN_EGG = registerSpawnEgg(ModEntityTypes.PRIMORDIAL_HUNGRY_FLESH_BLOB, 0x752144, 0x752144);
-	public static final DeferredItem<DeferredSpawnEggItem> FLESH_COW_SPAWN_EGG = registerSpawnEgg(ModEntityTypes.FLESH_COW, 0xe9967a, 0x9d7572);
-	public static final DeferredItem<DeferredSpawnEggItem> FLESH_SHEEP_SPAWN_EGG = registerSpawnEgg(ModEntityTypes.FLESH_SHEEP, 0xe9967a, 0xf9bbd4);
-	public static final DeferredItem<DeferredSpawnEggItem> FLESH_PIG_SPAWN_EGG = registerSpawnEgg(ModEntityTypes.FLESH_PIG, 0xe9967a, 0xed7684);
-	public static final DeferredItem<DeferredSpawnEggItem> FLESH_CHICKEN_SPAWN_EGG = registerSpawnEgg(ModEntityTypes.FLESH_CHICKEN, 0xe9967a, 0xce4e65);
-	public static final DeferredItem<DeferredSpawnEggItem> CHROMA_SHEEP_SPAWN_EGG = registerSpawnEgg(ModEntityTypes.CHROMA_SHEEP, 0xe9967a, 0xf9bbd4);
-	public static final DeferredItem<DeferredSpawnEggItem> THICK_FUR_SHEEP_SPAWN_EGG = registerSpawnEgg(ModEntityTypes.THICK_FUR_SHEEP, 0xe9967a, 0xf9bbd4);
+	public static final DeferredItem<SpawnEggItem> HUNGRY_FLESH_BLOB_SPAWN_EGG = registerSpawnEgg(ModEntityTypes.HUNGRY_FLESH_BLOB);
+	public static final DeferredItem<SpawnEggItem> FLESH_BLOB_SPAWN_EGG = registerSpawnEgg(ModEntityTypes.FLESH_BLOB);
+	public static final DeferredItem<SpawnEggItem> LEGACY_FLESH_BLOB_SPAWN_EGG = registerSpawnEgg(ModEntityTypes.LEGACY_FLESH_BLOB);
+	public static final DeferredItem<SpawnEggItem> PRIMORDIAL_FLESH_BLOB_SPAWN_EGG = registerSpawnEgg(ModEntityTypes.PRIMORDIAL_FLESH_BLOB);
+	public static final DeferredItem<SpawnEggItem> PRIMORDIAL_HUNGRY_FLESH_BLOB_SPAWN_EGG = registerSpawnEgg(ModEntityTypes.PRIMORDIAL_HUNGRY_FLESH_BLOB);
+	public static final DeferredItem<SpawnEggItem> FLESH_COW_SPAWN_EGG = registerSpawnEgg(ModEntityTypes.FLESH_COW);
+	public static final DeferredItem<SpawnEggItem> FLESH_SHEEP_SPAWN_EGG = registerSpawnEgg(ModEntityTypes.FLESH_SHEEP);
+	public static final DeferredItem<SpawnEggItem> FLESH_PIG_SPAWN_EGG = registerSpawnEgg(ModEntityTypes.FLESH_PIG);
+	public static final DeferredItem<SpawnEggItem> FLESH_CHICKEN_SPAWN_EGG = registerSpawnEgg(ModEntityTypes.FLESH_CHICKEN);
+	public static final DeferredItem<SpawnEggItem> CHROMA_SHEEP_SPAWN_EGG = registerSpawnEgg(ModEntityTypes.CHROMA_SHEEP);
+	public static final DeferredItem<SpawnEggItem> THICK_FUR_SHEEP_SPAWN_EGG = registerSpawnEgg(ModEntityTypes.THICK_FUR_SHEEP);
 
 	private ModItems() {}
 
@@ -231,127 +234,99 @@ public final class ModItems {
 	}
 
 	private static <T extends Item> DeferredItem<T> registerItem(String name, Function<Item.Properties, T> factory) {
-		return ITEMS.register(name, () -> factory.apply(createProperties()));
+		return ITEMS.register(name, id -> factory.apply(createProperties(id)));
 	}
 
 	private static <T extends Item> DeferredItem<T> registerDevItem(String name, Function<Item.Properties, T> factory) {
-		return ITEMS.register(name, () -> factory.apply(createProperties()));
+		return ITEMS.register(name, id -> factory.apply(createProperties(id)));
 	}
 
 	private static <T extends Block> DeferredItem<SimpleBlockItem> registerSimpleBlockItem(DeferredBlock<T> blockHolder) {
-		return ITEMS.register(blockHolder.getId().getPath(), () -> new SimpleBlockItem(blockHolder.get(), createProperties()));
+		return ITEMS.register(blockHolder.getId().getPath(), id -> new SimpleBlockItem(blockHolder.get(), createBlockItemProperties(id)));
 	}
 
 	private static <T extends Block> DeferredItem<SimpleBlockItem> registerSimpleBlockItem(DeferredBlock<T> blockHolder, Rarity rarity) {
-		return registerSimpleBlockItem(blockHolder, () -> createProperties().rarity(rarity));
-	}
-
-	private static <T extends Block> DeferredItem<SimpleBlockItem> registerSimpleBlockItem(DeferredBlock<T> blockHolder, Supplier<Item.Properties> properties) {
-		return ITEMS.register(blockHolder.getId().getPath(), () -> new SimpleBlockItem(blockHolder.get(), properties.get()));
-	}
-
-	private static <T extends Block, I extends BlockItem> DeferredItem<I> registerBlockItem(DeferredBlock<T> blockHolder, Function<T, I> factory) {
-		return ITEMS.register(blockHolder.getId().getPath(), () -> factory.apply(blockHolder.get()));
+		return ITEMS.register(blockHolder.getId().getPath(), id -> new SimpleBlockItem(blockHolder.get(), createBlockItemProperties(id).rarity(rarity)));
 	}
 
 	private static <T extends Block, I extends BlockItem> DeferredItem<I> registerBlockItem(DeferredBlock<T> blockHolder, IBlockItemFactory<T, I> factory) {
-		return ITEMS.register(blockHolder.getId().getPath(), () -> factory.create(blockHolder.get(), createProperties()));
+		return ITEMS.register(blockHolder.getId().getPath(), id -> factory.create(blockHolder.get(), createBlockItemProperties(id)));
 	}
 
 	private static <T extends Block, I extends BlockItem> DeferredItem<I> registerBlockItem(DeferredBlock<T> blockHolder, IBlockItemFactory<T, I> factory, Rarity rarity) {
-		return ITEMS.register(blockHolder.getId().getPath(), () -> factory.create(blockHolder.get(), createProperties().rarity(rarity)));
+		return ITEMS.register(blockHolder.getId().getPath(), id -> factory.create(blockHolder.get(), createBlockItemProperties(id).rarity(rarity)));
 	}
 
-	private static <I extends ArmorItem> DeferredItem<I> registerArmorHelmet(String name, Holder<ArmorMaterial> material, ArmorFactory<I> factory) {
-		return registerArmor(name + "_helmet", material, ArmorItem.Type.HELMET, factory);
+	private static <I extends Item> DeferredItem<I> registerLivingArmorHelmet(String name, ArmorMaterial material, int maxNutrients, LivingArmorFactory<I> factory) {
+		return registerLivingArmor(name + "_helmet", material, ArmorType.HELMET, maxNutrients, factory);
 	}
 
-	private static <I extends ArmorItem> DeferredItem<I> registerArmorChestplate(String name, Holder<ArmorMaterial> material, ArmorFactory<I> factory) {
-		return registerArmor(name + "_chestplate", material, ArmorItem.Type.CHESTPLATE, factory);
+	private static <I extends Item> DeferredItem<I> registerLivingArmorChestplate(String name, ArmorMaterial material, int maxNutrients, LivingArmorFactory<I> factory) {
+		return registerLivingArmor(name + "_chestplate", material, ArmorType.CHESTPLATE, maxNutrients, factory);
 	}
 
-	private static <I extends ArmorItem> DeferredItem<I> registerArmorLeggings(String name, Holder<ArmorMaterial> material, ArmorFactory<I> factory) {
-		return registerArmor(name + "_leggings", material, ArmorItem.Type.LEGGINGS, factory);
+	private static <I extends Item> DeferredItem<I> registerLivingArmorLeggings(String name, ArmorMaterial material, int maxNutrients, LivingArmorFactory<I> factory) {
+		return registerLivingArmor(name + "_leggings", material, ArmorType.LEGGINGS, maxNutrients, factory);
 	}
 
-	private static <I extends ArmorItem> DeferredItem<I> registerArmorBoots(String name, Holder<ArmorMaterial> material, ArmorFactory<I> factory) {
-		return registerArmor(name + "_boots", material, ArmorItem.Type.BOOTS, factory);
+	private static <I extends Item> DeferredItem<I> registerLivingArmorBoots(String name, ArmorMaterial material, int maxNutrients, LivingArmorFactory<I> factory) {
+		return registerLivingArmor(name + "_boots", material, ArmorType.BOOTS, maxNutrients, factory);
 	}
 
-	private static <I extends ArmorItem> DeferredItem<I> registerArmor(String name, Holder<ArmorMaterial> material, ArmorItem.Type type, ArmorFactory<I> factory) {
-		return ITEMS.register(name, () -> factory.create(material, type, createProperties().durability(ModArmorMaterials.getDurability(material, type))));
+	private static <I extends Item> DeferredItem<I> registerLivingArmor(String name, ArmorMaterial material, ArmorType type, int maxNutrients, LivingArmorFactory<I> factory) {
+		return ITEMS.register(name, id -> factory.create(material, type, maxNutrients, createProperties(id).rarity(ModRarities.VERY_RARE)));
 	}
 
-	private static <I extends ArmorItem> DeferredItem<I> registerLivingArmorHelmet(String name, Holder<ArmorMaterial> material, int maxNutrients, LivingArmorFactory<I> factory) {
-		return registerLivingArmor(name + "_helmet", material, ArmorItem.Type.HELMET, maxNutrients, factory);
-	}
-
-	private static <I extends ArmorItem> DeferredItem<I> registerLivingArmorChestplate(String name, Holder<ArmorMaterial> material, int maxNutrients, LivingArmorFactory<I> factory) {
-		return registerLivingArmor(name + "_chestplate", material, ArmorItem.Type.CHESTPLATE, maxNutrients, factory);
-	}
-
-	private static <I extends ArmorItem> DeferredItem<I> registerLivingArmorLeggings(String name, Holder<ArmorMaterial> material, int maxNutrients, LivingArmorFactory<I> factory) {
-		return registerLivingArmor(name + "_leggings", material, ArmorItem.Type.LEGGINGS, maxNutrients, factory);
-	}
-
-	private static <I extends ArmorItem> DeferredItem<I> registerLivingArmorBoots(String name, Holder<ArmorMaterial> material, int maxNutrients, LivingArmorFactory<I> factory) {
-		return registerLivingArmor(name + "_boots", material, ArmorItem.Type.BOOTS, maxNutrients, factory);
-	}
-
-	private static <I extends ArmorItem> DeferredItem<I> registerLivingArmor(String name, Holder<ArmorMaterial> material, ArmorItem.Type type, int maxNutrients, LivingArmorFactory<I> factory) {
-		return ITEMS.register(name, () -> factory.create(material, type, maxNutrients, createProperties().rarity(ModRarities.VERY_RARE).durability(ModArmorMaterials.getDurability(material, type))));
-	}
-
-	private static <T extends EntityType<? extends Mob>> DeferredItem<DeferredSpawnEggItem> registerSpawnEgg(DeferredHolder<EntityType<?>, T> mobHolder, int primaryColor, int accentColor) {
-		return ITEMS.register(mobHolder.getId().getPath() + "_spawn_egg", () -> new DeferredSpawnEggItem(mobHolder, primaryColor, accentColor, createProperties()));
+	private static <T extends EntityType<? extends Mob>> DeferredItem<SpawnEggItem> registerSpawnEgg(DeferredHolder<EntityType<?>, T> mobHolder) {
+		return ITEMS.register(mobHolder.getId().getPath() + "_spawn_egg", id -> new SpawnEggItem(createProperties(id).spawnEgg(mobHolder.get())));
 	}
 
 	private static <T extends Serum> DeferredItem<SerumItem> registerSerumItem(DeferredHolder<Serum, T> registryObject) {
-		return ITEMS.register(registryObject.getId().getPath(), () -> new SerumItem(createProperties().stacksTo(16).rarity(ModRarities.UNCOMMON), registryObject));
+		return ITEMS.register(registryObject.getId().getPath(), id -> new SerumItem(createProperties(id).stacksTo(16).rarity(ModRarities.UNCOMMON), registryObject));
 	}
 
 	private static DeferredItem<SimpleItem> registerSimpleVialItem(String name) {
-		return ITEMS.register(name, () -> new SimpleItem(createProperties()));
+		return registerItem(name, SimpleItem::new);
 	}
 
 	private static DeferredItem<SimpleItem> registerSimpleItem(String name) {
-		return ITEMS.register(name, () -> new SimpleItem(createProperties()));
+		return registerItem(name, SimpleItem::new);
 	}
 
 	private static DeferredItem<SimpleItem> registerSimpleItem(String name, Rarity rarity) {
-		return registerSimpleItem(name, () -> createProperties().rarity(rarity));
+		return registerItem(name, props -> new SimpleItem(props.rarity(rarity)));
 	}
 
-	private static Item.Properties createProperties() {
-		return new Item.Properties().rarity(ModRarities.COMMON);
+	private static Item.Properties createProperties(Identifier id) {
+		return new Item.Properties().rarity(ModRarities.COMMON).setId(ResourceKey.create(Registries.ITEM, id));
 	}
 
-	private static DeferredItem<SimpleItem> registerSimpleItem(String name, Supplier<Item.Properties> properties) {
-		return ITEMS.register(name, () -> new SimpleItem(properties.get()));
+	private static Item.Properties createBlockItemProperties(Identifier id) {
+		return createProperties(id).useBlockDescriptionPrefix();
 	}
 
-	private interface SwordSmithy<T extends SwordItem> {
+	private interface SwordSmithy<T extends Item> {
 		AttributeSupplier PLAYER_ATTRIBUTES = Player.createAttributes().build();
 
-		static <T extends SwordItem> T forge(SwordSmithy<T> smithy, Tier tier, int attackDamage, float attackSpeed, Item.Properties properties) {
-			int attackDamageModifier = Mth.floor(attackDamage - (PLAYER_ATTRIBUTES.getValue(Attributes.ATTACK_DAMAGE) + tier.getAttackDamageBonus()));
+		static <T extends Item> T forge(SwordSmithy<T> smithy, ToolMaterial material, int attackDamage, float attackSpeed, Item.Properties properties) {
+			int attackDamageModifier = Mth.floor(attackDamage - (PLAYER_ATTRIBUTES.getValue(Attributes.ATTACK_DAMAGE) + material.attackDamageBonus()));
 			float attackSpeedModifier = attackSpeed - (float) PLAYER_ATTRIBUTES.getValue(Attributes.ATTACK_SPEED);
-			return smithy.forge(tier, attackDamageModifier, attackSpeedModifier, properties);
+			return smithy.forge(material, attackDamageModifier, attackSpeedModifier, properties);
 		}
 
-		T forge(Tier tier, int attackDamageModifier, float attackSpeedModifier, Item.Properties properties);
+		T forge(ToolMaterial material, int attackDamageModifier, float attackSpeedModifier, Item.Properties properties);
 	}
 
 	interface IBlockItemFactory<T extends Block, I extends BlockItem> {
 		I create(T block, Item.Properties properties);
 	}
 
-	interface ArmorFactory<I extends ArmorItem> {
-		I create(Holder<ArmorMaterial> material, ArmorItem.Type type, Item.Properties properties);
+	interface ArmorFactory<I extends Item> {
+		I create(ArmorMaterial material, ArmorType type, Item.Properties properties);
 	}
 
-	interface LivingArmorFactory<I extends ArmorItem> {
-		I create(Holder<ArmorMaterial> material, ArmorItem.Type type, int maxNutrients, Item.Properties properties);
+	interface LivingArmorFactory<I extends Item> {
+		I create(ArmorMaterial material, ArmorType type, int maxNutrients, Item.Properties properties);
 	}
 
 }

@@ -71,7 +71,7 @@ public final class FormatUtil {
 	}
 
 	public static Locale getLocale() {
-		return FMLEnvironment.dist.isClient() ? getClientLocale() : getServerLocale();
+		return FMLEnvironment.getDist().isClient() ? getClientLocale() : getServerLocale();
 	}
 
 	private static Locale getClientLocale() {

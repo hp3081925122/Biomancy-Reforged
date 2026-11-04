@@ -5,7 +5,7 @@ import com.github.elenterius.biomancy.util.TransliterationUtil;
 import net.minecraft.client.gui.screens.inventory.AnvilScreen;
 import net.minecraft.client.gui.screens.inventory.ItemCombinerScreen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AnvilMenu;
@@ -22,7 +22,7 @@ public abstract class AnvilScreenMixin extends ItemCombinerScreen<AnvilMenu> {
 	@Final
 	private Player player;
 
-	private AnvilScreenMixin(AnvilMenu menu, Inventory playerInventory, Component title, ResourceLocation texture) {
+	private AnvilScreenMixin(AnvilMenu menu, Inventory playerInventory, Component title, Identifier texture) {
 		super(menu, playerInventory, title, texture);
 	}
 

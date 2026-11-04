@@ -1,5 +1,9 @@
 package com.github.elenterius.biomancy.crafting;
 
+import net.minecraft.world.item.crafting.display.SlotDisplay;
+import net.minecraft.world.item.ItemStackTemplate;
+import net.minecraft.world.item.Item;
+import net.minecraft.core.Holder;
 import com.github.elenterius.biomancy.component.EssenceData;
 import com.github.elenterius.biomancy.init.ModDataComponents;
 import com.github.elenterius.biomancy.init.ModItems;
@@ -12,7 +16,7 @@ import io.netty.buffer.ByteBuf;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
@@ -24,24 +28,28 @@ import java.util.stream.Stream;
 public final class EssenceIngredient implements ICustomIngredient {
 
 	public static final MapCodec<EssenceIngredient> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-			ResourceLocation.CODEC.fieldOf("entity_type").forGetter(EssenceIngredient::entityTypeId),
+			Identifier.CODEC.fieldOf("entity_type").forGetter(EssenceIngredient::entityTypeId),
 			Codec.intRange(0, 3).optionalFieldOf("tier", 0).forGetter(EssenceIngredient::tier)
 	).apply(instance, EssenceIngredient::new));
 
 	public static final StreamCodec<ByteBuf, EssenceIngredient> STREAM_CODEC = StreamCodec.composite(
-			ResourceLocation.STREAM_CODEC, EssenceIngredient::entityTypeId,
+			Identifier.STREAM_CODEC, EssenceIngredient::entityTypeId,
 			ByteBufCodecs.VAR_INT, EssenceIngredient::tier,
 			EssenceIngredient::new
 	);
 
-	private final ResourceLocation entityTypeId;
+	private final Identifier entityTypeId;
 	private final int tier;
-	private final ItemStack displayStack;
+	private ItemStack displayStack;
 
-	private EssenceIngredient(ResourceLocation entityTypeId, int tier) {
+	private EssenceIngredient(Identifier entityTypeId, int tier) {
 		this.entityTypeId = entityTypeId;
 		this.tier = tier;
-		displayStack = EssenceItem.fromEntityType(BuiltInRegistries.ENTITY_TYPE.get(entityTypeId), tier);
+	}
+
+	private ItemStack displayStack() {
+		if (displayStack == null) displayStack = EssenceItem.fromEntityType(BuiltInRegistries.ENTITY_TYPE.getValue(entityTypeId), tier);
+		return displayStack;
 	}
 
 	public static Ingredient of(EntityType<?> entityType) {
@@ -53,7 +61,7 @@ public final class EssenceIngredient implements ICustomIngredient {
 		return new EssenceIngredient(EntityType.getKey(entityType), tier).toVanilla();
 	}
 
-	public ResourceLocation entityTypeId() {
+	public Identifier entityTypeId() {
 		return entityTypeId;
 	}
 
@@ -71,9 +79,20 @@ public final class EssenceIngredient implements ICustomIngredient {
 		return tier <= 0 || data.tier() == tier;
 	}
 
+	public ItemStack getDisplayStack() {
+		return displayStack().copy();
+	}
+
 	@Override
-	public Stream<ItemStack> getItems() {
-		return Stream.of(displayStack.copy());
+	public Stream<Holder<Item>> items() {
+		return Stream.of(ModItems.ESSENCE.get().builtInRegistryHolder());
+	}
+
+	@Override
+	public SlotDisplay display() {
+		ItemStack stack = displayStack();
+		if (stack.isEmpty()) return new SlotDisplay.ItemSlotDisplay(ModItems.ESSENCE.get().builtInRegistryHolder());
+		return new SlotDisplay.ItemStackSlotDisplay(ItemStackTemplate.fromNonEmptyStack(stack));
 	}
 
 	@Override

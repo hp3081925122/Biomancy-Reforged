@@ -3,11 +3,11 @@
   "bio_forge_tab": "biomancy:blocks",
   "ingredients": [
     {
-      "item": "biomancy:flesh_bits"
+      "ingredient": "biomancy:flesh_bits"
     },
     {
       "count": 3,
-      "item": "biomancy:elastic_fibers"
+      "ingredient": "biomancy:elastic_fibers"
     }
   ],
   "nutrientsCost": 1,

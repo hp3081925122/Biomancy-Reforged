@@ -46,7 +46,7 @@ public final class Nutrients {
 		if (REPAIR_VALUES.containsKey(resource.getItem())) return true;
 
 		if (resource.has(DataComponents.FOOD)) {
-			FoodProperties foodProperties = resource.getFoodProperties(null);
+			FoodProperties foodProperties = resource.get(DataComponents.FOOD);
 			if (foodProperties == null) return false;
 
 			return resource.is(ItemTags.MEAT) && resource.is(ModItemTags.FRESH_RAW_MEATS) && foodProperties.nutrition() > 0;
@@ -72,7 +72,7 @@ public final class Nutrients {
 		}
 
 		if (resource.has(DataComponents.FOOD)) {
-			FoodProperties foodProperties = resource.getFoodProperties(null);
+			FoodProperties foodProperties = resource.get(DataComponents.FOOD);
 			if (foodProperties == null) return 0;
 
 			if (resource.is(ItemTags.MEAT) && resource.is(ModItemTags.FRESH_RAW_MEATS)) {
@@ -88,7 +88,7 @@ public final class Nutrients {
 		if (FUEL_VALUES.containsKey(resource.getItem())) return true;
 
 		if (resource.has(DataComponents.FOOD)) {
-			FoodProperties foodProperties = resource.getFoodProperties(null);
+			FoodProperties foodProperties = resource.get(DataComponents.FOOD);
 			return foodProperties != null && foodProperties.nutrition() > 0;
 		}
 
@@ -112,7 +112,7 @@ public final class Nutrients {
 		}
 
 		if (resource.has(DataComponents.FOOD)) {
-			FoodProperties foodProperties = resource.getFoodProperties(null);
+			FoodProperties foodProperties = resource.get(DataComponents.FOOD);
 			if (foodProperties == null) return 0;
 
 			int nutrition = foodProperties.nutrition();

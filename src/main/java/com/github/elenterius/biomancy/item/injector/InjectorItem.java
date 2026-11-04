@@ -1,5 +1,9 @@
 package com.github.elenterius.biomancy.item.injector;
 
+import com.github.elenterius.biomancy.util.animation.ModDataTickets;
+import com.github.elenterius.biomancy.util.animation.GeoRenderProviders;
+import com.github.elenterius.biomancy.util.MobUtil;
+import net.minecraft.world.item.component.TooltipDisplay;
 import com.github.elenterius.biomancy.util.EnchantmentUtil;
 import net.minecraft.core.Holder;
 import net.neoforged.neoforge.capabilities.Capabilities;
@@ -9,7 +13,6 @@ import com.github.elenterius.biomancy.api.serum.Serum;
 import com.github.elenterius.biomancy.api.serum.SerumContainer;
 import com.github.elenterius.biomancy.api.serum.SerumInjector;
 import com.github.elenterius.biomancy.client.gui.InjectorScreen;
-import com.github.elenterius.biomancy.client.render.item.injector.InjectorRenderer;
 import com.github.elenterius.biomancy.client.util.ClientTextUtil;
 import com.github.elenterius.biomancy.component.InjectorContents;
 import com.github.elenterius.biomancy.init.ModDataComponents;
@@ -29,12 +32,11 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -42,7 +44,6 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySelector;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -57,19 +58,18 @@ import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.LevelEvent;
 import net.minecraft.world.phys.AABB;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-import software.bernie.geckolib.animatable.client.GeoRenderProvider;
+import com.geckolib.animatable.client.GeoRenderProvider;
 import org.jspecify.annotations.Nullable;
-import software.bernie.geckolib.animatable.GeoItem;
-import software.bernie.geckolib.animatable.SingletonGeoAnimatable;
-import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.animation.AnimatableManager;
-import software.bernie.geckolib.animation.AnimationController;
-import software.bernie.geckolib.animation.RawAnimation;
-import software.bernie.geckolib.animation.keyframe.event.SoundKeyframeEvent;
-import software.bernie.geckolib.animation.PlayState;
-import software.bernie.geckolib.util.GeckoLibUtil;
+import com.geckolib.animatable.GeoItem;
+import com.geckolib.animatable.SingletonGeoAnimatable;
+import com.geckolib.animatable.instance.AnimatableInstanceCache;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.animation.AnimationController;
+import com.geckolib.animation.RawAnimation;
+import com.geckolib.animation.state.KeyFrameEvent;
+import com.geckolib.cache.animation.keyframeevent.SoundKeyframeData;
+import com.geckolib.animation.object.PlayState;
+import com.geckolib.util.GeckoLibUtil;
 
 import java.util.List;
 import java.util.Optional;
@@ -97,7 +97,7 @@ public class InjectorItem extends Item implements SerumInjector, ItemTooltipStyl
 			if (entities.isEmpty()) return false;
 			LivingEntity target = entities.get(0);
 			if (target.isAlive() && dispenserAffectEntity(level, pos, serum, stack, injectorItem, target)) {
-				level.playSound(null, pos, ModSoundEvents.INJECTOR_INJECT.get(), SoundSource.BLOCKS, 0.8f, 1f / (level.random.nextFloat() * 0.5f + 1f) + 0.2f);
+				level.playSound(null, pos, ModSoundEvents.INJECTOR_INJECT.get(), SoundSource.BLOCKS, 0.8f, 1f / (level.getRandom().nextFloat() * 0.5f + 1f) + 0.2f);
 				level.levelEvent(LevelEvent.PARTICLES_DRAGON_BLOCK_BREAK, target.blockPosition(), 0);
 				return true;
 			}
@@ -115,7 +115,7 @@ public class InjectorItem extends Item implements SerumInjector, ItemTooltipStyl
 				injectorStack.hurtAndBreak(1, level, (ServerPlayer) null, item -> {});
 
 				float damagePct = 1f;
-				for (ItemStack itemStack : target.getArmorSlots()) {
+				for (ItemStack itemStack : MobUtil.getArmorSlots(target)) {
 					if (itemStack.getItem() instanceof AcolyteArmorItem armor && armor.hasNutrients(itemStack)) {
 						damagePct -= 0.25f;
 					}
@@ -132,21 +132,22 @@ public class InjectorItem extends Item implements SerumInjector, ItemTooltipStyl
 		}
 		else {
 			injectorStack.hurtAndBreak(2, level, (ServerPlayer) null, item -> {});
-			level.playSound(null, pos, SoundEvents.ITEM_BREAK, SoundSource.BLOCKS, 0.5f, 1f / (level.random.nextFloat() * 0.5f + 1f) + 0.2f);
+			level.playSound(null, pos, SoundEvents.ITEM_BREAK.value(), SoundSource.BLOCKS, 0.5f, 1f / (level.getRandom().nextFloat() * 0.5f + 1f) + 0.2f);
 		}
 		return false;
 	}
 
 	public static Optional<LargeSingleItemStackHandler> getItemHandler(ItemStack stack) {
-		return Optional.ofNullable(stack.getCapability(Capabilities.ItemHandler.ITEM)).map(LargeSingleItemStackHandler.class::cast);
+		if (!(stack.getItem() instanceof InjectorItem)) return Optional.empty();
+		return Optional.of(InjectorItemInventory.create(MAX_SLOT_SIZE, stack).getItemHandler());
 	}
 
-	@OnlyIn(Dist.CLIENT)
 	private void tryToOpenClientScreen(InteractionHand hand) {
 		Screen currScreen = Minecraft.getInstance().screen;
 		if (currScreen == null && Minecraft.getInstance().player != null) {
 			Minecraft.getInstance().setScreen(new InjectorScreen(hand));
-			Minecraft.getInstance().player.playNotifySound(ModSoundEvents.UI_RADIAL_MENU_OPEN.get(), SoundSource.PLAYERS, 1f, 1f);
+			LocalPlayer localPlayer = Minecraft.getInstance().player;
+			localPlayer.level().playLocalSound(localPlayer.getX(), localPlayer.getY(), localPlayer.getZ(), ModSoundEvents.UI_RADIAL_MENU_OPEN.get(), SoundSource.PLAYERS, 1f, 1f, false);
 		}
 	}
 
@@ -214,21 +215,21 @@ public class InjectorItem extends Item implements SerumInjector, ItemTooltipStyl
 	}
 
 	@Override
-	public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
+	public InteractionResult use(Level level, Player player, InteractionHand usedHand) {
 		ItemStack stack = player.getItemInHand(usedHand);
 
-		if (!player.isShiftKeyDown()) return InteractionResultHolder.pass(stack);
-		if (player.getCooldowns().isOnCooldown(this) || !canInteractWithPlayerSelf(stack, player)) {
+		if (!player.isShiftKeyDown()) return InteractionResult.PASS;
+		if (player.getCooldowns().isOnCooldown(stack) || !canInteractWithPlayerSelf(stack, player)) {
 			SoundUtil.playItemSound(level, player, ModSoundEvents.INJECTOR_FAIL);
-			return InteractionResultHolder.fail(stack);
+			return InteractionResult.FAIL;
 		}
 
-		if (!level.isClientSide) {
+		if (!level.isClientSide()) {
 			InjectionScheduler.schedule(this, stack, player, player, SCHEDULE_TICKS);
 			broadcastAnimation((ServerLevel) level, player, stack, InjectorAnimation.INJECT_SELF);
-			player.getCooldowns().addCooldown(this, COOL_DOWN_TICKS);
+			player.getCooldowns().addCooldown(stack, COOL_DOWN_TICKS);
 		}
-		return InteractionResultHolder.consume(stack);
+		return InteractionResult.CONSUME.heldItemTransformedTo(stack);
 	}
 
 	@Override
@@ -236,16 +237,16 @@ public class InjectorItem extends Item implements SerumInjector, ItemTooltipStyl
 		Level level = player.level();
 
 		if (!canInteractWithLivingTarget(copyOfStack, player, target)) {
-			if (level.isClientSide) {
+			if (level.isClientSide()) {
 				SoundUtil.Client.playItemSound(level, player, ModSoundEvents.INJECTOR_FAIL.get());
 			}
 			return InteractionResult.FAIL;
 		}
 
-		if (level.isClientSide) return InteractionResult.CONSUME;
-		if (player.getCooldowns().isOnCooldown(this)) return InteractionResult.FAIL;
+		if (level.isClientSide()) return InteractionResult.CONSUME;
+		if (player.getCooldowns().isOnCooldown(copyOfStack)) return InteractionResult.FAIL;
 
-		player.getCooldowns().addCooldown(this, COOL_DOWN_TICKS);
+		player.getCooldowns().addCooldown(copyOfStack, COOL_DOWN_TICKS);
 
 		ItemStack realStack = player.getAbilities().instabuild ? player.getItemInHand(usedHand) : copyOfStack;
 		InjectionScheduler.schedule(this, realStack, player, target, SCHEDULE_TICKS);
@@ -255,7 +256,7 @@ public class InjectorItem extends Item implements SerumInjector, ItemTooltipStyl
 	}
 
 	@Override
-	public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
+	public void inventoryTick(ItemStack stack, ServerLevel level, Entity entity, @Nullable EquipmentSlot slot) {
 		if (entity instanceof ServerPlayer player && level instanceof ServerLevel serverLevel) {
 			InjectionScheduler.tick(serverLevel, this, stack, player);
 		}
@@ -297,8 +298,8 @@ public class InjectorItem extends Item implements SerumInjector, ItemTooltipStyl
 	private void consumeSerum(LargeSingleItemStackHandler handler, @Nullable Player player) {
 		if (handler.getStack().getItem() instanceof SerumContainer) {
 			ItemStack stack = handler.extractItem(1, false);
-			if (stack.hasCraftingRemainingItem()) {
-				ItemStack containerItem = stack.getCraftingRemainingItem();
+			if (stack.getCraftingRemainder() != null) {
+				ItemStack containerItem = stack.getCraftingRemainder().create();
 				if (!containerItem.isEmpty() && player != null && !player.addItem(containerItem)) {
 					player.drop(containerItem, false);
 				}
@@ -312,31 +313,13 @@ public class InjectorItem extends Item implements SerumInjector, ItemTooltipStyl
 	}
 
 	@Override
-	public int getEnchantmentValue() {
-		return 15;
-	}
-
-	@Override
 	public boolean isFoil(ItemStack stack) {
 		return false;
 	}
 
 	@Override
 	public void createGeoRenderer(Consumer<GeoRenderProvider> consumer) {
-		consumer.accept(new GeoRenderProvider() {
-			private final InjectorRenderer renderer = new InjectorRenderer();
-
-			@Override
-			public BlockEntityWithoutLevelRenderer getGeoItemRenderer() {
-				return renderer;
-			}
-		});
-	}
-
-	@Nullable
-	private InjectorRenderer getInjectorRenderer(InjectorItem item) {
-		BlockEntityWithoutLevelRenderer renderer = GeoRenderProvider.of(this).getGeoItemRenderer();
-		return renderer instanceof InjectorRenderer injectorRenderer ? injectorRenderer : null;
+		GeoRenderProviders.accept(this, consumer);
 	}
 
 	public void setEntityHost(ItemStack stack, Entity entity) {
@@ -379,7 +362,6 @@ public class InjectorItem extends Item implements SerumInjector, ItemTooltipStyl
 		return entityId != null ? level.getEntity(entityId) : null;
 	}
 
-	@OnlyIn(Dist.CLIENT)
 	private void onSoundKeyFrame(ItemStack stack, String soundId, double animationTick) {
 		Level level = Minecraft.getInstance().level;
 		if (level == null) return;
@@ -389,7 +371,7 @@ public class InjectorItem extends Item implements SerumInjector, ItemTooltipStyl
 		if (soundOrigin == null) return;
 
 		LocalPlayer client = Minecraft.getInstance().player;
-		level.playSound(client, soundOrigin.getX(), soundOrigin.getY(0.5f), soundOrigin.getZ(), ModSoundEvents.INJECTOR_INJECT.get(), SoundSource.PLAYERS, 0.8f, 1f / (level.random.nextFloat() * 0.5f + 1f) + 0.2f);
+		level.playSound(client, soundOrigin.getX(), soundOrigin.getY(0.5f), soundOrigin.getZ(), ModSoundEvents.INJECTOR_INJECT.get(), SoundSource.PLAYERS, 0.8f, 1f / (level.getRandom().nextFloat() * 0.5f + 1f) + 0.2f);
 
 		Entity victim = getEntityVictim(stack, level);
 		if (victim != null) {
@@ -397,20 +379,21 @@ public class InjectorItem extends Item implements SerumInjector, ItemTooltipStyl
 		}
 	}
 
-	private void soundListener(SoundKeyframeEvent<InjectorItem> event) {
-		if (GeoRenderProvider.of(this).getGeoItemRenderer() instanceof InjectorRenderer renderer) {
-			onSoundKeyFrame(renderer.getCurrentItemStack(), event.getKeyframeData().getSound(), event.getAnimationTick());
+	private void soundListener(KeyFrameEvent<InjectorItem, SoundKeyframeData> event) {
+		ItemStack stack = event.renderState().getGeckolibData(ModDataTickets.ITEMSTACK);
+		if (stack != null) {
+			onSoundKeyFrame(stack, event.keyframeData().getSound(), event.getAnimationTick());
 		}
 	}
 
 	@Override
 	public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-		AnimationController<InjectorItem> mainController = new AnimationController<>(this, MAIN_CONTROLLER, 1, event -> PlayState.CONTINUE);
+		AnimationController<InjectorItem> mainController = new AnimationController<>(MAIN_CONTROLLER, 1, event -> PlayState.CONTINUE);
 		InjectorAnimation.registerTriggerableAnimations(mainController);
 		mainController.setSoundKeyframeHandler(this::soundListener);
 		controllers.add(mainController);
 
-		AnimationController<InjectorItem> needleController = new AnimationController<>(this, NEEDLE_CONTROLLER, 1, event -> PlayState.CONTINUE);
+		AnimationController<InjectorItem> needleController = new AnimationController<>(NEEDLE_CONTROLLER, 1, event -> PlayState.CONTINUE);
 		InjectorAnimation.registerTriggerableAnimations(mainController);
 		controllers.add(needleController);
 	}
@@ -426,10 +409,10 @@ public class InjectorItem extends Item implements SerumInjector, ItemTooltipStyl
 	}
 
 	@Override
-	public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag isAdvanced) {
+	public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag isAdvanced) {
 		Level level = context.level();
-		tooltip.addAll(ClientTextUtil.getItemInfoTooltip(stack));
-		tooltip.add(ComponentUtil.EMPTY_LINE);
+		ClientTextUtil.getItemInfoTooltip(stack).forEach(tooltip);
+		tooltip.accept(ComponentUtil.EMPTY_LINE);
 
 		InjectorContents contents = stack.get(ModDataComponents.INJECTOR_CONTENTS);
 		if (contents != null) {
@@ -437,16 +420,16 @@ public class InjectorItem extends Item implements SerumInjector, ItemTooltipStyl
 			if (!serum.isEmpty()) {
 				CompoundTag serumData = getSerumData(stack);
 				short amount = contents.amount();
-				tooltip.add(ComponentUtil.literal(String.format("%dx ", amount)).append(serum.getDisplayName(serumData)).withStyle(ChatFormatting.GRAY));
+				tooltip.accept(ComponentUtil.literal(String.format("%dx ", amount)).append(serum.getDisplayName(serumData)).withStyle(ChatFormatting.GRAY));
 				if (ClientTextUtil.showExtraInfo(tooltip)) {
 					serum.appendTooltip(serumData, level, tooltip, isAdvanced);
 				}
-				tooltip.add(ComponentUtil.EMPTY_LINE);
+				tooltip.accept(ComponentUtil.EMPTY_LINE);
 			}
 		}
 
-		tooltip.add(ClientTextUtil.pressButtonTo(ClientTextUtil.getDefaultKey(), TextComponentUtil.getActionText("open_inventory")).withStyle(ChatFormatting.DARK_GRAY));
-		tooltip.add(ClientTextUtil.pressButtonTo(ClientTextUtil.getShiftKey().append(" + ").append(ClientTextUtil.getRightMouseKey()), TextComponentUtil.getActionText("self_inject")).withStyle(ChatFormatting.DARK_GRAY));
+		tooltip.accept(ClientTextUtil.pressButtonTo(ClientTextUtil.getDefaultKey(), TextComponentUtil.getActionText("open_inventory")).withStyle(ChatFormatting.DARK_GRAY));
+		tooltip.accept(ClientTextUtil.pressButtonTo(ClientTextUtil.getShiftKey().append(" + ").append(ClientTextUtil.getRightMouseKey()), TextComponentUtil.getActionText("self_inject")).withStyle(ChatFormatting.DARK_GRAY));
 	}
 
 	@Override
@@ -455,10 +438,10 @@ public class InjectorItem extends Item implements SerumInjector, ItemTooltipStyl
 		return serum.isEmpty() ? displayName : ComponentUtil.mutable().append(displayName).append(" (").append(serum.getDisplayName(getSerumData(stack))).append(")");
 	}
 
-	protected static final ResourceLocation CROSSHAIR = BiomancyMod.rl("textures/gui/injector_crosshair.png");
+	protected static final Identifier CROSSHAIR = BiomancyMod.rl("textures/gui/injector_crosshair.png");
 
 	@Override
-	public ResourceLocation getCrosshairTexture(ItemStack stack, Player player) {
+	public Identifier getCrosshairTexture(ItemStack stack, Player player) {
 		return CROSSHAIR;
 	}
 

@@ -47,25 +47,21 @@ public final class ModBlockEntities {
 	public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<ModularLarynxBlockEntity>> MODULAR_LARYNX = register(ModBlocks.MODULAR_LARYNX, ModularLarynxBlockEntity::new);
 	public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<ChrysalisBlockEntity>> CHRYSALIS = register(ModBlocks.CHRYSALIS, ChrysalisBlockEntity::new);
 	public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<BiometricMembraneBlockEntity>> BIOMETRIC_MEMBRANE = register(ModBlocks.BIOMETRIC_MEMBRANE, BiometricMembraneBlockEntity::new);
-	public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<OwnableBlockEntity>> OWNABLE_BE = BLOCK_ENTITIES.register("ownable_block_entity", () -> BlockEntityType.Builder.of(OwnableBlockEntity::new, ModBlocks.FLESHKIN_PRESSURE_PLATE.get()).build(noDataFixer()));
-	public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<BlockEntityDelegator>> BE_DELEGATOR = BLOCK_ENTITIES.register("block_entity_delegator", () -> BlockEntityType.Builder.of(BlockEntityDelegator::new, Blocks.AIR).build(noDataFixer()));
+	public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<OwnableBlockEntity>> OWNABLE_BE = BLOCK_ENTITIES.register("ownable_block_entity", () -> new BlockEntityType<>(OwnableBlockEntity::new, ModBlocks.FLESHKIN_PRESSURE_PLATE.get()));
+	public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<BlockEntityDelegator>> BE_DELEGATOR = BLOCK_ENTITIES.register("block_entity_delegator", () -> new BlockEntityType<>(BlockEntityDelegator::new, Blocks.AIR));
 
 	private ModBlockEntities() {}
 
 	private static <T extends BlockEntity, B extends Block> DeferredHolder<BlockEntityType<?>, BlockEntityType<T>> register(DeferredHolder<Block, B> blockHolder, BlockEntityType.BlockEntitySupplier<T> factory) {
-		return BLOCK_ENTITIES.register(blockHolder.getId().getPath(), () -> BlockEntityType.Builder.of(factory, blockHolder.get()).build(noDataFixer()));
+		return BLOCK_ENTITIES.register(blockHolder.getId().getPath(), () -> new BlockEntityType<>(factory, blockHolder.get()));
 	}
 
 	@SafeVarargs
 	private static <T extends BlockEntity> DeferredHolder<BlockEntityType<?>, BlockEntityType<T>> register(String name, BlockEntityType.BlockEntitySupplier<T> factory, DeferredHolder<Block, ? extends Block>... blockHolders) {
 		return BLOCK_ENTITIES.register(name, () -> {
 			Block[] blocks = Arrays.stream(blockHolders).map(DeferredHolder::get).toList().toArray(new Block[]{});
-			return BlockEntityType.Builder.of(factory, blocks).build(noDataFixer());
+			return new BlockEntityType<>(factory, blocks);
 		});
-	}
-
-	private static Type<?> noDataFixer() {
-		return null;
 	}
 
 }

@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.datagen.recipes.builder;
 
+import com.github.elenterius.biomancy.util.ItemHolders;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.crafting.IngredientStack;
 import com.github.elenterius.biomancy.crafting.recipe.BioForgingRecipe;
@@ -15,7 +16,7 @@ import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.advancements.Criterion;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.recipes.RecipeCategory;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -36,7 +37,7 @@ public final class BioForgingRecipeBuilder implements RecipeBuilder<BioForgingRe
 
 	public static final String RECIPE_SUB_FOLDER = ModRecipes.BIO_FORGING_RECIPE_TYPE.getId().getPath();
 
-	private final ResourceLocation recipeId;
+	private final Identifier recipeId;
 
 	private final List<ICondition> conditions = new ArrayList<>();
 	private final ItemData result;
@@ -46,27 +47,27 @@ public final class BioForgingRecipeBuilder implements RecipeBuilder<BioForgingRe
 
 	private int craftingCostNutrients = -1;
 
-	private BioForgingRecipeBuilder(ResourceLocation recipeId, ItemData result) {
-		this.recipeId = ResourceLocation.fromNamespaceAndPath(recipeId.getNamespace(), RECIPE_SUB_FOLDER + "/" + recipeId.getPath());
+	private BioForgingRecipeBuilder(Identifier recipeId, ItemData result) {
+		this.recipeId = Identifier.fromNamespaceAndPath(recipeId.getNamespace(), RECIPE_SUB_FOLDER + "/" + recipeId.getPath());
 		this.result = result;
 	}
 
-	public static BioForgingRecipeBuilder create(ResourceLocation recipeId, ItemData result) {
+	public static BioForgingRecipeBuilder create(Identifier recipeId, ItemData result) {
 		return new BioForgingRecipeBuilder(recipeId, result);
 	}
 
 	public static BioForgingRecipeBuilder create(String modId, String outputName, ItemData result) {
-		ResourceLocation rl = ResourceLocation.fromNamespaceAndPath(modId, outputName);
+		Identifier rl = Identifier.fromNamespaceAndPath(modId, outputName);
 		return new BioForgingRecipeBuilder(rl, result);
 	}
 
 	public static BioForgingRecipeBuilder create(String outputName, ItemData result) {
-		ResourceLocation rl = BiomancyMod.rl(outputName);
+		Identifier rl = BiomancyMod.rl(outputName);
 		return new BioForgingRecipeBuilder(rl, result);
 	}
 
 	public static BioForgingRecipeBuilder create(ItemData result) {
-		ResourceLocation rl = BiomancyMod.rl(result.getItemPath());
+		Identifier rl = BiomancyMod.rl(result.getItemPath());
 		return new BioForgingRecipeBuilder(rl, result);
 	}
 
@@ -118,11 +119,11 @@ public final class BioForgingRecipeBuilder implements RecipeBuilder<BioForgingRe
 	}
 
 	public BioForgingRecipeBuilder addIngredient(TagKey<Item> tag) {
-		return addIngredient(Ingredient.of(tag));
+		return addIngredient(ItemHolders.ingredient(tag));
 	}
 
 	public BioForgingRecipeBuilder addIngredient(TagKey<Item> tag, int quantity) {
-		return addIngredient(Ingredient.of(tag), quantity);
+		return addIngredient(ItemHolders.ingredient(tag), quantity);
 	}
 
 	public BioForgingRecipeBuilder addIngredient(ItemLike item) {
@@ -158,7 +159,7 @@ public final class BioForgingRecipeBuilder implements RecipeBuilder<BioForgingRe
 		}
 
 		String folderName = RecipeBuilder.getRecipeFolderName(category, BiomancyMod.MOD_ID);
-		ResourceLocation advancementId = ResourceLocation.fromNamespaceAndPath(recipeId.getNamespace(), "recipes/%s/%s".formatted(folderName, recipeId.getPath()));
+		Identifier advancementId = Identifier.fromNamespaceAndPath(recipeId.getNamespace(), "recipes/%s/%s".formatted(folderName, recipeId.getPath()));
 
 		consumer.accept(new Result(this, advancement.build(recipeId, advancementId)));
 	}
@@ -171,7 +172,7 @@ public final class BioForgingRecipeBuilder implements RecipeBuilder<BioForgingRe
 
 	public static class Result implements FinishedRecipe, WikiRecipe {
 
-		private final ResourceLocation id;
+		private final Identifier id;
 		private final List<IngredientStack> ingredients;
 		private final ItemData result;
 		private final int craftingCost;
@@ -219,7 +220,7 @@ public final class BioForgingRecipeBuilder implements RecipeBuilder<BioForgingRe
 		}
 
 		@Override
-		public ResourceLocation getId() {
+		public Identifier getId() {
 			return id;
 		}
 

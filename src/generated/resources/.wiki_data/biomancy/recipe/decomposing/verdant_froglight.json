@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "minecraft:verdant_froglight"
+      "ingredient": "minecraft:verdant_froglight"
     }
   },
   "output": {

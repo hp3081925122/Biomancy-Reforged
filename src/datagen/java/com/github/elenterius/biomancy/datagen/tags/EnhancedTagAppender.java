@@ -1,9 +1,9 @@
 package com.github.elenterius.biomancy.datagen.tags;
 
 import net.minecraft.core.Registry;
-import net.minecraft.data.tags.IntrinsicHolderTagsProvider;
+import net.minecraft.data.tags.TagAppender;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagBuilder;
 import net.minecraft.tags.TagKey;
 import net.neoforged.neoforge.registries.DeferredHolder;
@@ -12,7 +12,7 @@ import java.util.Collection;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-public record EnhancedTagAppender<T>(IntrinsicHolderTagsProvider.IntrinsicTagAppender<T> delegate, Registry<T> registry) {
+public record EnhancedTagAppender<T>(TagAppender<T, T> delegate, TagBuilder builder, Registry<T> registry, String modId) {
 
 	public EnhancedTagAppender<T> addTag(TagKey<T> tagKey) {
 		if (isValidNamespace(tagKey.location().getNamespace())) {
@@ -53,7 +53,7 @@ public record EnhancedTagAppender<T>(IntrinsicHolderTagsProvider.IntrinsicTagApp
 	}
 
 	public EnhancedTagAppender<T> add(T entry) {
-		ResourceLocation registryName = Objects.requireNonNull(registry.getKey(entry));
+		Identifier registryName = Objects.requireNonNull(registry.getKey(entry));
 		if (isValidNamespace(registryName.getNamespace())) {
 			delegate.add(entry);
 		}
@@ -64,114 +64,123 @@ public record EnhancedTagAppender<T>(IntrinsicHolderTagsProvider.IntrinsicTagApp
 	}
 
 	private boolean isValidNamespace(String namespace) {
-		return "c".equals(namespace) || "minecraft".equals(namespace) || delegate.getModID().equals(namespace);
+		return "c".equals(namespace) || "minecraft".equals(namespace) || modId.equals(namespace);
 	}
 
 	@SafeVarargs
 	public final EnhancedTagAppender<T> add(ResourceKey<T>... resourceKeys) {
-		for (ResourceKey<T> resourcekey : resourceKeys) {
-			if (isValidNamespace(resourcekey.location().getNamespace())) {
-				delegate.add(resourcekey);
+		for (ResourceKey<T> resourceKey : resourceKeys) {
+			if (isValidNamespace(resourceKey.identifier().getNamespace())) {
+				builder.addElement(resourceKey.identifier());
 			}
 			else {
-				addOptional(resourcekey.location());
+				addOptional(resourceKey.identifier());
 			}
 		}
 		return this;
 	}
 
-	public EnhancedTagAppender<T> addOptional(ResourceLocation resourceLocation) {
-		delegate.addOptional(resourceLocation);
+	public EnhancedTagAppender<T> addOptional(Identifier resourceLocation) {
+		builder.addOptionalElement(resourceLocation);
 		return this;
 	}
 
-	public EnhancedTagAppender<T> addOptional(ResourceLocation... resourceLocations) {
-		for (ResourceLocation resourceLocation : resourceLocations) {
-			delegate.addOptional(resourceLocation);
+	public EnhancedTagAppender<T> addOptional(Identifier... resourceLocations) {
+		for (Identifier resourceLocation : resourceLocations) {
+			builder.addOptionalElement(resourceLocation);
 		}
 		return this;
 	}
 
 	public EnhancedTagAppender<T> addOptional(String... resourceLocations) {
 		for (String resourceLocation : resourceLocations) {
-			delegate.addOptional(ResourceLocation.parse(resourceLocation));
+			builder.addOptionalElement(Identifier.parse(resourceLocation));
 		}
 		return this;
 	}
 
 	public EnhancedTagAppender<T> addOptional(DeferredHolder<?, ?>... entries) {
 		for (DeferredHolder<?, ?> deferredHolder : entries) {
-			delegate.addOptional(deferredHolder.getId());
+			builder.addOptionalElement(deferredHolder.getId());
 		}
 		return this;
 	}
 
-	public EnhancedTagAppender<T> addOptionalTag(ResourceLocation resourceLocation) {
-		delegate.addOptionalTag(resourceLocation);
+	public EnhancedTagAppender<T> addOptionalTag(Identifier resourceLocation) {
+		builder.addOptionalTag(resourceLocation);
 		return this;
 	}
 
-	public EnhancedTagAppender<T> addOptionalTag(ResourceLocation... resourceLocations) {
-		for (ResourceLocation resourceLocation : resourceLocations) {
-			delegate.addOptionalTag(resourceLocation);
+	public EnhancedTagAppender<T> addOptionalTag(Identifier... resourceLocations) {
+		for (Identifier resourceLocation : resourceLocations) {
+			builder.addOptionalTag(resourceLocation);
 		}
 		return this;
 	}
 
 	public EnhancedTagAppender<T> addOptionalTag(String... resourceLocations) {
 		for (String resourceLocation : resourceLocations) {
-			delegate.addOptionalTag(ResourceLocation.parse(resourceLocation));
+			builder.addOptionalTag(Identifier.parse(resourceLocation));
 		}
 		return this;
 	}
 
 	public TagBuilder getInternalBuilder() {
-		return delegate.getInternalBuilder();
+		return builder;
 	}
 
 	public String getModId() {
-		return delegate.getModID();
+		return modId;
 	}
 
 	public EnhancedTagAppender<T> replace() {
-		delegate.replace();
+		builder.setReplace(true);
 		return this;
 	}
 
 	public EnhancedTagAppender<T> replace(boolean bool) {
-		delegate.replace(bool);
+		builder.setReplace(bool);
 		return this;
 	}
 
 	public EnhancedTagAppender<T> remove(T entry) {
-		delegate.remove(entry);
+		builder.removeElement(Objects.requireNonNull(registry.getKey(entry)));
 		return this;
 	}
 
 	@SafeVarargs
 	public final EnhancedTagAppender<T> remove(T first, T... entries) {
-		delegate.remove(first, entries);
+		remove(first);
+		for (T entry : entries) {
+			remove(entry);
+		}
 		return this;
 	}
 
-	public EnhancedTagAppender<T> remove(ResourceLocation resourceLocation) {
-		delegate.remove(resourceLocation);
+	public EnhancedTagAppender<T> remove(Identifier resourceLocation) {
+		builder.removeElement(resourceLocation);
 		return this;
 	}
 
-	public EnhancedTagAppender<T> remove(ResourceLocation first, ResourceLocation... resourceLocations) {
-		delegate.remove(first, resourceLocations);
+	public EnhancedTagAppender<T> remove(Identifier first, Identifier... resourceLocations) {
+		remove(first);
+		for (Identifier resourceLocation : resourceLocations) {
+			remove(resourceLocation);
+		}
 		return this;
 	}
 
 	public EnhancedTagAppender<T> remove(TagKey<T> tagKey) {
-		delegate.remove(tagKey);
+		builder.removeTag(tagKey.location());
 		return this;
 	}
 
 	@SafeVarargs
 	public final EnhancedTagAppender<T> remove(TagKey<T> first, TagKey<T>... tagKeys) {
-		delegate.remove(first, tagKeys);
+		remove(first);
+		for (TagKey<T> tagKey : tagKeys) {
+			remove(tagKey);
+		}
 		return this;
 	}
 

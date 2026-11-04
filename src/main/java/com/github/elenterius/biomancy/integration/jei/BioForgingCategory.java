@@ -19,11 +19,11 @@ import mezz.jei.api.recipe.RecipeType;
 import mezz.jei.api.recipe.category.IRecipeCategory;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.List;
@@ -37,7 +37,7 @@ public class BioForgingCategory implements IRecipeCategory<BioForgingRecipe> {
 
 	public BioForgingCategory(IGuiHelper guiHelper) {
 		icon = guiHelper.createDrawableIngredient(VanillaTypes.ITEM_STACK, new ItemStack(ModItems.BIO_FORGE.get()));
-		ResourceLocation texture = BiomancyMod.rl("textures/gui/jei/bio_forge_recipe.png");
+		Identifier texture = BiomancyMod.rl("textures/gui/jei/bio_forge_recipe.png");
 		background = guiHelper.drawableBuilder(texture, 0, 0, 152, 32).setTextureSize(152, 32).build();
 	}
 
@@ -52,8 +52,13 @@ public class BioForgingCategory implements IRecipeCategory<BioForgingRecipe> {
 	}
 
 	@Override
-	public IDrawable getBackground() {
-		return background;
+	public int getWidth() {
+		return background.getWidth();
+	}
+
+	@Override
+	public int getHeight() {
+		return background.getHeight();
 	}
 
 	@Override
@@ -87,9 +92,10 @@ public class BioForgingCategory implements IRecipeCategory<BioForgingRecipe> {
 	}
 
 	@Override
-	public void draw(BioForgingRecipe recipe, IRecipeSlotsView recipeSlotsView, GuiGraphics guiGraphics, double mouseX, double mouseY) {
+	public void draw(BioForgingRecipe recipe, IRecipeSlotsView recipeSlotsView, GuiGraphicsExtractor guiGraphics, double mouseX, double mouseY) {
+		background.draw(guiGraphics);
 		Font font = Minecraft.getInstance().font;
 		MutableComponent costString = ComponentUtil.literal("-" + recipe.getCraftingCostNutrients());
-		guiGraphics.drawString(font, costString, 108, 32 - font.lineHeight + 1, ColorStyles.WHITE_ARGB);
+		guiGraphics.text(font, costString, 108, 32 - font.lineHeight + 1, ColorStyles.WHITE_ARGB);
 	}
 }

@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.util.shooting;
 
+import java.util.function.Consumer;
 import com.github.elenterius.biomancy.util.EnchantmentUtil;
 import net.minecraft.resources.ResourceKey;
 import com.github.elenterius.biomancy.init.ModDataComponents;
@@ -59,7 +60,7 @@ public interface Gun<T extends BaseProjectile> extends CrosshairProvider {
 
 		if (success) {
 			getGunProperties().sounds().playShoot(level, shooter);
-			projectileWeapon.hurtAndBreak(getDurabilityCost(projectileWeapon), shooter, LivingEntity.getSlotForHand(usedHand));
+			projectileWeapon.hurtAndBreak(getDurabilityCost(projectileWeapon), shooter, usedHand.asEquipmentSlot());
 			consumeAmmo(shooter, projectileWeapon, getAmmoCost(projectileWeapon));
 		}
 	}
@@ -218,7 +219,7 @@ public interface Gun<T extends BaseProjectile> extends CrosshairProvider {
 		if (!(shooter instanceof Player player) || !player.getAbilities().instabuild) addAmmo(stack, -amount);
 	}
 
-	default void appendGunStats(ItemStack stack, List<Component> tooltip) {
+	default void appendGunStats(ItemStack stack, Consumer<Component> tooltip) {
 		DecimalFormat df = FormatUtil.getDoubleFormatter();
 		GunProperties<T> gunProperties = getGunProperties();
 
@@ -236,29 +237,29 @@ public interface Gun<T extends BaseProjectile> extends CrosshairProvider {
 		float reloadDurationSeconds = getReloadDurationTicks(stack) / (float) SharedConstants.TICKS_PER_SECOND;
 		float bonusReloadReduction = reloadDurationSeconds - (gunProperties.reloadDurationTicks() / (float) SharedConstants.TICKS_PER_SECOND);
 
-		tooltip.add(TextComponentUtil.getTooltipText("projectile_speed").append(String.format(": %s m/s ", df.format(velocity * 20))).append(formatBonusValue(df, bonusVelocity * 20)).withStyle(ChatFormatting.GRAY));
+		tooltip.accept(TextComponentUtil.getTooltipText("projectile_speed").append(String.format(": %s m/s ", df.format(velocity * 20))).append(formatBonusValue(df, bonusVelocity * 20)).withStyle(ChatFormatting.GRAY));
 
 		ProjectileRange range = GunProperties.computeRange(gunProperties, velocity, accuracy);
 		float bonusRange = range.mean() - gunProperties.defaultRange().mean();
-		tooltip.add(TextComponentUtil.getTooltipText("projectile_range").append(String.format(": %s m", range.format(df))).append(formatBonusValue(df, bonusRange)).withStyle(ChatFormatting.GRAY));
+		tooltip.accept(TextComponentUtil.getTooltipText("projectile_range").append(String.format(": %s m", range.format(df))).append(formatBonusValue(df, bonusRange)).withStyle(ChatFormatting.GRAY));
 
-		tooltip.add(TextComponentUtil.getTooltipText("projectile_damage").append(String.format(": %s ", df.format(damage))).append(formatBonusValue(df, bonusDamage)).withStyle(ChatFormatting.GRAY));
+		tooltip.accept(TextComponentUtil.getTooltipText("projectile_damage").append(String.format(": %s ", df.format(damage))).append(formatBonusValue(df, bonusDamage)).withStyle(ChatFormatting.GRAY));
 
 		if (knockBack != 0) {
 			int bonusValue = knockBack - gunProperties.knockback();
-			tooltip.add(TextComponentUtil.getTooltipText("projectile_knock_back").append(String.format(": %s ", df.format(knockBack))).append(formatBonusValue(df, bonusValue)).withStyle(ChatFormatting.GRAY));
+			tooltip.accept(TextComponentUtil.getTooltipText("projectile_knock_back").append(String.format(": %s ", df.format(knockBack))).append(formatBonusValue(df, bonusValue)).withStyle(ChatFormatting.GRAY));
 		}
 
-		tooltip.add(TextComponentUtil.getTooltipText("accuracy").append(String.format(": %s ", df.format(accuracy))).append(formatBonusValue(df, bonusAccuracy)).withStyle(ChatFormatting.GRAY));
-		tooltip.add(TextComponentUtil.getTooltipText("fire_rate").append(String.format(": %s rps ", df.format(fireRate))).append(formatBonusValue(df, bonusFireRate)).withStyle(ChatFormatting.GRAY));
+		tooltip.accept(TextComponentUtil.getTooltipText("accuracy").append(String.format(": %s ", df.format(accuracy))).append(formatBonusValue(df, bonusAccuracy)).withStyle(ChatFormatting.GRAY));
+		tooltip.accept(TextComponentUtil.getTooltipText("fire_rate").append(String.format(": %s rps ", df.format(fireRate))).append(formatBonusValue(df, bonusFireRate)).withStyle(ChatFormatting.GRAY));
 
 		if (projectileCount > 1) {
-			tooltip.add(TextComponentUtil.getTooltipText("projectile_count").append(String.format(": %s ", df.format(projectileCount))).append(formatBonusValue(df, bonusProjectileCount)).withStyle(ChatFormatting.GRAY));
+			tooltip.accept(TextComponentUtil.getTooltipText("projectile_count").append(String.format(": %s ", df.format(projectileCount))).append(formatBonusValue(df, bonusProjectileCount)).withStyle(ChatFormatting.GRAY));
 		}
 
-		tooltip.add(TextComponentUtil.getTooltipText("reload_time").append(String.format(": %ss ", df.format(reloadDurationSeconds))).append(formatBonusValue(df, bonusReloadReduction, true)).withStyle(ChatFormatting.GRAY));
-		tooltip.add(ComponentUtil.EMPTY_LINE);
-		tooltip.add(TextComponentUtil.getTooltipText("ammo").append(String.format(": %d/%d ", getAmmo(stack), getMaxAmmo(stack))).withStyle(ChatFormatting.GRAY));
+		tooltip.accept(TextComponentUtil.getTooltipText("reload_time").append(String.format(": %ss ", df.format(reloadDurationSeconds))).append(formatBonusValue(df, bonusReloadReduction, true)).withStyle(ChatFormatting.GRAY));
+		tooltip.accept(ComponentUtil.EMPTY_LINE);
+		tooltip.accept(TextComponentUtil.getTooltipText("ammo").append(String.format(": %d/%d ", getAmmo(stack), getMaxAmmo(stack))).withStyle(ChatFormatting.GRAY));
 	}
 
 	static Component formatBonusValue(DecimalFormat df, float value) {

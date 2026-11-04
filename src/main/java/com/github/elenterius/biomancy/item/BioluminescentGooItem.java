@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.item;
 
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Player;
@@ -14,7 +15,7 @@ public class BioluminescentGooItem extends SimpleItem implements SignApplicator 
 	}
 
 	@Override
-	public boolean tryApplyToSign(Level level, SignBlockEntity sign, boolean isFrontText, Player player) {
+	public boolean tryApplyToSign(Level level, SignBlockEntity sign, boolean isFrontText, ItemStack item, Player player) {
 		if (sign.updateText(signText -> signText.setHasGlowingText(true), isFrontText)) {
 			level.playSound(null, sign.getBlockPos(), SoundEvents.GLOW_INK_SAC_USE, SoundSource.BLOCKS, 1f, 1f);
 			return true;

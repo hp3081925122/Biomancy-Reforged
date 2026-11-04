@@ -1,8 +1,6 @@
 {
   "type": "biomancy:digesting",
-  "ingredient": {
-    "item": "minecraft:crimson_fungus"
-  },
+  "ingredient": "minecraft:crimson_fungus",
   "nutrientsCost": 2,
   "processingTime": 409,
   "result": {

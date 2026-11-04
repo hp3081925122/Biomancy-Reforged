@@ -1,9 +1,7 @@
 {
   "type": "biomancy:digesting",
   "input": {
-    "0": {
-      "id": "farmersdelight:apple_cider"
-    }
+    "0": "farmersdelight:apple_cider"
   },
   "output": {
     "0": {

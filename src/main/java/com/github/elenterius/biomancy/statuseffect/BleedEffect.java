@@ -25,8 +25,8 @@ public class BleedEffect extends StatusEffect implements StackingStatusEffect {
 	}
 
 	@Override
-	public boolean applyEffectTick(LivingEntity livingEntity, int amplifier) {
-		if (livingEntity.hasEffect(MobEffects.REGENERATION) || livingEntity.hasEffect(MobEffects.HEAL)) {
+	public boolean applyEffectTick(ServerLevel serverLevel, LivingEntity livingEntity, int amplifier) {
+		if (livingEntity.hasEffect(MobEffects.REGENERATION) || livingEntity.hasEffect(MobEffects.INSTANT_HEALTH)) {
 			return false;
 		}
 
@@ -41,7 +41,7 @@ public class BleedEffect extends StatusEffect implements StackingStatusEffect {
 		int effectLevel = amplifier + 1;
 		livingEntity.hurt(ModDamageSources.bleed(livingEntity.level(), null), effectLevel);
 
-		if (livingEntity.level() instanceof ServerLevel serverLevel) {
+		{
 			float xz = livingEntity.getBbWidth() * 0.25f;
 			float y = livingEntity.getBbHeight() * 0.25f;
 			serverLevel.sendParticles(ModParticleTypes.FALLING_BLOOD.get(), livingEntity.getX(), livingEntity.getY(0.5f), livingEntity.getZ(), 4, xz, y, xz, 0);

@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "biomesoplenty:eyebulb"
+      "ingredient": "biomesoplenty:eyebulb"
     }
   },
   "output": {

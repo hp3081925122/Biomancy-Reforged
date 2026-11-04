@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "minecraft:tube_coral"
+      "ingredient": "minecraft:tube_coral"
     }
   },
   "output": {

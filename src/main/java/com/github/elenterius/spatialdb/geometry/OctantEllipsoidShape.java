@@ -108,16 +108,16 @@ public class OctantEllipsoidShape implements Shape, HasRadius {
 
 		@Override
 		public OctantEllipsoidShape read(CompoundTag tag) {
-			double x = tag.getDouble("X");
-			double y = tag.getDouble("Y");
-			double z = tag.getDouble("Z");
+			double x = tag.getDoubleOr("X", 0d);
+			double y = tag.getDoubleOr("Y", 0d);
+			double z = tag.getDoubleOr("Z", 0d);
 
-			float aPos = tag.getFloat("A+");
-			float bPos = tag.getFloat("B+");
-			float cPos = tag.getFloat("C+");
-			float aNeg = tag.getFloat("A-");
-			float bNeg = tag.getFloat("B-");
-			float cNeg = tag.getFloat("C-");
+			float aPos = tag.getFloatOr("A+", 0f);
+			float bPos = tag.getFloatOr("B+", 0f);
+			float cPos = tag.getFloatOr("C+", 0f);
+			float aNeg = tag.getFloatOr("A-", 0f);
+			float bNeg = tag.getFloatOr("B-", 0f);
+			float cNeg = tag.getFloatOr("C-", 0f);
 
 			return new OctantEllipsoidShape(x, y, z, aPos, bPos, cPos, aNeg, bNeg, cNeg);
 		}

@@ -60,7 +60,7 @@ public class JumpMoveHelper<T extends PathfinderMob & JumpMoveHelper.JumpingPath
 	}
 
 	public void onJumpFromGround() {
-		if (!jumpingMob.level().isClientSide) {
+		if (!jumpingMob.level().isClientSide()) {
 			jumpingMob.level().broadcastEntityEvent(jumpingMob, stateUpdateId);
 		}
 	}

@@ -24,11 +24,11 @@ public class ClimateUtil {
 
 	public static float getTemperature(Level level, BlockPos pos) {
 		Biome biome = level.getBiome(pos).value();
-		return getTemperature(biome, pos);
+		return getTemperature(biome, pos, level.getSeaLevel());
 	}
 
-	public static float getTemperature(Biome biome, BlockPos pos) {
-		return ((BiomeAccessor) (Object) biome).biomancy$getTemperature(pos);
+	public static float getTemperature(Biome biome, BlockPos pos, int seaLevel) {
+		return ((BiomeAccessor) (Object) biome).biomancy$getTemperature(pos, seaLevel);
 	}
 
 	public static float getHumidity(Biome biome) {

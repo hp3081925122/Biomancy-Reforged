@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "biomancy:undead_permeable_membrane"
+      "ingredient": "biomancy:undead_permeable_membrane"
     }
   },
   "output": {

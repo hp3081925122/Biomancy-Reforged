@@ -1,12 +1,13 @@
 package com.github.elenterius.biomancy.datagen.recipes.builder;
 
+import net.minecraft.resources.ResourceKey;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.mojang.serialization.DynamicOps;
 import net.minecraft.advancements.Advancement;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.data.recipes.RecipeOutput;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.neoforged.neoforge.common.conditions.ICondition;
@@ -27,14 +28,18 @@ public record FinishedRecipeOutput(Consumer<FinishedRecipe> consumer) implements
 	}
 
 	@Override
-	public void accept(ResourceLocation id, Recipe<?> recipe, @Nullable AdvancementHolder advancement, ICondition... conditions) {
-		consumer.accept(new VanillaRecipe(id, recipe, advancement, List.of(conditions)));
+	public void accept(ResourceKey<Recipe<?>> key, Recipe<?> recipe, @Nullable AdvancementHolder advancement, ICondition... conditions) {
+		consumer.accept(new VanillaRecipe(key.identifier(), recipe, advancement, List.of(conditions)));
 	}
 
-	public record VanillaRecipe(ResourceLocation id, Recipe<?> recipe, @Nullable AdvancementHolder advancement, List<ICondition> conditions) implements FinishedRecipe {
+	@Override
+	public void includeRootAdvancement() {
+	}
+
+	public record VanillaRecipe(Identifier id, Recipe<?> recipe, @Nullable AdvancementHolder advancement, List<ICondition> conditions) implements FinishedRecipe {
 
 		@Override
-		public ResourceLocation getId() {
+		public Identifier getId() {
 			return id;
 		}
 

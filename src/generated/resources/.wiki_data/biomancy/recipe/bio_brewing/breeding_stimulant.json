@@ -1,20 +1,18 @@
 {
   "type": "biomancy:bio_brewing",
   "input": {
-    "0": {
-      "id": "biomancy:genetic_compound"
-    },
+    "0": "biomancy:genetic_compound",
     "1": {
-      "id": "biomancy:nutrient_paste"
+      "ingredient": "biomancy:nutrient_paste"
     },
     "2": {
-      "id": "#minecraft:flowers"
+      "ingredient": "#minecraft:flowers"
     },
     "3": {
-      "id": "biomancy:hormone_secretion"
+      "ingredient": "biomancy:hormone_secretion"
     },
     "4": {
-      "id": "minecraft:cocoa_beans"
+      "ingredient": "minecraft:cocoa_beans"
     }
   },
   "output": {

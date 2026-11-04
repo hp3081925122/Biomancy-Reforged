@@ -1,8 +1,6 @@
 {
   "type": "biomancy:digesting",
-  "ingredient": {
-    "item": "minecraft:short_grass"
-  },
+  "ingredient": "minecraft:short_grass",
   "nutrientsCost": 2,
   "processingTime": 200,
   "result": {

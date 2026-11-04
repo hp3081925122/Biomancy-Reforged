@@ -1,7 +1,7 @@
 {
   "type": "biomancy:decomposing",
   "ingredient": {
-    "tag": "c:leathers"
+    "ingredient": "#c:leathers"
   },
   "nutrientsCost": 1,
   "processingTime": 120,

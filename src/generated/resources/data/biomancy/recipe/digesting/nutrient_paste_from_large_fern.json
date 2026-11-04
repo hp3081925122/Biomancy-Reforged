@@ -1,8 +1,6 @@
 {
   "type": "biomancy:digesting",
-  "ingredient": {
-    "item": "minecraft:large_fern"
-  },
+  "ingredient": "minecraft:large_fern",
   "nutrientsCost": 2,
   "processingTime": 332,
   "result": {

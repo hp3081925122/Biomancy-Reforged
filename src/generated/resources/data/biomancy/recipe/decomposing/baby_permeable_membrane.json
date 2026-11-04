@@ -1,7 +1,7 @@
 {
   "type": "biomancy:decomposing",
   "ingredient": {
-    "item": "biomancy:baby_permeable_membrane"
+    "ingredient": "biomancy:baby_permeable_membrane"
   },
   "nutrientsCost": 1,
   "processingTime": 40,

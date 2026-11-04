@@ -10,13 +10,14 @@ import com.github.elenterius.biomancy.entity.mob.fleshblob.PrimordialHangryEater
 import com.github.elenterius.biomancy.entity.projectile.*;
 import com.github.elenterius.biomancy.util.shooting.ProjectileEntityType;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
-import net.minecraft.world.entity.animal.Chicken;
-import net.minecraft.world.entity.animal.Cow;
-import net.minecraft.world.entity.animal.Sheep;
-import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
+import net.minecraft.world.entity.animal.chicken.Chicken;
+import net.minecraft.world.entity.animal.cow.Cow;
+import net.minecraft.world.entity.animal.sheep.Sheep;
+import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrowableItemProjectile;
 import net.minecraft.world.entity.projectile.ThrowableProjectile;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -49,28 +50,28 @@ public final class ModEntityTypes {
 	public static final DeferredHolder<EntityType<?>, ProjectileEntityType<AcidSprayProjectile>> ACID_SPRAY_PROJECTILE = registerProjectile("acid_spray_projectile", AcidSprayProjectile::new, builder -> builder.gravity(ProjectileEntityType.DEFAULT_GRAVITY / 2f).sized(4f / 16f, 4f / 16f));
 	public static final DeferredHolder<EntityType<?>, EntityType<GrenadeProjectile>> GRENADE_PROJECTILE = registerGrenade("grenade_projectile", GrenadeProjectile::new, builder -> builder.sized(0.6f, 0.6f));
 	public static final DeferredHolder<EntityType<?>, EntityType<ThrownAcidicEgg>> ACIDIC_EGG_PROJECTILE = registerThrowableItem("acidic_egg_projectile", ThrownAcidicEgg::new, builder -> builder.sized(0.25f, 0.25f));
-	public static final DeferredHolder<EntityType<?>, EntityType<GasCloud>> GAS_CLOUD = register("gas_cloud", EntityType.Builder.<GasCloud>of(GasCloud::new, MobCategory.MISC).fireImmune().sized(GasCloud.DEFAULT_RADIUS * 2f, GasCloud.DEFAULT_RADIUS * 2f).clientTrackingRange(10).updateInterval(Integer.MAX_VALUE));
+	public static final DeferredHolder<EntityType<?>, EntityType<GasCloud>> GAS_CLOUD = register("gas_cloud", EntityType.Builder.<GasCloud>of(GasCloud::new, MobCategory.MISC).noLootTable().fireImmune().sized(GasCloud.DEFAULT_RADIUS * 2f, GasCloud.DEFAULT_RADIUS * 2f).clientTrackingRange(10).updateInterval(Integer.MAX_VALUE));
 
 	private ModEntityTypes() {}
 
 	private static <T extends Entity> DeferredHolder<EntityType<?>, EntityType<T>> register(String name, EntityType.Builder<T> builder) {
-		return ENTITIES.register(name, () -> builder.build(BiomancyMod.rlStr(name)));
+		return ENTITIES.register(name, id -> builder.build(ResourceKey.create(Registries.ENTITY_TYPE, id)));
 	}
 
 	private static <T extends BaseProjectile> DeferredHolder<EntityType<?>, ProjectileEntityType<T>> registerProjectile(String name, ProjectileEntityType.Factory<T> factory, UnaryOperator<ProjectileEntityType.Builder<T>> builder) {
-		return ENTITIES.register(name, () -> builder.apply(ProjectileEntityType.Builder.of(factory)).updateInterval(10).build(BiomancyMod.rlStr(name)));
+		return ENTITIES.register(name, id -> builder.apply(ProjectileEntityType.Builder.of(factory)).updateInterval(10).build(ResourceKey.create(Registries.ENTITY_TYPE, id)));
 	}
 
 	private static <T extends BaseProjectile> DeferredHolder<EntityType<?>, ProjectileEntityType<T>> registerFastProjectile(String name, ProjectileEntityType.Factory<T> factory, UnaryOperator<ProjectileEntityType.Builder<T>> builder) {
-		return ENTITIES.register(name, () -> builder.apply(ProjectileEntityType.Builder.of(factory)).shouldReceiveVelocityUpdates(true).updateInterval(1).build(BiomancyMod.rlStr(name)));
+		return ENTITIES.register(name, id -> builder.apply(ProjectileEntityType.Builder.of(factory)).shouldReceiveVelocityUpdates(true).updateInterval(1).build(ResourceKey.create(Registries.ENTITY_TYPE, id)));
 	}
 
 	private static <T extends ThrowableProjectile> DeferredHolder<EntityType<?>, EntityType<T>> registerGrenade(String name, EntityType.EntityFactory<T> factory, UnaryOperator<EntityType.Builder<T>> builder) {
-		return ENTITIES.register(name, () -> builder.apply(EntityType.Builder.of(factory, MobCategory.MISC)).setShouldReceiveVelocityUpdates(true).updateInterval(1).build(BiomancyMod.rlStr(name)));
+		return ENTITIES.register(name, id -> builder.apply(EntityType.Builder.of(factory, MobCategory.MISC).noLootTable()).setShouldReceiveVelocityUpdates(true).updateInterval(1).build(ResourceKey.create(Registries.ENTITY_TYPE, id)));
 	}
 
 	private static <T extends ThrowableItemProjectile> DeferredHolder<EntityType<?>, EntityType<T>> registerThrowableItem(String name, EntityType.EntityFactory<T> factory, UnaryOperator<EntityType.Builder<T>> builder) {
-		return ENTITIES.register(name, () -> builder.apply(EntityType.Builder.of(factory, MobCategory.MISC)).clientTrackingRange(4).updateInterval(10).build(BiomancyMod.rlStr(name)));
+		return ENTITIES.register(name, id -> builder.apply(EntityType.Builder.of(factory, MobCategory.MISC).noLootTable()).clientTrackingRange(4).updateInterval(10).build(ResourceKey.create(Registries.ENTITY_TYPE, id)));
 	}
 
 	@SubscribeEvent

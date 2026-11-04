@@ -1,8 +1,6 @@
 {
   "type": "biomancy:digesting",
-  "ingredient": {
-    "item": "minecraft:vine"
-  },
+  "ingredient": "minecraft:vine",
   "nutrientsCost": 2,
   "processingTime": 200,
   "result": {

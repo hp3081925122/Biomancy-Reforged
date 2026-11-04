@@ -1,7 +1,7 @@
 {
   "type": "biomancy:decomposing",
   "ingredient": {
-    "item": "minecraft:chorus_fruit"
+    "ingredient": "minecraft:chorus_fruit"
   },
   "nutrientsCost": 1,
   "processingTime": 260,

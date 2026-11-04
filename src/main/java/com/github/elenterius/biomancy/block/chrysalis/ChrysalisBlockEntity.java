@@ -1,11 +1,13 @@
 package com.github.elenterius.biomancy.block.chrysalis;
 
+import net.minecraft.network.chat.ComponentSerialization;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.core.HolderLookup;
 import com.github.elenterius.biomancy.init.ModBlockEntities;
 import com.github.elenterius.biomancy.init.ModBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.Nameable;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -47,25 +49,17 @@ public class ChrysalisBlockEntity extends BlockEntity implements Nameable {
 	}
 
 	@Override
-	protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-		super.saveAdditional(tag, registries);
-		if (name != null) {
-			tag.putString(CUSTOM_NAME_KEY, Component.Serializer.toJson(name, registries));
-		}
-		if (entityTag != null) {
-			tag.put(Chrysalis.ENTITY_KEY, entityTag);
-		}
+	protected void saveAdditional(ValueOutput output) {
+		super.saveAdditional(output);
+		output.storeNullable(CUSTOM_NAME_KEY, ComponentSerialization.CODEC, name);
+		output.storeNullable(Chrysalis.ENTITY_KEY, CompoundTag.CODEC, entityTag);
 	}
 
 	@Override
-	protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-		super.loadAdditional(tag, registries);
-		if (tag.contains(CUSTOM_NAME_KEY, Tag.TAG_STRING)) {
-			name = parseCustomNameSafe(tag.getString(CUSTOM_NAME_KEY), registries);
-		}
-		if (tag.contains(Chrysalis.ENTITY_KEY, Tag.TAG_COMPOUND)) {
-			entityTag = tag.getCompound(Chrysalis.ENTITY_KEY);
-		}
+	protected void loadAdditional(ValueInput input) {
+		super.loadAdditional(input);
+		name = parseCustomNameSafe(input, CUSTOM_NAME_KEY);
+		input.read(Chrysalis.ENTITY_KEY, CompoundTag.CODEC).ifPresent(tag -> entityTag = tag);
 	}
 
 }

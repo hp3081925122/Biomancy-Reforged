@@ -1,7 +1,7 @@
 {
   "type": "biomancy:decomposing",
   "ingredient": {
-    "item": "minecraft:dried_kelp_block"
+    "ingredient": "minecraft:dried_kelp_block"
   },
   "nutrientsCost": 1,
   "processingTime": 60,

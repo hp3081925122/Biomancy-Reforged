@@ -1,11 +1,13 @@
 package com.github.elenterius.biomancy.crafting;
 
+import net.neoforged.neoforge.common.crafting.DataComponentIngredient;
+import net.minecraft.world.item.Item;
+import net.minecraft.core.Holder;
 import com.github.elenterius.biomancy.util.ItemStackCounter;
 import com.mojang.datafixers.util.Either;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import it.unimi.dsi.fastutil.ints.IntList;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
@@ -19,12 +21,13 @@ import java.util.List;
 
 public record IngredientStack(Ingredient ingredient, int count) {
 
+	public static final String INGREDIENT_KEY = "ingredient";
 	public static final String ALT_INGREDIENT_KEY = "alt";
 	public static final String COUNT_KEY = "count";
 
-	private static final MapCodec<Ingredient> INGREDIENT_MAP_CODEC = Codec.mapEither(Ingredient.CODEC.fieldOf(ALT_INGREDIENT_KEY), Ingredient.MAP_CODEC_NONEMPTY).xmap(
+	private static final MapCodec<Ingredient> INGREDIENT_MAP_CODEC = Codec.mapEither(Ingredient.CODEC.fieldOf(INGREDIENT_KEY), Ingredient.CODEC.fieldOf(ALT_INGREDIENT_KEY)).xmap(
 			either -> either.map(i -> i, i -> i),
-			ingredient -> !ingredient.isCustom() && ingredient.getValues().length != 1 ? Either.left(ingredient) : Either.right(ingredient)
+			Either::left
 	);
 
 	public static final Codec<IngredientStack> CODEC = RecordCodecBuilder.create(instance -> instance.group(
@@ -33,7 +36,7 @@ public record IngredientStack(Ingredient ingredient, int count) {
 	).apply(instance, IngredientStack::new));
 
 	public static final Codec<List<IngredientStack>> LIST_CODEC = CODEC.listOf().xmap(
-			list -> list.stream().filter(stack -> !stack.ingredient().isEmpty()).toList(),
+			list -> list.stream().filter(stack -> !isExplicitlyEmpty(stack.ingredient())).toList(),
 			list -> list
 	);
 
@@ -45,20 +48,33 @@ public record IngredientStack(Ingredient ingredient, int count) {
 
 	public static final StreamCodec<RegistryFriendlyByteBuf, List<IngredientStack>> LIST_STREAM_CODEC = STREAM_CODEC.apply(ByteBufCodecs.list());
 
+	private static boolean isExplicitlyEmpty(Ingredient ingredient) {
+		if (ingredient.isCustom()) return false;
+		return ingredient.getValues().unwrap().right().map(List::isEmpty).orElse(false);
+	}
+
 	public ItemStack[] getItems() {
-		return ingredient.getItems();
+		return getItems(ingredient);
+	}
+
+	public static ItemStack[] getItems(Ingredient ingredient) {
+		if (ingredient.getCustomIngredient() instanceof EssenceIngredient essenceIngredient) {
+			return new ItemStack[]{essenceIngredient.getDisplayStack()};
+		}
+		if (ingredient.getCustomIngredient() instanceof DataComponentIngredient componentIngredient) {
+			return componentIngredient.items().map(holder -> new ItemStack(holder, 1, componentIngredient.components())).toArray(ItemStack[]::new);
+		}
+		return ingredient.items().map(ItemStack::new).toArray(ItemStack[]::new);
 	}
 
 	public boolean testItem(@Nullable ItemStack stack) {
 		return ingredient.test(stack);
 	}
 
-	public boolean hasSufficientCount(StackedContents itemCounter) {
-		IntList stackingIds = ingredient.getStackingIds();
-
+	public boolean hasSufficientCount(StackedContents<Holder<Item>> itemCounter) {
 		int n = 0;
-		for (int i = 0; i < stackingIds.size(); i++) {
-			n += itemCounter.contents.get(stackingIds.getInt(i));
+		for (Holder<Item> holder : ingredient.items().toList()) {
+			n += itemCounter.amounts.getInt(holder);
 			if (n >= count) return true;
 		}
 
@@ -78,8 +94,8 @@ public record IngredientStack(Ingredient ingredient, int count) {
 	}
 
 	public List<ItemStack> getItemsWithCount() {
-		if (count == 1) return List.of(ingredient.getItems());
-		return Arrays.stream(ingredient.getItems()).map(this::copyItemStackWithCount).toList();
+		if (count == 1) return List.of(getItems());
+		return Arrays.stream(getItems()).map(this::copyItemStackWithCount).toList();
 	}
 
 	private ItemStack copyItemStackWithCount(ItemStack stack) {

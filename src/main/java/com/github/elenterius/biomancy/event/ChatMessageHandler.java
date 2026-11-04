@@ -23,7 +23,7 @@ public final class ChatMessageHandler {
 	@SubscribeEvent
 	public static void onServerReceiveChatMessageFromClient(final ServerChatEvent event) {
 		if (event.getPlayer().hasEffect(ModMobEffects.PRIMORDIAL_INFESTATION)) {
-			HoverEvent hoverEvent = new HoverEvent(HoverEvent.Action.SHOW_TEXT, event.getMessage().copy());
+			HoverEvent hoverEvent = new HoverEvent.ShowText(event.getMessage().copy());
 			event.setMessage(ComponentUtil.setStyles(event.getMessage(), TextStyles.PRIMORDIAL_RUNES.withHoverEvent(hoverEvent)));
 		}
 	}

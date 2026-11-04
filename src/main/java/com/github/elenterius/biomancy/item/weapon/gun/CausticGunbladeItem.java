@@ -1,5 +1,14 @@
 package com.github.elenterius.biomancy.item.weapon.gun;
 
+import com.github.elenterius.biomancy.util.CombatUtil;
+import net.minecraft.world.item.ItemInstance;
+import com.github.elenterius.biomancy.init.ModItemAbilities;
+import com.github.elenterius.biomancy.util.animation.ModDataTickets;
+import com.github.elenterius.biomancy.util.animation.GeoRenderProviders;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.item.component.TooltipDisplay;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.entity.EquipmentSlotGroup;
 import net.minecraft.core.Holder;
@@ -7,7 +16,6 @@ import com.github.elenterius.biomancy.component.AcidRefluxState;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.api.livingtool.SimpleLivingTool;
 import com.github.elenterius.biomancy.client.gui.ScreenOverlays;
-import com.github.elenterius.biomancy.client.render.item.caustic_gunblade.CausticGunbladeRenderer;
 import com.github.elenterius.biomancy.client.util.ClientTextUtil;
 import com.github.elenterius.biomancy.entity.projectile.AcidSprayProjectile;
 import com.github.elenterius.biomancy.init.*;
@@ -24,20 +32,18 @@ import com.github.elenterius.biomancy.util.animation.TriggerableAnimation;
 import com.github.elenterius.biomancy.util.shooting.*;
 import com.github.elenterius.geckolibextras.GLibExtras;
 import net.minecraft.SharedConstants;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.model.HumanoidModel;
-import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
@@ -53,21 +59,21 @@ import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-import software.bernie.geckolib.animatable.client.GeoRenderProvider;
+import com.geckolib.animatable.client.GeoRenderProvider;
 import net.minecraft.client.gui.Font;
 import net.neoforged.neoforge.common.ItemAbilities;
 import org.joml.Vector3f;
 import org.jspecify.annotations.Nullable;
-import software.bernie.geckolib.animatable.GeoItem;
-import software.bernie.geckolib.animatable.SingletonGeoAnimatable;
-import software.bernie.geckolib.constant.DataTickets;
-import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.animation.AnimatableManager;
-import software.bernie.geckolib.animation.AnimationController;
-import software.bernie.geckolib.animation.AnimationState;
-import software.bernie.geckolib.animation.RawAnimation;
-import software.bernie.geckolib.animation.PlayState;
-import software.bernie.geckolib.util.GeckoLibUtil;
+import com.geckolib.animatable.GeoItem;
+import com.geckolib.animatable.SingletonGeoAnimatable;
+import com.geckolib.constant.DataTickets;
+import com.geckolib.animatable.instance.AnimatableInstanceCache;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.animation.AnimationController;
+import com.geckolib.animation.state.AnimationTest;
+import com.geckolib.animation.RawAnimation;
+import com.geckolib.animation.object.PlayState;
+import com.geckolib.util.GeckoLibUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -80,7 +86,7 @@ public class CausticGunbladeItem extends LivingGunItem<AcidSprayProjectile> impl
 			SoundEvents.WITCH_DRINK, SoundEvents.WITCH_DRINK,
 			SoundEvents.TROPICAL_FISH_FLOP, SoundEvents.TROPICAL_FISH_FLOP, ModSoundEvents.FLESHKIN_BURP.get()
 	);
-	protected static final ResourceLocation CROSSHAIR = BiomancyMod.rl("textures/gui/gunblade_crosshair.png");
+	protected static final Identifier CROSSHAIR = BiomancyMod.rl("textures/gui/gunblade_crosshair.png");
 	protected final ItemAttributeModifiers defaultModifiers;
 	protected final ItemAttributeModifiers disabledModifiers;
 
@@ -133,13 +139,13 @@ public class CausticGunbladeItem extends LivingGunItem<AcidSprayProjectile> impl
 	}
 
 	@Override
-	public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
+	public InteractionResult use(Level level, Player player, InteractionHand usedHand) {
 		ItemStack stack = player.getItemInHand(usedHand);
 
 		if (Abilities.ACID_REFLUX.isActive(stack)) {
-			player.displayClientMessage(TextComponentUtil.getFailureMsgText("acid_reflux"), true);
+			player.sendOverlayMessage(TextComponentUtil.getFailureMsgText("acid_reflux"));
 			gunProperties.sounds().playLocalFail(level, player);
-			return InteractionResultHolder.fail(stack);
+			return InteractionResult.FAIL;
 		}
 
 		return super.use(level, player, usedHand);
@@ -147,7 +153,7 @@ public class CausticGunbladeItem extends LivingGunItem<AcidSprayProjectile> impl
 
 	@Override
 	public void onUseTick(Level level, LivingEntity shooter, ItemStack stack, int remainingUseDuration) {
-		if (level.isClientSide) {
+		if (level.isClientSide()) {
 			if (getGunState(stack) == GunState.SHOOTING_OR_CHARGING) {
 				int useTime = shooter.getTicksUsingItem();
 				long startTime = level.getGameTime() - useTime;
@@ -167,7 +173,7 @@ public class CausticGunbladeItem extends LivingGunItem<AcidSprayProjectile> impl
 			shooter.releaseUsingItem();
 			stopShooting(stack, serverLevel, shooter);
 			if (shooter instanceof ServerPlayer player) {
-				player.displayClientMessage(TextComponentUtil.getFailureMsgText("acid_reflux"), true);
+				player.sendOverlayMessage(TextComponentUtil.getFailureMsgText("acid_reflux"));
 			}
 			return;
 		}
@@ -177,7 +183,7 @@ public class CausticGunbladeItem extends LivingGunItem<AcidSprayProjectile> impl
 
 	@Override
 	public void onStopUsing(ItemStack stack, LivingEntity entity, int count) {
-		if (entity.level().isClientSide) {
+		if (entity.level().isClientSide()) {
 			ClientSoundHandler.removeSoundLayer(entity, "use_item", true);
 		}
 	}
@@ -197,12 +203,12 @@ public class CausticGunbladeItem extends LivingGunItem<AcidSprayProjectile> impl
 	}
 
 	@Override
-	public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
+	public void inventoryTick(ItemStack stack, ServerLevel level, Entity entity, @Nullable EquipmentSlot slot) {
 		if (level instanceof ServerLevel serverLevel && entity instanceof LivingEntity livingEntity) {
 			Abilities.ACID_REFLUX.tick(serverLevel, stack, livingEntity);
 		}
 
-		super.inventoryTick(stack, level, entity, slotId, isSelected);
+		super.inventoryTick(stack, level, entity, slot);
 	}
 
 	@Override
@@ -216,14 +222,14 @@ public class CausticGunbladeItem extends LivingGunItem<AcidSprayProjectile> impl
 	}
 
 	@Override
-	public boolean canPerformAction(ItemStack stack, net.neoforged.neoforge.common.ItemAbility itemAbility) {
-		if (!hasNutrients(stack)) return false;
-		return itemAbility != ItemAbilities.SWORD_SWEEP && ItemAbilities.DEFAULT_SWORD_ACTIONS.contains(itemAbility);
+	public boolean canPerformAction(ItemInstance stack, net.neoforged.neoforge.common.ItemAbility itemAbility) {
+		if (!(stack instanceof ItemStack itemStack) || !hasNutrients(itemStack)) return false;
+		return itemAbility != ItemAbilities.SWORD_SWEEP && ModItemAbilities.DEFAULT_SWORD_ACTIONS.contains(itemAbility);
 	}
 
 	@Override
-	public boolean hurtEnemy(ItemStack stack, LivingEntity target, LivingEntity attacker) {
-		if (attacker.level().isClientSide) return true;
+	public void hurtEnemy(ItemStack stack, LivingEntity target, LivingEntity attacker) {
+		if (attacker.level().isClientSide()) return;
 
 		if (!MobUtil.isCreativePlayer(attacker)) {
 			consumeNutrients(stack, 1);
@@ -239,7 +245,6 @@ public class CausticGunbladeItem extends LivingGunItem<AcidSprayProjectile> impl
 			Abilities.ACID_REFLUX.use(attacker.level(), stack, attacker);
 		}
 
-		return true;
 	}
 
 	@Override
@@ -247,13 +252,13 @@ public class CausticGunbladeItem extends LivingGunItem<AcidSprayProjectile> impl
 		if (!Abilities.ACID_REFLUX.isActive(stack)) return null;
 
 		DamageSource damageSource = ModDamageSources.acid(attacker.level(), attacker);
-		if (target.isInvulnerableTo(damageSource)) return null;
+		if (CombatUtil.isInvulnerableTo(target, damageSource)) return null;
 		return damageSource;
 	}
 
 	@Override
 	public void onCriticalHitEntity(ItemStack stack, LivingEntity attacker, LivingEntity target) {
-		if (attacker.level().isClientSide) return;
+		if (attacker.level().isClientSide()) return;
 
 		if (Abilities.ACID_REFLUX.isActive(stack)) {
 			target.addEffect(new MobEffectInstance(ModMobEffects.CORROSIVE, 4 * 20, 0));
@@ -263,8 +268,8 @@ public class CausticGunbladeItem extends LivingGunItem<AcidSprayProjectile> impl
 	}
 
 	@Override
-	public boolean canAttackBlock(BlockState state, Level level, BlockPos pos, Player player) {
-		return !player.isCreative();
+	public boolean canDestroyBlock(ItemStack stack, BlockState state, Level level, BlockPos pos, LivingEntity user) {
+		return !(user instanceof Player player && player.isCreative());
 	}
 
 	@Override
@@ -298,35 +303,28 @@ public class CausticGunbladeItem extends LivingGunItem<AcidSprayProjectile> impl
 	}
 
 	@Override
-	public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag isAdvanced) {
-		tooltip.addAll(ClientTextUtil.getItemInfoTooltip(stack));
+	public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag isAdvanced) {
+		ClientTextUtil.getItemInfoTooltip(stack).forEach(tooltip);
 
-		if (!Screen.hasControlDown()) {
-			tooltip.add(ComponentUtil.EMPTY_LINE);
+		if (!Minecraft.getInstance().hasControlDown()) {
+			tooltip.accept(ComponentUtil.EMPTY_LINE);
 			appendGunStats(stack, tooltip);
 		}
 
-		tooltip.add(ComponentUtil.EMPTY_LINE);
+		tooltip.accept(ComponentUtil.EMPTY_LINE);
 		appendLivingToolTooltip(stack, tooltip);
 
-		tooltip.add(ComponentUtil.EMPTY_LINE);
-		tooltip.add(ClientTextUtil.pressButtonTo(ClientTextUtil.getDefaultKey(), TextComponentUtil.getActionText("reload")).withStyle(TextStyles.DARK_GRAY));
+		tooltip.accept(ComponentUtil.EMPTY_LINE);
+		tooltip.accept(ClientTextUtil.pressButtonTo(ClientTextUtil.getDefaultKey(), TextComponentUtil.getActionText("reload")).withStyle(TextStyles.DARK_GRAY));
 
 		if (stack.isEnchanted()) {
-			tooltip.add(ComponentUtil.EMPTY_LINE);
+			tooltip.accept(ComponentUtil.EMPTY_LINE);
 		}
 	}
 
 	@Override
 	public void createGeoRenderer(Consumer<GeoRenderProvider> consumer) {
-		consumer.accept(new GeoRenderProvider() {
-			private final CausticGunbladeRenderer renderer = new CausticGunbladeRenderer();
-
-			@Override
-			public BlockEntityWithoutLevelRenderer getGeoItemRenderer() {
-				return renderer;
-			}
-		});
+		GeoRenderProviders.accept(this, consumer);
 	}
 
 	protected void broadcastAnimation(ServerLevel level, Entity relatedEntity, ItemStack stack, TriggerableAnimation animation) {
@@ -345,7 +343,7 @@ public class CausticGunbladeItem extends LivingGunItem<AcidSprayProjectile> impl
 	}
 
 	@Override
-	public ResourceLocation getCrosshairTexture(ItemStack stack, Player player) {
+	public Identifier getCrosshairTexture(ItemStack stack, Player player) {
 		return CROSSHAIR;
 	}
 
@@ -372,7 +370,7 @@ public class CausticGunbladeItem extends LivingGunItem<AcidSprayProjectile> impl
 			components.addAll(ClientTextUtil.splitLinesByNewLine(ComponentUtil.translatable(translationKey + ".desc").withStyle(TextStyles.DARK_GRAY)));
 		}
 
-		void render(Font font, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight, ItemStack stack);
+		void render(Font font, GuiGraphicsExtractor guiGraphics, float partialTick, int screenWidth, int screenHeight, ItemStack stack);
 
 	}
 
@@ -390,7 +388,7 @@ public class CausticGunbladeItem extends LivingGunItem<AcidSprayProjectile> impl
 			}
 
 			@Override
-			public void render(Font font, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight, ItemStack stack) {
+			public void render(Font font, GuiGraphicsExtractor guiGraphics, float partialTick, int screenWidth, int screenHeight, ItemStack stack) {
 				int acidLevel = getState(stack).acidLevel();
 				float acidLevelPct = acidLevel / (float) MAX_ACID_LEVEL;
 				ScreenOverlays.renderBloodChargeMeter(guiGraphics, font, screenWidth, screenHeight, -90, acidLevel, acidLevelPct);
@@ -485,10 +483,10 @@ public class CausticGunbladeItem extends LivingGunItem<AcidSprayProjectile> impl
 
 		private Animations() {}
 
-		static <T extends CausticGunbladeItem> PlayState handleMain(AnimationState<T> state) {
-			if (state.getController().isPlayingTriggeredAnimation()) return PlayState.CONTINUE;
+		static <T extends CausticGunbladeItem> PlayState handleMain(AnimationTest<T> state) {
+			if (state.controller().isPlayingTriggeredAnimation()) return PlayState.CONTINUE;
 
-			ItemStack itemStack = state.getData(DataTickets.ITEMSTACK);
+			ItemStack itemStack = state.getData(ModDataTickets.ITEMSTACK);
 			if (state.getData(GLibExtras.ITEM_HOST_TICKET) instanceof LivingEntity livingEntity) {
 				if (livingEntity.isUsingItem() && livingEntity.getUseItem() == itemStack) {
 					return state.setAndContinue(Animations.MELEE_TO_RANGED);
@@ -498,14 +496,14 @@ public class CausticGunbladeItem extends LivingGunItem<AcidSprayProjectile> impl
 			return state.setAndContinue(Animations.RANGED_TO_MELEE);
 		}
 
-		static <T extends CausticGunbladeItem> PlayState handleAcidCoat(AnimationState<T> state) {
-			ItemStack itemStack = state.getData(DataTickets.ITEMSTACK);
+		static <T extends CausticGunbladeItem> PlayState handleAcidCoat(AnimationTest<T> state) {
+			ItemStack itemStack = state.getData(ModDataTickets.ITEMSTACK);
 			boolean hasCoatedBlades = Abilities.ACID_REFLUX.isActive(itemStack);
 			return state.setAndContinue(hasCoatedBlades ? Animations.COATED_BLADES : Animations.UNCOATED_BLADES);
 		}
 
-		static <T extends CausticGunbladeItem> PlayState handleAmmo(AnimationState<T> state) {
-			ItemStack itemStack = state.getData(DataTickets.ITEMSTACK);
+		static <T extends CausticGunbladeItem> PlayState handleAmmo(AnimationTest<T> state) {
+			ItemStack itemStack = state.getData(ModDataTickets.ITEMSTACK);
 			Gun<?> gun = (Gun<?>) itemStack.getItem();
 
 			int ammo = gun.getAmmo(itemStack);
@@ -519,12 +517,12 @@ public class CausticGunbladeItem extends LivingGunItem<AcidSprayProjectile> impl
 		}
 
 		static void registerControllers(CausticGunbladeItem animatable, AnimatableManager.ControllerRegistrar controllers) {
-			AnimationController<CausticGunbladeItem> mainController = new AnimationController<>(animatable, MAIN_CONTROLLER, 0, Animations::handleMain);
+			AnimationController<CausticGunbladeItem> mainController = new AnimationController<>(MAIN_CONTROLLER, 0, Animations::handleMain);
 			registerTriggerableAnimations(mainController);
 			controllers.add(mainController);
 
-			controllers.add(new AnimationController<>(animatable, ACID_COAT_CONTROLLER, 0, Animations::handleAcidCoat));
-			controllers.add(new AnimationController<>(animatable, AMMO_CONTROLLER, 0, Animations::handleAmmo));
+			controllers.add(new AnimationController<CausticGunbladeItem>(ACID_COAT_CONTROLLER, 0, Animations::handleAcidCoat));
+			controllers.add(new AnimationController<CausticGunbladeItem>(AMMO_CONTROLLER, 0, Animations::handleAmmo));
 		}
 
 		private static TriggerableAnimation register(String controller, String name, RawAnimation rawAnimation) {

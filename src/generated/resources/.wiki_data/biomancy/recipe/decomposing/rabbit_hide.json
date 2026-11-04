@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "minecraft:rabbit_hide"
+      "ingredient": "minecraft:rabbit_hide"
     }
   },
   "output": {

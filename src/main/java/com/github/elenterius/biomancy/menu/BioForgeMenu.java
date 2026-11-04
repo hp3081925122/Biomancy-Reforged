@@ -84,7 +84,7 @@ public class BioForgeMenu extends PlayerContainerMenu {
 
 	@Override
 	protected void onPlayerMainInventoryChanged(Inventory inventory) {
-		if (!inventory.player.level().isClientSide && inventory.player instanceof ServerPlayer serverPlayer) {
+		if (!inventory.player.level().isClientSide() && inventory.player instanceof ServerPlayer serverPlayer) {
 			trackPlayerInvChanges(serverPlayer, inventory);
 		}
 	}
@@ -99,14 +99,14 @@ public class BioForgeMenu extends PlayerContainerMenu {
 
 	private void countPlayerInvItems(ServerPlayer serverPlayer, Inventory inventory) {
 		itemCounter.clear();
-		itemCounter.accountStacks(inventory.items);
+		itemCounter.accountStacks(inventory.getNonEquipmentItems());
 	}
 
 	private void updateResultSlot(ServerPlayer serverPlayer) {
 		ItemStack resultStack = ItemStack.EMPTY;
 
 		RecipeHolder<BioForgingRecipe> recipe = getSelectedRecipe();
-		if (recipe != null && resultContainer.setRecipeUsed(serverPlayer.level(), serverPlayer, recipe) && canCraft(recipe.value())) {
+		if (recipe != null && resultContainer.setRecipeUsed(serverPlayer, recipe) && canCraft(recipe.value())) {
 			resultStack = recipe.value().getResultItem(serverPlayer.level().registryAccess()).copy();
 		}
 
@@ -176,7 +176,7 @@ public class BioForgeMenu extends PlayerContainerMenu {
 
 		if (!successfulTransfer) return ItemStack.EMPTY;
 		if (slotZone == SlotZone.OUTPUT_ZONE) {
-			stackInSlot.getItem().onCraftedBy(stackInSlot, player.level(), player);
+			stackInSlot.getItem().onCraftedBy(stackInSlot, player);
 			slot.onQuickCraft(stackInSlot, copyOfStack);
 		}
 
@@ -290,13 +290,13 @@ public class BioForgeMenu extends PlayerContainerMenu {
 
 		@Override
 		protected void checkTakeAchievements(ItemStack stack) {
-			if (removeCount > 0) stack.onCraftedBy(player.level(), player, removeCount);
+			if (removeCount > 0) stack.onCraftedBy(player, removeCount);
 			removeCount = 0;
 		}
 
 		@Override
 		public void onTake(Player player, ItemStack stack) {
-			if (player.level().isClientSide) {
+			if (player.level().isClientSide()) {
 				setChanged();
 				return;
 			}
@@ -334,8 +334,8 @@ public class BioForgeMenu extends PlayerContainerMenu {
 			ingredientCost[i] = ingredients.get(i).count();
 		}
 
-		for (int idx = 0; idx < inventory.items.size(); idx++) {
-			ItemStack foundStack = inventory.items.get(idx);
+		for (int idx = 0; idx < inventory.getNonEquipmentItems().size(); idx++) {
+			ItemStack foundStack = inventory.getNonEquipmentItems().get(idx);
 			if (!foundStack.isEmpty()) {
 				for (int i = 0; i < ingredients.size(); i++) {
 					int remainingCost = ingredientCost[i];

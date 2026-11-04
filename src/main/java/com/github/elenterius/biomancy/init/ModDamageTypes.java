@@ -30,7 +30,7 @@ public final class ModDamageTypes {
 	}
 
 	public static Holder.Reference<DamageType> getHolder(ResourceKey<DamageType> key, LevelReader level) {
-		return level.registryAccess().registryOrThrow(Registries.DAMAGE_TYPE).getHolderOrThrow(key);
+		return level.registryAccess().lookupOrThrow(Registries.DAMAGE_TYPE).getOrThrow(key);
 	}
 
 	public static void bootstrap(BootstrapContext<DamageType> ctx) {
@@ -47,22 +47,22 @@ public final class ModDamageTypes {
 	}
 
 	private static void bootstrap(BootstrapContext<DamageType> ctx, ResourceKey<DamageType> key) {
-		ctx.register(key, new DamageType(key.location().toLanguageKey(), 0));
+		ctx.register(key, new DamageType(key.identifier().toLanguageKey(), 0));
 	}
 
 	private static void bootstrap(BootstrapContext<DamageType> ctx, ResourceKey<DamageType> key, float exhaustion) {
-		ctx.register(key, new DamageType(key.location().toLanguageKey(), exhaustion));
+		ctx.register(key, new DamageType(key.identifier().toLanguageKey(), exhaustion));
 	}
 
 	private static void bootstrap(BootstrapContext<DamageType> ctx, ResourceKey<DamageType> key, float exhaustion, DamageEffects effects) {
-		ctx.register(key, new DamageType(key.location().toLanguageKey(), exhaustion, effects));
+		ctx.register(key, new DamageType(key.identifier().toLanguageKey(), exhaustion, effects));
 	}
 
 	private static void bootstrap(BootstrapContext<DamageType> ctx, ResourceKey<DamageType> key, DamageScaling scaling, float exhaustion) {
-		ctx.register(key, new DamageType(key.location().toLanguageKey(), scaling, exhaustion));
+		ctx.register(key, new DamageType(key.identifier().toLanguageKey(), scaling, exhaustion));
 	}
 
 	private static void bootstrap(BootstrapContext<DamageType> ctx, ResourceKey<DamageType> key, DamageScaling scaling, float exhaustion, DamageEffects effects) {
-		ctx.register(key, new DamageType(key.location().toLanguageKey(), scaling, exhaustion, effects));
+		ctx.register(key, new DamageType(key.identifier().toLanguageKey(), scaling, exhaustion, effects));
 	}
 }

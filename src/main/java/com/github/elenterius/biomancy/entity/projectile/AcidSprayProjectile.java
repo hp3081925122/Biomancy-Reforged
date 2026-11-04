@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.entity.projectile;
 
+import com.github.elenterius.biomancy.util.CombatUtil;
 import com.github.elenterius.biomancy.init.ModBlocks;
 import com.github.elenterius.biomancy.init.ModDamageSources;
 import com.github.elenterius.biomancy.statuseffect.StatusEffectHandler;
@@ -33,9 +34,9 @@ public class AcidSprayProjectile extends BaseProjectile {
 	@Override
 	public void tick() {
 		super.tick();
-		if (tickCount > LIFESPAN && !level().isClientSide) discard();
+		if (tickCount > LIFESPAN && !level().isClientSide()) discard();
 
-		if (level().isClientSide) {
+		if (level().isClientSide()) {
 			trailPositions.addFirst(position());
 			while (trailPositions.size() > MAX_TRAIL_LENGTH) {
 				trailPositions.removeLast();
@@ -46,7 +47,7 @@ public class AcidSprayProjectile extends BaseProjectile {
 	@Override
 	protected void onHitEntity(EntityHitResult result) {
 		super.onHitEntity(result);
-		if (level().isClientSide) return;
+		if (level().isClientSide()) return;
 
 		Entity victim = result.getEntity();
 		Entity owner = getOwner();
@@ -54,7 +55,7 @@ public class AcidSprayProjectile extends BaseProjectile {
 		DamageSource acidDamageSource = ModDamageSources.acidProjectile(level(), this, owner);
 		victim.hurt(acidDamageSource, getDamage());
 
-		if (victim instanceof LivingEntity livingVictim && !livingVictim.isInvulnerableTo(acidDamageSource)) {
+		if (victim instanceof LivingEntity livingVictim && !CombatUtil.isInvulnerableTo(livingVictim, acidDamageSource)) {
 			StatusEffectHandler.applyCorrosiveEffect(livingVictim, 1);
 		}
 

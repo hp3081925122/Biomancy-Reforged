@@ -1,23 +1,23 @@
 package com.github.elenterius.biomancy.entity.misc;
 
+import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.core.particles.ParticleTypes;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.init.ModEntityTypes;
 import com.github.elenterius.biomancy.init.ModParticleTypes;
 import com.github.elenterius.biomancy.mixin.accessor.EntityAccessor;
-import com.github.elenterius.biomancy.util.debug.DebugInfo;
 import com.github.elenterius.biomancy.world.DynamicGasVolume;
-import com.mojang.blaze3d.vertex.PoseStack;
+import com.github.elenterius.biomancy.util.debug.DebugInfo;
+import net.minecraft.gizmos.GizmoStyle;
+import net.minecraft.gizmos.Gizmos;
+import net.minecraft.gizmos.TextGizmo;
+import net.minecraft.util.ARGB;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Font;
-import net.minecraft.client.renderer.LevelRenderer;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.SimpleParticleType;
@@ -29,6 +29,7 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -37,11 +38,11 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import org.joml.Matrix4f;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
@@ -93,19 +94,17 @@ public class GasCloud extends Entity implements TraceableEntity, DebugInfo.Entit
 		setPos(x, y, z);
 	}
 
-	protected @Nullable ParticleOptions readParticleData(CompoundTag data, String key) {
-		if (data.contains(key)) {
-			return ParticleTypes.CODEC.parse(registryAccess().createSerializationContext(NbtOps.INSTANCE), data.get(key))
-					.resultOrPartial(error -> BiomancyMod.LOGGER.warn("Couldn't load custom particle: {}", error))
-					.orElse(null);
-		}
-
-		return null;
+	protected @Nullable ParticleOptions readParticleData(ValueInput input, String key) {
+		return input.read(key, ParticleTypes.CODEC).orElse(null);
 	}
 
-	protected void writeParticleData(CompoundTag data, String key, ParticleOptions particleOptions) {
-		ParticleTypes.CODEC.encodeStart(registryAccess().createSerializationContext(NbtOps.INSTANCE), particleOptions)
-				.ifSuccess(tag -> data.put(key, tag));
+	protected void writeParticleData(ValueOutput output, String key, ParticleOptions particleOptions) {
+		output.store(key, ParticleTypes.CODEC, particleOptions);
+	}
+
+	@Override
+	public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
+		return false;
 	}
 
 	@Override
@@ -186,7 +185,7 @@ public class GasCloud extends Entity implements TraceableEntity, DebugInfo.Entit
 
 		super.tick();
 
-		if (level().isClientSide) {
+		if (level().isClientSide()) {
 			clientTick();
 		}
 		else {
@@ -225,6 +224,7 @@ public class GasCloud extends Entity implements TraceableEntity, DebugInfo.Entit
 		}
 
 		if (tickCount % 5 != 0) return;
+		if (!(level() instanceof ServerLevel serverLevel)) return;
 
 		if (effects.isEmpty()) {
 			reapplyCooldowns.clear();
@@ -246,7 +246,7 @@ public class GasCloud extends Entity implements TraceableEntity, DebugInfo.Entit
 
 				for (MobEffectInstance effectInstance : effects) {
 					if (effectInstance.getEffect().value().isInstantenous()) {
-						effectInstance.getEffect().value().applyInstantenousEffect(this, getOwner(), livingEntity, effectInstance.getAmplifier(), 0.5d);
+						effectInstance.getEffect().value().applyInstantenousEffect(serverLevel, this, getOwner(), livingEntity, effectInstance.getAmplifier(), 0.5d);
 					}
 					else {
 						livingEntity.addEffect(new MobEffectInstance(effectInstance), this);
@@ -359,9 +359,9 @@ public class GasCloud extends Entity implements TraceableEntity, DebugInfo.Entit
 	}
 
 	@Override
-	protected AABB makeBoundingBox() {
+	protected AABB makeBoundingBox(Vec3 position) {
 		if (dynamicGasVolume == null) {
-			return new AABB(blockPosition());
+			return new AABB(BlockPos.containing(position));
 		}
 
 		return dynamicGasVolume.toAABB();
@@ -394,118 +394,74 @@ public class GasCloud extends Entity implements TraceableEntity, DebugInfo.Entit
 	}
 
 	@Override
-	protected void readAdditionalSaveData(CompoundTag data) {
-		tickCount = data.getInt("ticks");
-		setPropagationDuration(data.getInt("propagation_ticks"));
-		durationTicks = data.getInt("duration_ticks");
-		gasInteractionType = GasInteractionType.fromId(data.getByte("interaction_type"));
-		effectReapplyCooldown = data.getInt("effect_reapply_cooldown");
-		durationModificationPerProc = data.getInt("duration_mod_per_proc");
-		radiusModificationPerProc = data.getFloat("radius_mod_per_proc");
-		radiusModificationPerTick = data.getFloat("radius_per_tick");
-		setRadius(data.getFloat("radius"));
+	protected void readAdditionalSaveData(ValueInput input) {
+		tickCount = input.getIntOr("ticks", 0);
+		setPropagationDuration(input.getIntOr("propagation_ticks", 0));
+		durationTicks = input.getIntOr("duration_ticks", 0);
+		gasInteractionType = GasInteractionType.fromId(input.getByteOr("interaction_type", (byte) 0));
+		effectReapplyCooldown = input.getIntOr("effect_reapply_cooldown", 0);
+		durationModificationPerProc = input.getIntOr("duration_mod_per_proc", 0);
+		radiusModificationPerProc = input.getFloatOr("radius_mod_per_proc", 0f);
+		radiusModificationPerTick = input.getFloatOr("radius_per_tick", 0f);
+		setRadius(input.getFloatOr("radius", 0f));
 
-		if (data.contains("effects", Tag.TAG_LIST)) {
-			ListTag list = data.getList("effects", Tag.TAG_COMPOUND);
+		Optional<List<MobEffectInstance>> loadedEffects = input.read("effects", MobEffectInstance.CODEC.listOf());
+		if (loadedEffects.isPresent()) {
 			effects.clear();
-
-			for (int i = 0; i < list.size(); i++) {
-				MobEffectInstance effectInstance = MobEffectInstance.load(list.getCompound(i));
-				if (effectInstance != null) {
-					addEffect(effectInstance);
-				}
+			for (MobEffectInstance effectInstance : loadedEffects.get()) {
+				addEffect(effectInstance);
 			}
 		}
 
-		ParticleOptions particleOptions = readParticleData(data, "particle");
+		ParticleOptions particleOptions = readParticleData(input, "particle");
 		if (particleOptions != null) {
 			setParticle(particleOptions);
 		}
 
-		if (data.hasUUID("owner")) {
-			ownerUUID = data.getUUID("owner");
+		if (input.read("owner", UUIDUtil.CODEC).isPresent()) {
+			ownerUUID = input.read("owner", UUIDUtil.CODEC).orElseThrow();
 		}
 	}
 
 	@Override
-	protected void addAdditionalSaveData(CompoundTag data) {
-		data.putInt("ticks", tickCount);
-		data.putInt("propagation_ticks", getPropagationDuration());
-		data.putInt("duration_ticks", durationTicks);
-		data.putByte("interaction_type", gasInteractionType.toId());
-		data.putInt("effect_reapply_cooldown", effectReapplyCooldown);
-		data.putInt("duration_mod_per_proc", durationModificationPerProc);
-		data.putFloat("radius_mod_per_proc", radiusModificationPerProc);
-		data.putFloat("radius_per_tick", radiusModificationPerTick);
-		data.putFloat("radius", getRadius());
-		writeParticleData(data, "particle", getParticle());
+	protected void addAdditionalSaveData(ValueOutput output) {
+		output.putInt("ticks", tickCount);
+		output.putInt("propagation_ticks", getPropagationDuration());
+		output.putInt("duration_ticks", durationTicks);
+		output.putByte("interaction_type", gasInteractionType.toId());
+		output.putInt("effect_reapply_cooldown", effectReapplyCooldown);
+		output.putInt("duration_mod_per_proc", durationModificationPerProc);
+		output.putFloat("radius_mod_per_proc", radiusModificationPerProc);
+		output.putFloat("radius_per_tick", radiusModificationPerTick);
+		output.putFloat("radius", getRadius());
+		writeParticleData(output, "particle", getParticle());
 
 		if (!effects.isEmpty()) {
-			ListTag list = new ListTag();
-			for (MobEffectInstance effectInstance : effects) {
-				list.add(effectInstance.save());
-			}
-
-			data.put("effects", list);
+			output.store("effects", MobEffectInstance.CODEC.listOf(), List.copyOf(effects));
 		}
 
 		if (ownerUUID != null) {
-			data.putUUID("owner", ownerUUID);
+			output.store("owner", UUIDUtil.CODEC, ownerUUID);
 		}
 	}
 
 	@Override
-	public void renderDebugInfo(EntityRenderDispatcher renderDispatcher, PoseStack poseStack, MultiBufferSource multiBuffer, int packedLight, float partialTicks) {
+	public void emitDebugGizmos(double cameraDistanceSqr, float partialTicks) {
 		if (dynamicGasVolume == null || dynamicGasVolume.getPackedPositions().isEmpty()) return;
-
-		double distanceSqr = renderDispatcher.distanceToSqr(this);
-		if (distanceSqr >= 64 * 64) return;
+		if (cameraDistanceSqr >= 64 * 64) return;
 
 		float radius = getRadius();
 		int desiredVolume = Mth.floor((4f / 3f) * Mth.PI * (radius * radius * radius * 0.8f));
 		int actualVolume = dynamicGasVolume.getPackedPositions().size();
 
-		double xOffset = -Mth.lerp(partialTicks, xOld, getX());
-		double yOffset = -Mth.lerp(partialTicks, yOld, getY());
-		double zOffset = -Mth.lerp(partialTicks, zOld, getZ());
+		AABB aabb = getBoundingBox().move(getPosition(partialTicks).subtract(position()));
+		Vec3 labelPos = new Vec3(aabb.minX + aabb.getXsize() / 2d, aabb.maxY + 0.25d, aabb.minZ + aabb.getZsize() / 2d);
+		Gizmos.billboardText("%d / %d".formatted(actualVolume, desiredVolume), labelPos, TextGizmo.Style.forColorAndCentered(0xFF00FFFF).withScale(0.4f));
 
-		poseStack.pushPose();
-		AABB aabb = getBoundingBox().move(xOffset, yOffset, zOffset);
-		poseStack.translate(aabb.minX + aabb.getXsize() / 2d, aabb.minY + aabb.getYsize(), aabb.minZ + aabb.getZsize() / 2d);
-		renderLabel(renderDispatcher, poseStack, multiBuffer, packedLight, "%d / %d".formatted(actualVolume, desiredVolume), 0.25f, 0x00FFFF, false);
-		poseStack.popPose();
-
+		GizmoStyle boxStyle = GizmoStyle.stroke(ARGB.colorFromFloat(1f, 0.25f, 1f, 0f));
 		for (long packedPos : dynamicGasVolume.getPackedPositions()) {
-			int x = BlockPos.getX(packedPos);
-			int y = BlockPos.getY(packedPos);
-			int z = BlockPos.getZ(packedPos);
-
-			float red = 0.25f;
-			float green = 1f;
-
-			poseStack.pushPose();
-			poseStack.translate(xOffset + x, yOffset + y, zOffset + z);
-			LevelRenderer.renderLineBox(poseStack, multiBuffer.getBuffer(RenderType.lines()), 0.1f, 0.1f, 0.1f, 0.9f, 0.9f, 0.9f, red, green, 0f, 1f);
-			poseStack.popPose();
+			Gizmos.cuboid(BlockPos.of(packedPos), -0.1f, boxStyle);
 		}
-	}
-
-	protected void renderLabel(EntityRenderDispatcher renderDispatcher, PoseStack poseStack, MultiBufferSource multiBuffer, int packedLight, String text, float y, int color, boolean translucentBackground) {
-		poseStack.pushPose();
-
-		poseStack.translate(0f, y, 0f);
-		poseStack.mulPose(renderDispatcher.cameraOrientation());
-		poseStack.scale(-0.025f, -0.025f, 0.025f);
-
-		int backgroundColor = (int) (Minecraft.getInstance().options.getBackgroundOpacity(0.25F) * 255f) << 24;
-		Font font = Minecraft.getInstance().font;
-		float x = -font.width(text) / 2f;
-
-		Matrix4f matrix4f = poseStack.last().pose();
-		font.drawInBatch(text, x, y, 0x20_ffffff, false, matrix4f, multiBuffer, translucentBackground ? Font.DisplayMode.SEE_THROUGH : Font.DisplayMode.NORMAL, backgroundColor, packedLight);
-		font.drawInBatch(text, x, y, 0xFF_000000 | color, false, matrix4f, multiBuffer, Font.DisplayMode.NORMAL, 0, packedLight);
-
-		poseStack.popPose();
 	}
 
 	public enum GasInteractionType {

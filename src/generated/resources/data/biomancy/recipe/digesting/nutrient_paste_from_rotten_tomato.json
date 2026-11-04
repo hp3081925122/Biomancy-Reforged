@@ -6,9 +6,7 @@
     }
   ],
   "type": "biomancy:digesting",
-  "ingredient": {
-    "item": "farmersdelight:rotten_tomato"
-  },
+  "ingredient": "farmersdelight:rotten_tomato",
   "nutrientsCost": 2,
   "processingTime": 250,
   "result": {

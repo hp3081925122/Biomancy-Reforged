@@ -1,9 +1,7 @@
 {
   "type": "biomancy:digesting",
   "input": {
-    "0": {
-      "id": "minecraft:tall_grass"
-    }
+    "0": "minecraft:tall_grass"
   },
   "output": {
     "0": {

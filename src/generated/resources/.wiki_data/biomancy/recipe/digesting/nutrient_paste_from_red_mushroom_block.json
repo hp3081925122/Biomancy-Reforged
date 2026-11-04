@@ -1,9 +1,7 @@
 {
   "type": "biomancy:digesting",
   "input": {
-    "0": {
-      "id": "minecraft:red_mushroom_block"
-    }
+    "0": "minecraft:red_mushroom_block"
   },
   "output": {
     "0": {

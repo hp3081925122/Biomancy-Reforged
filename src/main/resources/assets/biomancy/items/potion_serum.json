@@ -1,0 +1,10 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "biomancy:item/potion_serum",
+    "tints": [
+      { "type": "biomancy:potion_serum", "layer": 0 },
+      { "type": "biomancy:potion_serum", "layer": 1 }
+    ]
+  }
+}

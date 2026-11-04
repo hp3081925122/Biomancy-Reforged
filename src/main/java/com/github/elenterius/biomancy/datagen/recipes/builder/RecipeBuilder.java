@@ -1,8 +1,16 @@
 package com.github.elenterius.biomancy.datagen.recipes.builder;
 
+import java.util.Optional;
+import net.minecraft.advancements.criterion.DataComponentMatchers;
+import net.minecraft.advancements.criterion.MinMaxBounds;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.core.HolderSet;
+import net.minecraft.core.Holder;
+import com.github.elenterius.biomancy.util.ItemHolders;
 import net.minecraft.advancements.Criterion;
-import net.minecraft.advancements.critereon.InventoryChangeTrigger;
-import net.minecraft.advancements.critereon.ItemPredicate;
+import net.minecraft.advancements.criterion.InventoryChangeTrigger;
+import net.minecraft.advancements.criterion.ItemPredicate;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.recipes.RecipeCategory;
 import net.minecraft.tags.TagKey;
@@ -19,11 +27,11 @@ public sealed interface RecipeBuilder<T extends RecipeBuilder<?>> permits BioBre
 	}
 
 	private Criterion<InventoryChangeTrigger.TriggerInstance> has(ItemLike itemLike) {
-		return inventoryTrigger(ItemPredicate.Builder.item().of(itemLike).build());
+		return inventoryTrigger(ItemPredicate.Builder.item().of(ItemHolders.LOOKUP, itemLike).build());
 	}
 
 	private Criterion<InventoryChangeTrigger.TriggerInstance> has(TagKey<Item> tag) {
-		return inventoryTrigger(ItemPredicate.Builder.item().of(tag).build());
+		return inventoryTrigger(ItemPredicate.Builder.item().of(ItemHolders.LOOKUP, tag).build());
 	}
 
 	private Criterion<InventoryChangeTrigger.TriggerInstance> inventoryTrigger(ItemPredicate... predicates) {
@@ -50,6 +58,12 @@ public sealed interface RecipeBuilder<T extends RecipeBuilder<?>> permits BioBre
 
 	default T unlockedBy(ItemLike itemLike) {
 		return unlockedBy("has_" + getItemName(itemLike), has(itemLike));
+	}
+
+	default T unlockedBy(DatagenIngredient ingredient) {
+		Holder<Item> holder = Holder.Reference.createStandAlone(BuiltInRegistries.ITEM, ResourceKey.create(Registries.ITEM, ingredient.resourceLocation()));
+		ItemPredicate predicate = new ItemPredicate(Optional.of(HolderSet.direct(holder)), MinMaxBounds.Ints.ANY, DataComponentMatchers.ANY);
+		return unlockedBy("has_" + ingredient.resourceLocation().getPath(), inventoryTrigger(predicate));
 	}
 
 	default T unlockedBy(TagKey<Item> tag, Criterion<?> criterion) {

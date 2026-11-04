@@ -2,9 +2,7 @@
   "type": "minecraft:crafting_shapeless",
   "category": "misc",
   "ingredients": [
-    {
-      "item": "biomancy:mob_fang"
-    }
+    "biomancy:mob_fang"
   ],
   "result": {
     "count": 4,

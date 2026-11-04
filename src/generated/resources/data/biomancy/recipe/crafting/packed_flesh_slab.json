@@ -2,9 +2,7 @@
   "type": "minecraft:crafting_shaped",
   "category": "building",
   "key": {
-    "#": {
-      "item": "biomancy:packed_flesh"
-    }
+    "#": "biomancy:packed_flesh"
   },
   "pattern": [
     "###"

@@ -1,10 +1,13 @@
 package com.github.elenterius.biomancy.block.decomposer;
 
+import com.github.elenterius.biomancy.block.base.BlockTooltipProvider;
+import net.minecraft.world.item.component.TooltipDisplay;
+import java.util.function.Consumer;
 import com.mojang.serialization.MapCodec;
 import com.github.elenterius.biomancy.util.BlockItemUtil;
 import net.minecraft.world.item.Item;
 import com.github.elenterius.biomancy.util.InteractionUtil;
-import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.InteractionResult;
 import com.github.elenterius.biomancy.block.base.HorizontalFacingMachineBlock;
 import com.github.elenterius.biomancy.block.base.MachineBlockEntity;
 import com.github.elenterius.biomancy.init.ModBlockEntities;
@@ -46,7 +49,7 @@ import java.text.DecimalFormat;
 import java.util.List;
 import java.util.stream.Stream;
 
-public class DecomposerBlock extends HorizontalFacingMachineBlock {
+public class DecomposerBlock extends HorizontalFacingMachineBlock implements BlockTooltipProvider {
 
 	public static final MapCodec<DecomposerBlock> CODEC = simpleCodec(DecomposerBlock::new);
 
@@ -70,17 +73,17 @@ public class DecomposerBlock extends HorizontalFacingMachineBlock {
 	@Nullable
 	@Override
 	public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> blockEntityType) {
-		return level.isClientSide ? null : createTickerHelper(blockEntityType, ModBlockEntities.DECOMPOSER.get(), MachineBlockEntity::serverTick);
+		return level.isClientSide() ? null : createTickerHelper(blockEntityType, ModBlockEntities.DECOMPOSER.get(), MachineBlockEntity::serverTick);
 	}
 
 	@Override
-	protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+	protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
 		return InteractionUtil.toItemInteractionResult(use(state, level, pos, player, hand, hit));
 	}
 
 	protected InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
 		if (level.getBlockEntity(pos) instanceof DecomposerBlockEntity decomposer && decomposer.canPlayerInteract(player)) {
-			if (!level.isClientSide) {
+			if (!level.isClientSide()) {
 				player.openMenu(decomposer, buffer -> buffer.writeBlockPos(pos));
 				SoundUtil.Server.playBlockSound((ServerLevel) level, pos, ModSoundEvents.UI_DECOMPOSER_OPEN);
 			}
@@ -97,7 +100,7 @@ public class DecomposerBlock extends HorizontalFacingMachineBlock {
 
 	@Override
 	public RenderShape getRenderShape(BlockState state) {
-		return RenderShape.ENTITYBLOCK_ANIMATED;
+		return RenderShape.INVISIBLE;
 	}
 
 	@Override
@@ -118,19 +121,19 @@ public class DecomposerBlock extends HorizontalFacingMachineBlock {
 		}
 	}
 
-	@Override
-	public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
+	
+	public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag flag) {
 		int fuelAmount = getFuelAmount(stack);
 		if (fuelAmount > 0) {
-			tooltip.add(ComponentUtil.EMPTY_LINE);
+			tooltip.accept(ComponentUtil.EMPTY_LINE);
 			DecimalFormat df = FormatUtil.getIntegerFormatter();
-			tooltip.add(ComponentUtil.translatable("tooltip.biomancy.nutrients_fuel").withStyle(ChatFormatting.GRAY));
-			tooltip.add(ComponentUtil.literal("%s/%s u".formatted(df.format(fuelAmount), df.format(DecomposerBlockEntity.MAX_FUEL))).withStyle(TextStyles.NUTRIENTS));
+			tooltip.accept(ComponentUtil.translatable("tooltip.biomancy.nutrients_fuel").withStyle(ChatFormatting.GRAY));
+			tooltip.accept(ComponentUtil.literal("%s/%s u".formatted(df.format(fuelAmount), df.format(DecomposerBlockEntity.MAX_FUEL))).withStyle(TextStyles.NUTRIENTS));
 		}
 	}
 
 	public static int getFuelAmount(ItemStack stack) {
 		CompoundTag tag = BlockItemUtil.getBlockEntityData(stack);
-		return tag != null && tag.contains("Fuel") ? tag.getCompound("Fuel").getInt("Amount") : 0;
+		return tag != null && tag.contains("Fuel") ? tag.getCompoundOrEmpty("Fuel").getIntOr("Amount", 0) : 0;
 	}
 }

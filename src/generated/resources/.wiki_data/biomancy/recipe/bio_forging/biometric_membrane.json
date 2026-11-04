@@ -2,18 +2,18 @@
   "type": "biomancy:bio_forging",
   "input": {
     "0": {
-      "id": "biomancy:impermeable_membrane"
+      "ingredient": "biomancy:impermeable_membrane"
     },
     "1": {
       "count": 4,
-      "id": "biomancy:bile"
+      "ingredient": "biomancy:bile"
     },
     "2": {
       "count": 2,
-      "id": "biomancy:gem_fragments"
+      "ingredient": "biomancy:gem_fragments"
     },
     "3": {
-      "id": "biomancy:living_flesh"
+      "ingredient": "biomancy:living_flesh"
     }
   },
   "output": {

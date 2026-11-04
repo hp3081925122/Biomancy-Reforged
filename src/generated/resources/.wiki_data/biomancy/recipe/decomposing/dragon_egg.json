@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "minecraft:dragon_egg"
+      "ingredient": "minecraft:dragon_egg"
     }
   },
   "output": {

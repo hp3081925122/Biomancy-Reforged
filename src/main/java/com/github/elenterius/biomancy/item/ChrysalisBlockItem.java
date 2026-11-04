@@ -1,5 +1,9 @@
 package com.github.elenterius.biomancy.item;
 
+import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.item.component.TooltipDisplay;
+import net.minecraft.world.item.Item;
+import java.util.function.Consumer;
 import com.github.elenterius.biomancy.util.BlockItemUtil;
 import com.github.elenterius.biomancy.block.chrysalis.Chrysalis;
 import com.github.elenterius.biomancy.init.ModBlockEntities;
@@ -43,12 +47,12 @@ public class ChrysalisBlockItem extends SimpleBlockItem {
 
 	@Override
 	public void onDestroyed(ItemEntity itemEntity) {
-		if (itemEntity.level().isClientSide) return;
+		if (itemEntity.level().isClientSide()) return;
 
 		CompoundTag compoundTag = BlockItemUtil.getBlockEntityData(itemEntity.getItem());
 		if (compoundTag == null || !compoundTag.contains(ENTITY_KEY)) return;
 
-		CompoundTag entityTag = compoundTag.getCompound(ENTITY_KEY);
+		CompoundTag entityTag = compoundTag.getCompoundOrEmpty(ENTITY_KEY);
 		Chrysalis.spawnEntity((ServerLevel) itemEntity.level(), itemEntity.getEyePosition(), entityTag);
 	}
 
@@ -62,13 +66,13 @@ public class ChrysalisBlockItem extends SimpleBlockItem {
 		if (player.level().isClientSide()) return InteractionResult.PASS;
 
 		if (!isEmpty(stack)) {
-			player.displayClientMessage(TextComponentUtil.getFailureMsgText("already_full"), true);
+			player.sendOverlayMessage(TextComponentUtil.getFailureMsgText("already_full"));
 			return InteractionResult.PASS;
 		}
 
 		boolean isCaptureAllowed = isCapturingSupported(interactionTarget) && (isCapturingAllowed(interactionTarget) || player.isCreative());
 		if (!isCaptureAllowed) {
-			player.displayClientMessage(TextComponentUtil.getFailureMsgText("mob_too_powerful"), true);
+			player.sendOverlayMessage(TextComponentUtil.getFailureMsgText("mob_too_powerful"));
 			return InteractionResult.PASS;
 		}
 
@@ -79,7 +83,7 @@ public class ChrysalisBlockItem extends SimpleBlockItem {
 			CompoundTag compoundTag = new CompoundTag();
 
 			if (storeEntity(compoundTag, interactionTarget, true)) {
-				BlockItem.setBlockEntityData(copy, ModBlockEntities.CHRYSALIS.get(), compoundTag);
+				BlockItemUtil.setBlockEntityData(copy, ModBlockEntities.CHRYSALIS.get(), compoundTag);
 
 				playInsertSound(player);
 
@@ -91,13 +95,13 @@ public class ChrysalisBlockItem extends SimpleBlockItem {
 				return InteractionResult.SUCCESS;
 			}
 
-			player.displayClientMessage(TextComponentUtil.getFailureMsgText("failed_to_store_mob"), true);
+			player.sendOverlayMessage(TextComponentUtil.getFailureMsgText("failed_to_store_mob"));
 			return InteractionResult.PASS;
 		}
 
 		CompoundTag compoundTag = new CompoundTag();
 		if (storeEntity(compoundTag, interactionTarget, true)) {
-			BlockItem.setBlockEntityData(stack, ModBlockEntities.CHRYSALIS.get(), compoundTag);
+			BlockItemUtil.setBlockEntityData(stack, ModBlockEntities.CHRYSALIS.get(), compoundTag);
 
 			playInsertSound(player);
 
@@ -107,7 +111,7 @@ public class ChrysalisBlockItem extends SimpleBlockItem {
 			return InteractionResult.SUCCESS;
 		}
 
-		player.displayClientMessage(TextComponentUtil.getFailureMsgText("failed_to_store_mob"), true);
+		player.sendOverlayMessage(TextComponentUtil.getFailureMsgText("failed_to_store_mob"));
 		return InteractionResult.PASS;
 	}
 
@@ -124,29 +128,29 @@ public class ChrysalisBlockItem extends SimpleBlockItem {
 
 		if (level.mayInteract(player, context.getClickedPos()) && player.mayUseItemAt(context.getClickedPos(), context.getClickedFace(), stack)) {
 
-			CompoundTag entityTag = compoundTag.getCompound(ENTITY_KEY);
+			CompoundTag entityTag = compoundTag.getCompoundOrEmpty(ENTITY_KEY);
 
 			if (spawnEntity((ServerLevel) level, context, entityTag)) {
 				compoundTag.remove(ENTITY_KEY);
-				BlockItem.setBlockEntityData(stack, ModBlockEntities.CHRYSALIS.get(), compoundTag);
+				BlockItemUtil.setBlockEntityData(stack, ModBlockEntities.CHRYSALIS.get(), compoundTag);
 
 				playRemoveSound(player);
 				return InteractionResult.CONSUME;
 			}
 
-			MutableComponent entityName = ComponentUtil.translatable(entityTag.getString(ENTITY_NAME_KEY));
-			player.displayClientMessage(TextComponentUtil.getFailureMsgText("failed_to_spawn_mob", entityName), true);
+			MutableComponent entityName = ComponentUtil.translatable(entityTag.getStringOr(ENTITY_NAME_KEY, ""));
+			player.sendOverlayMessage(TextComponentUtil.getFailureMsgText("failed_to_spawn_mob", entityName));
 			return InteractionResult.FAIL;
 		}
 
-		player.displayClientMessage(TextComponentUtil.getFailureMsgText("item_interaction_not_allowed"), true);
+		player.sendOverlayMessage(TextComponentUtil.getFailureMsgText("item_interaction_not_allowed"));
 		return InteractionResult.FAIL;
 	}
 
 	private boolean spawnEntity(ServerLevel level, UseOnContext context, CompoundTag entityTag) {
-		Entity entityToSpawn = EntityType.loadEntityRecursive(entityTag.getCompound(ENTITY_DATA_KEY), level, entity -> {
+		Entity entityToSpawn = EntityType.loadEntityRecursive(entityTag.getCompoundOrEmpty(ENTITY_DATA_KEY), level, EntitySpawnReason.LOAD, entity -> {
 			Vec3 pos = MobUtil.getAdjustedSpawnPositionFor(context.getClickedPos(), context.getClickLocation(), context.getClickedFace(), entity);
-			entity.moveTo(pos.x, pos.y, pos.z, Mth.wrapDegrees(level.random.nextFloat() * 360), 0);
+			entity.snapTo(pos.x, pos.y, pos.z, Mth.wrapDegrees(level.getRandom().nextFloat() * 360), 0);
 
 			if (entity instanceof LivingEntity living) {
 				living.yHeadRot = living.getYRot();
@@ -186,20 +190,20 @@ public class ChrysalisBlockItem extends SimpleBlockItem {
 	}
 
 	@Override
-	public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
-		super.appendHoverText(stack, context, tooltip, flag);
+	public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag flag) {
+		super.appendHoverText(stack, context, display, tooltip, flag);
 
 		CompoundTag compoundTag = BlockItemUtil.getBlockEntityData(stack);
 		if (compoundTag == null || !compoundTag.contains(ENTITY_KEY)) return;
 
-		CompoundTag tag = compoundTag.getCompound(ENTITY_KEY);
-		MutableComponent entityName = ComponentUtil.translatable(tag.getString(ENTITY_NAME_KEY));
+		CompoundTag tag = compoundTag.getCompoundOrEmpty(ENTITY_KEY);
+		MutableComponent entityName = ComponentUtil.translatable(tag.getStringOr(ENTITY_NAME_KEY, ""));
 
-		tooltip.add(ComponentUtil.EMPTY_LINE);
-		tooltip.add(TextComponentUtil.getTooltipText("contains", entityName).withStyle(TextStyles.ITALIC_GRAY));
+		tooltip.accept(ComponentUtil.EMPTY_LINE);
+		tooltip.accept(TextComponentUtil.getTooltipText("contains", entityName).withStyle(TextStyles.ITALIC_GRAY));
 
-		float volume = tag.getFloat(ENTITY_VOLUME_KEY);
-		tooltip.add(ComponentUtil.literal(String.format("%.1f m\u00B3", volume)).withStyle(ChatFormatting.DARK_GRAY));
+		float volume = tag.getFloatOr(ENTITY_VOLUME_KEY, 0f);
+		tooltip.accept(ComponentUtil.literal(String.format("%.1f m\u00B3", volume)).withStyle(ChatFormatting.DARK_GRAY));
 	}
 
 	@Override
@@ -219,8 +223,8 @@ public class ChrysalisBlockItem extends SimpleBlockItem {
 		CompoundTag compoundTag = BlockItemUtil.getBlockEntityData(stack);
 		if (compoundTag == null || !compoundTag.contains(ENTITY_KEY)) return null;
 
-		CompoundTag tag = compoundTag.getCompound(ENTITY_KEY);
-		return ComponentUtil.translatable(tag.getString(ENTITY_NAME_KEY));
+		CompoundTag tag = compoundTag.getCompoundOrEmpty(ENTITY_KEY);
+		return ComponentUtil.translatable(tag.getStringOr(ENTITY_NAME_KEY, ""));
 	}
 
 }

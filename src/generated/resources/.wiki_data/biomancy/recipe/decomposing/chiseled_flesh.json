@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "biomancy:chiseled_flesh"
+      "ingredient": "biomancy:chiseled_flesh"
     }
   },
   "output": {

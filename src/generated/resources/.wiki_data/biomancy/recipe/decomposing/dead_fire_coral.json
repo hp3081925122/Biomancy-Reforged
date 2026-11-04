@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "minecraft:dead_fire_coral"
+      "ingredient": "minecraft:dead_fire_coral"
     }
   },
   "output": {

@@ -2,14 +2,14 @@
   "type": "biomancy:bio_forging",
   "input": {
     "0": {
-      "id": "biomancy:grenade_casing"
+      "ingredient": "biomancy:grenade_casing"
     },
     "1": {
-      "id": "biomancy:gelling_agent"
+      "ingredient": "biomancy:gelling_agent"
     },
     "2": {
       "count": 2,
-      "id": "biomancy:unstable_compound"
+      "ingredient": "biomancy:unstable_compound"
     }
   },
   "output": {

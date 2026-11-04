@@ -3,7 +3,6 @@ package com.github.elenterius.biomancy.datagen.tags;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.init.ModEntityTypes;
 import com.github.elenterius.biomancy.init.tags.ModEntityTags;
-import net.mcreator.sonsofsins.SonsOfSinsMod;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.PackOutput;
@@ -11,7 +10,6 @@ import net.minecraft.data.tags.EntityTypeTagsProvider;
 import net.minecraft.tags.EntityTypeTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.EntityType;
-import net.neoforged.neoforge.common.data.ExistingFileHelper;
 import org.apache.commons.lang3.StringUtils;
 import org.jspecify.annotations.Nullable;
 
@@ -19,12 +17,12 @@ import java.util.concurrent.CompletableFuture;
 
 public class ModEntityTypeTagsProvider extends EntityTypeTagsProvider {
 
-	public ModEntityTypeTagsProvider(PackOutput output, CompletableFuture<HolderLookup.Provider> lookupProvider, @Nullable ExistingFileHelper existingFileHelper) {
-		super(output, lookupProvider, BiomancyMod.MOD_ID, existingFileHelper);
+	public ModEntityTypeTagsProvider(PackOutput output, CompletableFuture<HolderLookup.Provider> lookupProvider) {
+		super(output, lookupProvider, BiomancyMod.MOD_ID);
 	}
 
 	protected EnhancedTagAppender<EntityType<?>> createTag(TagKey<EntityType<?>> tag) {
-		return new EnhancedTagAppender<>(tag(tag), BuiltInRegistries.ENTITY_TYPE);
+		return new EnhancedTagAppender<>(tag(tag), getOrCreateRawBuilder(tag), BuiltInRegistries.ENTITY_TYPE, modId);
 	}
 
 	@Override
@@ -55,8 +53,7 @@ public class ModEntityTypeTagsProvider extends EntityTypeTagsProvider {
 		createTag(ModEntityTags.FLESHKIN_IGNORES)
 				.addTag(
 						ModEntityTags.FLESHKIN
-				)
-				.addOptionalTag(SonsOfSinsMod.MODID + ":is_a_flesh_creature");
+				);
 
 		tag(EntityTypeTags.FALL_DAMAGE_IMMUNE).add(
 				ModEntityTypes.FLESH_CHICKEN.get()

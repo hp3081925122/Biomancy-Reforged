@@ -1,6 +1,6 @@
 package com.github.elenterius.biomancy.util.colors;
 
-import net.minecraft.util.FastColor;
+import net.minecraft.util.ARGB;
 
 /// Implemented based on:
 /// - [Oklab](https://bottosson.github.io/posts/oklab) by Björn Ottosson
@@ -39,9 +39,9 @@ public final class ColorSpaces {
 
 		/// @return s and l in the range of \[0.0, 1.0\]
 		public static double[] fromARGB32(int rgb) {
-			double r = FastColor.ARGB32.red(rgb) / 255.0;
-			double g = FastColor.ARGB32.green(rgb) / 255.0;
-			double b = FastColor.ARGB32.blue(rgb) / 255.0;
+			double r = ARGB.red(rgb) / 255.0;
+			double g = ARGB.green(rgb) / 255.0;
+			double b = ARGB.blue(rgb) / 255.0;
 
 			double min = Math.min(r, Math.min(g, b));
 			double max = Math.max(r, Math.max(g, b));
@@ -93,7 +93,7 @@ public final class ColorSpaces {
 				b = hueToRgb(p, q, h - 1.0 / 3.0);
 			}
 
-			return FastColor.ARGB32.color(
+			return ARGB.color(
 					255,
 					clamp(floor(r * 255.0), 0, 255),
 					clamp(floor(g * 255.0), 0, 255),
@@ -180,15 +180,15 @@ public final class ColorSpaces {
 		/// @return sRGB
 		public static double[] fromARGB32(int argb) {
 			return new double[]{
-					FastColor.ARGB32.red(argb) / 255.0,
-					FastColor.ARGB32.green(argb) / 255.0,
-					FastColor.ARGB32.blue(argb) / 255.0
+					ARGB.red(argb) / 255.0,
+					ARGB.green(argb) / 255.0,
+					ARGB.blue(argb) / 255.0
 			};
 		}
 
 		/// @return ARGB
 		public static int toARGB32(double[] rgb) {
-			return FastColor.ARGB32.color(
+			return ARGB.color(
 					255,
 					clamp((int) (rgb[0] * 255.0), 0, 255),
 					clamp((int) (rgb[1] * 255.0), 0, 255),

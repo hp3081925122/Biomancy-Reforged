@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.client.util;
 
+import java.util.function.Consumer;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.init.client.ModKeyBindings;
 import com.github.elenterius.biomancy.item.ItemTooltipStyleProvider;
@@ -41,22 +42,22 @@ public final class ClientTextUtil {
 	}
 
 	public static List<Component> getItemInfoTooltip(ItemStack stack) {
-		if (Screen.hasControlDown()) {
+		if (Minecraft.getInstance().hasControlDown()) {
 			return splitLinesByNewLine(getItemTooltip(stack).withStyle(TextStyles.LORE));
 		}
 
 		return List.of(holdButtonTo(CTRL_KEY_TEXT.plainCopy(), SHOW_INFO).withStyle(TextStyles.LORE));
 	}
 
-	public static boolean showItemInfo(List<Component> tooltip) {
-		boolean flag = Screen.hasControlDown();
-		if (!flag) tooltip.add(holdButtonTo(CTRL_KEY_TEXT.plainCopy(), SHOW_INFO).withStyle(TextStyles.LORE));
+	public static boolean showItemInfo(Consumer<Component> tooltip) {
+		boolean flag = Minecraft.getInstance().hasControlDown();
+		if (!flag) tooltip.accept(holdButtonTo(CTRL_KEY_TEXT.plainCopy(), SHOW_INFO).withStyle(TextStyles.LORE));
 		return flag;
 	}
 
-	public static boolean showExtraInfo(List<Component> tooltip) {
-		boolean flag = Screen.hasAltDown();
-		if (!flag) tooltip.add(holdButtonTo(ALT_KEY_TEXT.plainCopy(), SHOW_INFO).withStyle(TextStyles.LORE));
+	public static boolean showExtraInfo(Consumer<Component> tooltip) {
+		boolean flag = Minecraft.getInstance().hasAltDown();
+		if (!flag) tooltip.accept(holdButtonTo(ALT_KEY_TEXT.plainCopy(), SHOW_INFO).withStyle(TextStyles.LORE));
 		return flag;
 	}
 
@@ -92,7 +93,7 @@ public final class ClientTextUtil {
 		if (Minecraft.getInstance().level != null) {
 			Player player = Minecraft.getInstance().level.getPlayerByUUID(uuid);
 			if (player != null) {
-				return player.getGameProfile().getName();
+				return player.getGameProfile().name();
 			}
 		}
 		return uuid.toString();

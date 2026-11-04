@@ -4,12 +4,14 @@ import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.loot.CatMorningGiftLootModifier;
 import com.github.elenterius.biomancy.loot.CopyBlockEntityDataFunction;
 import com.github.elenterius.biomancy.loot.DespoilLootModifier;
+import com.github.elenterius.biomancy.loot.TradeConfigCondition;
 import com.google.common.collect.Sets;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.storage.loot.LootTable;
-import net.minecraft.world.level.storage.loot.functions.LootItemFunctionType;
+import net.minecraft.world.level.storage.loot.functions.LootItemFunction;
+import net.minecraft.world.level.storage.loot.predicates.LootItemCondition;
 import net.neoforged.neoforge.common.loot.IGlobalLootModifier;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -26,8 +28,11 @@ public final class ModLoot {
 	public static final DeferredHolder<MapCodec<? extends IGlobalLootModifier>, MapCodec<DespoilLootModifier>> DESPOIL_SERIALIZER = GLOBAL_MODIFIERS.register("despoil", () -> DespoilLootModifier.CODEC);
 	public static final DeferredHolder<MapCodec<? extends IGlobalLootModifier>, MapCodec<CatMorningGiftLootModifier>> CAT_MORNING_GIFT_SERIALIZER = GLOBAL_MODIFIERS.register("cat_morning_gift", () -> CatMorningGiftLootModifier.CODEC);
 
-	public static final DeferredRegister<LootItemFunctionType<?>> LOOT_FUNCTIONS = DeferredRegister.create(Registries.LOOT_FUNCTION_TYPE, BiomancyMod.MOD_ID);
-	public static final DeferredHolder<LootItemFunctionType<?>, LootItemFunctionType<CopyBlockEntityDataFunction>> COPY_BLOCK_ENTITY_DATA = LOOT_FUNCTIONS.register("copy_block_entity_data", () -> new LootItemFunctionType<>(CopyBlockEntityDataFunction.CODEC));
+	public static final DeferredRegister<MapCodec<? extends LootItemFunction>> LOOT_FUNCTIONS = DeferredRegister.create(Registries.LOOT_FUNCTION_TYPE, BiomancyMod.MOD_ID);
+	public static final DeferredHolder<MapCodec<? extends LootItemFunction>, MapCodec<CopyBlockEntityDataFunction>> COPY_BLOCK_ENTITY_DATA = LOOT_FUNCTIONS.register("copy_block_entity_data", () -> CopyBlockEntityDataFunction.CODEC);
+
+	public static final DeferredRegister<MapCodec<? extends LootItemCondition>> LOOT_CONDITIONS = DeferredRegister.create(Registries.LOOT_CONDITION_TYPE, BiomancyMod.MOD_ID);
+	public static final DeferredHolder<MapCodec<? extends LootItemCondition>, MapCodec<TradeConfigCondition>> TRADE_CONFIG = LOOT_CONDITIONS.register("trade_config", () -> TradeConfigCondition.CODEC);
 
 	private ModLoot() {}
 

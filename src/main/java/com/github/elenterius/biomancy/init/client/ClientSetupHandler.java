@@ -1,5 +1,7 @@
 package com.github.elenterius.biomancy.init.client;
 
+import com.github.elenterius.biomancy.client.render.item.ItemGeoRenderProviders;
+import com.github.elenterius.biomancy.client.util.MolangUtil;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.block.membrane.BiometricMembraneBlock;
 import com.github.elenterius.biomancy.block.vialholder.VialHolderBlock;
@@ -39,28 +41,29 @@ import com.github.elenterius.biomancy.tooltip.StorageSacTooltipComponent;
 import com.github.elenterius.biomancy.util.TransliterationUtil;
 import net.minecraft.client.particle.AttackSweepParticle;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
+import net.neoforged.neoforge.client.event.RegisterDebugRenderersEvent;
+import com.github.elenterius.biomancy.client.render.EntityDebugInfoRenderer;
 import net.minecraft.client.particle.BubblePopParticle;
 import net.minecraft.client.particle.HugeExplosionParticle;
 import net.minecraft.client.particle.PlayerCloudParticle;
-import net.minecraft.client.renderer.ItemBlockRenderTypes;
-import net.minecraft.client.renderer.RenderType;
+import com.github.elenterius.biomancy.client.gui.BioForgeScreen;
+import com.github.elenterius.biomancy.crafting.recipe.RecipeMaps;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.entity.NoopRenderer;
 import net.minecraft.client.renderer.entity.ThrownItemRenderer;
-import net.minecraft.client.renderer.item.ItemProperties;
-import net.minecraft.client.renderer.item.ItemPropertyFunction;
 import net.minecraft.core.particles.SimpleParticleType;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.BucketItem;
+import net.minecraft.world.item.crafting.RecipeMap;
+import net.minecraft.world.level.material.Fluid;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.neoforge.client.event.*;
-import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
+import net.neoforged.neoforge.client.event.RegisterSpecialModelRendererEvent;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 import net.neoforged.neoforge.registries.NeoForgeRegistries;
 import net.minecraft.core.registries.BuiltInRegistries;
 import com.github.elenterius.biomancy.client.extensions.*;
 import com.github.elenterius.biomancy.fluid.TintedFluidType;
-import com.github.elenterius.biomancy.item.BEWLBlockItem;
+import com.github.elenterius.biomancy.client.render.item.BlockEntityItemSpecialRenderer;
 import com.github.elenterius.biomancy.item.weapon.gun.CausticGunbladeItem;
 import com.github.elenterius.biomancy.item.weapon.gun.ImpalerItem;
 import net.minecraft.world.item.Item;
@@ -78,7 +81,7 @@ public final class ClientSetupHandler {
 
 	@SubscribeEvent
 	public static void onSetup(final FMLClientSetupEvent event) {
-		setBlockRenderLayers();
+		ItemGeoRenderProviders.register();
 
 		event.enqueueWork(ClientSetupHandler::onPostSetup);
 
@@ -88,8 +91,13 @@ public final class ClientSetupHandler {
 	}
 
 	private static void onPostSetup() {
-		registerItemModelProperties();
 		ModArmPoses.init();
+		MolangUtil.registerVariables();
+	}
+
+	@SubscribeEvent
+	public static void onRegisterDebugRenderers(final RegisterDebugRenderersEvent event) {
+		event.register(EntityDebugInfoRenderer::new);
 	}
 
 	@SubscribeEvent
@@ -99,7 +107,7 @@ public final class ClientSetupHandler {
 
 	@SubscribeEvent
 	public static void registerKeyMappings(final RegisterKeyMappingsEvent event) {
-		ModKeyBindings.register(event::register);
+		ModKeyBindings.register(event);
 	}
 
 	@SubscribeEvent
@@ -138,17 +146,6 @@ public final class ClientSetupHandler {
 		event.registerEntityRenderer(ModEntityTypes.GAS_CLOUD.get(), NoopRenderer::new);
 	}
 
-	@SuppressWarnings("removal")
-	private static void setBlockRenderLayers() {
-		ItemBlockRenderTypes.setRenderLayer(ModBlocks.FLESH_IRIS_DOOR.get(), RenderType.cutout());
-		ItemBlockRenderTypes.setRenderLayer(ModBlocks.FLESH_DOOR.get(), RenderType.cutout());
-		ItemBlockRenderTypes.setRenderLayer(ModBlocks.FULL_FLESH_DOOR.get(), RenderType.cutout());
-
-		ItemBlockRenderTypes.setRenderLayer(ModFluids.ACID.get(), RenderType.translucent());
-		ItemBlockRenderTypes.setRenderLayer(ModFluids.FLOWING_ACID.get(), RenderType.translucent());
-
-	}
-
 	@SubscribeEvent
 	public static void registerParticles(final RegisterParticleProvidersEvent event) {
 		event.registerSpriteSet(ModParticleTypes.BLOODY_CLAWS_ATTACK.get(), AttackSweepParticle.Provider::new);
@@ -182,32 +179,39 @@ public final class ClientSetupHandler {
 	public static void registerLayerDefinitions(final EntityRenderersEvent.RegisterLayerDefinitions event) {
 	}
 
-	private static void registerItemModelProperties() {
-		ItemPropertyFunction isUsingItem = (stack, level, livingEntity, seed) -> livingEntity != null && livingEntity.isUsingItem() && livingEntity.getUseItem() == stack ? 1f : 0f;
-		ItemProperties.register(ModItems.THORN_SHIELD.get(), ResourceLocation.withDefaultNamespace("blocking"), isUsingItem);
-		ItemProperties.register(ModItems.CAUSTIC_GUNBLADE.get(), ResourceLocation.withDefaultNamespace("shooting"), isUsingItem);
-	}
-
 	@SubscribeEvent
 	public static void registerLayers(final EntityRenderersEvent.AddLayers event) {
 	}
 
 	@SubscribeEvent
-	public static void onBlockModelRegistry(final ModelEvent.RegisterAdditional event) {
+	public static void onItemTintSourceRegistry(final RegisterColorHandlersEvent.ItemTintSources event) {
+		ModTintSources.registerItemTintSources(event);
 	}
 
 	@SubscribeEvent
-	public static void onItemColorRegistry(final RegisterColorHandlersEvent.Item event) {
-		event.register((stack, tintIndex) -> ModItems.ESSENCE.get().getColor(stack, tintIndex), ModItems.ESSENCE.get());
-		event.register((stack, index) -> index == 1 ? IClientFluidTypeExtensions.of(((BucketItem) stack.getItem()).content).getTintColor() : 0xFF_FFFFFF, ModItems.ACID_BUCKET.get());
-		event.register(BiometricMembraneBlock::getTintColor, ModItems.BIOMETRIC_MEMBRANE.get());
-		event.register((stack, tintIndex) -> ModItems.POTION_SERUM.get().getTintColor(stack, tintIndex), ModItems.POTION_SERUM.get());
+	public static void onBlockTintSourceRegistry(final RegisterColorHandlersEvent.BlockTintSources event) {
+		ModTintSources.registerBlockTintSources(event);
 	}
 
 	@SubscribeEvent
-	public static void onBlockColorRegistry(final RegisterColorHandlersEvent.Block event) {
-		event.register(VialHolderBlock::getTintColor, ModBlocks.VIAL_HOLDER.get());
-		event.register(BiometricMembraneBlock::getTintColor, ModBlocks.BIOMETRIC_MEMBRANE.get());
+	public static void registerFluidModels(final RegisterFluidModelsEvent event) {
+		event.register(TexturedFluidTypeExtensions.createTranslucentFluidModel("acid"), ModFluids.ACID, ModFluids.FLOWING_ACID);
+		for (Fluid fluid : BuiltInRegistries.FLUID) {
+			if (fluid.getFluidType() instanceof TintedFluidType tintedFluidType) {
+				event.register(TintedFluidTypeExtensions.createFluidModel(tintedFluidType.getTintColor()), fluid);
+			}
+		}
+	}
+
+	@SubscribeEvent
+	public static void onRecipesReceived(final RecipesReceivedEvent event) {
+		RecipeMaps.setClientRecipeMap(event.getRecipeMap());
+		if (Minecraft.getInstance().screen instanceof BioForgeScreen screen) screen.onRecipeBookUpdated();
+	}
+
+	@SubscribeEvent
+	public static void onLoggingOut(final ClientPlayerNetworkEvent.LoggingOut event) {
+		RecipeMaps.setClientRecipeMap(RecipeMap.EMPTY);
 	}
 
 	@SubscribeEvent
@@ -231,16 +235,18 @@ public final class ClientSetupHandler {
 		}
 
 		for (Item item : BuiltInRegistries.ITEM) {
-			if (item instanceof BEWLBlockItem) {
-				event.registerItem(new BEWLItemExtensions(), item);
-			}
-			else if (item instanceof ImpalerItem) {
+			if (item instanceof ImpalerItem) {
 				event.registerItem(new ImpalerItemExtensions(), item);
 			}
 			else if (item instanceof CausticGunbladeItem) {
 				event.registerItem(new CausticGunbladeItemExtensions(), item);
 			}
 		}
+	}
+
+	@SubscribeEvent
+	static void registerSpecialModelRenderers(final RegisterSpecialModelRendererEvent event) {
+		event.register(BlockEntityItemSpecialRenderer.ID, BlockEntityItemSpecialRenderer.Unbaked.MAP_CODEC);
 	}
 
 	@SubscribeEvent

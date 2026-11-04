@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.fluid;
 
+import net.minecraft.server.level.ServerLevel;
 import com.github.elenterius.biomancy.block.veins.FleshVeinsBlock;
 import com.github.elenterius.biomancy.init.AcidInteractions;
 import com.github.elenterius.biomancy.init.tags.ModBlockTags;
@@ -27,16 +28,6 @@ public abstract class AcidFluid extends BaseFlowingFluid {
 	}
 
 	@Override
-	protected boolean canPassThrough(BlockGetter level, Fluid fluid, BlockPos fromPos, BlockState fromBlockState, Direction direction, BlockPos toPos, BlockState toBlockState, FluidState toFluidState) {
-		return toBlockState.getBlock() instanceof FleshVeinsBlock || super.canPassThrough(level, fluid, fromPos, fromBlockState, direction, toPos, toBlockState, toFluidState);
-	}
-
-	@Override
-	protected boolean canSpreadTo(BlockGetter level, BlockPos fromPos, BlockState fromBlockState, Direction direction, BlockPos toPos, BlockState toBlockState, FluidState toFluidState, Fluid fluid) {
-		return toBlockState.getBlock() instanceof FleshVeinsBlock || super.canSpreadTo(level, fromPos, fromBlockState, direction, toPos, toBlockState, toFluidState, fluid);
-	}
-
-	@Override
 	protected void spreadTo(LevelAccessor level, BlockPos pos, BlockState state, Direction direction, FluidState fluidState) {
 		if (state.getBlock() instanceof FleshVeinsBlock) {
 			beforeDestroyingBlock(level, pos, state);
@@ -60,11 +51,11 @@ public abstract class AcidFluid extends BaseFlowingFluid {
 	}
 
 	@Override
-	protected void randomTick(Level level, BlockPos liquidPos, FluidState fluidState, RandomSource random) {
-		if (level.random.nextFloat() > 0.4f) return;
+	protected void randomTick(ServerLevel level, BlockPos liquidPos, FluidState fluidState, RandomSource random) {
+		if (level.getRandom().nextFloat() > 0.4f) return;
 
 		for (int i = 0; i < 3; i++) {
-			float p = level.random.nextFloat();
+			float p = level.getRandom().nextFloat();
 			int yOffset = 0;
 			if (p < 0.2f) yOffset = 1;
 			else if (p < 0.6f) yOffset = -1;
@@ -75,7 +66,7 @@ public abstract class AcidFluid extends BaseFlowingFluid {
 			BlockState blockState = level.getBlockState(blockPos);
 			if (blockState.isAir()) return;
 
-			if (level.random.nextFloat() >= 0.1f) {
+			if (level.getRandom().nextFloat() >= 0.1f) {
 				Block block = blockState.getBlock();
 				if (corrodeCopper(level, liquidPos, block, blockState, blockPos)) continue;
 				if (destroyBlock(level, liquidPos, block, blockState, blockPos)) continue;

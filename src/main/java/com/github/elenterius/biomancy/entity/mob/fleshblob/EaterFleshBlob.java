@@ -1,5 +1,9 @@
 package com.github.elenterius.biomancy.entity.mob.fleshblob;
 
+import net.minecraft.world.item.component.Consumable;
+import net.minecraft.world.item.ItemStackTemplate;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.core.component.DataComponents;
 import com.github.elenterius.biomancy.entity.mob.FoodEater;
 import com.github.elenterius.biomancy.entity.mob.ai.goal.FindItemGoal;
 import net.minecraft.core.particles.ItemParticleOption;
@@ -18,22 +22,23 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.UseAnim;
+import net.minecraft.world.item.ItemUseAnimation;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
-import software.bernie.geckolib.animation.AnimatableManager;
-import software.bernie.geckolib.animation.AnimationController;
-import software.bernie.geckolib.animation.AnimationState;
-import software.bernie.geckolib.animation.keyframe.event.CustomInstructionKeyframeEvent;
-import software.bernie.geckolib.animation.PlayState;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.animation.AnimationController;
+import com.geckolib.animation.state.AnimationTest;
+import com.geckolib.animation.state.KeyFrameEvent;
+import com.geckolib.cache.animation.keyframeevent.CustomInstructionKeyframeData;
+import com.geckolib.animation.object.PlayState;
 
 import java.util.function.Predicate;
 
 public abstract class EaterFleshBlob extends FleshBlob implements FoodEater {
 
-	public static final Predicate<ItemEntity> ITEM_ENTITY_FILTER = itemEntity -> FindItemGoal.ITEM_ENTITY_FILTER.test(itemEntity) && itemEntity.getItem().getFoodProperties(null) != null;
+	public static final Predicate<ItemEntity> ITEM_ENTITY_FILTER = itemEntity -> FindItemGoal.ITEM_ENTITY_FILTER.test(itemEntity) && itemEntity.getItem().get(DataComponents.FOOD) != null;
 	protected static final EntityDataAccessor<Boolean> IS_EATING = SynchedEntityData.defineId(EaterFleshBlob.class, EntityDataSerializers.BOOLEAN);
 
 	protected EaterFleshBlob(EntityType<? extends EaterFleshBlob> entityType, Level level) {
@@ -68,7 +73,7 @@ public abstract class EaterFleshBlob extends FleshBlob implements FoodEater {
 	}
 
 	private static boolean isEdible(ItemStack stack) {
-		return stack.getFoodProperties(null) != null;
+		return stack.get(DataComponents.FOOD) != null;
 	}
 
 	@Override
@@ -79,12 +84,11 @@ public abstract class EaterFleshBlob extends FleshBlob implements FoodEater {
 		return (heldStack.isEmpty() || !isEdible(heldStack)) && super.canPickUpLoot();
 	}
 
-	@Override
 	public boolean canTakeItem(ItemStack stack) {
 		if (isEdible(stack)) {
 			return getFoodItem().isEmpty() && canPickUpLoot();
 		}
-		return super.canTakeItem(stack);
+		return true;
 	}
 
 	@Override
@@ -94,7 +98,7 @@ public abstract class EaterFleshBlob extends FleshBlob implements FoodEater {
 	}
 
 	@Override
-	protected void pickUpItem(ItemEntity itemEntity) {
+	protected void pickUpItem(ServerLevel level, ItemEntity itemEntity) {
 		ItemStack stack = itemEntity.getItem();
 		if (canHoldItem(stack)) {
 			onItemPickup(itemEntity);
@@ -103,7 +107,7 @@ public abstract class EaterFleshBlob extends FleshBlob implements FoodEater {
 
 			ItemStack heldStack = getFoodItem();
 			if (!heldStack.isEmpty()) {
-				spawnAtLocation(heldStack);
+				spawnAtLocation(level, heldStack);
 			}
 
 			setFoodItem(stack);
@@ -114,11 +118,11 @@ public abstract class EaterFleshBlob extends FleshBlob implements FoodEater {
 	protected InteractionResult mobInteract(Player player, InteractionHand hand) {
 		ItemStack stack = player.getItemInHand(hand);
 		if (canHoldItem(stack)) {
-			if (level().isClientSide) return InteractionResult.CONSUME;
+			if (level().isClientSide()) return InteractionResult.CONSUME;
 
 			ItemStack heldStack = getFoodItem();
-			if (!heldStack.isEmpty()) {
-				spawnAtLocation(heldStack);
+			if (!heldStack.isEmpty() && level() instanceof ServerLevel serverLevel) {
+				spawnAtLocation(serverLevel, heldStack);
 			}
 
 			setFoodItem(stack.copyWithCount(1));
@@ -181,7 +185,7 @@ public abstract class EaterFleshBlob extends FleshBlob implements FoodEater {
 
 		for (int i = 0; i < 8; i++) {
 			Vec3 motion = new Vec3((random.nextFloat() - 0.5d) * 0.1d, random.nextFloat() * 0.1d + 0.15d, 0).xRot(pitch).yRot(yaw);
-			level().addParticle(new ItemParticleOption(ParticleTypes.ITEM, stack), x, y, z, motion.x, motion.y, motion.z);
+			level().addParticle(new ItemParticleOption(ParticleTypes.ITEM, ItemStackTemplate.fromNonEmptyStack(stack)), x, y, z, motion.x, motion.y, motion.z);
 		}
 	}
 
@@ -189,15 +193,20 @@ public abstract class EaterFleshBlob extends FleshBlob implements FoodEater {
 		ItemStack stack = getFoodItem();
 		if (stack.isEmpty()) return;
 
-		if (stack.getUseAnimation() == UseAnim.DRINK) {
-			playClientLocalSound(getDrinkingSound(stack), 0.75f, level().random.nextFloat() * 0.1f + 0.9f);
+		if (stack.getUseAnimation() == ItemUseAnimation.DRINK) {
+			playClientLocalSound(getConsumeSound(stack, SoundEvents.GENERIC_DRINK.value()), 0.75f, level().getRandom().nextFloat() * 0.1f + 0.9f);
 		}
 
-		if (stack.getUseAnimation() == UseAnim.EAT) {
+		if (stack.getUseAnimation() == ItemUseAnimation.EAT) {
 			spawnEatingParticles(stack);
-			SoundEvent eatingSound = getEatingSound(stack);
+			SoundEvent eatingSound = getConsumeSound(stack, SoundEvents.GENERIC_EAT.value());
 			playClientLocalSound(eatingSound, 0.75f + 0.25f * random.nextInt(2), (random.nextFloat() - random.nextFloat()) * 0.2f + 1f);
 		}
+	}
+
+	private static SoundEvent getConsumeSound(ItemStack stack, SoundEvent fallback) {
+		Consumable consumable = stack.get(DataComponents.CONSUMABLE);
+		return consumable != null ? consumable.sound().value() : fallback;
 	}
 
 	private void playClientLocalSound(SoundEvent soundEvent, float volume, float pitch) {
@@ -206,17 +215,17 @@ public abstract class EaterFleshBlob extends FleshBlob implements FoodEater {
 		}
 	}
 
-	protected <T extends EaterFleshBlob> PlayState handleEatingAnimation(AnimationState<T> event) {
+	protected <T extends EaterFleshBlob> PlayState handleEatingAnimation(AnimationTest<T> event) {
 		if (isEating()) {
-			event.getController().setAnimation(EATING_ANIMATION);
+			event.controller().setAnimation(EATING_ANIMATION);
 			return PlayState.CONTINUE;
 		}
 
 		return PlayState.STOP;
 	}
 
-	protected <E extends EaterFleshBlob> void onEatingSfx(CustomInstructionKeyframeEvent<E> event) {
-		if (event.getKeyframeData().getInstructions().equals("eating_fx;")) {
+	protected <E extends EaterFleshBlob> void onEatingSfx(KeyFrameEvent<E, CustomInstructionKeyframeData> event) {
+		if (event.keyframeData().getInstructions().equals("eating_fx;")) {
 			playEatingFX();
 		}
 	}
@@ -224,7 +233,7 @@ public abstract class EaterFleshBlob extends FleshBlob implements FoodEater {
 	@Override
 	public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
 		super.registerControllers(controllers);
-		AnimationController<EaterFleshBlob> controller = new AnimationController<>(this, "eat", 4, this::handleEatingAnimation);
+		AnimationController<EaterFleshBlob> controller = new AnimationController<>("eat", 4, this::handleEatingAnimation);
 		controller.setCustomInstructionKeyframeHandler(this::onEatingSfx);
 		controllers.add(controller);
 	}

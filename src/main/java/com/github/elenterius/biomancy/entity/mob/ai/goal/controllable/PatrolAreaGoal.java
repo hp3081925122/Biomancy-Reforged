@@ -39,7 +39,7 @@ public class PatrolAreaGoal<T extends PathfinderMob & OwnableMob & ControllableM
 			Optional<Player> owner = entity.getOwnerAsPlayer();
 			return owner.isPresent() ? findPosTowards(owner.get().position()) : findPosNearby();
 		}
-		if (mob.level().random.nextFloat() < 0.3F) {
+		if (mob.level().getRandom().nextFloat() < 0.3F) {
 			return findPosNearby();
 		}
 		else {
@@ -62,7 +62,7 @@ public class PatrolAreaGoal<T extends PathfinderMob & OwnableMob & ControllableM
 	private Vec3 findPosTowardsRandomPlayer() {
 		List<Player> list = mob.level().getEntitiesOfClass(Player.class, mob.getBoundingBox().inflate(32d));
 		if (!list.isEmpty()) {
-			Player player = list.get(mob.level().random.nextInt(list.size()));
+			Player player = list.get(mob.level().getRandom().nextInt(list.size()));
 			return LandRandomPos.getPosTowards(mob, 10, 7, player.position());
 		}
 		return null;

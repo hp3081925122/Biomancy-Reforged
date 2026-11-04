@@ -1,5 +1,9 @@
 package com.github.elenterius.biomancy.crafting.recipe;
 
+import net.minecraft.core.HolderLookup;
+import java.util.Optional;
+import net.minecraft.world.item.crafting.RecipeBookCategory;
+import net.minecraft.world.item.crafting.Recipe;
 import com.github.elenterius.biomancy.crafting.IngredientStack;
 import com.github.elenterius.biomancy.init.ModItems;
 import com.github.elenterius.biomancy.init.ModRecipes;
@@ -7,12 +11,12 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeInput;
 import net.minecraft.world.item.crafting.RecipeSerializer;
@@ -30,20 +34,26 @@ public class BioBrewingRecipe extends StaticProcessingRecipe {
 	public static final int MAX_REACTANT = 1;
 
 	private final List<IngredientStack> ingredients;
-	private final Ingredient recipeReactant;
-	private final ItemStack result;
+	private final Optional<Ingredient> recipeReactant;
+	private final ItemStackTemplate result;
+	private ItemStack resultStack;
 
 	private final int matchPriority;
 	private final NonNullList<Ingredient> vanillaIngredients;
 
-	public BioBrewingRecipe(ItemStack result, int craftingTimeTicks, int craftingCostNutrients, List<IngredientStack> ingredients, Ingredient reactant) {
+	public BioBrewingRecipe(ItemStack result, int craftingTimeTicks, int craftingCostNutrients, List<IngredientStack> ingredients, Optional<Ingredient> reactant) {
+		this(ItemStackTemplate.fromNonEmptyStack(result), craftingTimeTicks, craftingCostNutrients, ingredients, reactant);
+		resultStack = result;
+	}
+
+	public BioBrewingRecipe(ItemStackTemplate result, int craftingTimeTicks, int craftingCostNutrients, List<IngredientStack> ingredients, Optional<Ingredient> reactant) {
 		super(craftingTimeTicks, craftingCostNutrients);
 		this.ingredients = ingredients;
 		recipeReactant = reactant;
 		this.result = result;
 
 		List<Ingredient> flatIngredients = RecipeUtil.flattenIngredientStacks(ingredients);
-		flatIngredients.add(recipeReactant);
+		recipeReactant.ifPresent(flatIngredients::add);
 
 		vanillaIngredients = NonNullList.createWithCapacity(flatIngredients.size());
 		vanillaIngredients.addAll(flatIngredients);
@@ -59,7 +69,7 @@ public class BioBrewingRecipe extends StaticProcessingRecipe {
 	@Override
 	public boolean matches(RecipeInput input, Level level) {
 		int lastIndex = input.size() - 1;
-		if (!recipeReactant.test(input.getItem(lastIndex))) return false;
+		if (!Ingredient.testOptionalIngredient(recipeReactant, input.getItem(lastIndex))) return false;
 
 		int[] countedIngredients = new int[ingredients.size()];
 		for (int idx = 0; idx < lastIndex; idx++) {
@@ -83,18 +93,16 @@ public class BioBrewingRecipe extends StaticProcessingRecipe {
 	}
 
 	@Override
-	public ItemStack assemble(RecipeInput input, HolderLookup.Provider registries) {
-		return result.copy();
+	public ItemStack assemble(RecipeInput input) {
+		return resultStack().copy();
 	}
 
-	@Override
 	public boolean canCraftInDimensions(int width, int height) {
 		return width * height >= ingredients.size();
 	}
 
-	@Override
 	public ItemStack getResultItem(HolderLookup.Provider registries) {
-		return result;
+		return resultStack();
 	}
 
 	@Override
@@ -106,26 +114,30 @@ public class BioBrewingRecipe extends StaticProcessingRecipe {
 		return ingredients;
 	}
 
-	public Ingredient getReactant() {
+	public Optional<Ingredient> getReactant() {
 		return recipeReactant;
 	}
 
 	@Override
-	public RecipeSerializer<?> getSerializer() {
+	public RecipeSerializer<? extends Recipe<RecipeInput>> getSerializer() {
 		return ModRecipes.BIO_BREWING_SERIALIZER.get();
 	}
 
 	@Override
-	public RecipeType<?> getType() {
+	public RecipeType<? extends Recipe<RecipeInput>> getType() {
 		return ModRecipes.BIO_BREWING_RECIPE_TYPE.get();
 	}
 
-	@Override
 	public ItemStack getToastSymbol() {
 		return new ItemStack(ModItems.BIO_LAB.get());
 	}
 
-	public static class Serializer implements RecipeSerializer<BioBrewingRecipe> {
+	@Override
+	public RecipeBookCategory recipeBookCategory() {
+		return ModRecipes.BIO_BREWING_CATEGORY.get();
+	}
+
+	public static final class Serializer {
 
 		private static final Codec<List<IngredientStack>> INGREDIENTS_CODEC = IngredientStack.LIST_CODEC.validate(list -> {
 			if (list.isEmpty()) return DataResult.error(() -> "No ingredients found for bio brewing recipe");
@@ -139,31 +151,36 @@ public class BioBrewingRecipe extends StaticProcessingRecipe {
 
 		public static final MapCodec<BioBrewingRecipe> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
 				INGREDIENTS_CODEC.fieldOf(RecipeUtil.JsonKeys.INGREDIENTS).forGetter(BioBrewingRecipe::getIngredientQuantities),
-				Ingredient.CODEC.optionalFieldOf(RecipeUtil.JsonKeys.REACTANT, Ingredient.EMPTY).forGetter(BioBrewingRecipe::getReactant),
-				ItemStack.STRICT_CODEC.fieldOf(RecipeUtil.JsonKeys.RESULT).forGetter(r -> r.result),
+				Ingredient.CODEC.optionalFieldOf(RecipeUtil.JsonKeys.REACTANT).forGetter(BioBrewingRecipe::getReactant),
+				ItemStackTemplate.CODEC.fieldOf(RecipeUtil.JsonKeys.RESULT).forGetter(r -> r.result),
 				Codec.INT.optionalFieldOf(RecipeUtil.JsonKeys.PROCESSING_TIME, JSON_DEFAULT_CRAFTING_TIME_TICKS).forGetter(StaticProcessingRecipe::getCraftingTimeTicks),
 				Codec.INT.optionalFieldOf(RecipeUtil.JsonKeys.NUTRIENTS_COST, (int) DEFAULT_CRAFTING_COST_NUTRIENTS).forGetter(StaticProcessingRecipe::getCraftingCostNutrients)
 		).apply(instance, (ingredients, reactant, result, time, cost) -> new BioBrewingRecipe(result, time, cost, ingredients, reactant)));
 
 		public static final StreamCodec<RegistryFriendlyByteBuf, BioBrewingRecipe> STREAM_CODEC = StreamCodec.composite(
-				ItemStack.STREAM_CODEC, r -> r.result,
-				Ingredient.CONTENTS_STREAM_CODEC, BioBrewingRecipe::getReactant,
+				ItemStackTemplate.STREAM_CODEC, r -> r.result,
+				Ingredient.OPTIONAL_CONTENTS_STREAM_CODEC, BioBrewingRecipe::getReactant,
 				ByteBufCodecs.VAR_INT, StaticProcessingRecipe::getCraftingTimeTicks,
 				ByteBufCodecs.VAR_INT, StaticProcessingRecipe::getCraftingCostNutrients,
 				IngredientStack.LIST_STREAM_CODEC, BioBrewingRecipe::getIngredientQuantities,
 				(result, reactant, time, cost, ingredients) -> new BioBrewingRecipe(result, time, cost, ingredients, reactant)
 		);
 
-		@Override
+		public static final RecipeSerializer<BioBrewingRecipe> INSTANCE = new RecipeSerializer<>(CODEC, STREAM_CODEC);
+
 		public MapCodec<BioBrewingRecipe> codec() {
 			return CODEC;
 		}
 
-		@Override
 		public StreamCodec<RegistryFriendlyByteBuf, BioBrewingRecipe> streamCodec() {
 			return STREAM_CODEC;
 		}
 
+	}
+
+	private ItemStack resultStack() {
+		if (resultStack == null) resultStack = result.create();
+		return resultStack;
 	}
 
 }

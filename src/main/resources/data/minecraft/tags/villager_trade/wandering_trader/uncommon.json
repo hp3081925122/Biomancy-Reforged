@@ -1,0 +1,8 @@
+{
+  "replace": false,
+  "values": [
+    "biomancy:wandering_trader/emerald_cleansing_serum",
+    "biomancy:wandering_trader/emerald_and_compass_giant_worm_map",
+    "biomancy:wandering_trader/emerald_and_compass_vault_map"
+  ]
+}

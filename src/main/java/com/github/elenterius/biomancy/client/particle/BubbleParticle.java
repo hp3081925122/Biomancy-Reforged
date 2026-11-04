@@ -1,21 +1,24 @@
 package com.github.elenterius.biomancy.client.particle;
 
+import net.minecraft.util.RandomSource;
+import net.minecraft.client.particle.SpriteSet;
 import com.github.elenterius.biomancy.init.ModFluids;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.*;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.world.level.material.FluidState;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
-@OnlyIn(Dist.CLIENT)
-public class BubbleParticle extends TextureSheetParticle {
+public class BubbleParticle extends SingleQuadParticle {
+
+	public void pickSprite(SpriteSet sprites) {
+		setSprite(sprites.get(random));
+	}
 
 	private final SimpleParticleType popParticle;
 
 	protected BubbleParticle(ClientLevel level, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed, SimpleParticleType popParticle) {
-		super(level, x, y, z);
+		super(level, x, y, z, null);
 		this.popParticle = popParticle;
 
 		setSize(0.02f, 0.02f);
@@ -57,12 +60,12 @@ public class BubbleParticle extends TextureSheetParticle {
 		}
 	}
 
-	public ParticleRenderType getRenderType() {
-		return ParticleRenderType.PARTICLE_SHEET_OPAQUE;
+	protected Layer getLayer() {
+		return Layer.OPAQUE;
 	}
 
 	public record AcidProvider(SpriteSet sprite, SimpleParticleType popParticle) implements ParticleProvider<SimpleParticleType> {
-		public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
+		public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed, RandomSource random) {
 			BubbleParticle particle = new BubbleParticle(level, x, y, z, xSpeed, ySpeed, zSpeed, popParticle);
 			particle.pickSprite(sprite);
 			return particle;
@@ -70,7 +73,7 @@ public class BubbleParticle extends TextureSheetParticle {
 	}
 
 	public record VolatileProvider(SpriteSet sprite, SimpleParticleType popParticle) implements ParticleProvider<SimpleParticleType> {
-		public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
+		public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed, RandomSource random) {
 			BubbleParticle particle = new BubbleParticle(level, x, y, z, xSpeed, ySpeed, zSpeed, popParticle);
 			particle.pickSprite(sprite);
 			particle.quadSize *= particle.random.nextFloat() * 0.8f + 0.4f;

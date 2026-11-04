@@ -1,7 +1,7 @@
 {
   "type": "biomancy:decomposing",
   "ingredient": {
-    "item": "minecraft:cake"
+    "ingredient": "minecraft:cake"
   },
   "nutrientsCost": 1,
   "processingTime": 360,

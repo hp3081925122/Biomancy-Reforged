@@ -3,7 +3,7 @@ package com.github.elenterius.biomancy.block.tongue;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.world.item.ItemStack;
 import com.github.elenterius.biomancy.util.InteractionUtil;
-import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.InteractionResult;
 import com.github.elenterius.biomancy.init.ModBlockEntities;
 import com.github.elenterius.biomancy.util.VoxelShapeUtil;
 import net.minecraft.core.BlockPos;
@@ -87,11 +87,11 @@ public class TongueBlock extends HorizontalDirectionalBlock implements EntityBlo
 	@Nullable
 	@Override
 	public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> blockEntityType) {
-		return level.isClientSide ? null : createTickerHelper(blockEntityType, ModBlockEntities.TONGUE.get(), TongueBlockEntity::serverTick);
+		return level.isClientSide() ? null : createTickerHelper(blockEntityType, ModBlockEntities.TONGUE.get(), TongueBlockEntity::serverTick);
 	}
 
 	@Override
-	protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+	protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
 		return InteractionUtil.toItemInteractionResult(use(state, level, pos, player, hand, hit));
 	}
 
@@ -99,7 +99,7 @@ public class TongueBlock extends HorizontalDirectionalBlock implements EntityBlo
 		if (!player.getItemInHand(hand).isEmpty()) return InteractionResult.PASS;
 
 		if (level.getBlockEntity(pos) instanceof TongueBlockEntity blockEntity) {
-			if (level.isClientSide) return InteractionResult.SUCCESS;
+			if (level.isClientSide()) return InteractionResult.SUCCESS;
 			blockEntity.giveInventoryContentsTo(level, pos, player);
 			return InteractionResult.CONSUME;
 		}
@@ -108,18 +108,8 @@ public class TongueBlock extends HorizontalDirectionalBlock implements EntityBlo
 	}
 
 	@Override
-	public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
-		if (!state.is(newState.getBlock())) {
-			if (level.getBlockEntity(pos) instanceof TongueBlockEntity tongue) {
-				tongue.dropInventoryContents(level, pos);
-			}
-			super.onRemove(state, level, pos, newState, isMoving);
-		}
-	}
-
-	@Override
 	public RenderShape getRenderShape(BlockState state) {
-		return RenderShape.ENTITYBLOCK_ANIMATED;
+		return RenderShape.INVISIBLE;
 	}
 
 	@Override

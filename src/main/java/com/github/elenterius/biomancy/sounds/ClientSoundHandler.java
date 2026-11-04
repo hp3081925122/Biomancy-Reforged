@@ -8,7 +8,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.client.sounds.WeighedSoundEvents;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.Entity;
 import net.neoforged.api.distmarker.Dist;
@@ -39,7 +39,7 @@ public final class ClientSoundHandler {
 		getSoundManager().play(sound);
 	}
 
-	public static @Nullable WeighedSoundEvents getWeightedSoundEvents(ResourceLocation id) {
+	public static @Nullable WeighedSoundEvents getWeightedSoundEvents(Identifier id) {
 		return getSoundManager().getSoundEvent(id);
 	}
 
@@ -88,7 +88,7 @@ public final class ClientSoundHandler {
 	}
 
 	public void onEntityLeaveLevel(final EntityLeaveLevelEvent event) {
-		if (!event.getLevel().isClientSide) return;
+		if (!event.getLevel().isClientSide()) return;
 		removeSoundLayers(event.getEntity(), true);
 	}
 
@@ -124,7 +124,7 @@ public final class ClientSoundHandler {
 				return;
 			}
 
-			if (!update.soundEvent.getLocation().equals(currentSound.getLocation())) {
+			if (!update.soundEvent.location().equals(currentSound.getIdentifier())) {
 				currentSound.fadeOut();
 				layers.remove(update.soundLayerId);
 

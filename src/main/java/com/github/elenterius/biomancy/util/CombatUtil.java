@@ -1,16 +1,25 @@
 package com.github.elenterius.biomancy.util;
 
+import com.github.elenterius.biomancy.util.MobUtil;
+import com.github.elenterius.biomancy.item.armor.LivingArmorItem;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.equipment.Equippable;
 import net.minecraft.util.Mth;
 import com.github.elenterius.biomancy.util.EnchantmentUtil;
 import com.github.elenterius.biomancy.init.ModDamageSources;
 import com.github.elenterius.biomancy.init.ModMobEffects;
 import com.github.elenterius.biomancy.item.armor.AcolyteArmorItem;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.DamageTypeTags;
+import net.minecraft.tags.EntityTypeTags;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
+import net.neoforged.neoforge.common.CommonHooks;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.Level;
@@ -25,16 +34,27 @@ import java.util.function.Predicate;
 public final class CombatUtil {
 	private CombatUtil() {}
 
+	public static boolean isInvulnerableTo(Entity target, DamageSource source) {
+		if (target instanceof LivingEntity livingEntity && target.level() instanceof ServerLevel serverLevel) {
+			return livingEntity.isInvulnerableTo(serverLevel, source);
+		}
+		boolean isVanillaInvulnerable = target.isRemoved()
+				|| target.isInvulnerable() && !source.is(DamageTypeTags.BYPASSES_INVULNERABILITY) && !source.isCreativePlayer()
+				|| source.is(DamageTypeTags.IS_FIRE) && target.fireImmune()
+				|| source.is(DamageTypeTags.IS_FALL) && target.is(EntityTypeTags.FALL_DAMAGE_IMMUNE);
+		return CommonHooks.isEntityInvulnerableTo(target, source, isVanillaInvulnerable);
+	}
+
 	public static boolean canPierceThroughArmor(ItemStack weapon, LivingEntity target, @Nullable LivingEntity attacker) {
 		float pierceProbability = 0;
-		for (ItemStack itemStack : target.getArmorSlots()) {
+		for (ItemStack itemStack : MobUtil.getArmorSlots(target)) {
 			if (itemStack.getItem() instanceof AcolyteArmorItem) {
 				pierceProbability += 0.25f;
 			}
 		}
 
 		if (attacker != null) {
-			for (ItemStack itemStack : attacker.getArmorSlots()) {
+			for (ItemStack itemStack : MobUtil.getArmorSlots(attacker)) {
 				if (itemStack.getItem() instanceof AcolyteArmorItem) {
 					pierceProbability += 0.25f;
 				}
@@ -47,16 +67,18 @@ public final class CombatUtil {
 	}
 
 	public static boolean hasFulLArmorSetEquipped(Player player, Predicate<ItemStack> predicate) {
-		Set<ArmorItem.Type> equippedTypes = EnumSet.noneOf(ArmorItem.Type.class);
+		Set<EquipmentSlot> equippedTypes = EnumSet.noneOf(EquipmentSlot.class);
 
-		for (ItemStack stackInArmorSlot : player.getArmorSlots()) {
-			if (stackInArmorSlot.getItem() instanceof ArmorItem armor && predicate.test(stackInArmorSlot)) {
-				equippedTypes.add(armor.getType());
+		for (EquipmentSlot slot : LivingArmorItem.ARMOR_SLOTS) {
+			ItemStack stackInArmorSlot = player.getItemBySlot(slot);
+			Equippable equippable = stackInArmorSlot.get(DataComponents.EQUIPPABLE);
+			if (equippable != null && ItemCategoryUtil.isHumanoidArmor(stackInArmorSlot) && predicate.test(stackInArmorSlot)) {
+				equippedTypes.add(equippable.slot());
 			}
 			else return false;
 		}
 
-		return equippedTypes.size() == ArmorItem.Type.values().length;
+		return equippedTypes.size() == LivingArmorItem.ARMOR_SLOTS.size();
 	}
 
 	public static void performWaterAOE(Level level, Entity attacker, double maxDistance) {

@@ -31,7 +31,7 @@ public record KeyPressMessage(byte slotIndex, byte flag) implements CustomPacket
 
 	public static void handle(KeyPressMessage packet, IPayloadContext context) {
 		if (context.player() instanceof ServerPlayer player) {
-			KeyPressListener.onReceiveKeybindingPacket(player.serverLevel(), player, UnsignedBytes.toInt(packet.slotIndex), packet.flag);
+			KeyPressListener.onReceiveKeybindingPacket(player.level(), player, UnsignedBytes.toInt(packet.slotIndex), packet.flag);
 		}
 	}
 

@@ -1,9 +1,7 @@
 {
   "type": "biomancy:digesting",
   "input": {
-    "0": {
-      "id": "minecraft:cocoa_beans"
-    }
+    "0": "minecraft:cocoa_beans"
   },
   "output": {
     "0": {

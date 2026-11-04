@@ -1,4 +1,3 @@
-// 1.21.1	2026-11-04T00:24:25.8343429	Global Loot Modifiers : biomancy
+// 26.1.2	2026-11-04T22:45:15.2911178	Global Loot Modifiers : biomancy
 b969cf3e7c9b42a9f41d00287482363cd0f75040 data/biomancy/loot_modifiers/cat_morning_gift.json
 492884f1bf7df107f8c50d4ec56f60cada639731 data/biomancy/loot_modifiers/despoil.json
-805d903980e732d632f481df6f7136126be9c06b data/neoforge/loot_modifiers/global_loot_modifiers.json

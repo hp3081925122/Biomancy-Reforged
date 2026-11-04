@@ -3,14 +3,14 @@
   "input": {
     "0": {
       "count": 8,
-      "id": "biomancy:organic_matter"
+      "ingredient": "biomancy:organic_matter"
     },
     "1": {
-      "id": "minecraft:spider_eye"
+      "ingredient": "minecraft:spider_eye"
     },
     "2": {
       "count": 4,
-      "id": "biomancy:bile"
+      "ingredient": "biomancy:bile"
     }
   },
   "output": {

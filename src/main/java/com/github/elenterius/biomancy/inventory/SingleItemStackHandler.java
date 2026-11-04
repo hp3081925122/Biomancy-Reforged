@@ -1,14 +1,12 @@
 package com.github.elenterius.biomancy.inventory;
 
-import net.minecraft.core.HolderLookup;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.common.util.INBTSerializable;
-import net.neoforged.neoforge.items.IItemHandlerModifiable;
 
-public class SingleItemStackHandler implements SerializableItemHandler, IItemHandlerModifiable, INBTSerializable<CompoundTag> {
+public class SingleItemStackHandler implements SerializableItemHandler {
 
 	public static final String ITEM_TAG = "Item";
 
@@ -157,28 +155,25 @@ public class SingleItemStackHandler implements SerializableItemHandler, IItemHan
 		}
 	}
 
-	public void serializeItemAmount(CompoundTag tag) {}
+	public void serializeItemAmount(ValueOutput output) {}
 
-	public int deserializeItemAmount(CompoundTag tag) {
+	public int deserializeItemAmount(ValueInput input) {
 		return -1;
 	}
 
 	@Override
-	public CompoundTag serializeNBT(HolderLookup.Provider provider) {
-		CompoundTag nbt = new CompoundTag();
-		serializeItemAmount(nbt);
+	public void serialize(ValueOutput output) {
+		serializeItemAmount(output);
 		if (!cachedStack.isEmpty()) {
-			nbt.put(ITEM_TAG, cachedStack.copyWithCount(Math.min(cachedStack.getCount(), 64)).save(provider));
+			output.store(ITEM_TAG, ItemStack.CODEC, cachedStack.copyWithCount(Math.min(cachedStack.getCount(), 64)));
 		}
-		return nbt;
 	}
 
 	@Override
-	public void deserializeNBT(HolderLookup.Provider provider, CompoundTag nbt) {
-		if (nbt.contains(ITEM_TAG)) cachedStack = ItemStack.parseOptional(provider, nbt.getCompound(ITEM_TAG));
-		else cachedStack = ItemStack.EMPTY;
+	public void deserialize(ValueInput input) {
+		cachedStack = input.read(ITEM_TAG, ItemStack.OPTIONAL_CODEC).orElse(ItemStack.EMPTY);
 
-		int itemAmount = deserializeItemAmount(nbt);
+		int itemAmount = deserializeItemAmount(input);
 		if (itemAmount > cachedStack.getCount()) {
 			cachedStack.setCount(itemAmount);
 		}

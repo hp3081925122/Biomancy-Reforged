@@ -4,23 +4,23 @@
   "ingredients": [
     {
       "count": 30,
-      "item": "biomancy:nutrients"
+      "ingredient": "biomancy:nutrients"
     },
     {
       "count": 4,
-      "item": "biomancy:organic_matter"
+      "ingredient": "biomancy:organic_matter"
     },
     {
       "count": 6,
-      "item": "biomancy:hormone_secretion"
+      "ingredient": "biomancy:hormone_secretion"
     },
     {
       "count": 4,
-      "item": "biomancy:mineral_fragment"
+      "ingredient": "biomancy:mineral_fragment"
     },
     {
       "count": 4,
-      "item": "biomancy:regenerative_fluid"
+      "ingredient": "biomancy:regenerative_fluid"
     }
   ],
   "nutrientsCost": 1,

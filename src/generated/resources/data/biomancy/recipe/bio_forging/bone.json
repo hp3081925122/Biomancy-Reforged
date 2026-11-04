@@ -4,7 +4,7 @@
   "ingredients": [
     {
       "count": 12,
-      "item": "biomancy:bone_fragments"
+      "ingredient": "biomancy:bone_fragments"
     }
   ],
   "nutrientsCost": 1,

@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.api.livingtool;
 
+import java.util.function.Consumer;
 import com.github.elenterius.biomancy.api.nutrients.Nutrients;
 import com.github.elenterius.biomancy.api.nutrients.NutrientsContainerItem;
 import com.github.elenterius.biomancy.styles.TextComponentUtil;
@@ -42,10 +43,10 @@ public interface LivingTool extends NutrientsContainerItem {
 
 	int getLivingToolActionCost(ItemStack livingTool, ItemAbility itemAbility);
 
-	default void appendLivingToolTooltip(ItemStack stack, List<Component> tooltip) {
+	default void appendLivingToolTooltip(ItemStack stack, Consumer<Component> tooltip) {
 		DecimalFormat df = FormatUtil.getIntegerFormatter();
-		tooltip.add(TextComponentUtil.getTooltipText("nutrients_fuel").withStyle(TextStyles.GRAY));
-		tooltip.add(ComponentUtil.literal(" %s/%s".formatted(df.format(getNutrients(stack)), df.format(getMaxNutrients(stack)))).withStyle(TextStyles.NUTRIENTS));
+		tooltip.accept(TextComponentUtil.getTooltipText("nutrients_fuel").withStyle(TextStyles.GRAY));
+		tooltip.accept(ComponentUtil.literal(" %s/%s".formatted(df.format(getNutrients(stack)), df.format(getMaxNutrients(stack)))).withStyle(TextStyles.NUTRIENTS));
 	}
 
 }

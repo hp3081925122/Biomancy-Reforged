@@ -1,8 +1,6 @@
 {
   "type": "biomancy:digesting",
-  "ingredient": {
-    "tag": "minecraft:tall_flowers"
-  },
+  "ingredient": "#c:flowers/tall",
   "nutrientsCost": 2,
   "processingTime": 332,
   "result": {

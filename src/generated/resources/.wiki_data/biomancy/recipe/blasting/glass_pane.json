@@ -3,11 +3,8 @@
   "category": "blocks",
   "cookingtime": 100,
   "experience": 0.01,
-  "ingredient": {
-    "item": "biomancy:stone_powder"
-  },
+  "ingredient": "biomancy:stone_powder",
   "result": {
-    "count": 1,
     "id": "minecraft:glass_pane"
   }
 }

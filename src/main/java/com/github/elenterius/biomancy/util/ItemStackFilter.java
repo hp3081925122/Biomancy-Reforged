@@ -1,19 +1,24 @@
 package com.github.elenterius.biomancy.util;
 
-import net.minecraft.core.HolderLookup;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+import java.util.Optional;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.common.util.INBTSerializable;
 import org.jspecify.annotations.Nullable;
 
 import java.util.function.Predicate;
 
-public class ItemStackFilter implements Predicate<ItemStack>, INBTSerializable<CompoundTag> {
+public class ItemStackFilter implements Predicate<ItemStack> {
 
 	public static final String FILTER_KEY = "Filter";
 	public static final String STRICT_KEY = "Strict";
+
+	public static final Codec<ItemStackFilter> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+			ItemStack.OPTIONAL_CODEC.optionalFieldOf(FILTER_KEY).forGetter(filter -> Optional.ofNullable(filter.filter)),
+			Codec.BOOL.optionalFieldOf(STRICT_KEY, false).forGetter(filter -> filter.isStrict)
+	).apply(instance, (filter, strict) -> new ItemStackFilter(filter.orElse(null), strict)));
 
 	public static final ItemStackFilter ALLOW_ANY = new ItemStackFilter(null, false);
 	public static final ItemStackFilter ALLOW_NONE = new ItemStackFilter(ItemStack.EMPTY, false);
@@ -25,14 +30,6 @@ public class ItemStackFilter implements Predicate<ItemStack>, INBTSerializable<C
 	protected ItemStackFilter(@Nullable ItemStack filter, boolean isStrict) {
 		this.filter = filter;
 		this.isStrict = isStrict;
-	}
-
-	protected ItemStackFilter(HolderLookup.Provider provider, CompoundTag tag) {
-		deserializeNBT(provider, tag);
-	}
-
-	public static ItemStackFilter of(HolderLookup.Provider provider, CompoundTag tag) {
-		return new ItemStackFilter(provider, tag);
 	}
 
 	public static ItemStackFilter of(Item filter) {
@@ -47,7 +44,7 @@ public class ItemStackFilter implements Predicate<ItemStack>, INBTSerializable<C
 		if (filter == null) return ALLOW_ANY;
 		if (filter.isEmpty()) return ALLOW_NONE;
 
-		filter = new ItemStack(filter.getItemHolder(), 1, filter.getComponentsPatch().forget(type -> type == DataComponents.ENCHANTMENTS || type == DataComponents.ATTRIBUTE_MODIFIERS));
+		filter = new ItemStack(filter.typeHolder(), 1, filter.getComponentsPatch().forget(type -> type == DataComponents.ENCHANTMENTS || type == DataComponents.ATTRIBUTE_MODIFIERS));
 
 		return new ItemStackFilter(filter, isStrict);
 	}
@@ -65,22 +62,6 @@ public class ItemStackFilter implements Predicate<ItemStack>, INBTSerializable<C
 		else {
 			return filter.is(stack.getItem());
 		}
-	}
-
-	@Override
-	public CompoundTag serializeNBT(HolderLookup.Provider provider) {
-		CompoundTag tag = new CompoundTag();
-		if (filter != null) {
-			tag.put(FILTER_KEY, filter.saveOptional(provider));
-			tag.putBoolean(STRICT_KEY, isStrict);
-		}
-		return tag;
-	}
-
-	@Override
-	public void deserializeNBT(HolderLookup.Provider provider, CompoundTag tag) {
-		filter = tag.contains(FILTER_KEY) ? ItemStack.parseOptional(provider, tag.getCompound(FILTER_KEY)) : null;
-		isStrict = tag.getBoolean(STRICT_KEY);
 	}
 
 	public boolean allowsAny() {

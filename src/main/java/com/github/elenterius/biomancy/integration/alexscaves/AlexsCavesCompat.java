@@ -3,7 +3,7 @@ package com.github.elenterius.biomancy.integration.alexscaves;
 import com.github.elenterius.biomancy.api.nutrients.Nutrients;
 import com.github.elenterius.biomancy.api.tribute.SimpleTribute;
 import com.github.elenterius.biomancy.api.tribute.Tributes;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -27,13 +27,13 @@ public final class AlexsCavesCompat {
 	}
 
 	private static Block getBlock(String name) {
-		ResourceLocation id = ResourceLocation.fromNamespaceAndPath("alexscaves", name);
-		return Objects.requireNonNull(BuiltInRegistries.BLOCK.get(id));
+		Identifier id = Identifier.fromNamespaceAndPath("alexscaves", name);
+		return Objects.requireNonNull(BuiltInRegistries.BLOCK.getValue(id));
 	}
 
 	private static Item getItem(String name) {
-		ResourceLocation id = ResourceLocation.fromNamespaceAndPath("alexscaves", name);
-		return Objects.requireNonNull(BuiltInRegistries.ITEM.get(id));
+		Identifier id = Identifier.fromNamespaceAndPath("alexscaves", name);
+		return Objects.requireNonNull(BuiltInRegistries.ITEM.getValue(id));
 	}
 
 }

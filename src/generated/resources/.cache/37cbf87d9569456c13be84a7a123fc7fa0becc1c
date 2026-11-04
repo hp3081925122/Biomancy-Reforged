@@ -1,4 +1,4 @@
-// 1.21.1	2026-11-04T00:24:25.8228639	Biomancy's Datapack Entries
+// 26.1.2	2026-11-04T22:45:15.2808703	Biomancy's Datapack Entries
 713327ba92c093f2f02fefe1768671f615802f43 data/biomancy/banner_pattern/mascot_accent.json
 83b89a084de7af7b44edefaf95c351bf85ca8367 data/biomancy/banner_pattern/mascot_base.json
 cb407f539a0832d7ed2fc5ba5a4911edd95d6c47 data/biomancy/banner_pattern/mascot_outline.json
@@ -17,4 +17,4 @@ d1c0934fbfbca50c7f4e06b6dae8918863dbd251 data/biomancy/enchantment/anesthetic.js
 e66149365e0a1305f49c8d7ab318e407fd4cc4b7 data/biomancy/enchantment/parasitic_metabolism.json
 e308ba38e232e0dab2bb92b1060294f8b8ac896c data/biomancy/enchantment/self_feeding.json
 1de1d2db8113b3873959ed212bfafca67709c2e8 data/biomancy/enchantment/surgical_precision.json
-955c059af7d088fd7e9c77844e92f934309291d1 data/biomancy/painting_variant/jerry_provides.json
+ffe86658ed0c95ac1bf80cc5d7e32a4b8cc41ec4 data/biomancy/painting_variant/jerry_provides.json

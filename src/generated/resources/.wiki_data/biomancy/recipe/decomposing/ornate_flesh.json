@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "biomancy:ornate_flesh"
+      "ingredient": "biomancy:ornate_flesh"
     }
   },
   "output": {

@@ -1,17 +1,15 @@
 {
   "type": "biomancy:bio_brewing",
   "input": {
-    "0": {
-      "id": "biomancy:exotic_compound"
-    },
+    "0": "biomancy:exotic_compound",
     "1": {
-      "id": "biomancy:unstable_compound"
+      "ingredient": "biomancy:unstable_compound"
     },
     "2": {
-      "id": "biomancy:genetic_compound"
+      "ingredient": "biomancy:genetic_compound"
     },
     "3": {
-      "id": "biomancy:acid_extract"
+      "ingredient": "biomancy:acid_extract"
     }
   },
   "output": {

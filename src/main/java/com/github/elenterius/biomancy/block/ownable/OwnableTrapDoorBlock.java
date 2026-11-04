@@ -1,8 +1,14 @@
 package com.github.elenterius.biomancy.block.ownable;
 
+import net.minecraft.core.Direction;
+import com.github.elenterius.biomancy.block.base.BlockTooltipProvider;
+import net.minecraft.world.entity.InsideBlockEffectApplier;
+import net.minecraft.world.level.redstone.Orientation;
+import net.minecraft.world.item.component.TooltipDisplay;
+import java.util.function.Consumer;
 import net.minecraft.world.item.Item;
 import com.github.elenterius.biomancy.util.InteractionUtil;
-import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.InteractionResult;
 import com.github.elenterius.biomancy.block.property.UserSensitivity;
 import com.github.elenterius.biomancy.init.ModBlockEntities;
 import com.github.elenterius.biomancy.init.ModBlockProperties;
@@ -49,7 +55,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-public class OwnableTrapDoorBlock extends TrapDoorBlock implements OwnableEntityBlock {
+public class OwnableTrapDoorBlock extends TrapDoorBlock implements BlockTooltipProvider, OwnableEntityBlock {
 
 	public static final EnumProperty<UserSensitivity> SENSITIVITY = ModBlockProperties.USER_SENSITIVITY;
 	protected static final AABB TOP_AABB_VOLUME = new AABB(0d, 0.75d, 0d, 1d, 1.25d, 1d);
@@ -87,7 +93,7 @@ public class OwnableTrapDoorBlock extends TrapDoorBlock implements OwnableEntity
 	}
 
 	@Override
-	protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+	protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
 		return InteractionUtil.toItemInteractionResult(use(state, level, pos, player, hand, hit));
 	}
 
@@ -96,18 +102,18 @@ public class OwnableTrapDoorBlock extends TrapDoorBlock implements OwnableEntity
 
 			ItemStack stack = player.getItemInHand(hand);
 			if (stack.getItem() instanceof EssenceItem essenceItem) {
-				if (level.isClientSide) return InteractionResult.SUCCESS;
+				if (level.isClientSide()) return InteractionResult.SUCCESS;
 
 				if (restrictedBlock.isActionAllowed(player, Actions.CONFIGURE)) {
 					boolean success = essenceItem.getEntityUUID(stack).map(restrictedBlock::addUser).orElse(false);
 					if (success) {
 						stack.shrink(1);
-						level.playSound(null, pos, ModSoundEvents.FLESHKIN_EAT.get(), SoundSource.BLOCKS, 1f, level.random.nextFloat() * 0.1f + 0.9f);
+						level.playSound(null, pos, ModSoundEvents.FLESHKIN_EAT.get(), SoundSource.BLOCKS, 1f, level.getRandom().nextFloat() * 0.1f + 0.9f);
 						return InteractionResult.SUCCESS;
 					}
 				}
 
-				level.playSound(null, pos, ModSoundEvents.FLESHKIN_NO.get(), SoundSource.BLOCKS, 1f, level.random.nextFloat() * 0.1f + 0.9f);
+				level.playSound(null, pos, ModSoundEvents.FLESHKIN_NO.get(), SoundSource.BLOCKS, 1f, level.getRandom().nextFloat() * 0.1f + 0.9f);
 				return InteractionResult.CONSUME;
 			}
 
@@ -117,7 +123,7 @@ public class OwnableTrapDoorBlock extends TrapDoorBlock implements OwnableEntity
 				if (isWaterlogged(state)) {
 					level.scheduleTick(pos, Fluids.WATER, Fluids.WATER.getTickDelay(level));
 				}
-				return InteractionResult.sidedSuccess(level.isClientSide);
+				return InteractionResult.SUCCESS;
 			}
 
 			state = state.cycle(OPEN);
@@ -126,7 +132,7 @@ public class OwnableTrapDoorBlock extends TrapDoorBlock implements OwnableEntity
 				level.scheduleTick(pos, Fluids.WATER, Fluids.WATER.getTickDelay(level));
 			}
 			playSound(player, level, pos, isOpen(state));
-			return InteractionResult.sidedSuccess(level.isClientSide);
+			return InteractionResult.SUCCESS;
 		}
 
 		if (isWaterlogged(state)) {
@@ -141,17 +147,22 @@ public class OwnableTrapDoorBlock extends TrapDoorBlock implements OwnableEntity
 	}
 
 	@Override
-	public void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, BlockPos neighborPos, boolean isMoving) {
+	public void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, @Nullable Orientation orientation, boolean isMoving) {
 		if (level.isClientSide()) return;
 
 		if (level.getBlockEntity(pos) instanceof IRestrictedInteraction restricted) {
 			boolean isAllowed = false;
 
-			if (neighborBlock instanceof OwnableEntityBlock && level.getBlockState(neighborPos).is(neighborBlock)) {
-				if (level.getBlockEntity(neighborPos) instanceof Ownable neighbor) {
-					Optional<UUID> neighborOwner = neighbor.getOptionalOwnerUUID();
-					if (neighborOwner.isPresent()) {
-						isAllowed = restricted.isActionAllowed(neighborOwner.get(), Actions.USE_BLOCK);
+			if (neighborBlock instanceof OwnableEntityBlock) {
+				for (Direction direction : Direction.values()) {
+					BlockPos neighborPos = pos.relative(direction);
+					if (!level.getBlockState(neighborPos).is(neighborBlock)) continue;
+					if (level.getBlockEntity(neighborPos) instanceof Ownable neighbor) {
+						Optional<UUID> neighborOwner = neighbor.getOptionalOwnerUUID();
+						if (neighborOwner.isPresent() && restricted.isActionAllowed(neighborOwner.get(), Actions.USE_BLOCK)) {
+							isAllowed = true;
+							break;
+						}
 					}
 				}
 			}
@@ -239,7 +250,7 @@ public class OwnableTrapDoorBlock extends TrapDoorBlock implements OwnableEntity
 	}
 
 	@Override
-	public void entityInside(BlockState state, Level level, BlockPos pos, Entity entity) {
+	public void entityInside(BlockState state, Level level, BlockPos pos, Entity entity, InsideBlockEffectApplier effectApplier, boolean isPrecise) {
 		openDoorOnEntityCollision(state, level, pos, entity);
 	}
 
@@ -292,9 +303,8 @@ public class OwnableTrapDoorBlock extends TrapDoorBlock implements OwnableEntity
 		return state.getValue(OPEN);
 	}
 
-	@Override
-	public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
-		super.appendHoverText(stack, context, tooltip, flag);
+	
+	public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag flag) {
 		OwnableEntityBlock.appendUserListToTooltip(stack, tooltip);
 	}
 

@@ -1,32 +1,33 @@
 package com.github.elenterius.biomancy.item.shield;
 
-import com.github.elenterius.biomancy.client.render.item.shield.ThornShieldRenderer;
+import org.jspecify.annotations.Nullable;
+import net.minecraft.world.entity.EquipmentSlot;
+import com.github.elenterius.biomancy.util.animation.ModDataTickets;
+import com.github.elenterius.biomancy.util.animation.GeoRenderProviders;
 import com.github.elenterius.biomancy.item.ShieldBlockingListener;
 import com.github.elenterius.biomancy.styles.TextComponentUtil;
 import com.github.elenterius.biomancy.styles.TextStyles;
 import com.github.elenterius.biomancy.util.ComponentUtil;
 import com.github.elenterius.geckolibextras.GLibExtras;
-import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.item.Equipable;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import software.bernie.geckolib.animatable.client.GeoRenderProvider;
-import software.bernie.geckolib.animatable.GeoItem;
-import software.bernie.geckolib.constant.DataTickets;
-import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.animation.AnimatableManager;
-import software.bernie.geckolib.animation.AnimationController;
-import software.bernie.geckolib.animation.RawAnimation;
-import software.bernie.geckolib.util.GeckoLibUtil;
+import com.geckolib.animatable.client.GeoRenderProvider;
+import com.geckolib.animatable.GeoItem;
+import com.geckolib.constant.DataTickets;
+import com.geckolib.animatable.instance.AnimatableInstanceCache;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.animation.AnimationController;
+import com.geckolib.animation.RawAnimation;
+import com.geckolib.util.GeckoLibUtil;
 
 import java.util.List;
 import java.util.function.Consumer;
 
-public class ThornShieldItem extends LivingShieldItem implements Equipable, ShieldBlockingListener, GeoItem {
+public class ThornShieldItem extends LivingShieldItem implements ShieldBlockingListener, GeoItem {
 
 	private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
@@ -35,7 +36,7 @@ public class ThornShieldItem extends LivingShieldItem implements Equipable, Shie
 	}
 
 	@Override
-	public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
+	public void inventoryTick(ItemStack stack, ServerLevel level, Entity entity, @Nullable EquipmentSlot slot) {
 		if (level instanceof ServerLevel serverLevel) {
 			GeoItem.getOrAssignId(stack, serverLevel);
 		}
@@ -47,41 +48,29 @@ public class ThornShieldItem extends LivingShieldItem implements Equipable, Shie
 	}
 
 	@Override
-	public boolean canDisableShield(ItemStack attackerItem, ItemStack shield, LivingEntity user, LivingEntity attacker) {
-		return super.canDisableShield(attackerItem, shield, user, attacker);
-	}
-
-	@Override
-	public void appendLivingToolTooltip(ItemStack stack, List<Component> tooltip) {
-		tooltip.add(TextComponentUtil.getAbilityText("thorny_hide").withStyle(TextStyles.GRAY));
-		tooltip.add(ComponentUtil.space().append(TextComponentUtil.getAbilityText("thorny_hide.desc")).withStyle(TextStyles.DARK_GRAY));
+	public void appendLivingToolTooltip(ItemStack stack, Consumer<Component> tooltip) {
+		tooltip.accept(TextComponentUtil.getAbilityText("thorny_hide").withStyle(TextStyles.GRAY));
+		tooltip.accept(ComponentUtil.space().append(TextComponentUtil.getAbilityText("thorny_hide.desc")).withStyle(TextStyles.DARK_GRAY));
 
 		super.appendLivingToolTooltip(stack, tooltip);
 	}
 
 	@Override
 	public void createGeoRenderer(Consumer<GeoRenderProvider> consumer) {
-		consumer.accept(new GeoRenderProvider() {
-			private final ThornShieldRenderer renderer = new ThornShieldRenderer();
-
-			@Override
-			public BlockEntityWithoutLevelRenderer getGeoItemRenderer() {
-				return renderer;
-			}
-		});
+		GeoRenderProviders.accept(this, consumer);
 	}
 
 	@Override
 	public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-		AnimationController<ThornShieldItem> controller = new AnimationController<>(this, "main", state -> {
+		AnimationController<ThornShieldItem> controller = new AnimationController<>("main", state -> {
 
 			if (state.getData(GLibExtras.ITEM_HOST_TICKET) instanceof LivingEntity livingEntity) {
-				if (livingEntity.isBlocking() && livingEntity.getUseItem() == state.getData(DataTickets.ITEMSTACK)) {
+				if (livingEntity.isBlocking() && livingEntity.getUseItem() == state.getData(ModDataTickets.ITEMSTACK)) {
 					return state.setAndContinue(Animations.TRANSITION_TO_EXTENDED);
 				}
 			}
 
-			if (state.getController().getCurrentAnimation() != null && !state.isCurrentAnimationStage("retracted")) {
+			if (state.controller().getCurrentRawAnimation() != null && !state.isCurrentAnimationStage("retracted")) {
 				return state.setAndContinue(Animations.TRANSITION_TO_RETRACTED);
 			}
 

@@ -6,7 +6,7 @@ import com.github.elenterius.biomancy.world.mound.Chamber;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
-import net.minecraft.util.random.SimpleWeightedRandomList;
+import net.minecraft.util.random.WeightedList;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -39,7 +39,7 @@ public final class ChamberDecorators {
 	public static final ChamberDecorator PRIMAL_ORIFICE_COMBS = new HangingCombsDecorator(ModBlocks.PRIMAL_ORIFICE.get().defaultBlockState());
 	public static final ChamberDecorator BONE_PILLARS = new PillarsDecorator(Blocks.BONE_BLOCK.defaultBlockState());
 
-	public static final SimpleWeightedRandomList<ChamberDecorator> RANDOM_DEFAULTS = SimpleWeightedRandomList.<ChamberDecorator>builder()
+	public static final WeightedList<ChamberDecorator> RANDOM_DEFAULTS = WeightedList.<ChamberDecorator>builder()
 			.add(EMPTY, 10)
 			.add(PRIMAL_FLESH_PILLARS, 25)
 			.add(MALIGNANT_FLESH_PILLARS, 15)
@@ -51,7 +51,7 @@ public final class ChamberDecorators {
 	private ChamberDecorators() {}
 
 	public static ChamberDecorator getRandomDefault(RandomSource random) {
-		return RANDOM_DEFAULTS.getRandomValue(random).orElse(PRIMAL_FLESH_PILLARS);
+		return RANDOM_DEFAULTS.getRandom(random).orElse(PRIMAL_FLESH_PILLARS);
 	}
 
 }

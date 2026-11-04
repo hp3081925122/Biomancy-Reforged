@@ -1,7 +1,7 @@
 {
   "type": "biomancy:decomposing",
   "ingredient": {
-    "item": "biomancy:living_flesh"
+    "ingredient": "biomancy:living_flesh"
   },
   "nutrientsCost": 1,
   "processingTime": 208,

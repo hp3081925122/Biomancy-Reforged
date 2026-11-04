@@ -6,9 +6,7 @@
     }
   ],
   "type": "biomancy:digesting",
-  "ingredient": {
-    "item": "farmersdelight:red_mushroom_colony"
-  },
+  "ingredient": "farmersdelight:red_mushroom_colony",
   "nutrientsCost": 2,
   "processingTime": 715,
   "result": {

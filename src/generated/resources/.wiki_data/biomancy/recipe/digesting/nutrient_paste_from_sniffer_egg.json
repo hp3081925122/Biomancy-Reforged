@@ -1,9 +1,7 @@
 {
   "type": "biomancy:digesting",
   "input": {
-    "0": {
-      "id": "minecraft:sniffer_egg"
-    }
+    "0": "minecraft:sniffer_egg"
   },
   "output": {
     "0": {

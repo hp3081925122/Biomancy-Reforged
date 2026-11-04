@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:item/handheld",
+  "textures": {
+    "layer0": "biomancy:item/weapon/despoil_sickle",
+    "layer1": {
+      "sprite": "biomancy:item/weapon/despoil_sickle_emissive",
+      "neoforge_data": {
+        "light_emission": 15
+      }
+    }
+  }
+}

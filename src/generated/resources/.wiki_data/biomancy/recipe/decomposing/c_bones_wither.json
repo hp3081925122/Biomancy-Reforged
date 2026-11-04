@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "#c:bones/wither"
+      "ingredient": "#c:bones/wither"
     }
   },
   "output": {

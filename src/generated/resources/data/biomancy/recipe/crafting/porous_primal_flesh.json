@@ -2,12 +2,8 @@
   "type": "minecraft:crafting_shaped",
   "category": "building",
   "key": {
-    "M": {
-      "item": "biomancy:malignant_flesh"
-    },
-    "P": {
-      "item": "biomancy:primal_flesh"
-    }
+    "M": "biomancy:malignant_flesh",
+    "P": "biomancy:primal_flesh"
   },
   "pattern": [
     "PM",

@@ -5,7 +5,7 @@ import com.github.elenterius.biomancy.integration.ModsCompatHandler;
 import com.github.elenterius.biomancy.util.ComponentUtil;
 import com.github.elenterius.biomancy.util.EventCalendar;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
@@ -31,7 +31,6 @@ public final class BiomancyMod {
 		ModBlocks.BLOCKS.register(modEventBus);
 		ModItems.ITEMS.register(modEventBus);
 		ModDataComponents.DATA_COMPONENTS.register(modEventBus);
-		ModArmorMaterials.ARMOR_MATERIALS.register(modEventBus);
 		ModBlockEntities.BLOCK_ENTITIES.register(modEventBus);
 		ModCapabilities.ATTACHMENT_TYPES.register(modEventBus);
 		ModCreativeModeTabs.CREATIVE_TABS.register(modEventBus);
@@ -54,11 +53,14 @@ public final class BiomancyMod {
 
 		ModRecipes.RECIPE_TYPES.register(modEventBus);
 		ModRecipes.RECIPE_SERIALIZERS.register(modEventBus);
+		ModRecipes.RECIPE_BOOK_CATEGORIES.register(modEventBus);
 		ModRecipes.INGREDIENT_TYPES.register(modEventBus);
+		ModRecipes.RECIPE_DISPLAYS.register(modEventBus);
 		ModBioForgeTabs.BIO_FORGE_TABS.register(modEventBus);
 
 		ModLoot.GLOBAL_MODIFIERS.register(modEventBus);
 		ModLoot.LOOT_FUNCTIONS.register(modEventBus);
+		ModLoot.LOOT_CONDITIONS.register(modEventBus);
 		ModTriggers.TRIGGERS.register(modEventBus);
 		ModPredicates.ITEM_SUB_PREDICATES.register(modEventBus);
 
@@ -73,8 +75,8 @@ public final class BiomancyMod {
 		return Boolean.getBoolean(DEV_MODE_PROPERTY_KEY);
 	}
 
-	public static ResourceLocation rl(String path) {
-		return ResourceLocation.fromNamespaceAndPath(MOD_ID, path);
+	public static Identifier rl(String path) {
+		return Identifier.fromNamespaceAndPath(MOD_ID, path);
 	}
 
 	public static String rlStr(String path) {

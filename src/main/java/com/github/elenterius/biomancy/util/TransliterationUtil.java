@@ -3,12 +3,9 @@ package com.github.elenterius.biomancy.util;
 import com.github.elenterius.biomancy.BiomancyConfig;
 import com.ibm.icu.text.Transliterator;
 import net.minecraft.network.chat.Component;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import java.util.function.UnaryOperator;
 
-@OnlyIn(Dist.CLIENT)
 public final class TransliterationUtil {
 	private static final String ANY_TO_LATIN_WITHOUT_ACCENTS_TO_ASCII = "Any-Latin; NFD; [:Nonspacing Mark:] Remove; NFC; Latin-ASCII;";
 

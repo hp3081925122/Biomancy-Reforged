@@ -23,7 +23,7 @@ public final class ModBannerPatterns {
 	}
 
 	private static void register(BootstrapContext<BannerPattern> context, ResourceKey<BannerPattern> key) {
-		context.register(key, new BannerPattern(key.location(), "block.minecraft.banner." + key.location().toShortLanguageKey()));
+		context.register(key, new BannerPattern(key.identifier(), "block.minecraft.banner." + key.identifier().toShortLanguageKey()));
 	}
 
 	private static ResourceKey<BannerPattern> create(String name) {
@@ -35,7 +35,7 @@ public final class ModBannerPatterns {
 	}
 
 	private static TagKey<BannerPattern> createTagKey(ResourceKey<BannerPattern> key) {
-		return TagKey.create(Registries.BANNER_PATTERN, key.location().withPrefix("pattern_item/"));
+		return TagKey.create(Registries.BANNER_PATTERN, key.identifier().withPrefix("pattern_item/"));
 	}
 
 }

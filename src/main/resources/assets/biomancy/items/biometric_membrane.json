@@ -1,0 +1,10 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "biomancy:item/biometric_membrane",
+    "tints": [
+      { "type": "biomancy:biometric_membrane", "layer": 0 },
+      { "type": "biomancy:biometric_membrane", "layer": 1 }
+    ]
+  }
+}

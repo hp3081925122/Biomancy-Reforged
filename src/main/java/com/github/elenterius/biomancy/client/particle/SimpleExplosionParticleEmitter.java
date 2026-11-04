@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.client.particle;
 
+import net.minecraft.util.RandomSource;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.NoRenderParticle;
 import net.minecraft.client.particle.Particle;
@@ -34,7 +35,7 @@ public class SimpleExplosionParticleEmitter extends NoRenderParticle {
 	}
 
 	public record Provider(SimpleParticleType explosionParticle) implements ParticleProvider<SimpleParticleType> {
-		public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
+		public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed, RandomSource random) {
 			return new SimpleExplosionParticleEmitter(level, x, y, z, xSpeed, explosionParticle);
 		}
 	}

@@ -1,5 +1,7 @@
 package com.github.elenterius.biomancy.entity.mob;
 
+import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.core.component.DataComponents;
 import com.github.elenterius.biomancy.entity.mob.ai.goal.FindItemGoal;
 import com.github.elenterius.biomancy.init.ModEntityTypes;
 import com.github.elenterius.biomancy.init.ModMobEffects;
@@ -17,6 +19,8 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.AgeableMob;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.EntityReference;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
@@ -26,11 +30,11 @@ import net.minecraft.world.entity.ai.goal.*;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.animal.Animal;
-import net.minecraft.world.entity.animal.Pig;
+import net.minecraft.world.entity.animal.pig.Pig;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.monster.hoglin.Hoglin;
-import net.minecraft.world.entity.npc.AbstractVillager;
+import net.minecraft.world.entity.npc.villager.AbstractVillager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.ItemStack;
@@ -39,18 +43,18 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
-import software.bernie.geckolib.animatable.GeoEntity;
-import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.animation.AnimatableManager;
-import software.bernie.geckolib.util.GeckoLibUtil;
+import com.geckolib.animatable.GeoEntity;
+import com.geckolib.animatable.instance.AnimatableInstanceCache;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.util.GeckoLibUtil;
 
 import java.util.function.Predicate;
 
 public class FleshPig extends Animal implements Enemy, GeoEntity {
 
-	protected static final Predicate<LivingEntity> PREY_SELECTOR = livingEntity -> !(livingEntity instanceof Pig) && !(livingEntity instanceof Hoglin) && !livingEntity.getType().is(ModEntityTags.FLESHKIN_IGNORES);
+	protected static final Predicate<LivingEntity> PREY_SELECTOR = livingEntity -> !(livingEntity instanceof Pig) && !(livingEntity instanceof Hoglin) && !livingEntity.is(ModEntityTags.FLESHKIN_IGNORES);
 
-	protected static final Ingredient FOOD_ITEMS = Ingredient.of(ModItemTags.FRESH_RAW_MEATS);
+	protected static final Predicate<ItemStack> FOOD_ITEMS = stack -> stack.is(ModItemTags.FRESH_RAW_MEATS);
 	protected static final Predicate<ItemEntity> FOOD_ITEM_ENTITIES = itemEntity -> FindItemGoal.ITEM_ENTITY_FILTER.test(itemEntity) && itemEntity.getItem().is(ModItemTags.FRESH_RAW_MEATS);
 
 	protected final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
@@ -61,7 +65,7 @@ public class FleshPig extends Animal implements Enemy, GeoEntity {
 	}
 
 	public static AttributeSupplier.Builder createAttributes() {
-		return Mob.createMobAttributes()
+		return Animal.createAnimalAttributes()
 				.add(Attributes.MAX_HEALTH, 10d)
 				.add(Attributes.MOVEMENT_SPEED, 0.25d)
 				.add(Attributes.ATTACK_DAMAGE, 0.8d);
@@ -83,9 +87,9 @@ public class FleshPig extends Animal implements Enemy, GeoEntity {
 		goalSelector.addGoal(8, new RandomLookAroundGoal(this));
 
 		targetSelector.addGoal(1, new HurtByTargetGoal(this).setAlertOthers());
-		targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true, PREY_SELECTOR));
-		targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Animal.class, false, PREY_SELECTOR));
-		targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, AbstractVillager.class, false, PREY_SELECTOR));
+		targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true, (target, serverLevel) -> PREY_SELECTOR.test(target)));
+		targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Animal.class, false, (target, serverLevel) -> PREY_SELECTOR.test(target)));
+		targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, AbstractVillager.class, false, (target, serverLevel) -> PREY_SELECTOR.test(target)));
 	}
 
 	@Override
@@ -99,8 +103,8 @@ public class FleshPig extends Animal implements Enemy, GeoEntity {
 	}
 
 	@Override
-	public boolean wantsToPickUp(ItemStack stack) {
-		return !isInLove() && super.wantsToPickUp(stack);
+	public boolean wantsToPickUp(ServerLevel level, ItemStack stack) {
+		return !isInLove() && super.wantsToPickUp(level, stack);
 	}
 
 	@Override
@@ -109,7 +113,7 @@ public class FleshPig extends Animal implements Enemy, GeoEntity {
 	}
 
 	@Override
-	protected void pickUpItem(ItemEntity itemEntity) {
+	protected void pickUpItem(ServerLevel level, ItemEntity itemEntity) {
 		ItemStack stack = itemEntity.getItem();
 		if (canHoldItem(stack)) {
 			onItemPickup(itemEntity);
@@ -140,14 +144,14 @@ public class FleshPig extends Animal implements Enemy, GeoEntity {
 	}
 
 	protected int getFoodNutrition(ItemStack stack) {
-		FoodProperties foodProperties = stack.getFoodProperties(this);
+		FoodProperties foodProperties = stack.get(DataComponents.FOOD);
 		return foodProperties == null ? 0 : foodProperties.nutrition();
 	}
 
 	public void setInLove(@Nullable Player player) {
 		setInLoveTime(600 * 4);
-		if (player != null) {
-			((AnimalAccessor) this).biomancy$setLoveCause(player.getUUID());
+		if (player instanceof ServerPlayer serverPlayer) {
+			((AnimalAccessor) this).biomancy$setLoveCause(EntityReference.of(serverPlayer));
 		}
 		level().broadcastEntityEvent(this, (byte) 18);
 	}
@@ -167,7 +171,7 @@ public class FleshPig extends Animal implements Enemy, GeoEntity {
 			return otherParent.getBreedOffspring(level, this);
 		}
 
-		return ModEntityTypes.FLESH_PIG.get().create(level);
+		return ModEntityTypes.FLESH_PIG.get().create(level, EntitySpawnReason.BREEDING);
 	}
 
 	@Override
@@ -197,7 +201,7 @@ public class FleshPig extends Animal implements Enemy, GeoEntity {
 
 	@Override
 	protected void playStepSound(BlockPos pos, BlockState block) {
-		playSound(SoundEvents.PIG_STEP, 0.15f, 1f);
+		playSound(SoundEvents.PIG_STEP.value(), 0.15f, 1f);
 	}
 
 	@Override

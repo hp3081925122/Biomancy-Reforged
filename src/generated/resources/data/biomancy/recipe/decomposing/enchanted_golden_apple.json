@@ -1,7 +1,7 @@
 {
   "type": "biomancy:decomposing",
   "ingredient": {
-    "item": "minecraft:enchanted_golden_apple"
+    "ingredient": "minecraft:enchanted_golden_apple"
   },
   "nutrientsCost": 5,
   "processingTime": 4080,

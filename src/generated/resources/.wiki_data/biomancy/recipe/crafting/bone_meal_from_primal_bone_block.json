@@ -2,9 +2,7 @@
   "type": "minecraft:crafting_shapeless",
   "category": "misc",
   "ingredients": [
-    {
-      "item": "biomancy:primal_bone_block"
-    }
+    "biomancy:primal_bone_block"
   ],
   "result": {
     "count": 9,

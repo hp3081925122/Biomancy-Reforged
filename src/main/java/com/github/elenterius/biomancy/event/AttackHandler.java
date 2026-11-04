@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.event;
 
+import com.github.elenterius.biomancy.util.MobUtil;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.init.ModCapabilities;
 import com.github.elenterius.biomancy.init.ModMobEffects;
@@ -41,7 +42,7 @@ public final class AttackHandler {
 	@SubscribeEvent
 	public static void onHurt(final LivingIncomingDamageEvent event) {
 		LivingEntity livingEntity = event.getEntity();
-		if (livingEntity.level().isClientSide) return;
+		if (livingEntity.level().isClientSide()) return;
 		event.getContainer().addModifier(DamageContainer.Reduction.ARMOR, (container, reduction) -> onActuallyHurt(livingEntity, container, reduction));
 	}
 
@@ -62,7 +63,7 @@ public final class AttackHandler {
 		if (amount <= 0f) return armorReduction;
 
 		int resistProbability = 0;
-		for (ItemStack itemStack : livingEntity.getArmorSlots()) {
+		for (ItemStack itemStack : MobUtil.getArmorSlots(livingEntity)) {
 			if (itemStack.getItem() instanceof LivingArmorItem armor && armor.hasNutrients(itemStack)) {
 				resistProbability += 25;
 				armor.decreaseNutrients(itemStack, 1);

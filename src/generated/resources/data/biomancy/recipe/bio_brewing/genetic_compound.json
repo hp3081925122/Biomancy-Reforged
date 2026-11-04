@@ -2,17 +2,15 @@
   "type": "biomancy:bio_brewing",
   "ingredients": [
     {
-      "item": "biomancy:hormone_secretion"
+      "ingredient": "biomancy:hormone_secretion"
     },
     {
-      "item": "biomancy:nutrient_paste"
+      "ingredient": "biomancy:nutrient_paste"
     }
   ],
   "nutrientsCost": 2,
   "processingTime": 80,
-  "reactant": {
-    "item": "biomancy:organic_compound"
-  },
+  "reactant": "biomancy:organic_compound",
   "result": {
     "id": "biomancy:genetic_compound"
   }

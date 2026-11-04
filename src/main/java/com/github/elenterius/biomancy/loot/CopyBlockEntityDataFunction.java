@@ -1,6 +1,7 @@
 package com.github.elenterius.biomancy.loot;
 
-import com.github.elenterius.biomancy.init.ModLoot;
+import java.util.Objects;
+import com.github.elenterius.biomancy.util.BlockItemUtil;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -13,8 +14,7 @@ import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.storage.loot.LootContext;
 import net.minecraft.world.level.storage.loot.functions.LootItemConditionalFunction;
-import net.minecraft.world.level.storage.loot.functions.LootItemFunctionType;
-import net.minecraft.world.level.storage.loot.parameters.LootContextParam;
+import net.minecraft.util.context.ContextKey;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.level.storage.loot.predicates.LootItemCondition;
 
@@ -39,22 +39,22 @@ public class CopyBlockEntityDataFunction extends LootItemConditionalFunction {
 	}
 
 	@Override
-	public LootItemFunctionType<CopyBlockEntityDataFunction> getType() {
-		return ModLoot.COPY_BLOCK_ENTITY_DATA.get();
+	public MapCodec<CopyBlockEntityDataFunction> codec() {
+		return CODEC;
 	}
 
 	@Override
-	public Set<LootContextParam<?>> getReferencedContextParams() {
+	public Set<ContextKey<?>> getReferencedContextParams() {
 		return Set.of(LootContextParams.BLOCK_ENTITY);
 	}
 
 	@Override
 	protected ItemStack run(ItemStack stack, LootContext context) {
-		BlockEntity blockEntity = context.getParamOrNull(LootContextParams.BLOCK_ENTITY);
+		BlockEntity blockEntity = context.getOptionalParameter(LootContextParams.BLOCK_ENTITY);
 		if (blockEntity == null) return stack;
 
 		CompoundTag source = blockEntity.saveCustomOnly(context.getLevel().registryAccess());
-		CompoundTag target = stack.getOrDefault(DataComponents.BLOCK_ENTITY_DATA, CustomData.EMPTY).copyTag();
+		CompoundTag target = Objects.requireNonNullElseGet(BlockItemUtil.getBlockEntityData(stack), CompoundTag::new);
 
 		boolean changed = false;
 		for (String key : keys) {
@@ -67,7 +67,7 @@ public class CopyBlockEntityDataFunction extends LootItemConditionalFunction {
 
 		if (changed) {
 			target.remove("id");
-			BlockItem.setBlockEntityData(stack, blockEntity.getType(), target);
+			BlockItemUtil.setBlockEntityData(stack, blockEntity.getType(), target);
 		}
 
 		return stack;

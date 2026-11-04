@@ -1,8 +1,6 @@
 {
   "type": "biomancy:digesting",
-  "ingredient": {
-    "item": "minecraft:tall_grass"
-  },
+  "ingredient": "minecraft:tall_grass",
   "nutrientsCost": 2,
   "processingTime": 332,
   "result": {

@@ -1,5 +1,8 @@
 package com.github.elenterius.biomancy.block.bioforge;
 
+import net.neoforged.neoforge.items.IItemHandlerModifiable;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.core.HolderLookup;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.api.nutrients.FuelHandler;
@@ -27,17 +30,18 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.ContainerOpenersCounter;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.transfer.ResourceHandler;
+import net.neoforged.neoforge.transfer.fluid.FluidResource;
 import net.neoforged.neoforge.items.IItemHandler;
 import org.jspecify.annotations.Nullable;
-import software.bernie.geckolib.animatable.GeoBlockEntity;
-import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.animation.AnimatableManager;
-import software.bernie.geckolib.animation.AnimationController;
-import software.bernie.geckolib.animation.AnimationState;
-import software.bernie.geckolib.animation.RawAnimation;
-import software.bernie.geckolib.animation.PlayState;
-import software.bernie.geckolib.util.GeckoLibUtil;
+import com.geckolib.animatable.GeoBlockEntity;
+import com.geckolib.animatable.instance.AnimatableInstanceCache;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.animation.AnimationController;
+import com.geckolib.animation.state.AnimationTest;
+import com.geckolib.animation.RawAnimation;
+import com.geckolib.animation.object.PlayState;
+import com.geckolib.util.GeckoLibUtil;
 
 import java.util.Objects;
 
@@ -71,7 +75,7 @@ public class BioForgeBlockEntity extends BlockEntity implements MenuProvider, Pl
 		}
 
 		@Override
-		protected boolean isOwnContainer(Player player) {
+		public boolean isOwnContainer(Player player) {
 			if (player.containerMenu instanceof BioForgeMenu menu) {
 				return menu.getStateData() == stateData;
 			}
@@ -117,12 +121,12 @@ public class BioForgeBlockEntity extends BlockEntity implements MenuProvider, Pl
 	}
 
 	protected void onInventoryChanged() {
-		if (level != null && !level.isClientSide) setChanged();
+		if (level != null && !level.isClientSide()) setChanged();
 	}
 
 	public void startOpen(Player player) {
 		if (remove || player.isSpectator()) return;
-		openersCounter.incrementOpeners(player, Objects.requireNonNull(getLevel()), getBlockPos(), getBlockState());
+		openersCounter.incrementOpeners(player, Objects.requireNonNull(getLevel()), getBlockPos(), getBlockState(), player.getContainerInteractionRange());
 	}
 
 	public void stopOpen(Player player) {
@@ -186,17 +190,17 @@ public class BioForgeBlockEntity extends BlockEntity implements MenuProvider, Pl
 	}
 
 	@Override
-	protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-		super.saveAdditional(tag, registries);
-		tag.put("Fuel", fuelHandler.serializeNBT(registries));
-		tag.put("FuelSlots", fuelInventory.serializeNBT(registries));
+	protected void saveAdditional(ValueOutput output) {
+		super.saveAdditional(output);
+		fuelHandler.serialize(output.child("Fuel"));
+		fuelInventory.serialize(output.child("FuelSlots"));
 	}
 
 	@Override
-	protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-		super.loadAdditional(tag, registries);
-		fuelHandler.deserializeNBT(registries, tag.getCompound("Fuel"));
-		fuelInventory.deserializeNBT(registries, tag.getCompound("FuelSlots"));
+	protected void loadAdditional(ValueInput input) {
+		super.loadAdditional(input);
+		fuelHandler.deserialize(input.childOrEmpty("Fuel"));
+		fuelInventory.deserialize(input.childOrEmpty("FuelSlots"));
 	}
 
 	public void dropAllInvContents(Level level, BlockPos pos) {
@@ -221,7 +225,7 @@ public class BioForgeBlockEntity extends BlockEntity implements MenuProvider, Pl
 		nearbyTimer = Mth.clamp(nearbyTimer + (player != null ? 1 : -1), -10, 10);
 	}
 
-	private <T extends BioForgeBlockEntity> PlayState handleAnimationState(AnimationState<T> state) {
+	private <T extends BioForgeBlockEntity> PlayState handleAnimationState(AnimationTest<T> state) {
 
 		if (playWorkingAnimation) {
 			return state.setAndContinue(Animations.WORKING);
@@ -247,7 +251,7 @@ public class BioForgeBlockEntity extends BlockEntity implements MenuProvider, Pl
 
 	@Override
 	public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-		AnimationController<BioForgeBlockEntity> controller = new AnimationController<>(this, Animations.MAIN_CONTROLLER, 10, this::handleAnimationState);
+		AnimationController<BioForgeBlockEntity> controller = new AnimationController<>(Animations.MAIN_CONTROLLER, 10, this::handleAnimationState);
 		controller.setAnimation(Animations.FOLDED);
 		controllers.add(controller);
 	}
@@ -269,15 +273,21 @@ public class BioForgeBlockEntity extends BlockEntity implements MenuProvider, Pl
 
 	}
 
-	public @Nullable IItemHandler getItemHandler(@Nullable Direction side) {
+	public @Nullable IItemHandlerModifiable getItemHandler(@Nullable Direction side) {
 		if (isRemoved()) return null;
 		if (side != null && side.getAxis().isHorizontal()) return fuelInventory;
 		return null;
 	}
 
-	public @Nullable IFluidHandler getFluidHandler(@Nullable Direction side) {
+	public @Nullable ResourceHandler<FluidResource> getFluidHandler(@Nullable Direction side) {
 		if (isRemoved()) return null;
 		return fuelHandler.getFluidConsumer();
 	}
 
+	@Override
+	public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+		if (level != null) {
+			dropAllInvContents(level, pos);
+		}
+	}
 }

@@ -2,16 +2,13 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "key": {
-    "P": {
-      "item": "biomancy:primal_permeable_membrane_pane"
-    }
+    "P": "biomancy:primal_permeable_membrane_pane"
   },
   "pattern": [
     "P",
     "P"
   ],
   "result": {
-    "count": 1,
     "id": "biomancy:primal_permeable_membrane"
   }
 }

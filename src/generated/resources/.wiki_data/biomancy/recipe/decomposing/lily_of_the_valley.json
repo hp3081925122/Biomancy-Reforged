@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "minecraft:lily_of_the_valley"
+      "ingredient": "minecraft:lily_of_the_valley"
     }
   },
   "output": {

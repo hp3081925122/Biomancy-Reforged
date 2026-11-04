@@ -44,12 +44,12 @@ public final class PillarPlantUtil {
 	}
 
 	public static boolean handleGrowth(PillarPlantHelper plantHelper, Level level, BlockPos pos, BlockState state) {
-		return handleGrowth(plantHelper, level, pos, state, plantHelper.defaultHeight, level.random.nextInt(3) + 2);
+		return handleGrowth(plantHelper, level, pos, state, plantHelper.defaultHeight, level.getRandom().nextInt(3) + 2);
 	}
 
 	private static boolean handleGrowth(PillarPlantHelper plantHelper, Level level, BlockPos pos, BlockState state, int maxHeight, int ageModifier) {
 		if (plantHelper.canGrow(level, pos, state, maxHeight)) {
-			if (!level.isClientSide && level instanceof ServerLevel serverLevel) {
+			if (!level.isClientSide() && level instanceof ServerLevel serverLevel) {
 				plantHelper.grow(serverLevel, pos, state, maxHeight, ageModifier);
 				serverLevel.levelEvent(LevelEvent.PARTICLES_AND_SOUND_PLANT_GROWTH, pos, 5);
 			}
@@ -64,7 +64,7 @@ public final class PillarPlantUtil {
 		for (int i = 0; i < 3; i++) {
 			if (state.isAir() || !plantHelper.canGrow(level, pos, state, maxHeight)) break;
 
-			if (!level.isClientSide && level instanceof ServerLevel serverLevel) {
+			if (!level.isClientSide() && level instanceof ServerLevel serverLevel) {
 				plantHelper.grow(serverLevel, pos, state, maxHeight, ageModifier);
 				serverLevel.levelEvent(LevelEvent.PARTICLES_AND_SOUND_PLANT_GROWTH, pos, 5);
 			}
@@ -127,7 +127,7 @@ public final class PillarPlantUtil {
 				level.setBlockAndUpdate(posAbove, block.defaultBlockState());
 				BlockState newState = state.setValue(ageProperty, 0);
 				level.setBlock(pos, newState, Block.UPDATE_INVISIBLE);
-				if (callNeighborChanged) newState.handleNeighborChanged(level, posAbove, block, pos, false);
+				if (callNeighborChanged) newState.handleNeighborChanged(level, posAbove, block, null, false);
 			}
 			else {
 				level.setBlock(pos, state.setValue(ageProperty, age), Block.UPDATE_INVISIBLE);

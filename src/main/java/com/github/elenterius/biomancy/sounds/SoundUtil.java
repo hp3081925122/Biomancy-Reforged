@@ -31,7 +31,7 @@ public final class SoundUtil {
 	}
 
 	public static void playItemSound(Level level, LivingEntity itemHolder, SoundEvent soundEvent) {
-		if (level.isClientSide) {
+		if (level.isClientSide()) {
 			Client.playItemSound(level, itemHolder, soundEvent);
 		}
 		else {
@@ -45,7 +45,7 @@ public final class SoundUtil {
 
 		public static void playItemSound(Level level, LivingEntity itemHolder, SoundEvent soundEvent) {
 			SoundSource soundSource = itemHolder instanceof Player ? SoundSource.PLAYERS : SoundSource.HOSTILE;
-			float pitch = randomPitchForItem(level.random);
+			float pitch = randomPitchForItem(level.getRandom());
 			level.playSound(itemHolder instanceof Player player ? player : null, itemHolder.getX(), itemHolder.getY(0.5f), itemHolder.getZ(), soundEvent, soundSource, 0.8f, pitch);
 		}
 
@@ -58,11 +58,11 @@ public final class SoundUtil {
 		}
 
 		public static void playBlockSound(Level level, BlockPos pos, Supplier<SoundEvent> soundEventSupplier, float volume) {
-			playBlockSound(level, pos, soundEventSupplier.get(), volume, randomPitchForBlock(level.random));
+			playBlockSound(level, pos, soundEventSupplier.get(), volume, randomPitchForBlock(level.getRandom()));
 		}
 
 		public static void playBlockSound(Level level, BlockPos pos, SoundEvent soundEvent) {
-			playBlockSound(level, pos, soundEvent, 1f, randomPitchForBlock(level.random));
+			playBlockSound(level, pos, soundEvent, 1f, randomPitchForBlock(level.getRandom()));
 		}
 
 		public static void playBlockSound(Level level, BlockPos pos, SoundEvent soundEvent, float volume, float pitch) {
@@ -90,7 +90,7 @@ public final class SoundUtil {
 		}
 
 		static SimpleSoundInstance createLoopingSoundInstance(SoundEvent soundEvent, float volume, BlockPos pos) {
-			return new SimpleSoundInstance(soundEvent.getLocation(), SoundSource.BLOCKS, volume, 1f, RandomSource.create(), true, 0, SoundInstance.Attenuation.LINEAR, pos.getX() + 0.5d, pos.getY() + 0.5d, pos.getZ() + 0.5d, false);
+			return new SimpleSoundInstance(soundEvent.location(), SoundSource.BLOCKS, volume, 1f, RandomSource.create(), true, 0, SoundInstance.Attenuation.LINEAR, pos.getX() + 0.5d, pos.getY() + 0.5d, pos.getZ() + 0.5d, false);
 		}
 
 	}
@@ -104,7 +104,7 @@ public final class SoundUtil {
 		}
 
 		public static void playBlockSound(ServerLevel level, BlockPos pos, SoundEvent soundEvent) {
-			level.playSound(null, pos, soundEvent, SoundSource.BLOCKS, 1f, randomPitchForBlock(level.random));
+			level.playSound(null, pos, soundEvent, SoundSource.BLOCKS, 1f, randomPitchForBlock(level.getRandom()));
 		}
 
 		public static void playBlockSound(ServerLevel level, BlockPos pos, SoundEvent soundEvent, float volume, float pitch) {
@@ -112,7 +112,7 @@ public final class SoundUtil {
 		}
 
 		public static void playItemSound(ServerLevel level, LivingEntity itemHolder, SoundEvent soundEvent) {
-			float pitch = randomPitchForItem(level.random);
+			float pitch = randomPitchForItem(level.getRandom());
 			level.playSound(null, itemHolder.getX(), itemHolder.getY(0.5f), itemHolder.getZ(), soundEvent, itemHolder.getSoundSource(), 0.8f, pitch);
 		}
 

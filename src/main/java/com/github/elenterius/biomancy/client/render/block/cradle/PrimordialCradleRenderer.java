@@ -1,120 +1,137 @@
 package com.github.elenterius.biomancy.client.render.block.cradle;
 
+import com.geckolib.cache.model.GeoBone;
+import com.geckolib.cache.model.GeoQuad;
+import com.geckolib.cache.model.GeoVertex;
+import com.geckolib.cache.model.cuboid.CuboidGeoBone;
+import com.geckolib.cache.model.cuboid.GeoCube;
+import com.geckolib.constant.dataticket.DataTicket;
+import com.geckolib.renderer.base.BoneSnapshots;
+import com.geckolib.renderer.base.RenderPassInfo;
+import com.geckolib.util.RenderUtil;
+import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.block.cradle.PrimordialCradleBlockEntity;
 import com.github.elenterius.biomancy.client.render.block.CustomGeoBlockRenderer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.Direction;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
+import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
-import software.bernie.geckolib.cache.object.*;
-import software.bernie.geckolib.animation.AnimationProcessor;
+import org.jspecify.annotations.Nullable;
 
 public class PrimordialCradleRenderer extends CustomGeoBlockRenderer<PrimordialCradleBlockEntity> {
 
-	private final Vector4f vertexPosition = new Vector4f(0, 0, 0, 1);
-	private float lifeEnergyPct;
-	private boolean isSpecialCube = false;
-	private MultiBufferSource mbs = null;
+	private static final DataTicket<Float> BIOMASS_PCT = DataTicket.create(BiomancyMod.MOD_ID + ":cradle_biomass_pct", Float.class);
+	private static final DataTicket<Boolean> HAS_MODIFIERS = DataTicket.create(BiomancyMod.MOD_ID + ":cradle_has_modifiers", Boolean.class);
+	private static final DataTicket<Float> LIFE_ENERGY_PCT = DataTicket.create(BiomancyMod.MOD_ID + ":cradle_life_energy_pct", Float.class);
+
+	private static final String EYE_OVERLAY_BONE = "_eye_overlay";
 
 	public PrimordialCradleRenderer(BlockEntityRendererProvider.Context context) {
-		super(new PrimordialCradleModel());
+		super(context, new PrimordialCradleModel(), RenderTypes::entityCutoutCull);
 	}
 
 	@Override
-	public void preRender(PoseStack poseStack, PrimordialCradleBlockEntity animatable, BakedGeoModel model, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, int colour) {
-		AnimationProcessor<?> processor = getGeoModel().getAnimationProcessor();
-		GeoBone boneFillLevel = processor.getBone("_fill_level");
-		GeoBone boneToppings = processor.getBone("_toppings");
-
-		boneFillLevel.setHidden(true);
-		boneToppings.setHidden(true);
-
-		float biomassPct = animatable.getBiomassPct();
-		if (biomassPct > 0) {
-			boneFillLevel.setHidden(false);
-			boneFillLevel.setPosY(Mth.floor(biomassPct * 8f) + 2f);
-			if (animatable.hasModifiers()) {
-				boneToppings.setHidden(false);
-			}
-		}
-
-		lifeEnergyPct = Math.min(animatable.getLifeEnergyPct(), 1f);
-		mbs = bufferSource;
-
-		super.preRender(poseStack, animatable, model, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, colour);
+	public void addRenderData(PrimordialCradleBlockEntity cradle, @Nullable Void relatedObject, BlockEntityRenderState renderState, float partialTick) {
+		renderState.addGeckolibData(BIOMASS_PCT, cradle.getBiomassPct());
+		renderState.addGeckolibData(HAS_MODIFIERS, cradle.hasModifiers());
+		renderState.addGeckolibData(LIFE_ENERGY_PCT, Math.min(cradle.getLifeEnergyPct(), 1f));
 	}
 
 	@Override
-	public void renderCubesOfBone(PoseStack stack, GeoBone bone, VertexConsumer buffer, int packedLight, int packedOverlay, int colour) {
-		if (bone.getName().equals("_eye_overlay")) {
-			if (lifeEnergyPct > 0) {
-				isSpecialCube = true;
-				if (!bone.isHidden()) {
-					for (GeoCube cube : bone.getCubes()) {
-						stack.pushPose();
-						renderCube(stack, cube, mbs.getBuffer(RenderType.eyes(getTextureLocation(animatable))), 0xf000f0, OverlayTexture.NO_OVERLAY, colour);
-						stack.popPose();
-					}
-				}
-				isSpecialCube = false;
+	public void adjustModelBonesForRender(RenderPassInfo<BlockEntityRenderState> renderPassInfo, BoneSnapshots snapshots) {
+		float biomassPct = renderPassInfo.getOrDefaultGeckolibData(BIOMASS_PCT, 0f);
+		boolean hasModifiers = renderPassInfo.getOrDefaultGeckolibData(HAS_MODIFIERS, false);
+
+		snapshots.ifPresent("_fill_level", bone -> {
+			if (biomassPct > 0) {
+				bone.setTranslateY(Mth.floor(biomassPct * 8f) + 2f);
 			}
+			else {
+				bone.skipRender(true).skipChildrenRender(true);
+			}
+		});
+
+		if (biomassPct <= 0 || !hasModifiers) {
+			snapshots.ifPresent("_toppings", bone -> bone.skipRender(true).skipChildrenRender(true));
 		}
-		else super.renderCubesOfBone(stack, bone, buffer, packedLight, packedOverlay, colour);
+
+		snapshots.ifPresent(EYE_OVERLAY_BONE, bone -> bone.skipRender(true));
 	}
 
 	@Override
-	public void createVerticesOfQuad(GeoQuad quad, Matrix4f matrix4f, Vector3f normal, VertexConsumer buffer, int packedLight, int packedOverlay, int colour) {
-		GeoVertex[] vertices = quad.vertices();
+	public void preRenderPass(RenderPassInfo<BlockEntityRenderState> renderPassInfo, SubmitNodeCollector renderTasks) {
+		super.preRenderPass(renderPassInfo, renderTasks);
 
-		if (isSpecialCube && quad.direction() == Direction.NORTH) {
-			float steps = (vertices[0].position().y() - vertices[2].position().y()) * 16f;
-			float delta = (Mth.floor(lifeEnergyPct * (steps - 1f)) + 1f) / steps;
-			float textureV = Mth.lerp(delta, vertices[2].texV(), vertices[0].texV());
-			float positionY = Mth.lerp(delta, vertices[2].position().y(), vertices[0].position().y());
+		float lifeEnergyPct = renderPassInfo.getOrDefaultGeckolibData(LIFE_ENERGY_PCT, 0f);
+		if (lifeEnergyPct <= 0) return;
 
-			GeoVertex topLeft = vertices[0];
-			GeoVertex topRight = vertices[1];
+		renderPassInfo.model().getBone(EYE_OVERLAY_BONE).ifPresent(bone -> renderPassInfo.addPerBoneRender(bone, (passInfo, eyeBone, collector) -> {
+			if (!(eyeBone instanceof CuboidGeoBone cuboidBone)) return;
 
-			for (GeoVertex vertex : vertices) {
-				boolean isTopVertex = (vertex == topLeft || vertex == topRight);
-				if (isTopVertex) {
-					createVertex(matrix4f, normal, buffer, packedLight, packedOverlay, colour, vertex, textureV, positionY);
+			Identifier texture = getGeoModel().getTextureResource(passInfo.renderState());
+			int color = passInfo.renderColor();
+			PoseStack poseStack = passInfo.poseStack();
+			eyeBone.translateAwayFromPivotPoint(poseStack);
+
+			collector.submitCustomGeometry(poseStack, RenderTypes.eyes(texture), (pose, consumer) -> {
+				PoseStack cubePoseStack = new PoseStack();
+				cubePoseStack.last().set(pose);
+				for (GeoCube cube : cuboidBone.cubes) {
+					cubePoseStack.pushPose();
+					renderEyeCube(cubePoseStack, cube, consumer, lifeEnergyPct, color);
+					cubePoseStack.popPose();
 				}
-				else {
-					createVertex(matrix4f, normal, buffer, packedLight, packedOverlay, colour, vertex);
+			});
+		}));
+	}
+
+	private static void renderEyeCube(PoseStack poseStack, GeoCube cube, VertexConsumer consumer, float lifeEnergyPct, int color) {
+		cube.translateToPivotPoint(poseStack);
+		cube.rotate(poseStack);
+		cube.translateAwayFromPivotPoint(poseStack);
+
+		Matrix3f normalPose = poseStack.last().normal();
+		Matrix4f pose = new Matrix4f(poseStack.last().pose());
+
+		for (GeoQuad quad : cube.quads()) {
+			if (quad == null) continue;
+
+			Vector3f normal = normalPose.transform(quad.normalVec());
+			RenderUtil.fixInvertedFlatCube(cube, normal);
+
+			GeoVertex[] vertices = quad.vertices();
+			if (quad.direction() == Direction.NORTH) {
+				float steps = (vertices[0].posY() - vertices[2].posY()) * 16f;
+				float delta = (Mth.floor(lifeEnergyPct * (steps - 1f)) + 1f) / steps;
+				float textureV = Mth.lerp(delta, vertices[2].texV(), vertices[0].texV());
+				float positionY = Mth.lerp(delta, vertices[2].posY(), vertices[0].posY());
+
+				for (GeoVertex vertex : vertices) {
+					boolean isTopVertex = vertex == vertices[0] || vertex == vertices[1];
+					addVertex(consumer, pose, normal, color, vertex.posX(), isTopVertex ? positionY : vertex.posY(), vertex.posZ(), vertex.texU(), isTopVertex ? textureV : vertex.texV());
 				}
 			}
-		}
-		else {
-			for (GeoVertex vertex : vertices) {
-				createVertex(matrix4f, normal, buffer, packedLight, packedOverlay, colour, vertex);
+			else {
+				for (GeoVertex vertex : vertices) {
+					addVertex(consumer, pose, normal, color, vertex.posX(), vertex.posY(), vertex.posZ(), vertex.texU(), vertex.texV());
+				}
 			}
 		}
 	}
 
-	private void createVertex(Matrix4f matrix4f, Vector3f normal, VertexConsumer buffer, int packedLight, int packedOverlay, int colour, GeoVertex geoVertex) {
-		vertexPosition.set(geoVertex.position().x(), geoVertex.position().y(), geoVertex.position().z(), 1);
-		matrix4f.transform(vertexPosition);
-		buffer.addVertex(
-				vertexPosition.x(), vertexPosition.y(), vertexPosition.z(), colour,
-				geoVertex.texU(), geoVertex.texV(), packedOverlay, packedLight, normal.x(), normal.y(), normal.z()
-		);
-	}
-
-	private void createVertex(Matrix4f matrix4f, Vector3f normal, VertexConsumer buffer, int packedLight, int packedOverlay, int colour, GeoVertex geoVertex, float v, float y) {
-		vertexPosition.set(geoVertex.position().x(), y, geoVertex.position().z(), 1);
-		matrix4f.transform(vertexPosition);
-		buffer.addVertex(
-				vertexPosition.x(), vertexPosition.y(), vertexPosition.z(), colour,
-				geoVertex.texU(), v, packedOverlay, packedLight, normal.x(), normal.y(), normal.z()
-		);
+	private static void addVertex(VertexConsumer consumer, Matrix4f pose, Vector3f normal, int color, float x, float y, float z, float u, float v) {
+		Vector4f position = pose.transform(new Vector4f(x, y, z, 1f));
+		consumer.addVertex(position.x(), position.y(), position.z(), color, u, v, OverlayTexture.NO_OVERLAY, 0xf000f0, normal.x(), normal.y(), normal.z());
 	}
 
 }

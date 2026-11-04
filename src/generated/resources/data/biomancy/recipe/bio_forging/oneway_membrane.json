@@ -4,22 +4,22 @@
   "ingredients": [
     {
       "count": 2,
-      "item": "biomancy:flesh_bits"
+      "ingredient": "biomancy:flesh_bits"
     },
     {
       "count": 2,
-      "item": "biomancy:elastic_fibers"
+      "ingredient": "biomancy:elastic_fibers"
     },
     {
       "count": 4,
-      "item": "biomancy:bile"
+      "ingredient": "biomancy:bile"
     },
     {
-      "item": "biomancy:gelling_agent"
+      "ingredient": "biomancy:gelling_agent"
     },
     {
       "count": 2,
-      "item": "biomancy:gem_fragments"
+      "ingredient": "biomancy:gem_fragments"
     }
   ],
   "nutrientsCost": 1,

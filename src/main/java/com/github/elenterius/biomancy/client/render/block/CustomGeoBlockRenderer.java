@@ -1,16 +1,30 @@
 package com.github.elenterius.biomancy.client.render.block;
 
+import com.geckolib.animatable.GeoBlockEntity;
+import com.geckolib.model.GeoModel;
+import com.geckolib.renderer.GeoBlockRenderer;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.core.Direction;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+import net.minecraft.world.level.block.DirectionalBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
-import software.bernie.geckolib.animatable.GeoBlockEntity;
-import software.bernie.geckolib.model.GeoModel;
-import software.bernie.geckolib.renderer.GeoBlockRenderer;
+import org.jspecify.annotations.Nullable;
 
-public abstract class CustomGeoBlockRenderer<T extends BlockEntity & GeoBlockEntity> extends GeoBlockRenderer<T> {
+import java.util.function.Function;
 
-	protected CustomGeoBlockRenderer(GeoModel<T> model) {
-		super(model);
+public abstract class CustomGeoBlockRenderer<T extends BlockEntity & GeoBlockEntity> extends GeoBlockRenderer<T, BlockEntityRenderState> {
+
+	private final Function<Identifier, RenderType> renderType;
+
+	protected CustomGeoBlockRenderer(BlockEntityRendererProvider.Context context, GeoModel<T> model, Function<Identifier, RenderType> renderType) {
+		super(context, model);
+		this.renderType = renderType;
 	}
 
 	@Override
@@ -18,18 +32,26 @@ public abstract class CustomGeoBlockRenderer<T extends BlockEntity & GeoBlockEnt
 		return 96;
 	}
 
-	/**
-	 * Max distance at which animations are still played.
-	 *
-	 * @return value smaller or equal to the view distance
-	 */
 	public int getAnimationDistance() {
-		return 48; //FIXME: NOT FUNCTIONAL ATM
+		return 48;
 	}
 
 	public boolean shouldAnimate(T blockEntity) {
-		Vec3 cameraPos = Minecraft.getInstance().getBlockEntityRenderDispatcher().camera.getPosition();
+		Vec3 cameraPos = Minecraft.getInstance().gameRenderer.getMainCamera().position();
 		return Vec3.atCenterOf(blockEntity.getBlockPos()).closerThan(cameraPos, getAnimationDistance());
+	}
+
+	@Override
+	protected Direction getBlockStateDirection(T blockEntity) {
+		BlockState blockState = blockEntity.getBlockState();
+		if (blockState.hasProperty(HorizontalDirectionalBlock.FACING)) return blockState.getValue(HorizontalDirectionalBlock.FACING);
+		if (blockState.hasProperty(DirectionalBlock.FACING)) return blockState.getValue(DirectionalBlock.FACING);
+		return Direction.NORTH;
+	}
+
+	@Override
+	public @Nullable RenderType getRenderType(BlockEntityRenderState renderState, Identifier texture) {
+		return renderType.apply(texture);
 	}
 
 }

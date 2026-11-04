@@ -30,16 +30,16 @@ public interface ControllableMob<T extends Mob> {
 	default void updateRestriction(Command cmd, BlockPos pos) {
 		T mob = getMobInstance();
 		if (cmd == Command.SIT) {
-			mob.restrictTo(pos, 4);
+			mob.setHomeTo(pos, 4);
 		}
 		else if (cmd == Command.PATROL_AREA) {
-			mob.restrictTo(pos, 24);
+			mob.setHomeTo(pos, 24);
 		}
 		else if (cmd == Command.HOLD_POSITION) {
-			mob.restrictTo(pos, 8);
+			mob.setHomeTo(pos, 8);
 		}
 		else {
-			mob.clearRestriction();
+			mob.clearHome();
 		}
 	}
 

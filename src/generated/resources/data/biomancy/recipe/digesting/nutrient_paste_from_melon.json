@@ -1,8 +1,6 @@
 {
   "type": "biomancy:digesting",
-  "ingredient": {
-    "item": "minecraft:melon"
-  },
+  "ingredient": "minecraft:melon",
   "nutrientsCost": 3,
   "processingTime": 702,
   "result": {

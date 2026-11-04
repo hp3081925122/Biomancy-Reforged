@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.serum;
 
+import java.util.function.Consumer;
 import com.github.elenterius.biomancy.api.serum.Serum;
 import com.github.elenterius.biomancy.init.ModSerums;
 import com.github.elenterius.biomancy.styles.TextStyles;
@@ -47,8 +48,8 @@ public abstract class BasicSerum implements Serum {
 		return translationKey;
 	}
 
-	public void appendTooltip(CompoundTag tag, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-		tooltip.add(ComponentUtil.translatable(getDescriptionTranslationKey()).withStyle(TextStyles.LORE));
+	public void appendTooltip(CompoundTag tag, @Nullable Level level, Consumer<Component> tooltip, TooltipFlag flag) {
+		tooltip.accept(ComponentUtil.translatable(getDescriptionTranslationKey()).withStyle(TextStyles.LORE));
 	}
 
 	@Override

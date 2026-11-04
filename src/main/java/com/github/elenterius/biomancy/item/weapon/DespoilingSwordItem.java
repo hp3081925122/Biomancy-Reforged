@@ -1,5 +1,7 @@
 package com.github.elenterius.biomancy.item.weapon;
 
+import com.github.elenterius.biomancy.item.ConditionalEnchantable;
+import net.minecraft.world.item.ItemInstance;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.core.Holder;
 import com.github.elenterius.biomancy.init.ModEnchantments;
@@ -11,16 +13,16 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Tier;
+import net.minecraft.world.item.ToolMaterial;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.common.ItemAbility;
 
-public class DespoilingSwordItem extends SimpleSwordItem {
+public class DespoilingSwordItem extends SimpleSwordItem implements ConditionalEnchantable {
 
-	public DespoilingSwordItem(Tier tier, int attackDamageModifier, float attackSpeedModifier, Properties properties) {
-		super(tier, attackDamageModifier, attackSpeedModifier, properties);
+	public DespoilingSwordItem(ToolMaterial material, int attackDamageModifier, float attackSpeedModifier, Properties properties) {
+		super(material, attackDamageModifier, attackSpeedModifier, properties);
 	}
 
 	public boolean isBroken(ItemStack stack) {
@@ -42,8 +44,8 @@ public class DespoilingSwordItem extends SimpleSwordItem {
 	}
 
 	@Override
-	public int getEnchantmentLevel(ItemStack stack, Holder<Enchantment> enchantment) {
-		if (isBroken(stack)) return 0;
+	public int getEnchantmentLevel(ItemInstance stack, Holder<Enchantment> enchantment) {
+		if (stack instanceof ItemStack itemStack && isBroken(itemStack)) return 0;
 
 		int level = super.getEnchantmentLevel(stack, enchantment);
 
@@ -55,13 +57,12 @@ public class DespoilingSwordItem extends SimpleSwordItem {
 	}
 
 	@Override
-	public boolean hurtEnemy(ItemStack stack, LivingEntity target, LivingEntity attacker) {
-		if (isBroken(stack)) return false;
+	public void hurtEnemy(ItemStack stack, LivingEntity target, LivingEntity attacker) {
+		if (isBroken(stack)) return;
 
 		if (!target.isDeadOrDying()) {
 			stack.hurtAndBreak(2, attacker, EquipmentSlot.MAINHAND);
 		}
-		return true;
 	}
 
 	@Override
@@ -83,8 +84,8 @@ public class DespoilingSwordItem extends SimpleSwordItem {
 	}
 
 	@Override
-	public boolean canPerformAction(ItemStack stack, ItemAbility itemAbility) {
-		if (isBroken(stack)) return false;
+	public boolean canPerformAction(ItemInstance stack, ItemAbility itemAbility) {
+		if (stack instanceof ItemStack itemStack && isBroken(itemStack)) return false;
 		return super.canPerformAction(stack, itemAbility);
 	}
 

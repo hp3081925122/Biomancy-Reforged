@@ -2,33 +2,16 @@
   "type": "minecraft:crafting_shapeless",
   "category": "misc",
   "ingredients": [
-    {
-      "item": "biomancy:gelling_agent"
-    },
-    {
-      "item": "biomancy:bile"
-    },
-    {
-      "item": "biomancy:bile"
-    },
-    {
-      "item": "biomancy:nutrients"
-    },
-    {
-      "item": "minecraft:sugar"
-    },
-    {
-      "item": "minecraft:sugar"
-    },
-    {
-      "item": "minecraft:yellow_dye"
-    },
-    {
-      "item": "minecraft:glass_bottle"
-    }
+    "biomancy:gelling_agent",
+    "biomancy:bile",
+    "biomancy:bile",
+    "biomancy:nutrients",
+    "minecraft:sugar",
+    "minecraft:sugar",
+    "minecraft:yellow_dye",
+    "minecraft:glass_bottle"
   ],
   "result": {
-    "count": 1,
     "id": "minecraft:honey_bottle"
   }
 }

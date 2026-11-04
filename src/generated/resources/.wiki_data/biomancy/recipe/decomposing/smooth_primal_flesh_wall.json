@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "biomancy:smooth_primal_flesh_wall"
+      "ingredient": "biomancy:smooth_primal_flesh_wall"
     }
   },
   "output": {

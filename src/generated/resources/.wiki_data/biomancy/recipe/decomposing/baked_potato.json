@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "minecraft:baked_potato"
+      "ingredient": "minecraft:baked_potato"
     }
   },
   "output": {

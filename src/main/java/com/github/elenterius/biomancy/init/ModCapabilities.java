@@ -10,20 +10,26 @@ import com.github.elenterius.biomancy.block.digester.DigesterBlockEntity;
 import com.github.elenterius.biomancy.block.mawhopper.MawHopperBlockEntity;
 import com.github.elenterius.biomancy.block.modularlarynx.ModularLarynxBlockEntity;
 import com.github.elenterius.biomancy.block.storagesac.StorageSacBlockEntity;
-import com.github.elenterius.biomancy.inventory.InjectorItemInventory;
-import com.github.elenterius.biomancy.inventory.ItemStackInventory;
+import com.github.elenterius.biomancy.inventory.InjectorItemAccessHandler;
+import com.github.elenterius.biomancy.inventory.ItemHandlerResourceAdapter;
 import com.github.elenterius.biomancy.item.injector.InjectorItem;
+import net.minecraft.core.component.DataComponents;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.attachment.AttachmentType;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
+import net.neoforged.neoforge.items.IItemHandlerModifiable;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.NeoForgeRegistries;
+import net.neoforged.neoforge.transfer.ResourceHandler;
+import net.neoforged.neoforge.transfer.item.ItemAccessItemHandler;
+import net.neoforged.neoforge.transfer.item.ItemResource;
+import org.jspecify.annotations.Nullable;
 
 import java.util.function.Supplier;
 
-@EventBusSubscriber(modid = BiomancyMod.MOD_ID, bus = EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = BiomancyMod.MOD_ID)
 public final class ModCapabilities {
 
 	public static final DeferredRegister<AttachmentType<?>> ATTACHMENT_TYPES = DeferredRegister.create(NeoForgeRegistries.Keys.ATTACHMENT_TYPES, BiomancyMod.MOD_ID);
@@ -33,25 +39,34 @@ public final class ModCapabilities {
 
 	private ModCapabilities() {}
 
+	private static @Nullable ResourceHandler<ItemResource> wrap(@Nullable IItemHandlerModifiable itemHandler) {
+		return itemHandler != null ? new ItemHandlerResourceAdapter(itemHandler) : null;
+	}
+
 	@SubscribeEvent
 	public static void onRegisterCapabilities(final RegisterCapabilitiesEvent event) {
-		event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.DIGESTER.get(), DigesterBlockEntity::getItemHandler);
-		event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, ModBlockEntities.DIGESTER.get(), DigesterBlockEntity::getFluidHandler);
-		event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.DECOMPOSER.get(), DecomposerBlockEntity::getItemHandler);
-		event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, ModBlockEntities.DECOMPOSER.get(), DecomposerBlockEntity::getFluidHandler);
-		event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.BIO_LAB.get(), BioLabBlockEntity::getItemHandler);
-		event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, ModBlockEntities.BIO_LAB.get(), BioLabBlockEntity::getFluidHandler);
-		event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.BIO_FORGE.get(), BioForgeBlockEntity::getItemHandler);
-		event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, ModBlockEntities.BIO_FORGE.get(), BioForgeBlockEntity::getFluidHandler);
-		event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, ModBlockEntities.PRIMORDIAL_CRADLE.get(), PrimordialCradleBlockEntity::getFluidHandler);
-		event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.MAW_HOPPER.get(), MawHopperBlockEntity::getItemHandler);
-		event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.MODULAR_LARYNX.get(), ModularLarynxBlockEntity::getItemHandler);
-		event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.STORAGE_SAC.get(), StorageSacBlockEntity::getItemHandler);
-		event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.BE_DELEGATOR.get(), (delegator, side) -> delegator.getDelegateCapability(Capabilities.ItemHandler.BLOCK, side));
-		event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, ModBlockEntities.BE_DELEGATOR.get(), (delegator, side) -> delegator.getDelegateCapability(Capabilities.FluidHandler.BLOCK, side));
+		event.registerBlockEntity(Capabilities.Item.BLOCK, ModBlockEntities.DIGESTER.get(), (be, side) -> wrap(be.getItemHandler(side)));
+		event.registerBlockEntity(Capabilities.Fluid.BLOCK, ModBlockEntities.DIGESTER.get(), DigesterBlockEntity::getFluidHandler);
+		event.registerBlockEntity(Capabilities.Item.BLOCK, ModBlockEntities.DECOMPOSER.get(), (be, side) -> wrap(be.getItemHandler(side)));
+		event.registerBlockEntity(Capabilities.Fluid.BLOCK, ModBlockEntities.DECOMPOSER.get(), DecomposerBlockEntity::getFluidHandler);
+		event.registerBlockEntity(Capabilities.Item.BLOCK, ModBlockEntities.BIO_LAB.get(), (be, side) -> wrap(be.getItemHandler(side)));
+		event.registerBlockEntity(Capabilities.Fluid.BLOCK, ModBlockEntities.BIO_LAB.get(), BioLabBlockEntity::getFluidHandler);
+		event.registerBlockEntity(Capabilities.Item.BLOCK, ModBlockEntities.BIO_FORGE.get(), (be, side) -> wrap(be.getItemHandler(side)));
+		event.registerBlockEntity(Capabilities.Fluid.BLOCK, ModBlockEntities.BIO_FORGE.get(), BioForgeBlockEntity::getFluidHandler);
+		event.registerBlockEntity(Capabilities.Fluid.BLOCK, ModBlockEntities.PRIMORDIAL_CRADLE.get(), PrimordialCradleBlockEntity::getFluidHandler);
+		event.registerBlockEntity(Capabilities.Item.BLOCK, ModBlockEntities.MAW_HOPPER.get(), (be, side) -> wrap(be.getItemHandler(side)));
+		event.registerBlockEntity(Capabilities.Item.BLOCK, ModBlockEntities.MODULAR_LARYNX.get(), (be, side) -> wrap(be.getItemHandler(side)));
+		event.registerBlockEntity(Capabilities.Item.BLOCK, ModBlockEntities.STORAGE_SAC.get(), (be, side) -> wrap(be.getItemHandler(side)));
+		event.registerBlockEntity(Capabilities.Item.BLOCK, ModBlockEntities.BE_DELEGATOR.get(), (delegator, side) -> delegator.getDelegateCapability(Capabilities.Item.BLOCK, side));
+		event.registerBlockEntity(Capabilities.Fluid.BLOCK, ModBlockEntities.BE_DELEGATOR.get(), (delegator, side) -> delegator.getDelegateCapability(Capabilities.Fluid.BLOCK, side));
 
-		event.registerItem(Capabilities.ItemHandler.ITEM, (stack, context) -> InjectorItemInventory.create(InjectorItem.MAX_SLOT_SIZE, stack).getItemHandler(), ModItems.INJECTOR.get());
-		event.registerItem(Capabilities.ItemHandler.ITEM, (stack, context) -> ItemStackInventory.create(StorageSacBlockEntity.SLOTS, 64, stack).getItemHandler(), ModItems.STORAGE_SAC.get());
+		event.registerItem(Capabilities.Item.ITEM, (stack, access) -> new InjectorItemAccessHandler(access, InjectorItem.MAX_SLOT_SIZE), ModItems.INJECTOR.get());
+		event.registerItem(Capabilities.Item.ITEM, (stack, access) -> new ItemAccessItemHandler(access, DataComponents.CONTAINER, StorageSacBlockEntity.SLOTS) {
+			@Override
+			protected int getCapacity(int index, ItemResource resource) {
+				return Math.min(64, super.getCapacity(index, resource));
+			}
+		}, ModItems.STORAGE_SAC.get());
 	}
 
 	public interface IFlagCap {

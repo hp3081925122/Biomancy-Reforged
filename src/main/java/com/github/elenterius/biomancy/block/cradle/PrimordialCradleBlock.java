@@ -1,5 +1,11 @@
 package com.github.elenterius.biomancy.block.cradle;
 
+import com.github.elenterius.biomancy.block.base.BlockTooltipProvider;
+import net.minecraft.world.entity.InsideBlockEffectApplier;
+import com.github.elenterius.biomancy.util.ItemCategoryUtil;
+import net.neoforged.neoforge.transfer.access.ItemAccess;
+import net.minecraft.world.item.component.TooltipDisplay;
+import java.util.function.Consumer;
 import com.github.elenterius.biomancy.item.weapon.gun.GunbladeItem;
 import com.github.elenterius.biomancy.item.weapon.ClawsItem;
 import com.mojang.serialization.MapCodec;
@@ -7,11 +13,10 @@ import com.github.elenterius.biomancy.util.BlockItemUtil;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import com.github.elenterius.biomancy.util.InteractionUtil;
-import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.InteractionResult;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import com.github.elenterius.biomancy.init.*;
 import com.github.elenterius.biomancy.init.tags.ModItemTags;
-import com.github.elenterius.biomancy.integration.ModsCompatHandler;
 import com.github.elenterius.biomancy.sounds.SoundUtil;
 import com.github.elenterius.biomancy.styles.TextStyles;
 import com.github.elenterius.biomancy.util.ComponentUtil;
@@ -58,7 +63,7 @@ import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-public class PrimordialCradleBlock extends HorizontalDirectionalBlock implements EntityBlock {
+public class PrimordialCradleBlock extends HorizontalDirectionalBlock implements BlockTooltipProvider, EntityBlock {
 
 	public static final MapCodec<PrimordialCradleBlock> CODEC = simpleCodec(PrimordialCradleBlock::new);
 
@@ -67,21 +72,17 @@ public class PrimordialCradleBlock extends HorizontalDirectionalBlock implements
 
 		Item item = stack.getItem();
 
-		if (item instanceof TieredItem || item instanceof BowItem || item instanceof CompassItem || item instanceof CrossbowItem || item instanceof FishingRodItem || item instanceof TridentItem || item instanceof ClawsItem || item instanceof GunbladeItem) return true;
+		if (ItemCategoryUtil.isTieredTool(stack) || item instanceof BowItem || item instanceof CompassItem || item instanceof CrossbowItem || item instanceof FishingRodItem || item instanceof TridentItem || item instanceof ClawsItem || item instanceof GunbladeItem) return true;
 
 		if (item instanceof BlockItem blockItem) {
 			Block block = blockItem.getBlock();
 
-			if (ModsCompatHandler.getOverweightFarmingHelper().isOverweightBlock(block)) return false;
-
 			if (block instanceof EntityBlock) return true;
 		}
 
-		if (ModsCompatHandler.getTetraHelper().isToolOrModularItem(item)) return true;
-
 		if (stack.isEnchanted()) return true;
 		if (!item.canFitInsideContainerItems()) return true;
-		return stack.getCapability(Capabilities.ItemHandler.ITEM) != null;
+		return stack.getCapability(Capabilities.Item.ITEM, ItemAccess.forStack(stack)) != null;
 	};
 
 	protected static final VoxelShape INSIDE_AABB = box(3, 4, 3, 13, 16, 13);
@@ -111,7 +112,7 @@ public class PrimordialCradleBlock extends HorizontalDirectionalBlock implements
 	}
 
 	public static int getPrimalEnergy(CompoundTag tag) {
-		return tag.contains(PrimordialCradleBlockEntity.PRIMAL_ENERGY_KEY) ? tag.getInt(PrimordialCradleBlockEntity.PRIMAL_ENERGY_KEY) : 0;
+		return tag.contains(PrimordialCradleBlockEntity.PRIMAL_ENERGY_KEY) ? tag.getIntOr(PrimordialCradleBlockEntity.PRIMAL_ENERGY_KEY, 0) : 0;
 	}
 
 	public static MutableComponent createValueComponent(DecimalFormat df, int value, String name) {
@@ -138,24 +139,14 @@ public class PrimordialCradleBlock extends HorizontalDirectionalBlock implements
 		return ModBlockEntities.PRIMORDIAL_CRADLE.get().create(pos, state);
 	}
 
-	@Override
-	public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
-		if (!state.is(newState.getBlock())) {
-			if (level instanceof ServerLevel serverLevel) {
-				SpatialDBManager.getInstance(serverLevel).removeShape(serverLevel, pos);
-			}
-			super.onRemove(state, level, pos, newState, isMoving);
-		}
-	}
-
 	@Nullable
 	@Override
 	public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> blockEntityType) {
-		return level.isClientSide ? null : createTickerHelper(blockEntityType, ModBlockEntities.PRIMORDIAL_CRADLE.get(), PrimordialCradleBlockEntity::serverTick);
+		return level.isClientSide() ? null : createTickerHelper(blockEntityType, ModBlockEntities.PRIMORDIAL_CRADLE.get(), PrimordialCradleBlockEntity::serverTick);
 	}
 
 	@Override
-	protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+	protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
 		return InteractionUtil.toItemInteractionResult(use(state, level, pos, player, hand, hit));
 	}
 
@@ -163,15 +154,15 @@ public class PrimordialCradleBlock extends HorizontalDirectionalBlock implements
 		ItemStack stack = player.getItemInHand(hand);
 
 		if (increaseFillLevel(player, level, pos, stack.copyWithCount(1))) {
-			if (!level.isClientSide) {
+			if (!level.isClientSide()) {
 				boolean isPotion = stack.getItem() instanceof PotionItem;
 
 				if (!player.isCreative()) {
 					stack.shrink(1);
 				}
 
-				if (stack.hasCraftingRemainingItem()) {
-					player.getInventory().add(stack.getCraftingRemainingItem());
+				if (stack.getCraftingRemainder() != null) {
+					player.getInventory().add(stack.getCraftingRemainder().create());
 				}
 				else if (isPotion && stack.isEmpty()) {
 					player.getInventory().add(new ItemStack(Items.GLASS_BOTTLE));
@@ -180,7 +171,7 @@ public class PrimordialCradleBlock extends HorizontalDirectionalBlock implements
 			}
 			return InteractionResult.SUCCESS;
 		}
-		if (!level.isClientSide) {
+		if (!level.isClientSide()) {
 			SoundUtil.Server.playBlockSound((ServerLevel) level, pos, ModSoundEvents.CRADLE_NO);
 		}
 
@@ -188,7 +179,7 @@ public class PrimordialCradleBlock extends HorizontalDirectionalBlock implements
 	}
 
 	@Override
-	public void entityInside(BlockState state, Level level, BlockPos pos, Entity entity) {
+	public void entityInside(BlockState state, Level level, BlockPos pos, Entity entity, InsideBlockEffectApplier effectApplier, boolean isPrecise) {
 		if (!level.isClientSide() && entity instanceof ItemEntity itemEntity) {
 			ItemStack stack = itemEntity.getItem();
 			Entity thrower = itemEntity.getOwner();
@@ -198,11 +189,11 @@ public class PrimordialCradleBlock extends HorizontalDirectionalBlock implements
 			}
 
 			if (increaseFillLevel(thrower, level, pos, stack)) {
-				if (stack.hasCraftingRemainingItem()) {
-					entity.spawnAtLocation(stack.getCraftingRemainingItem());
+				if (stack.getCraftingRemainder() != null) {
+					entity.spawnAtLocation((ServerLevel) level, stack.getCraftingRemainder().create());
 				}
 				else if (stack.getItem() instanceof PotionItem) {
-					entity.spawnAtLocation(new ItemStack(Items.GLASS_BOTTLE));
+					entity.spawnAtLocation((ServerLevel) level, new ItemStack(Items.GLASS_BOTTLE));
 				}
 			}
 		}
@@ -228,7 +219,7 @@ public class PrimordialCradleBlock extends HorizontalDirectionalBlock implements
 
 	@Override
 	public RenderShape getRenderShape(BlockState state) {
-		return RenderShape.ENTITYBLOCK_ANIMATED;
+		return RenderShape.INVISIBLE;
 	}
 
 	@Override
@@ -253,8 +244,8 @@ public class PrimordialCradleBlock extends HorizontalDirectionalBlock implements
 		}
 	}
 
-	@Override
-	public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
+	
+	public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag flag) {
 		CompoundTag tag = BlockItemUtil.getBlockEntityData(stack);
 		if (tag == null) return;
 
@@ -266,52 +257,58 @@ public class PrimordialCradleBlock extends HorizontalDirectionalBlock implements
 		boolean hasProcGenValues = tag.contains(PrimordialCradleBlockEntity.PROC_GEN_VALUES_KEY);
 
 		if (hasProcGenValues) {
-			tooltip.add(ComponentUtil.EMPTY_LINE);
-			tooltip.add(ComponentUtil.literal("Seeded with:").withStyle(TextStyles.PRIMORDIAL_RUNES_MUTED_PURPLE));
+			tooltip.accept(ComponentUtil.EMPTY_LINE);
+			tooltip.accept(ComponentUtil.literal("Seeded with:").withStyle(TextStyles.PRIMORDIAL_RUNES_MUTED_PURPLE));
 
-			MoundShape.ProcGenValues procGenValues = MoundShape.ProcGenValues.readFrom(tag.getCompound(PrimordialCradleBlockEntity.PROC_GEN_VALUES_KEY));
+			MoundShape.ProcGenValues procGenValues = MoundShape.ProcGenValues.readFrom(tag.getCompoundOrEmpty(PrimordialCradleBlockEntity.PROC_GEN_VALUES_KEY));
 
-			tooltip.add(
+			tooltip.accept(
 					ComponentUtil.literal(df.format(procGenValues.biomeTemperature()))
 							.withStyle(TextStyles.PRIMORDIAL_RUNES_PURPLE)
 							.append(ComponentUtil.literal(" Temperature").withStyle(TextStyles.PRIMORDIAL_RUNES_MUTED_PURPLE))
 			);
-			tooltip.add(
+			tooltip.accept(
 					ComponentUtil.literal(df.format(procGenValues.biomeHumidity()))
 							.withStyle(TextStyles.PRIMORDIAL_RUNES_PURPLE)
 							.append(ComponentUtil.literal(" Humidity").withStyle(TextStyles.PRIMORDIAL_RUNES_MUTED_PURPLE))
 			);
 
-			if (!hasPrimalEnergy) tooltip.add(ComponentUtil.EMPTY_LINE);
+			if (!hasPrimalEnergy) tooltip.accept(ComponentUtil.EMPTY_LINE);
 		}
 
 		if (hasPrimalEnergy) {
-			tooltip.add(ComponentUtil.EMPTY_LINE);
-			tooltip.add(
+			tooltip.accept(ComponentUtil.EMPTY_LINE);
+			tooltip.accept(
 					ComponentUtil.literal(df.format(primalEnergy)).withStyle(TextStyles.PRIMORDIAL_RUNES_PURPLE)
 							.append(ComponentUtil.literal(" Primal Energy").withStyle(TextStyles.PRIMORDIAL_RUNES_MUTED_PURPLE))
 			);
 
-			if (!hasTributes) tooltip.add(ComponentUtil.EMPTY_LINE);
+			if (!hasTributes) tooltip.accept(ComponentUtil.EMPTY_LINE);
 		}
 
 		if (hasTributes) {
-			tooltip.add(ComponentUtil.EMPTY_LINE);
+			tooltip.accept(ComponentUtil.EMPTY_LINE);
 
-			CompoundTag sacrificeTag = tag.getCompound(PrimordialCradleBlockEntity.SACRIFICE_KEY);
-			byte biomass = sacrificeTag.getByte("Biomass");
-			int lifeEnergy = sacrificeTag.getInt("LifeEnergy");
-			int success = sacrificeTag.getInt("Success");
-			int disease = sacrificeTag.getInt("Disease");
-			int hostile = sacrificeTag.getInt("Hostile");
-			int anomaly = sacrificeTag.getInt("Anomaly");
+			CompoundTag sacrificeTag = tag.getCompoundOrEmpty(PrimordialCradleBlockEntity.SACRIFICE_KEY);
+			byte biomass = sacrificeTag.getByteOr("Biomass", (byte) 0);
+			int lifeEnergy = sacrificeTag.getIntOr("LifeEnergy", 0);
+			int success = sacrificeTag.getIntOr("Success", 0);
+			int disease = sacrificeTag.getIntOr("Disease", 0);
+			int hostile = sacrificeTag.getIntOr("Hostile", 0);
+			int anomaly = sacrificeTag.getIntOr("Anomaly", 0);
 
-			if (biomass > 0) tooltip.add(createValueComponent(df, biomass, "Biomass"));
-			if (lifeEnergy > 0) tooltip.add(createValueComponent(df, lifeEnergy, "Life Energy"));
-			if (success > 0) tooltip.add(createValueComponent(df, success, "Success"));
-			if (disease > 0) tooltip.add(createValueComponent(df, disease, "Disease"));
-			if (hostile != 0) tooltip.add(createValueComponent(df, hostile, "Hostile"));
-			if (anomaly > 0) tooltip.add(createValueComponent(df, anomaly, "Anomaly"));
+			if (biomass > 0) tooltip.accept(createValueComponent(df, biomass, "Biomass"));
+			if (lifeEnergy > 0) tooltip.accept(createValueComponent(df, lifeEnergy, "Life Energy"));
+			if (success > 0) tooltip.accept(createValueComponent(df, success, "Success"));
+			if (disease > 0) tooltip.accept(createValueComponent(df, disease, "Disease"));
+			if (hostile != 0) tooltip.accept(createValueComponent(df, hostile, "Hostile"));
+			if (anomaly > 0) tooltip.accept(createValueComponent(df, anomaly, "Anomaly"));
 		}
+	}
+
+	@Override
+	protected void affectNeighborsAfterRemoval(BlockState state, ServerLevel level, BlockPos pos, boolean movedByPiston) {
+		SpatialDBManager.getInstance(level).removeShape(level, pos);
+		super.affectNeighborsAfterRemoval(state, level, pos, movedByPiston);
 	}
 }

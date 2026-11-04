@@ -15,13 +15,13 @@ public interface KeyPressListener {
 		EquipmentSlot slotType = getEquipmentSlotTypeFrom(slotIndex);
 		if (slotType != null) {
 			ItemStack heldStack = player.getItemBySlot(slotType);
-			if ((heldStack.getItem() instanceof KeyPressListener keyListener) && !(player.getCooldowns().isOnCooldown(heldStack.getItem()))) {
+			if ((heldStack.getItem() instanceof KeyPressListener keyListener) && !(player.getCooldowns().isOnCooldown(heldStack))) {
 				keyListener.onServerReceiveKeyPress(heldStack, world, player, flag);
 			}
 		}
 		else {
 			ItemStack stackInSlot = player.getInventory().getItem(slotIndex);
-			if (!stackInSlot.isEmpty() && (stackInSlot.getItem() instanceof KeyPressListener keyListener) && !(player.getCooldowns().isOnCooldown(stackInSlot.getItem()))) {
+			if (!stackInSlot.isEmpty() && (stackInSlot.getItem() instanceof KeyPressListener keyListener) && !(player.getCooldowns().isOnCooldown(stackInSlot))) {
 				keyListener.onServerReceiveKeyPress(stackInSlot, world, player, flag);
 			}
 		}
@@ -30,7 +30,7 @@ public interface KeyPressListener {
 	static @Nullable EquipmentSlot getEquipmentSlotTypeFrom(int slotIndex) {
 		if (slotIndex < 0 || slotIndex > 5) return null;
 		for (EquipmentSlot equipmentSlotType : EquipmentSlot.values()) {
-			if (equipmentSlotType.getFilterFlag() == slotIndex) {
+			if (equipmentSlotType.getFilterBit(0) == slotIndex) {
 				return equipmentSlotType;
 			}
 		}

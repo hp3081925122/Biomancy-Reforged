@@ -3,15 +3,15 @@
   "input": {
     "0": {
       "count": 8,
-      "id": "biomancy:flesh_bits"
+      "ingredient": "biomancy:flesh_bits"
     },
     "1": {
       "count": 16,
-      "id": "biomancy:bone_fragments"
+      "ingredient": "biomancy:bone_fragments"
     },
     "2": {
       "count": 4,
-      "id": "biomancy:mineral_fragment"
+      "ingredient": "biomancy:mineral_fragment"
     }
   },
   "output": {

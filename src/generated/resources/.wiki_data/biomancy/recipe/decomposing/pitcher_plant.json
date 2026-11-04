@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "minecraft:pitcher_plant"
+      "ingredient": "minecraft:pitcher_plant"
     }
   },
   "output": {

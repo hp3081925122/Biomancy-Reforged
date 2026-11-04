@@ -31,7 +31,7 @@ public final class ClientInputHandler {
 		LocalPlayer player = Minecraft.getInstance().player;
 		if (player == null) return;
 
-		InputConstants.Key key = InputConstants.getKey(event.getKey(), event.getScanCode());
+		InputConstants.Key key = InputConstants.getKey(event.getKeyEvent());
 
 		if (ModKeyBindings.MAIN_HAND_ITEM_ACTION.isActiveAndMatches(key)) {
 			handleEquipmentSlot(EquipmentSlot.MAINHAND, player);
@@ -55,7 +55,7 @@ public final class ClientInputHandler {
 	private static void handleEquipmentSlot(EquipmentSlot slot, LocalPlayer player) {
 		ItemStack stack = player.getItemBySlot(slot);
 		if (!stack.isEmpty() && stack.getItem() instanceof KeyPressListener keyListener) {
-			KeyPressListener.KeyPressResult result = keyListener.onClientKeyPress(stack, player.clientLevel, player, slot, KeyPressListener.KeyPressResult.NO_FLAGS);
+			KeyPressListener.KeyPressResult result = keyListener.onClientKeyPress(stack, player.level(), player, slot, KeyPressListener.KeyPressResult.NO_FLAGS);
 			if (result.success()) {
 				ModNetworkHandler.sendKeyBindPressToServer(slot, result.flags());
 			}

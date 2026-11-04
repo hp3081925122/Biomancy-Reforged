@@ -9,17 +9,18 @@ import com.github.elenterius.biomancy.init.tags.ModItemTags;
 import com.github.elenterius.biomancy.statuseffect.StatusEffectHandler;
 import net.minecraft.core.Direction;
 import net.minecraft.core.cauldron.CauldronInteraction;
+import net.minecraft.core.cauldron.CauldronInteractions;
 import net.minecraft.core.dispenser.DefaultDispenseItemBehavior;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.stats.Stats;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Item;
@@ -46,7 +47,8 @@ import java.util.Optional;
 
 public final class AcidInteractions {
 
-	public static final CauldronInteraction.InteractionMap ACID_CAULDRON = CauldronInteraction.newInteractionMap(BiomancyMod.MOD_ID + ":acid");
+	public static final Identifier ACID_CAULDRON_ID = BiomancyMod.rl("acid");
+	public static final CauldronInteraction.Dispatcher ACID_CAULDRON = new CauldronInteraction.Dispatcher();
 
 	public static final Map<Block, BlockState> NORMAL_TO_ERODED_BLOCK_CONVERSION = Map.of(
 			Blocks.GRASS_BLOCK, Blocks.DIRT.defaultBlockState(),
@@ -67,14 +69,13 @@ public final class AcidInteractions {
 	private static void registerCauldronInteractions() {
 		final CauldronInteraction fillWithAcid = (state, level, pos, player, hand, stack) -> {
 			SoundEvent sound = Objects.requireNonNullElse(ModFluids.ACID_TYPE.get().getSound(SoundActions.BUCKET_EMPTY), SoundEvents.BUCKET_EMPTY);
-			return CauldronInteraction.emptyBucket(level, pos, player, hand, stack, ModBlocks.ACID_CAULDRON.get().defaultBlockState().setValue(LayeredCauldronBlock.LEVEL, 3), sound);
+			return CauldronInteractions.emptyBucket(level, pos, player, hand, stack, ModBlocks.ACID_CAULDRON.get().defaultBlockState().setValue(LayeredCauldronBlock.LEVEL, 3), sound);
 		};
 
-		CauldronInteraction.EMPTY.map().put(ModItems.ACID_BUCKET.get(), fillWithAcid);
+		CauldronInteractions.EMPTY.put(ModItems.ACID_BUCKET.get(), fillWithAcid);
 
-		final CauldronInteraction originalPotionInteraction = Objects.requireNonNull(CauldronInteraction.EMPTY.map().get(Items.POTION));
-		CauldronInteraction.EMPTY.map().put(ModItems.ACID_EXTRACT.get(), (state, level, pos, player, hand, stack) -> {
-			if (!level.isClientSide) {
+		CauldronInteractions.EMPTY.put(ModItems.ACID_EXTRACT.get(), (state, level, pos, player, hand, stack) -> {
+			if (!level.isClientSide()) {
 				player.setItemInHand(hand, ItemUtils.createFilledResult(stack, player, ModItems.VIAL.get().getDefaultInstance()));
 				player.awardStat(Stats.USE_CAULDRON);
 				player.awardStat(Stats.ITEM_USED.get(stack.getItem()));
@@ -83,16 +84,16 @@ public final class AcidInteractions {
 				level.gameEvent(player, GameEvent.FLUID_PLACE, pos);
 			}
 
-			return ItemInteractionResult.sidedSuccess(level.isClientSide);
+			return InteractionResult.SUCCESS;
 		});
 
-		ACID_CAULDRON.map().put(ModItems.ACID_BUCKET.get(), fillWithAcid);
-		ACID_CAULDRON.map().put(Items.BUCKET, (state, level, pos, player, hand, stack) -> {
+		ACID_CAULDRON.put(ModItems.ACID_BUCKET.get(), fillWithAcid);
+		ACID_CAULDRON.put(Items.BUCKET, (state, level, pos, player, hand, stack) -> {
 			SoundEvent sound = Objects.requireNonNullElse(ModFluids.ACID_TYPE.get().getSound(SoundActions.BUCKET_FILL), SoundEvents.BUCKET_FILL);
-			return CauldronInteraction.fillBucket(state, level, pos, player, hand, stack, ModItems.ACID_BUCKET.get().getDefaultInstance(), AcidInteractions::isCauldronFull, sound);
+			return CauldronInteractions.fillBucket(state, level, pos, player, hand, stack, ModItems.ACID_BUCKET.get().getDefaultInstance(), AcidInteractions::isCauldronFull, sound);
 		});
-		ACID_CAULDRON.map().put(ModItems.VIAL.get(), (state, level, pos, player, hand, stack) -> {
-			if (!level.isClientSide) {
+		ACID_CAULDRON.put(ModItems.VIAL.get(), (state, level, pos, player, hand, stack) -> {
+			if (!level.isClientSide()) {
 				player.setItemInHand(hand, ItemUtils.createFilledResult(stack, player, ModItems.ACID_EXTRACT.get().getDefaultInstance()));
 				player.awardStat(Stats.USE_CAULDRON);
 				player.awardStat(Stats.ITEM_USED.get(stack.getItem()));
@@ -101,11 +102,11 @@ public final class AcidInteractions {
 				level.gameEvent(player, GameEvent.FLUID_PICKUP, pos);
 			}
 
-			return ItemInteractionResult.sidedSuccess(level.isClientSide);
+			return InteractionResult.SUCCESS;
 		});
-		ACID_CAULDRON.map().put(ModItems.ACID_EXTRACT.get(), (state, level, pos, player, hand, stack) -> {
+		ACID_CAULDRON.put(ModItems.ACID_EXTRACT.get(), (state, level, pos, player, hand, stack) -> {
 			if (!isCauldronFull(state)) {
-				if (!level.isClientSide) {
+				if (!level.isClientSide()) {
 					player.setItemInHand(hand, ItemUtils.createFilledResult(stack, player, ModItems.VIAL.get().getDefaultInstance()));
 					player.awardStat(Stats.USE_CAULDRON);
 					player.awardStat(Stats.ITEM_USED.get(stack.getItem()));
@@ -114,10 +115,10 @@ public final class AcidInteractions {
 					level.gameEvent(player, GameEvent.FLUID_PLACE, pos);
 				}
 
-				return ItemInteractionResult.sidedSuccess(level.isClientSide);
+				return InteractionResult.SUCCESS;
 			}
 
-			return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+			return InteractionResult.TRY_WITH_EMPTY_HAND;
 		});
 	}
 
@@ -150,7 +151,7 @@ public final class AcidInteractions {
 	}
 
 	public static void handleEntityInsideAcid(LivingEntity livingEntity) {
-		if (!livingEntity.level().isClientSide) {
+		if (!livingEntity.level().isClientSide()) {
 			StatusEffectHandler.applyCorrosiveEffect(livingEntity, 4);
 		}
 		else if (livingEntity.tickCount % 10 == 0 && livingEntity.getRandom().nextFloat() < 0.4f) {
@@ -187,9 +188,9 @@ public final class AcidInteractions {
 			CompoundTag entityData = itemEntity.getPersistentData();
 			CompoundTag digestionData = getOrCreateDigestionData(entityData);
 
-			int digestionTimer = digestionData.getInt(TIMER_KEY);
+			int digestionTimer = digestionData.getIntOr(TIMER_KEY, 0);
 
-			if (level.isClientSide && digestionTimer > 0) {
+			if (level.isClientSide() && digestionTimer > 0) {
 				RandomSource random = level.getRandom();
 				Vec3 pos = itemEntity.position();
 				double y = itemEntity.getY(1d) + 0.1d;
@@ -207,12 +208,12 @@ public final class AcidInteractions {
 				return;
 			}
 
-			ResourceLocation lastRecipeId = ResourceLocation.tryParse(digestionData.getString(RECIPE_KEY));
+			Identifier lastRecipeId = Identifier.tryParse(digestionData.getStringOr(RECIPE_KEY, ""));
 			Optional<RecipeHolder<DigestingRecipe>> optionalRecipe = DigesterBlockEntity.RECIPE_TYPE.get().getBestRecipeForIngredient(level, itemStack, lastRecipeId);
 
 			if (optionalRecipe.isEmpty()) return;
 
-			ResourceLocation recipeId = optionalRecipe.get().id();
+			Identifier recipeId = optionalRecipe.get().id().identifier();
 			DigestingRecipe recipe = optionalRecipe.get().value();
 
 			if (!recipeId.equals(lastRecipeId)) {
@@ -222,12 +223,12 @@ public final class AcidInteractions {
 				digestionData.putInt(DELAY_KEY, recipe.getCraftingTimeTicks(inventory) / 40);
 			}
 
-			if (digestionTimer < BASE_DELAY + digestionData.getInt(DELAY_KEY)) {
+			if (digestionTimer < BASE_DELAY + digestionData.getIntOr(DELAY_KEY, 0)) {
 				digestionData.putInt(TIMER_KEY, digestionTimer + 1);
 				entityData.put(BASE_DATA_KEY, digestionData);
 			}
 			else {
-				if (!level.isClientSide) {
+				if (!level.isClientSide()) {
 					digestAtPos(itemEntity.level(), itemEntity.position(), itemStack, 8, recipe);
 
 					if (itemStack.isEmpty()) {
@@ -243,7 +244,7 @@ public final class AcidInteractions {
 		}
 
 		public static CompoundTag getOrCreateDigestionData(CompoundTag entityData) {
-			if (entityData.contains(BASE_DATA_KEY)) return entityData.getCompound(BASE_DATA_KEY);
+			if (entityData.contains(BASE_DATA_KEY)) return entityData.getCompoundOrEmpty(BASE_DATA_KEY);
 			return new CompoundTag();
 		}
 
@@ -258,7 +259,7 @@ public final class AcidInteractions {
 
 			int amount = Math.min(inputStack.getCount(), maxAmount);
 
-			ItemStack outputStack = recipe.assemble(inventory, level.registryAccess());
+			ItemStack outputStack = recipe.assemble(inventory);
 			double fuelValue = Nutrients.getFuelValue(outputStack);
 			double craftingCost = recipe.getCraftingCostNutrients(inventory) / fuelValue;
 			double totalCount = (outputStack.getCount() * amount - craftingCost * amount) * EFFICIENCY;

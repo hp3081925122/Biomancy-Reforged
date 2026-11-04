@@ -1,8 +1,6 @@
 {
   "type": "biomancy:digesting",
-  "ingredient": {
-    "item": "minecraft:warped_roots"
-  },
+  "ingredient": "minecraft:warped_roots",
   "nutrientsCost": 2,
   "processingTime": 332,
   "result": {

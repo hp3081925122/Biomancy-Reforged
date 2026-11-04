@@ -1,7 +1,7 @@
 {
   "type": "biomancy:decomposing",
   "ingredient": {
-    "tag": "c:crops"
+    "ingredient": "#c:crops"
   },
   "nutrientsCost": 1,
   "processingTime": 80,

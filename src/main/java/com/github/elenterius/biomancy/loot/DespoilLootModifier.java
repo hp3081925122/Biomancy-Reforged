@@ -6,13 +6,13 @@ import com.github.elenterius.biomancy.util.EnchantmentUtil;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import net.minecraft.advancements.critereon.EntityFlagsPredicate;
-import net.minecraft.advancements.critereon.EntityPredicate;
+import net.minecraft.advancements.criterion.EntityFlagsPredicate;
+import net.minecraft.advancements.criterion.EntityPredicate;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
@@ -53,20 +53,24 @@ public class DespoilLootModifier extends LootModifier {
 	}
 
 	public DespoilLootModifier(LootItemCondition[] conditions) {
-		super(conditions);
+		this(conditions, IGlobalLootModifier.DEFAULT_PRIORITY);
 	}
 
-	public static ResourceLocation getLootTableId(EntityType<?> entityType) {
-		ResourceLocation key = BuiltInRegistries.ENTITY_TYPE.getKey(entityType);
+	public DespoilLootModifier(LootItemCondition[] conditions, int priority) {
+		super(conditions, priority);
+	}
+
+	public static Identifier getLootTableId(EntityType<?> entityType) {
+		Identifier key = BuiltInRegistries.ENTITY_TYPE.getKey(entityType);
 		return key.withPrefix(LOOT_PREFIX);
 	}
 
-	public static ResourceLocation getLootTableId(ResourceLocation entityTypeId) {
+	public static Identifier getLootTableId(Identifier entityTypeId) {
 		return entityTypeId.withPrefix(LOOT_PREFIX);
 	}
 
 	protected static int getDespoilLevel(LootContext lootContext) {
-		Entity killer = lootContext.getParamOrNull(LootContextParams.ATTACKING_ENTITY);
+		Entity killer = lootContext.getOptionalParameter(LootContextParams.ATTACKING_ENTITY);
 		if (killer instanceof LivingEntity livingEntity) {
 			Optional<Holder.Reference<Enchantment>> despoil = EnchantmentUtil.getHolder(livingEntity.registryAccess(), ModEnchantments.DESPOIL);
 			int itemDespoilLevel = despoil.map(enchantment -> enchantment.value().getSlotItems(livingEntity).values().stream()
@@ -84,7 +88,7 @@ public class DespoilLootModifier extends LootModifier {
 	}
 
 	protected static boolean isUsingTool(LootContext lootContext) {
-		Entity killer = lootContext.getParamOrNull(LootContextParams.ATTACKING_ENTITY);
+		Entity killer = lootContext.getOptionalParameter(LootContextParams.ATTACKING_ENTITY);
 
 		if (killer instanceof LivingEntity livingEntity) {
 			ItemStack stack = livingEntity.getMainHandItem();
@@ -105,7 +109,7 @@ public class DespoilLootModifier extends LootModifier {
 
 	@Override
 	protected ObjectArrayList<ItemStack> doApply(ObjectArrayList<ItemStack> generatedLoot, LootContext context) {
-		Entity thisEntity = context.getParamOrNull(LootContextParams.THIS_ENTITY);
+		Entity thisEntity = context.getOptionalParameter(LootContextParams.THIS_ENTITY);
 
 		if (thisEntity instanceof LivingEntity || thisEntity instanceof Player) {
 			LootTable lootTable = getLootTable(context.getLevel(), thisEntity);
@@ -140,14 +144,14 @@ public class DespoilLootModifier extends LootModifier {
 
 	protected LootParams createLootParams(LootContext context) {
 		LootParams.Builder builder = new LootParams.Builder(context.getLevel())
-				.withParameter(LootContextParams.THIS_ENTITY, context.getParam(LootContextParams.THIS_ENTITY))
-				.withParameter(LootContextParams.ORIGIN, context.getParam(LootContextParams.ORIGIN))
-				.withParameter(LootContextParams.DAMAGE_SOURCE, context.getParam(LootContextParams.DAMAGE_SOURCE))
-				.withOptionalParameter(LootContextParams.ATTACKING_ENTITY, context.getParamOrNull(LootContextParams.ATTACKING_ENTITY))
-				.withOptionalParameter(LootContextParams.DIRECT_ATTACKING_ENTITY, context.getParamOrNull(LootContextParams.DIRECT_ATTACKING_ENTITY));
+				.withParameter(LootContextParams.THIS_ENTITY, context.getParameter(LootContextParams.THIS_ENTITY))
+				.withParameter(LootContextParams.ORIGIN, context.getParameter(LootContextParams.ORIGIN))
+				.withParameter(LootContextParams.DAMAGE_SOURCE, context.getParameter(LootContextParams.DAMAGE_SOURCE))
+				.withOptionalParameter(LootContextParams.ATTACKING_ENTITY, context.getOptionalParameter(LootContextParams.ATTACKING_ENTITY))
+				.withOptionalParameter(LootContextParams.DIRECT_ATTACKING_ENTITY, context.getOptionalParameter(LootContextParams.DIRECT_ATTACKING_ENTITY));
 
-		if (context.hasParam(LootContextParams.LAST_DAMAGE_PLAYER)) {
-			Player player = context.getParam(LootContextParams.LAST_DAMAGE_PLAYER);
+		if (context.hasParameter(LootContextParams.LAST_DAMAGE_PLAYER)) {
+			Player player = context.getParameter(LootContextParams.LAST_DAMAGE_PLAYER);
 			builder = builder.withParameter(LootContextParams.LAST_DAMAGE_PLAYER, player).withLuck(player.getLuck());
 		}
 

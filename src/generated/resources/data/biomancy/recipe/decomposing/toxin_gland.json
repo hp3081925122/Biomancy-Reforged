@@ -1,7 +1,7 @@
 {
   "type": "biomancy:decomposing",
   "ingredient": {
-    "item": "biomancy:toxin_gland"
+    "ingredient": "biomancy:toxin_gland"
   },
   "nutrientsCost": 1,
   "processingTime": 184,

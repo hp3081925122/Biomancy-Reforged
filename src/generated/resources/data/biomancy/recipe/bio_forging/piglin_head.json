@@ -3,19 +3,21 @@
   "bio_forge_tab": "biomancy:components",
   "ingredients": [
     {
-      "item": "minecraft:skeleton_skull"
+      "ingredient": "minecraft:skeleton_skull"
     },
     {
-      "type": "biomancy:essence",
-      "entity_type": "minecraft:piglin"
+      "ingredient": {
+        "neoforge:ingredient_type": "biomancy:essence",
+        "entity_type": "minecraft:piglin"
+      }
     },
     {
       "count": 42,
-      "item": "biomancy:flesh_bits"
+      "ingredient": "biomancy:flesh_bits"
     },
     {
       "count": 18,
-      "item": "biomancy:elastic_fibers"
+      "ingredient": "biomancy:elastic_fibers"
     }
   ],
   "nutrientsCost": 4,

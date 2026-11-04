@@ -1,0 +1,9 @@
+{
+  "model": {
+    "type": "minecraft:special",
+    "base": "biomancy:item/guide_book",
+    "model": {
+      "type": "geckolib:geckolib"
+    }
+  }
+}

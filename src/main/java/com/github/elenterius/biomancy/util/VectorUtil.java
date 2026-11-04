@@ -41,12 +41,12 @@ public class VectorUtil {
 	}
 
 	public static Vec3i axisAlignedPlane3i(Direction direction) {
-		Vec3i normal = direction.getNormal();
+		Vec3i normal = direction.getUnitVec3i();
 		return new Vec3i(1 - Math.abs(normal.getX()), 1 - Math.abs(normal.getY()), 1 - Math.abs(normal.getZ()));
 	}
 
 	public static Vec3 axisAlignedPlane3d(Direction direction) {
-		Vec3i normal = direction.getNormal();
+		Vec3i normal = direction.getUnitVec3i();
 		return new Vec3(1d - Math.abs(normal.getX()), 1d - Math.abs(normal.getY()), 1d - Math.abs(normal.getZ()));
 	}
 

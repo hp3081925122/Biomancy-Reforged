@@ -1,5 +1,8 @@
 package com.github.elenterius.biomancy.entity.mob;
 
+import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.level.storage.ValueInput;
 import com.github.elenterius.biomancy.init.ModEntityTypes;
 import com.github.elenterius.biomancy.init.ModMobEffects;
 import net.minecraft.nbt.CompoundTag;
@@ -11,7 +14,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.animal.Sheep;
+import net.minecraft.world.entity.animal.sheep.Sheep;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
 import org.jspecify.annotations.Nullable;
@@ -35,15 +38,15 @@ public class ThickFurSheep extends Sheep {
 	}
 
 	@Override
-	public void addAdditionalSaveData(CompoundTag compound) {
-		super.addAdditionalSaveData(compound);
-		compound.putByte(WOOL_SIZE_TAG, (byte) getWoolSize());
+	public void addAdditionalSaveData(ValueOutput output) {
+		super.addAdditionalSaveData(output);
+		output.putByte(WOOL_SIZE_TAG, (byte) getWoolSize());
 	}
 
 	@Override
-	public void readAdditionalSaveData(CompoundTag compound) {
-		super.readAdditionalSaveData(compound);
-		setWoolSize(compound.getByte(WOOL_SIZE_TAG));
+	public void readAdditionalSaveData(ValueInput input) {
+		super.readAdditionalSaveData(input);
+		setWoolSize(input.getByteOr(WOOL_SIZE_TAG, (byte) 0));
 	}
 
 	@Override
@@ -54,7 +57,7 @@ public class ThickFurSheep extends Sheep {
 
 	@Nullable
 	@Override
-	public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType spawnType, @Nullable SpawnGroupData data) {
+	public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, EntitySpawnReason spawnType, @Nullable SpawnGroupData data) {
 		SpawnGroupData spawnData = super.finalizeSpawn(level, difficulty, spawnType, data);
 		setWoolSize(!isSheared() ? (byte) 1 : (byte) 0);
 		return spawnData;
@@ -117,10 +120,10 @@ public class ThickFurSheep extends Sheep {
 	public Sheep getBreedOffspring(ServerLevel level, AgeableMob otherParent) {
 		float p = (hasEffect(ModMobEffects.LIBIDO) ? 0.1f : 0f) + (otherParent.hasEffect(ModMobEffects.LIBIDO) ? 0.1f : 0f);
 		if (p > 0 && random.nextFloat() < p) {
-			return ModEntityTypes.FLESH_SHEEP.get().create(level);
+			return ModEntityTypes.FLESH_SHEEP.get().create(level, EntitySpawnReason.BREEDING);
 		}
 
-		return ModEntityTypes.THICK_FUR_SHEEP.get().create(level);
+		return ModEntityTypes.THICK_FUR_SHEEP.get().create(level, EntitySpawnReason.BREEDING);
 	}
 
 }

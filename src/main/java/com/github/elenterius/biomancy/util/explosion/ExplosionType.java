@@ -1,39 +1,39 @@
 package com.github.elenterius.biomancy.util.explosion;
 
-import net.minecraft.core.BlockPos;
+import com.github.elenterius.biomancy.init.ModParticleTypes;
+import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.sounds.SoundEvents;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.ExplosionDamageCalculator;
-import net.minecraft.world.level.Level;
+import net.minecraft.world.level.ServerExplosion;
+import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 
-import java.util.List;
+import java.util.function.Supplier;
 
 public enum ExplosionType {
 	VANILLA(
-			(level, source, damageSource, damageCalculator, x, y, z, radius, fire, interaction) -> new Explosion(level, source, damageSource, damageCalculator, x, y, z, radius, fire, interaction, ParticleTypes.EXPLOSION, ParticleTypes.EXPLOSION_EMITTER, SoundEvents.GENERIC_EXPLODE),
-			(level, source, x, y, z, radius, positions) -> new Explosion(level, source, x, y, z, radius, positions, Explosion.BlockInteraction.DESTROY_WITH_DECAY, ParticleTypes.EXPLOSION, ParticleTypes.EXPLOSION_EMITTER, SoundEvents.GENERIC_EXPLODE)
+			(level, source, damageSource, damageCalculator, x, y, z, radius, fire, interaction) -> new ServerExplosion(level, source, damageSource, damageCalculator, new Vec3(x, y, z), radius, fire, interaction),
+			() -> ParticleTypes.EXPLOSION, () -> ParticleTypes.EXPLOSION_EMITTER
 	),
-	DECAY(DecayExplosion::new, DecayExplosion::new),
-	VOLATILE(VolatileExplosion::new, VolatileExplosion::new);
+	DECAY(DecayExplosion::new, ModParticleTypes.DECAY_EXPLOSION::get, ModParticleTypes.DECAY_EXPLOSION_EMITTER::get),
+	VOLATILE(VolatileExplosion::new, ModParticleTypes.VOLATILE_EXPLOSION::get, ModParticleTypes.VOLATILE_EXPLOSION_EMITTER::get);
 
-	public final ServerExplosionFactory<? extends Explosion> serverFactory;
-	public final ClientExplosionFactory<? extends Explosion> clientFactory;
+	public final ServerExplosionFactory<? extends ServerExplosion> serverFactory;
+	public final Supplier<? extends ParticleOptions> smallParticle;
+	public final Supplier<? extends ParticleOptions> largeParticle;
 
-	<T extends Explosion> ExplosionType(ServerExplosionFactory<T> serverFactory, ClientExplosionFactory<T> clientFactory) {
-		this.clientFactory = clientFactory;
+	<T extends ServerExplosion> ExplosionType(ServerExplosionFactory<T> serverFactory, Supplier<? extends ParticleOptions> smallParticle, Supplier<? extends ParticleOptions> largeParticle) {
 		this.serverFactory = serverFactory;
+		this.smallParticle = smallParticle;
+		this.largeParticle = largeParticle;
 	}
 
-	public interface ServerExplosionFactory<T extends Explosion> {
-		T create(Level level, @Nullable Entity source, @Nullable DamageSource damageSource, @Nullable ExplosionDamageCalculator damageCalculator, double x, double y, double z, float radius, boolean fire, Explosion.BlockInteraction interaction);
-	}
-
-	public interface ClientExplosionFactory<T extends Explosion> {
-		T create(Level level, @Nullable Entity source, double toBlowX, double toBlowY, double toBlowZ, float radius, List<BlockPos> positions);
+	public interface ServerExplosionFactory<T extends ServerExplosion> {
+		T create(ServerLevel level, @Nullable Entity source, @Nullable DamageSource damageSource, @Nullable ExplosionDamageCalculator damageCalculator, double x, double y, double z, float radius, boolean fire, Explosion.BlockInteraction interaction);
 	}
 
 }

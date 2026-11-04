@@ -94,7 +94,7 @@ public class OnewayMembraneBlock extends FacingBlock implements Membrane {
 	}
 
 	@Override
-	public boolean propagatesSkylightDown(BlockState state, BlockGetter level, BlockPos pos) {
+	public boolean propagatesSkylightDown(BlockState state) {
 		return getFacing(state).getAxis().isHorizontal();
 	}
 

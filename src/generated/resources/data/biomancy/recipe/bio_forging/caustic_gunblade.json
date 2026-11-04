@@ -3,23 +3,23 @@
   "bio_forge_tab": "biomancy:tools",
   "ingredients": [
     {
-      "item": "biomancy:living_flesh"
+      "ingredient": "biomancy:living_flesh"
     },
     {
       "count": 16,
-      "item": "biomancy:flesh_bits"
+      "ingredient": "biomancy:flesh_bits"
     },
     {
       "count": 8,
-      "item": "biomancy:bone_fragments"
+      "ingredient": "biomancy:bone_fragments"
     },
     {
       "count": 2,
-      "item": "biomancy:mob_gland"
+      "ingredient": "biomancy:mob_gland"
     },
     {
       "count": 4,
-      "item": "biomancy:primal_orifice"
+      "ingredient": "biomancy:primal_orifice"
     }
   ],
   "nutrientsCost": 300,

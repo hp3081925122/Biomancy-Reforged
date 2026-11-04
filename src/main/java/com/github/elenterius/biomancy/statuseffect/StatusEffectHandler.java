@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.statuseffect;
 
+import com.github.elenterius.biomancy.util.MobUtil;
 import net.minecraft.core.registries.BuiltInRegistries;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.init.ModMobEffects;
@@ -10,6 +11,7 @@ import com.github.elenterius.biomancy.item.armor.LivingArmorItem;
 import com.github.elenterius.biomancy.serum.FrenzySerum;
 import com.github.elenterius.biomancy.util.OneShotTaskWorker;
 import net.minecraft.core.Holder;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -24,6 +26,8 @@ import net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent;
 import net.neoforged.neoforge.event.entity.living.MobEffectEvent;
 import org.jspecify.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.BiConsumer;
 
 @EventBusSubscriber(modid = BiomancyMod.MOD_ID)
@@ -33,7 +37,7 @@ public final class StatusEffectHandler {
 
 	@SubscribeEvent
 	public static void onEffectAdded(final MobEffectEvent.Added event) {
-		if (event.getEntity().level().isClientSide) return;
+		if (event.getEntity().level().isClientSide()) return;
 
 		if (event.getEffectInstance().getEffect().is(ModMobEffects.FRENZY)) {
 			if (event.getEntity() instanceof Mob mob) {
@@ -48,11 +52,27 @@ public final class StatusEffectHandler {
 
 	@SubscribeEvent
 	public static void onEffectRemoval(final MobEffectEvent.Remove event) {
-		if (event.getEntity().level().isClientSide) return;
+		if (event.getEntity().level().isClientSide()) return;
 
 		if (event.getEffect().is(ModMobEffects.ESSENCE_ANEMIA) && ModMobEffectTags.isNotRemovableWithCleansingSerum(ModMobEffects.ESSENCE_ANEMIA)) {
 			event.setCanceled(true);
 		}
+	}
+
+	public static boolean clearEffectsCuredBy(LivingEntity livingEntity, ItemStack stack) {
+		boolean clearAll = stack.has(DataComponents.DEATH_PROTECTION);
+		List<MobEffectInstance> effects = new ArrayList<>(livingEntity.getActiveEffects());
+		boolean removedAny = false;
+		MobEffectInstance removedFrenzy = null;
+		for (MobEffectInstance effectInstance : effects) {
+			if (!clearAll && effectInstance.getEffect().value() instanceof StatusEffect statusEffect && !statusEffect.isCuredByMilk()) continue;
+			if (livingEntity.removeEffect(effectInstance.getEffect())) {
+				removedAny = true;
+				if (effectInstance.getEffect().is(ModMobEffects.FRENZY)) removedFrenzy = effectInstance;
+			}
+		}
+		if (!livingEntity.level().isClientSide()) addWithdrawalAfterFrenzy(livingEntity, removedFrenzy);
+		return removedAny;
 	}
 
 	public static void addWithdrawalAfterFrenzy(LivingEntity livingEntity, @Nullable MobEffectInstance removedEffectInstance) {
@@ -65,10 +85,10 @@ public final class StatusEffectHandler {
 
 	@SubscribeEvent
 	public static void onFoodEaten(final LivingEntityUseItemEvent.Finish event) {
-		if (event.getEntity().level().isClientSide) return;
+		if (event.getEntity().level().isClientSide()) return;
 
 		ItemStack stack = event.getItem();
-		FoodProperties food = stack.getFoodProperties(event.getEntity());
+		FoodProperties food = stack.get(DataComponents.FOOD);
 		if (food != null && stack.is(ModItemTags.SUGARS)) {
 			reduceWithdrawal(food.nutrition(), event.getEntity());
 		}
@@ -112,10 +132,10 @@ public final class StatusEffectHandler {
 		MobEffectCategory category = effect.value().getCategory();
 
 		if (target.isInvertedHealAndHarm()) {
-			if (effect.is(MobEffects.HEAL)) {
+			if (effect.is(MobEffects.INSTANT_HEALTH)) {
 				category = MobEffectCategory.HARMFUL;
 			}
-			else if (effect.is(MobEffects.HARM)) {
+			else if (effect.is(MobEffects.INSTANT_DAMAGE)) {
 				category = MobEffectCategory.BENEFICIAL;
 			}
 		}
@@ -124,7 +144,7 @@ public final class StatusEffectHandler {
 			int resistProbability = 0;
 			int resistance = 15;
 
-			for (ItemStack itemStack : target.getArmorSlots()) {
+			for (ItemStack itemStack : MobUtil.getArmorSlots(target)) {
 				if (itemStack.getItem() instanceof AcolyteArmorItem armor && armor.hasNutrients(itemStack)) {
 					resistProbability += resistance;
 					nutrientsConsumer.accept(armor, itemStack);
@@ -141,7 +161,7 @@ public final class StatusEffectHandler {
 
 	public static boolean canApplyAcidEffect(LivingEntity target, BiConsumer<LivingArmorItem, ItemStack> nutrientsConsumer) {
 		int acidResistProbability = 0;
-		for (ItemStack itemStack : target.getArmorSlots()) {
+		for (ItemStack itemStack : MobUtil.getArmorSlots(target)) {
 			if (itemStack.getItem() instanceof LivingArmorItem armor && armor.hasNutrients(itemStack)) {
 				acidResistProbability += 25;
 				nutrientsConsumer.accept(armor, itemStack);

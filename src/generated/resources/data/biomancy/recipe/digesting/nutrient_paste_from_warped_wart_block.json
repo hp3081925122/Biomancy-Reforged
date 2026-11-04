@@ -1,8 +1,6 @@
 {
   "type": "biomancy:digesting",
-  "ingredient": {
-    "item": "minecraft:warped_wart_block"
-  },
+  "ingredient": "minecraft:warped_wart_block",
   "nutrientsCost": 3,
   "processingTime": 409,
   "result": {

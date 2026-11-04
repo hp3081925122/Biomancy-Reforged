@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.item.injector;
 
+import com.github.elenterius.biomancy.util.MobUtil;
 import net.minecraft.world.item.Item;
 import com.github.elenterius.biomancy.util.EnchantmentUtil;
 import com.github.elenterius.biomancy.api.serum.Serum;
@@ -21,7 +22,7 @@ final class InjectionScheduler {
 	private InjectionScheduler() {}
 
 	public static void schedule(InjectorItem injector, ItemStack stack, Player player, LivingEntity target, int delayInTicks) {
-		if (stack.isEmpty() || player.level().isClientSide || injector.getSerum(stack).isEmpty()) return;
+		if (stack.isEmpty() || player.level().isClientSide() || injector.getSerum(stack).isEmpty()) return;
 
 		injector.setEntityHost(stack, player);
 		injector.setEntityVictim(stack, target);
@@ -57,12 +58,12 @@ final class InjectionScheduler {
 				stack.hurtAndBreak(2, level, player, item -> {});
 				player.onEquippedItemBroken(injectorItem, EquipmentSlot.MAINHAND);
 				injector.broadcastAnimation(level, player, stack, InjectorItem.InjectorAnimation.REGROW_NEEDLE);
-				player.getCooldowns().addCooldown(stack.getItem(), InjectorItem.COOL_DOWN_TICKS * 2);
+				player.getCooldowns().addCooldown(stack, InjectorItem.COOL_DOWN_TICKS * 2);
 				return;
 			}
 
 			float damagePct = 1f;
-			for (ItemStack itemStack : target.getArmorSlots()) {
+			for (ItemStack itemStack : MobUtil.getArmorSlots(target)) {
 				if (itemStack.getItem() instanceof AcolyteArmorItem armor && armor.hasNutrients(itemStack)) {
 					damagePct -= 0.25f;
 				}

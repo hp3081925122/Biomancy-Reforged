@@ -1,35 +1,36 @@
 package com.github.elenterius.biomancy.client.particle;
 
+import net.minecraft.client.particle.SpriteSet;
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.particle.ParticleRenderType;
-import net.minecraft.client.particle.TextureSheetParticle;
+import net.minecraft.client.particle.SingleQuadParticle;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.util.FastColor;
+import net.minecraft.util.ARGB;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidState;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
-@OnlyIn(Dist.CLIENT)
-public class VanillaDripParticle extends TextureSheetParticle {
+public class VanillaDripParticle extends SingleQuadParticle {
+
+	public void pickSprite(SpriteSet sprites) {
+		setSprite(sprites.get(random));
+	}
 
 	protected final Fluid type;
 	private boolean isGlowing;
 
 	protected VanillaDripParticle(ClientLevel level, double x, double y, double z, Fluid fluid) {
-		super(level, x, y, z);
+		super(level, x, y, z, null);
 		setSize(0.01F, 0.01F);
 		gravity = 0.06F;
 		type = fluid;
 	}
 
-	public ParticleRenderType getRenderType() {
-		return ParticleRenderType.PARTICLE_SHEET_OPAQUE;
+	protected Layer getLayer() {
+		return Layer.OPAQUE;
 	}
 
 	protected void setGlowing(boolean glowing) {
@@ -37,8 +38,8 @@ public class VanillaDripParticle extends TextureSheetParticle {
 	}
 
 	@Override
-	public int getLightColor(float partialTick) {
-		return isGlowing ? 0xf0 : super.getLightColor(partialTick);
+	public int getLightCoords(float partialTick) {
+		return isGlowing ? 0xf0 : super.getLightCoords(partialTick);
 	}
 
 	@Override
@@ -77,19 +78,18 @@ public class VanillaDripParticle extends TextureSheetParticle {
 	protected void postMoveUpdate() {  }
 
 	protected void setColorRGB(int color) {
-		rCol = FastColor.ARGB32.red(color) / 255f;
-		gCol = FastColor.ARGB32.green(color) / 255f;
-		bCol = FastColor.ARGB32.blue(color) / 255f;
+		rCol = ARGB.red(color) / 255f;
+		gCol = ARGB.green(color) / 255f;
+		bCol = ARGB.blue(color) / 255f;
 	}
 
 	protected void setColorARGB(int color) {
-		rCol = FastColor.ARGB32.red(color) / 255f;
-		gCol = FastColor.ARGB32.green(color) / 255f;
-		bCol = FastColor.ARGB32.blue(color) / 255f;
-		alpha = FastColor.ARGB32.alpha(color) / 255f;
+		rCol = ARGB.red(color) / 255f;
+		gCol = ARGB.green(color) / 255f;
+		bCol = ARGB.blue(color) / 255f;
+		alpha = ARGB.alpha(color) / 255f;
 	}
 
-	@OnlyIn(Dist.CLIENT)
 	protected static class DripLandParticle extends VanillaDripParticle {
 		protected DripLandParticle(ClientLevel level, double x, double y, double z, Fluid fluid) {
 			super(level, x, y, z, fluid);
@@ -97,7 +97,6 @@ public class VanillaDripParticle extends TextureSheetParticle {
 		}
 	}
 
-	@OnlyIn(Dist.CLIENT)
 	protected static class DripHangParticle extends VanillaDripParticle {
 		protected final ParticleOptions fallingParticle;
 
@@ -124,7 +123,6 @@ public class VanillaDripParticle extends TextureSheetParticle {
 		}
 	}
 
-	@OnlyIn(Dist.CLIENT)
 	protected static class FallingParticle extends VanillaDripParticle {
 
 		protected FallingParticle(ClientLevel level, double x, double y, double z, Fluid fluid) {
@@ -144,7 +142,6 @@ public class VanillaDripParticle extends TextureSheetParticle {
 		}
 	}
 
-	@OnlyIn(Dist.CLIENT)
 	protected static class FallAndLandParticle extends FallingParticle {
 		protected final ParticleOptions landParticle;
 
@@ -162,7 +159,6 @@ public class VanillaDripParticle extends TextureSheetParticle {
 		}
 	}
 
-	@OnlyIn(Dist.CLIENT)
 	protected static class AcidFallAndLandParticle extends FallAndLandParticle {
 
 		protected AcidFallAndLandParticle(ClientLevel level, double x, double y, double z, Fluid fluid, ParticleOptions landParticle) {

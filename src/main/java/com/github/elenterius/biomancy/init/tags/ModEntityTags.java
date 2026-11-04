@@ -2,7 +2,7 @@ package com.github.elenterius.biomancy.init.tags;
 
 import com.github.elenterius.biomancy.BiomancyMod;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.EntityType;
 
@@ -26,7 +26,7 @@ public final class ModEntityTags {
 	}
 
 	private static TagKey<EntityType<?>> conventionalTag(String name) {
-		return TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath("c", name));
+		return TagKey.create(Registries.ENTITY_TYPE, Identifier.fromNamespaceAndPath("c", name));
 	}
 
 }

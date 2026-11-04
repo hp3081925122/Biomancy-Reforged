@@ -1,5 +1,7 @@
 package com.github.elenterius.biomancy.item;
 
+import net.minecraft.world.item.component.TooltipDisplay;
+import java.util.function.Consumer;
 import com.github.elenterius.biomancy.client.util.ClientTextUtil;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
@@ -17,8 +19,8 @@ public class SimpleItem extends Item implements ItemTooltipStyleProvider {
 	}
 
 	@Override
-	public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag isAdvanced) {
-		tooltip.addAll(ClientTextUtil.getItemInfoTooltip(stack));
+	public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag isAdvanced) {
+		ClientTextUtil.getItemInfoTooltip(stack).forEach(tooltip);
 	}
 
 }

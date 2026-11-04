@@ -30,10 +30,4 @@ public class PotionSerumSubtypeInterpreter implements ISubtypeInterpreter<ItemSt
 		return getPotionKey(stack);
 	}
 
-	@Override
-	public String getLegacyStringSubtypeInfo(ItemStack stack, UidContext context) {
-		ResourceKey<Potion> key = getPotionKey(stack);
-		return key != null ? key.location().toString() : "";
-	}
-
 }

@@ -1,8 +1,11 @@
 package com.github.elenterius.biomancy.block.ownable;
 
+import com.github.elenterius.biomancy.block.base.BlockTooltipProvider;
+import net.minecraft.world.item.component.TooltipDisplay;
+import java.util.function.Consumer;
 import net.minecraft.world.item.Item;
 import com.github.elenterius.biomancy.util.InteractionUtil;
-import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.InteractionResult;
 import com.github.elenterius.biomancy.init.ModSoundEvents;
 import com.github.elenterius.biomancy.item.EssenceItem;
 import com.github.elenterius.biomancy.util.ownable.Ownable;
@@ -28,15 +31,14 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
-public abstract class OwnableBlock extends BaseEntityBlock implements OwnableEntityBlock {
+public abstract class OwnableBlock extends BaseEntityBlock implements BlockTooltipProvider, OwnableEntityBlock {
 
 	protected OwnableBlock(Properties properties) {
 		super(properties);
 	}
 
-	@Override
-	public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
-		super.appendHoverText(stack, context, tooltip, flag);
+	
+	public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag flag) {
 		OwnableEntityBlock.appendUserListToTooltip(stack, tooltip);
 	}
 
@@ -49,7 +51,7 @@ public abstract class OwnableBlock extends BaseEntityBlock implements OwnableEnt
 	}
 
 	@Override
-	protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+	protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
 		return InteractionUtil.toItemInteractionResult(use(state, level, pos, player, hand, hit));
 	}
 
@@ -58,18 +60,18 @@ public abstract class OwnableBlock extends BaseEntityBlock implements OwnableEnt
 		if (level.getBlockEntity(pos) instanceof IRestrictedInteraction restrictedBlock && restrictedBlock.isActionAllowed(player, Actions.USE_BLOCK)) {
 			ItemStack stack = player.getItemInHand(hand);
 			if (stack.getItem() instanceof EssenceItem essenceItem) {
-				if (level.isClientSide) return InteractionResult.SUCCESS;
+				if (level.isClientSide()) return InteractionResult.SUCCESS;
 
 				if (restrictedBlock.isActionAllowed(player, Actions.CONFIGURE)) {
 					boolean success = essenceItem.getEntityUUID(stack).map(restrictedBlock::addUser).orElse(false);
 					if (success) {
 						stack.shrink(1);
-						level.playSound(null, pos, ModSoundEvents.FLESHKIN_EAT.get(), SoundSource.BLOCKS, 1f, level.random.nextFloat() * 0.1f + 0.9f);
+						level.playSound(null, pos, ModSoundEvents.FLESHKIN_EAT.get(), SoundSource.BLOCKS, 1f, level.getRandom().nextFloat() * 0.1f + 0.9f);
 						return InteractionResult.SUCCESS;
 					}
 				}
 
-				level.playSound(null, pos, ModSoundEvents.FLESHKIN_NO.get(), SoundSource.BLOCKS, 1f, level.random.nextFloat() * 0.1f + 0.9f);
+				level.playSound(null, pos, ModSoundEvents.FLESHKIN_NO.get(), SoundSource.BLOCKS, 1f, level.getRandom().nextFloat() * 0.1f + 0.9f);
 				return InteractionResult.CONSUME;
 			}
 		}

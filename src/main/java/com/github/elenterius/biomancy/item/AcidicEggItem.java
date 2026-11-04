@@ -1,10 +1,10 @@
 package com.github.elenterius.biomancy.item;
 
+import net.minecraft.world.InteractionResult;
 import com.github.elenterius.biomancy.entity.projectile.ThrownAcidicEgg;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.stats.Stats;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -16,11 +16,11 @@ public class AcidicEggItem extends SimpleItem {
 	}
 
 	@Override
-	public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+	public InteractionResult use(Level level, Player player, InteractionHand hand) {
 		ItemStack stack = player.getItemInHand(hand);
 
-		if (level.isClientSide) {
-			return InteractionResultHolder.success(stack);
+		if (level.isClientSide()) {
+			return InteractionResult.SUCCESS.heldItemTransformedTo(stack);
 		}
 
 		ThrownAcidicEgg thrownEgg = new ThrownAcidicEgg(level, player);
@@ -36,7 +36,7 @@ public class AcidicEggItem extends SimpleItem {
 			stack.shrink(1);
 		}
 
-		return InteractionResultHolder.consume(stack);
+		return InteractionResult.CONSUME.heldItemTransformedTo(stack);
 	}
 
 }

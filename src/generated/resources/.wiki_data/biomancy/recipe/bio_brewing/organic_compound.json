@@ -1,20 +1,18 @@
 {
   "type": "biomancy:bio_brewing",
   "input": {
-    "0": {
-      "id": "biomancy:vial"
-    },
+    "0": "biomancy:vial",
     "1": {
-      "id": "biomancy:bile"
+      "ingredient": "biomancy:bile"
     },
     "2": {
-      "id": "biomancy:bile"
+      "ingredient": "biomancy:bile"
     },
     "3": {
-      "id": "biomancy:organic_matter"
+      "ingredient": "biomancy:organic_matter"
     },
     "4": {
-      "id": "biomancy:nutrients"
+      "ingredient": "biomancy:nutrients"
     }
   },
   "output": {

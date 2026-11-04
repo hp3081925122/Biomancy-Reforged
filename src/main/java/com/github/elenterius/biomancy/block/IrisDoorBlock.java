@@ -1,8 +1,10 @@
 package com.github.elenterius.biomancy.block;
 
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.ScheduledTickAccess;
 import net.minecraft.world.item.ItemStack;
 import com.github.elenterius.biomancy.util.InteractionUtil;
-import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.InteractionResult;
 import com.github.elenterius.biomancy.block.property.Orientation;
 import com.github.elenterius.biomancy.init.ModBlockProperties;
 import com.github.elenterius.biomancy.init.ModSoundEvents;
@@ -108,7 +110,7 @@ public class IrisDoorBlock extends Block implements SimpleWaterloggedBlock {
 	}
 
 	@Override
-	protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+	protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
 		return InteractionUtil.toItemInteractionResult(use(state, level, pos, player, hand, hit));
 	}
 
@@ -118,11 +120,11 @@ public class IrisDoorBlock extends Block implements SimpleWaterloggedBlock {
 		if (isWaterlogged(state)) level.scheduleTick(pos, Fluids.WATER, Fluids.WATER.getTickDelay(level));
 		triggerEvents(player, level, pos, isOpen(state));
 
-		return InteractionResult.sidedSuccess(level.isClientSide);
+		return InteractionResult.SUCCESS;
 	}
 
 	@Override
-	public void neighborChanged(BlockState state, Level level, BlockPos pos, Block block, BlockPos fromPos, boolean isMoving) {
+	public void neighborChanged(BlockState state, Level level, BlockPos pos, Block block, net.minecraft.world.level.redstone.@Nullable Orientation orientation, boolean isMoving) {
 		if (level.isClientSide()) return;
 
 		boolean hasSignal = level.hasNeighborSignal(pos);
@@ -144,7 +146,7 @@ public class IrisDoorBlock extends Block implements SimpleWaterloggedBlock {
 	}
 
 	private void playSound(@Nullable Player player, Level level, BlockPos pos, SoundEvent sound) {
-		level.playSound(player, pos, sound, SoundSource.BLOCKS, 1f, level.random.nextFloat() * 0.1f + 0.9f);
+		level.playSound(player, pos, sound, SoundSource.BLOCKS, 1f, level.getRandom().nextFloat() * 0.1f + 0.9f);
 	}
 
 	@Override
@@ -198,11 +200,11 @@ public class IrisDoorBlock extends Block implements SimpleWaterloggedBlock {
 	}
 
 	@Override
-	public BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor level, BlockPos currentPos, BlockPos neighborPos) {
+	public BlockState updateShape(BlockState state, LevelReader level, ScheduledTickAccess ticks, BlockPos currentPos, Direction direction, BlockPos neighborPos, BlockState neighborState, RandomSource random) {
 		if (isWaterlogged(state)) {
-			level.scheduleTick(currentPos, Fluids.WATER, Fluids.WATER.getTickDelay(level));
+			ticks.scheduleTick(currentPos, Fluids.WATER, Fluids.WATER.getTickDelay(level));
 		}
-		return super.updateShape(state, direction, neighborState, level, currentPos, neighborPos);
+		return super.updateShape(state, level, ticks, currentPos, direction, neighborPos, neighborState, random);
 	}
 
 	@Override

@@ -1,9 +1,7 @@
 {
   "type": "biomancy:digesting",
   "input": {
-    "0": {
-      "id": "minecraft:vine"
-    }
+    "0": "minecraft:vine"
   },
   "output": {
     "0": {

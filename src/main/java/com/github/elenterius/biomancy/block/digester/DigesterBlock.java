@@ -1,10 +1,17 @@
 package com.github.elenterius.biomancy.block.digester;
 
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.component.Consumable;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundEvent;
+import com.github.elenterius.biomancy.block.base.BlockTooltipProvider;
+import net.minecraft.world.item.component.TooltipDisplay;
+import java.util.function.Consumer;
 import com.mojang.serialization.MapCodec;
 import com.github.elenterius.biomancy.util.BlockItemUtil;
 import net.minecraft.world.item.Item;
 import com.github.elenterius.biomancy.util.InteractionUtil;
-import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.InteractionResult;
 import com.github.elenterius.biomancy.block.base.HorizontalFacingMachineBlock;
 import com.github.elenterius.biomancy.block.base.MachineBlockEntity;
 import com.github.elenterius.biomancy.init.ModBlockEntities;
@@ -27,7 +34,7 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.item.UseAnim;
+import net.minecraft.world.item.ItemUseAnimation;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -48,7 +55,7 @@ import org.jspecify.annotations.Nullable;
 import java.text.DecimalFormat;
 import java.util.List;
 
-public class DigesterBlock extends HorizontalFacingMachineBlock {
+public class DigesterBlock extends HorizontalFacingMachineBlock implements BlockTooltipProvider {
 
 	public static final MapCodec<DigesterBlock> CODEC = simpleCodec(DigesterBlock::new);
 
@@ -78,17 +85,17 @@ public class DigesterBlock extends HorizontalFacingMachineBlock {
 	@Nullable
 	@Override
 	public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> blockEntityType) {
-		return level.isClientSide ? null : createTickerHelper(blockEntityType, ModBlockEntities.DIGESTER.get(), MachineBlockEntity::serverTick);
+		return level.isClientSide() ? null : createTickerHelper(blockEntityType, ModBlockEntities.DIGESTER.get(), MachineBlockEntity::serverTick);
 	}
 
 	@Override
-	protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+	protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
 		return InteractionUtil.toItemInteractionResult(use(state, level, pos, player, hand, hit));
 	}
 
 	protected InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
 		if (level.getBlockEntity(pos) instanceof DigesterBlockEntity digester && digester.canPlayerInteract(player)) {
-			if (!level.isClientSide) {
+			if (!level.isClientSide()) {
 				player.openMenu(digester, buffer -> buffer.writeBlockPos(pos));
 				SoundUtil.Server.playBlockSound((ServerLevel) level, pos, ModSoundEvents.UI_DIGESTER_OPEN);
 			}
@@ -143,16 +150,21 @@ public class DigesterBlock extends HorizontalFacingMachineBlock {
 		return Boolean.TRUE.equals(state.getValue(CRAFTING));
 	}
 
+	private static SoundEvent getConsumeSound(ItemStack stack, SoundEvent fallback) {
+		Consumable consumable = stack.get(DataComponents.CONSUMABLE);
+		return consumable != null ? consumable.sound().value() : fallback;
+	}
+
 	private boolean playFoodEatingSound(Level level, BlockPos pos, RandomSource random) {
 		if (level.getBlockEntity(pos) instanceof DigesterBlockEntity digester) {
 			ItemStack stack = digester.getInputSlotStack();
 			if (stack.isEmpty()) return false;
 
-			if (stack.getUseAnimation() == UseAnim.DRINK) {
-				SoundUtil.Client.playBlockSound(level, pos, stack.getDrinkingSound(), 0.5F, random.nextFloat() * 0.1F + 0.9F);
+			if (stack.getUseAnimation() == ItemUseAnimation.DRINK) {
+				SoundUtil.Client.playBlockSound(level, pos, getConsumeSound(stack, SoundEvents.GENERIC_DRINK.value()), 0.5F, random.nextFloat() * 0.1F + 0.9F);
 			}
-			else if (stack.getUseAnimation() == UseAnim.EAT) {
-				SoundUtil.Client.playBlockSound(level, pos, stack.getEatingSound(), 0.5f + 0.5f * random.nextInt(2), (random.nextFloat() - random.nextFloat()) * 0.2f + 1f);
+			else if (stack.getUseAnimation() == ItemUseAnimation.EAT) {
+				SoundUtil.Client.playBlockSound(level, pos, getConsumeSound(stack, SoundEvents.GENERIC_EAT.value()), 0.5f + 0.5f * random.nextInt(2), (random.nextFloat() - random.nextFloat()) * 0.2f + 1f);
 			}
 
 			return true;
@@ -161,19 +173,19 @@ public class DigesterBlock extends HorizontalFacingMachineBlock {
 		return false;
 	}
 
-	@Override
-	public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
+	
+	public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag flag) {
 		int fuelAmount = getFuelAmount(stack);
 		if (fuelAmount > 0) {
-			tooltip.add(ComponentUtil.EMPTY_LINE);
+			tooltip.accept(ComponentUtil.EMPTY_LINE);
 			DecimalFormat df = FormatUtil.getIntegerFormatter();
-			tooltip.add(ComponentUtil.translatable("tooltip.biomancy.nutrients_fuel").withStyle(ChatFormatting.GRAY));
-			tooltip.add(ComponentUtil.literal("%s/%s u".formatted(df.format(fuelAmount), df.format(DigesterBlockEntity.MAX_FUEL))).withStyle(TextStyles.NUTRIENTS));
+			tooltip.accept(ComponentUtil.translatable("tooltip.biomancy.nutrients_fuel").withStyle(ChatFormatting.GRAY));
+			tooltip.accept(ComponentUtil.literal("%s/%s u".formatted(df.format(fuelAmount), df.format(DigesterBlockEntity.MAX_FUEL))).withStyle(TextStyles.NUTRIENTS));
 		}
 	}
 
 	public static int getFuelAmount(ItemStack stack) {
 		CompoundTag tag = BlockItemUtil.getBlockEntityData(stack);
-		return tag != null && tag.contains("Fuel") ? tag.getCompound("Fuel").getInt("Amount") : 0;
+		return tag != null && tag.contains("Fuel") ? tag.getCompoundOrEmpty("Fuel").getIntOr("Amount", 0) : 0;
 	}
 }

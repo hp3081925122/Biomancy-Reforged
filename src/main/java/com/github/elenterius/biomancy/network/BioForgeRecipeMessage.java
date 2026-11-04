@@ -8,18 +8,18 @@ import io.netty.buffer.ByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
-public record BioForgeRecipeMessage(int containerId, ResourceLocation id) implements CustomPacketPayload {
+public record BioForgeRecipeMessage(int containerId, Identifier id) implements CustomPacketPayload {
 
 	public static final Type<BioForgeRecipeMessage> TYPE = new Type<>(BiomancyMod.rl("bio_forge_recipe"));
 
 	public static final StreamCodec<ByteBuf, BioForgeRecipeMessage> STREAM_CODEC = StreamCodec.composite(
 			ByteBufCodecs.VAR_INT, BioForgeRecipeMessage::containerId,
-			ResourceLocation.STREAM_CODEC, BioForgeRecipeMessage::id,
+			Identifier.STREAM_CODEC, BioForgeRecipeMessage::id,
 			BioForgeRecipeMessage::new
 	);
 

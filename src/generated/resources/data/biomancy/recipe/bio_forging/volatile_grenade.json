@@ -3,14 +3,14 @@
   "bio_forge_tab": "biomancy:tools",
   "ingredients": [
     {
-      "item": "biomancy:grenade_casing"
+      "ingredient": "biomancy:grenade_casing"
     },
     {
-      "item": "biomancy:gelling_agent"
+      "ingredient": "biomancy:gelling_agent"
     },
     {
       "count": 2,
-      "item": "biomancy:unstable_compound"
+      "ingredient": "biomancy:unstable_compound"
     }
   ],
   "nutrientsCost": 1,

@@ -1,5 +1,9 @@
 package com.github.elenterius.biomancy.item.weapon.gun;
 
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.item.component.TooltipDisplay;
+import net.minecraft.world.item.Item;
+import java.util.function.Consumer;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.core.Holder;
 import com.github.elenterius.biomancy.init.ModDataComponents;
@@ -18,7 +22,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.stats.Stats;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
@@ -26,7 +29,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ProjectileWeaponItem;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.item.UseAnim;
+import net.minecraft.world.item.ItemUseAnimation;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.level.Level;
 import org.jspecify.annotations.Nullable;
@@ -52,7 +55,7 @@ public abstract class GunItem<T extends BaseProjectile> extends ProjectileWeapon
 		GunState state = getGunState(stack);
 		if (state == GunState.NONE && !canReload(stack, player)) {
 			gunProperties.sounds().playLocalFail(level, player);
-			player.displayClientMessage(TextComponentUtil.getFailureMsgText("reload_not_possible"), true);
+			player.sendOverlayMessage(TextComponentUtil.getFailureMsgText("reload_not_possible"));
 			return KeyPressResult.fail();
 		}
 
@@ -78,7 +81,7 @@ public abstract class GunItem<T extends BaseProjectile> extends ProjectileWeapon
 	}
 
 	@Override
-	public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
+	public InteractionResult use(Level level, Player player, InteractionHand usedHand) {
 		ItemStack stack = player.getItemInHand(usedHand);
 		GunState state = getGunState(stack);
 
@@ -88,21 +91,21 @@ public abstract class GunItem<T extends BaseProjectile> extends ProjectileWeapon
 			}
 			setGunState(stack, GunState.SHOOTING_OR_CHARGING);
 			player.startUsingItem(usedHand);
-			return InteractionResultHolder.consume(stack);
+			return InteractionResult.CONSUME.heldItemTransformedTo(stack);
 		}
 
-		player.displayClientMessage(TextComponentUtil.getFailureMsgText("not_enough_ammo"), true);
-		return InteractionResultHolder.fail(stack);
+		player.sendOverlayMessage(TextComponentUtil.getFailureMsgText("not_enough_ammo"));
+		return InteractionResult.FAIL;
 	}
 
 	@Override
 	public void onUseTick(Level level, LivingEntity shooter, ItemStack stack, int remainingUseDuration) {
-		if (!level.isClientSide && level instanceof ServerLevel serverLevel) {
+		if (!level.isClientSide() && level instanceof ServerLevel serverLevel) {
 			if (getGunState(stack) != GunState.SHOOTING_OR_CHARGING) return;
 
 			if (getAmmo(stack) < getAmmoCost(stack)) {
 				if (shooter instanceof Player player) {
-					player.displayClientMessage(TextComponentUtil.getFailureMsgText("not_enough_ammo"), true);
+					player.sendOverlayMessage(TextComponentUtil.getFailureMsgText("not_enough_ammo"));
 				}
 				shooter.releaseUsingItem();
 				stopShooting(stack, serverLevel, shooter);
@@ -130,7 +133,7 @@ public abstract class GunItem<T extends BaseProjectile> extends ProjectileWeapon
 	}
 
 	@Override
-	public void releaseUsing(ItemStack stack, Level level, LivingEntity shooter, int remainingUseDuration) {
+	public boolean releaseUsing(ItemStack stack, Level level, LivingEntity shooter, int remainingUseDuration) {
 
 		if (level instanceof ServerLevel serverLevel && gunProperties.shootBehavior().isOnRelease()) {
 			int elapsedTime = getUseDuration(stack, shooter) - remainingUseDuration;
@@ -156,14 +159,15 @@ public abstract class GunItem<T extends BaseProjectile> extends ProjectileWeapon
 		if (shooter instanceof Player player) {
 			player.awardStat(Stats.ITEM_USED.get(this));
 		}
+		return false;
 	}
 
 	@Override
-	public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
-		if (!level.isClientSide && level instanceof ServerLevel serverLevel && entity instanceof LivingEntity shooter) {
+	public void inventoryTick(ItemStack stack, ServerLevel level, Entity entity, @Nullable EquipmentSlot slot) {
+		if (!level.isClientSide() && level instanceof ServerLevel serverLevel && entity instanceof LivingEntity shooter) {
 			if (getGunState(stack) != GunState.RELOADING) return;
 
-			if (isSelected && canReload(stack, shooter)) {
+			if (slot == EquipmentSlot.MAINHAND && canReload(stack, shooter)) {
 				long elapsedTime = serverLevel.getGameTime() - getReloadStartTime(stack);
 				if (elapsedTime < 0) return;
 
@@ -199,10 +203,10 @@ public abstract class GunItem<T extends BaseProjectile> extends ProjectileWeapon
 	}
 
 	@Override
-	public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag isAdvanced) {
+	public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag isAdvanced) {
 		appendGunStats(stack, tooltip);
-		tooltip.add(ComponentUtil.EMPTY_LINE);
-		tooltip.add(ClientTextUtil.pressButtonTo(ClientTextUtil.getDefaultKey(), TextComponentUtil.getActionText("reload")).withStyle(TextStyles.DARK_GRAY));
+		tooltip.accept(ComponentUtil.EMPTY_LINE);
+		tooltip.accept(ClientTextUtil.pressButtonTo(ClientTextUtil.getDefaultKey(), TextComponentUtil.getActionText("reload")).withStyle(TextStyles.DARK_GRAY));
 	}
 
 	@Override
@@ -211,8 +215,8 @@ public abstract class GunItem<T extends BaseProjectile> extends ProjectileWeapon
 	}
 
 	@Override
-	public UseAnim getUseAnimation(ItemStack stack) {
-		return UseAnim.NONE;
+	public ItemUseAnimation getUseAnimation(ItemStack stack) {
+		return ItemUseAnimation.NONE;
 	}
 
 	@Override

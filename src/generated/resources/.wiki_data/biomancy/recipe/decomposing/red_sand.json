@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "minecraft:red_sand"
+      "ingredient": "minecraft:red_sand"
     }
   },
   "output": {

@@ -1,5 +1,8 @@
 package com.github.elenterius.biomancy.block.chrysalis;
 
+import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.util.ProblemReporter;
+import net.minecraft.world.level.storage.TagValueOutput;
 import com.github.elenterius.biomancy.init.tags.ModEntityTags;
 import com.github.elenterius.biomancy.util.MobUtil;
 import net.minecraft.nbt.CompoundTag;
@@ -19,13 +22,13 @@ public interface Chrysalis {
 	static boolean isCapturingSupported(Entity entity) {
 		if (entity instanceof Mob && entity.isAlive()) {
 			EntityType<?> entityType = entity.getType();
-			return entityType.canSummon() && entityType.canSerialize() && !entityType.is(ModEntityTags.C_CAPTURING_NOT_SUPPORTED);
+			return entityType.canSummon() && entityType.canSerialize() && !entityType.builtInRegistryHolder().is(ModEntityTags.C_CAPTURING_NOT_SUPPORTED);
 		}
 		return false;
 	}
 
 	static boolean isCapturingAllowed(Entity entity) {
-		return !entity.getType().is(ModEntityTags.CAPTURING_BY_CHRYSALIS_NOT_ALLOWED);
+		return !entity.is(ModEntityTags.CAPTURING_BY_CHRYSALIS_NOT_ALLOWED);
 	}
 
 	static boolean storeEntity(CompoundTag tag, Entity entity, boolean removeEntity) {
@@ -55,9 +58,10 @@ public interface Chrysalis {
 	}
 
 	static boolean saveEntity(CompoundTag compoundTag, Entity entity) {
-		CompoundTag entityData = new CompoundTag();
+		TagValueOutput output = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, entity.registryAccess());
 
-		if (entity.saveAsPassenger(entityData)) {
+		if (entity.saveAsPassenger(output)) {
+			CompoundTag entityData = output.buildResult();
 			CompoundTag tag = new CompoundTag();
 			tag.put(ENTITY_DATA_KEY, entityData);
 			tag.putString(ENTITY_NAME_KEY, entity.getType().getDescriptionId());
@@ -74,8 +78,8 @@ public interface Chrysalis {
 	}
 
 	static boolean spawnEntity(ServerLevel level, Vec3 pos, CompoundTag entityTag) {
-		Entity entityToSpawn = EntityType.loadEntityRecursive(entityTag.getCompound(ENTITY_DATA_KEY), level, entity -> {
-			entity.moveTo(pos.x, pos.y, pos.z, Mth.wrapDegrees(level.random.nextFloat() * 360), 0);
+		Entity entityToSpawn = EntityType.loadEntityRecursive(entityTag.getCompoundOrEmpty(ENTITY_DATA_KEY), level, EntitySpawnReason.LOAD, entity -> {
+			entity.snapTo(pos.x, pos.y, pos.z, Mth.wrapDegrees(level.getRandom().nextFloat() * 360), 0);
 
 			if (entity instanceof LivingEntity living) {
 				living.yHeadRot = living.getYRot();

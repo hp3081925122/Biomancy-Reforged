@@ -3,36 +3,37 @@ package com.github.elenterius.biomancy.client.render.entity.mob.fleshblob;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.entity.mob.fleshblob.EaterFleshBlob;
 import com.github.elenterius.biomancy.init.client.ModRenderTypes;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
-import software.bernie.geckolib.model.GeoModel;
+import net.minecraft.resources.Identifier;
+import org.jspecify.annotations.Nullable;
+import com.github.elenterius.biomancy.client.render.BiomancyGeoModel;
 
 import java.util.Locale;
 
 import static com.github.elenterius.biomancy.client.render.entity.mob.fleshblob.FleshBlobModel.TROLL_TEXTURE;
 
-public class LegacyFleshBlobModel<T extends EaterFleshBlob> extends GeoModel<T> {
+public class LegacyFleshBlobModel<T extends EaterFleshBlob> extends BiomancyGeoModel<T> {
 
-	protected static final ResourceLocation TEXTURE = BiomancyMod.rl("textures/entity/mob/flesh_blob/flesh_blob_legacy.png");
+	protected static final Identifier TEXTURE = BiomancyMod.rl("textures/entity/mob/flesh_blob/flesh_blob_legacy.png");
 
 	@Override
-	public ResourceLocation getModelResource(T fleshBlob) {
+	public Identifier getModelResource(T fleshBlob) {
 		return FleshBlobModel.MODEL;
 	}
 
 	@Override
-	public ResourceLocation getTextureResource(T fleshBlob) {
+	public Identifier getTextureResource(T fleshBlob) {
 		return TEXTURE;
 	}
 
 	@Override
-	public ResourceLocation getAnimationResource(T fleshBlob) {
+	public Identifier getAnimationResource(T fleshBlob) {
 		return FleshBlobModel.ANIMATION;
 	}
 
 	@Override
-	public RenderType getRenderType(T fleshBlob, ResourceLocation texture) {
+	public @Nullable RenderType getRenderType(T fleshBlob, Identifier texture) {
 		if (BiomancyMod.EVENT_CALENDAR.isAprilFools()) return ModRenderTypes.getCutoutPartyTime(TROLL_TEXTURE);
 
 		if (fleshBlob.hasCustomName()) {
@@ -45,7 +46,7 @@ public class LegacyFleshBlobModel<T extends EaterFleshBlob> extends GeoModel<T> 
 			}
 		}
 
-		return super.getRenderType(fleshBlob, texture);
+		return null;
 	}
 
 }

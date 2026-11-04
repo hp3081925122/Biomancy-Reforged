@@ -1,11 +1,11 @@
 package com.github.elenterius.biomancy.datagen.loot;
 
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.CachedOutput;
 import net.minecraft.data.DataProvider;
 import net.minecraft.data.PackOutput;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -50,9 +50,9 @@ public class WikiDespoilLootProvider implements DataProvider {
 				.map(entry -> {
 					String fileName = baseFileName(entry.getKey());
 
-					Map<String, Set<ResourceLocation>> namespacedMobs = new HashMap<>();
+					Map<String, Set<Identifier>> namespacedMobs = new HashMap<>();
 					for (EntityType<?> entityType : entry.getValue()) {
-						ResourceLocation key = key(entityType);
+						Identifier key = key(entityType);
 						namespacedMobs.computeIfAbsent(key.getNamespace(), k -> new HashSet<>()).add(key);
 					}
 
@@ -94,16 +94,16 @@ public class WikiDespoilLootProvider implements DataProvider {
 	}
 
 	protected String baseFileName(ItemLike itemLike) {
-		ResourceLocation key = BuiltInRegistries.ITEM.getKey(itemLike.asItem());
+		Identifier key = BuiltInRegistries.ITEM.getKey(itemLike.asItem());
 		if (key != null) return key.getPath();
 		throw new RuntimeException("Item key is missing for: " + itemLike);
 	}
 
-	protected String contentLink(ResourceLocation identifier) {
+	protected String contentLink(Identifier identifier) {
 		return "[](@" + identifier + ")";
 	}
 
-	protected ResourceLocation key(EntityType<?> entityType) {
+	protected Identifier key(EntityType<?> entityType) {
 		return Objects.requireNonNull(BuiltInRegistries.ENTITY_TYPE.getKey(entityType));
 	}
 

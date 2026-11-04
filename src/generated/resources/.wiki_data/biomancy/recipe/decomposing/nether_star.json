@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "minecraft:nether_star"
+      "ingredient": "minecraft:nether_star"
     }
   },
   "output": {

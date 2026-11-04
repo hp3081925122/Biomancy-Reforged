@@ -3,15 +3,15 @@
   "input": {
     "0": {
       "count": 10,
-      "id": "biomancy:bio_lumens"
+      "ingredient": "biomancy:bio_lumens"
     },
     "1": {
       "count": 2,
-      "id": "minecraft:yellow_dye"
+      "ingredient": "minecraft:yellow_dye"
     },
     "2": {
       "count": 4,
-      "id": "biomancy:organic_matter"
+      "ingredient": "biomancy:organic_matter"
     }
   },
   "output": {

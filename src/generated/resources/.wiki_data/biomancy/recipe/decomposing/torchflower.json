@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "minecraft:torchflower"
+      "ingredient": "minecraft:torchflower"
     }
   },
   "output": {

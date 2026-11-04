@@ -1,8 +1,10 @@
 package com.github.elenterius.biomancy.block.base;
 
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.ScheduledTickAccess;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -48,7 +50,7 @@ public abstract class SimpleMultiFaceBlock extends Block {
 	});
 	protected static final Direction[] DIRECTIONS = Direction.values();
 
-	protected final ImmutableMap<BlockState, VoxelShape> shapesCache;
+	protected final Function<BlockState, VoxelShape> shapesCache;
 	protected final boolean canRotate;
 	protected final boolean canMirrorX;
 	protected final boolean canMirrorZ;
@@ -90,7 +92,7 @@ public abstract class SimpleMultiFaceBlock extends Block {
 	}
 
 	@Override
-	public BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor level, BlockPos pos, BlockPos neighborPos) {
+	public BlockState updateShape(BlockState state, LevelReader level, ScheduledTickAccess ticks, BlockPos pos, Direction direction, BlockPos neighborPos, BlockState neighborState, RandomSource random) {
 		if (!hasAnyFace(state)) {
 			return Blocks.AIR.defaultBlockState();
 		}
@@ -102,7 +104,7 @@ public abstract class SimpleMultiFaceBlock extends Block {
 		return state;
 	}
 
-	protected BlockState removeFace(BlockState state, Direction face, LevelAccessor level, BlockPos pos) {
+	protected BlockState removeFace(BlockState state, Direction face, LevelReader level, BlockPos pos) {
 		BlockState blockState = state.setValue(getFaceProperty(face), Boolean.FALSE);
 		return hasAnyFace(blockState) ? blockState : Blocks.AIR.defaultBlockState();
 	}
@@ -110,7 +112,7 @@ public abstract class SimpleMultiFaceBlock extends Block {
 	@Override
 	public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
 		//noinspection DataFlowIssue
-		return shapesCache.getOrDefault(state, Shapes.block());
+		return shapesCache.apply(state);
 	}
 
 	@Override

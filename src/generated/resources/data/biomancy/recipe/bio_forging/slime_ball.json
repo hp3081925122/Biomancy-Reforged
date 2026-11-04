@@ -4,14 +4,14 @@
   "ingredients": [
     {
       "count": 4,
-      "item": "biomancy:regenerative_fluid"
+      "ingredient": "biomancy:regenerative_fluid"
     },
     {
       "count": 4,
-      "item": "biomancy:bile"
+      "ingredient": "biomancy:bile"
     },
     {
-      "item": "biomancy:gelling_agent"
+      "ingredient": "biomancy:gelling_agent"
     }
   ],
   "nutrientsCost": 1,

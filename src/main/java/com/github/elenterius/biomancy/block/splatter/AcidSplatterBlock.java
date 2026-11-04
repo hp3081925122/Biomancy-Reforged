@@ -97,7 +97,7 @@ public class AcidSplatterBlock extends SplatterBlock {
 		if (entity instanceof LivingEntity livingEntity) {
 			AcidInteractions.handleEntityInsideAcid(livingEntity);
 			if (livingEntity.tickCount % 20 == 0) {
-				reduceSplatter(state, level, pos, level.random, false);
+				reduceSplatter(state, level, pos, level.getRandom(), false);
 			}
 		}
 	}
@@ -116,7 +116,7 @@ public class AcidSplatterBlock extends SplatterBlock {
 		if (!availableFaces.isEmpty()) {
 			int index = availableFaces.size() == 1 ? 0 : random.nextIntBetweenInclusive(0, availableFaces.size() - 1);
 			Direction face = availableFaces.get(index);
-			Vec3i normal = face.getNormal();
+			Vec3i normal = face.getUnitVec3i();
 
 			double x = pos.getX() + 0.5d;
 			double y = pos.getY() + 0.5d;

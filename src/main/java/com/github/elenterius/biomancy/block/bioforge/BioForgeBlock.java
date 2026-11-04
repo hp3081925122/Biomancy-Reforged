@@ -1,10 +1,15 @@
 package com.github.elenterius.biomancy.block.bioforge;
 
+import com.github.elenterius.biomancy.block.base.BlockTooltipProvider;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
+import net.minecraft.world.item.component.TooltipDisplay;
+import java.util.function.Consumer;
 import com.mojang.serialization.MapCodec;
 import com.github.elenterius.biomancy.util.BlockItemUtil;
 import net.minecraft.world.item.Item;
 import com.github.elenterius.biomancy.util.InteractionUtil;
-import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.InteractionResult;
 import com.github.elenterius.biomancy.init.ModBlockEntities;
 import com.github.elenterius.biomancy.init.ModSoundEvents;
 import com.github.elenterius.biomancy.sounds.SoundUtil;
@@ -34,7 +39,6 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.BooleanOp;
 import net.minecraft.world.phys.shapes.CollisionContext;
@@ -45,11 +49,11 @@ import org.jspecify.annotations.Nullable;
 import java.text.DecimalFormat;
 import java.util.List;
 
-public class BioForgeBlock extends BaseEntityBlock {
+public class BioForgeBlock extends BaseEntityBlock implements BlockTooltipProvider {
 
 	public static final MapCodec<BioForgeBlock> CODEC = simpleCodec(BioForgeBlock::new);
 
-	public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
+	public static final EnumProperty<Direction> FACING = BlockStateProperties.HORIZONTAL_FACING;
 	protected static final VoxelShape SHAPE = createShape();
 
 	private static VoxelShape createShape() {
@@ -88,7 +92,7 @@ public class BioForgeBlock extends BaseEntityBlock {
 	@Nullable
 	@Override
 	public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> blockEntityType) {
-		return createTickerHelper(blockEntityType, ModBlockEntities.BIO_FORGE.get(), level.isClientSide ? BioForgeBlockEntity::clientTick : BioForgeBlockEntity::serverTick);
+		return createTickerHelper(blockEntityType, ModBlockEntities.BIO_FORGE.get(), level.isClientSide() ? BioForgeBlockEntity::clientTick : BioForgeBlockEntity::serverTick);
 	}
 
 	@Override
@@ -99,13 +103,13 @@ public class BioForgeBlock extends BaseEntityBlock {
 	}
 
 	@Override
-	protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+	protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
 		return InteractionUtil.toItemInteractionResult(use(state, level, pos, player, hand, hit));
 	}
 
 	protected InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
 		if (level.getBlockEntity(pos) instanceof BioForgeBlockEntity bioForge && bioForge.canPlayerInteract(player)) {
-			if (!level.isClientSide) {
+			if (!level.isClientSide()) {
 				player.openMenu(bioForge, buffer -> buffer.writeBlockPos(pos));
 				SoundUtil.Server.playBlockSound((ServerLevel) level, pos, ModSoundEvents.UI_BIO_FORGE_OPEN);
 			}
@@ -116,24 +120,13 @@ public class BioForgeBlock extends BaseEntityBlock {
 	}
 
 	@Override
-	public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
-		if (!state.is(newState.getBlock())) {
-			BlockEntity blockEntity = level.getBlockEntity(pos);
-			if (blockEntity instanceof BioForgeBlockEntity machine) {
-				machine.dropAllInvContents(level, pos);
-			}
-			super.onRemove(state, level, pos, newState, isMoving);
-		}
-	}
-
-	@Override
-	public void fallOn(Level level, BlockState state, BlockPos pos, Entity entity, float fallDistance) {
+	public void fallOn(Level level, BlockState state, BlockPos pos, Entity entity, double fallDistance) {
 		entity.causeFallDamage(fallDistance, 0.5f, level.damageSources().fall());
 	}
 
 	@Override
 	public RenderShape getRenderShape(BlockState state) {
-		return RenderShape.ENTITYBLOCK_ANIMATED;
+		return RenderShape.INVISIBLE;
 	}
 
 	@Override
@@ -149,19 +142,19 @@ public class BioForgeBlock extends BaseEntityBlock {
 		return state.rotate(mirror.getRotation(state.getValue(FACING)));
 	}
 
-	@Override
-	public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
+	
+	public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag flag) {
 		int fuelAmount = getFuelAmount(stack);
 		if (fuelAmount > 0) {
-			tooltip.add(ComponentUtil.EMPTY_LINE);
+			tooltip.accept(ComponentUtil.EMPTY_LINE);
 			DecimalFormat df = FormatUtil.getIntegerFormatter();
-			tooltip.add(ComponentUtil.translatable("tooltip.biomancy.nutrients_fuel").withStyle(ChatFormatting.GRAY));
-			tooltip.add(ComponentUtil.literal("%s/%s u".formatted(df.format(fuelAmount), df.format(BioForgeBlockEntity.MAX_FUEL))).withStyle(TextStyles.NUTRIENTS));
+			tooltip.accept(ComponentUtil.translatable("tooltip.biomancy.nutrients_fuel").withStyle(ChatFormatting.GRAY));
+			tooltip.accept(ComponentUtil.literal("%s/%s u".formatted(df.format(fuelAmount), df.format(BioForgeBlockEntity.MAX_FUEL))).withStyle(TextStyles.NUTRIENTS));
 		}
 	}
 
 	public static int getFuelAmount(ItemStack stack) {
 		CompoundTag tag = BlockItemUtil.getBlockEntityData(stack);
-		return tag != null && tag.contains("Fuel") ? tag.getShort("Fuel") : 0;
+		return tag != null && tag.contains("Fuel") ? tag.getShortOr("Fuel", (short) 0) : 0;
 	}
 }

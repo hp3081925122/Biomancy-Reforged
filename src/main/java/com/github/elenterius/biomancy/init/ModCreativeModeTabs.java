@@ -1,5 +1,7 @@
 package com.github.elenterius.biomancy.init;
 
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import com.github.elenterius.biomancy.util.BlockItemUtil;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.api.livingtool.LivingTool;
 import com.github.elenterius.biomancy.api.serum.SerumContainer;
@@ -13,7 +15,7 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.*;
@@ -89,7 +91,7 @@ public final class ModCreativeModeTabs {
 
 					HolderLookup.RegistryLookup<Enchantment> enchantments = params.holders().lookupOrThrow(Registries.ENCHANTMENT);
 					for (ResourceKey<Enchantment> key : List.of(ModEnchantments.DESPOIL, ModEnchantments.ANESTHETIC, ModEnchantments.SURGICAL_PRECISION, ModEnchantments.PARASITIC_METABOLISM, ModEnchantments.SELF_FEEDING)) {
-						enchantments.get(key).ifPresent(enchantment -> output.accept(EnchantedBookItem.createForEnchantment(new EnchantmentInstance(enchantment, enchantment.value().getMaxLevel()))));
+						enchantments.get(key).ifPresent(enchantment -> output.accept(EnchantmentHelper.createBook(new EnchantmentInstance(enchantment, enchantment.value().getMaxLevel()))));
 					}
 				});
 	}
@@ -152,7 +154,7 @@ public final class ModCreativeModeTabs {
 
 					ServerLevel level = server.getLevel(Level.OVERWORLD);
 					if (level != null) {
-						Stream<ResourceLocation> templates = level.getStructureManager().listTemplates().filter(id -> id.getNamespace().equals(BiomancyMod.MOD_ID));
+						Stream<Identifier> templates = level.getStructureManager().listTemplates().filter(id -> id.getNamespace().equals(BiomancyMod.MOD_ID));
 						templates.forEach(id -> {
 							ItemStack stack = new ItemStack(Blocks.STRUCTURE_BLOCK);
 							stack.set(DataComponents.CUSTOM_NAME, ComponentUtil.literal(id.toString()));
@@ -165,7 +167,7 @@ public final class ModCreativeModeTabs {
 							tag.putString("mode", StructureMode.LOAD.toString());
 							tag.putBoolean("showair", true);
 
-							BlockItem.setBlockEntityData(stack, BlockEntityType.STRUCTURE_BLOCK, tag);
+							BlockItemUtil.setBlockEntityData(stack, BlockEntityType.STRUCTURE_BLOCK, tag);
 
 							output.accept(stack);
 						});

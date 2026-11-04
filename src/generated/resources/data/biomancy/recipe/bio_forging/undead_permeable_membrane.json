@@ -3,14 +3,14 @@
   "bio_forge_tab": "biomancy:misc",
   "ingredients": [
     {
-      "item": "biomancy:impermeable_membrane"
+      "ingredient": "biomancy:impermeable_membrane"
     },
     {
       "count": 4,
-      "item": "biomancy:bile"
+      "ingredient": "biomancy:bile"
     },
     {
-      "item": "minecraft:phantom_membrane"
+      "ingredient": "minecraft:phantom_membrane"
     }
   ],
   "nutrientsCost": 1,

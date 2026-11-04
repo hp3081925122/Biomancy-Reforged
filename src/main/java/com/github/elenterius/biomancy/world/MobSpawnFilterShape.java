@@ -5,7 +5,7 @@ import com.github.elenterius.spatialdb.geometry.Shape;
 import com.github.elenterius.spatialdb.type.ShapeSerializers;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -19,7 +19,7 @@ public class MobSpawnFilterShape implements Shape, MobSpawnFilter {
 	}
 
 	@Override
-	public boolean isMobAllowedToSpawn(Mob mob, MobSpawnType spawnReason, LevelAccessor level, double x, double y, double z) {
+	public boolean isMobAllowedToSpawn(Mob mob, EntitySpawnReason spawnReason, LevelAccessor level, double x, double y, double z) {
 		return false;
 	}
 
@@ -65,8 +65,8 @@ public class MobSpawnFilterShape implements Shape, MobSpawnFilter {
 		public MobSpawnFilterShape read(CompoundTag tag) {
 			Shape shape = EMPTY;
 
-			CompoundTag shapeCompound = tag.getCompound("Shape");
-			String serializerId = shapeCompound.getString("Serializer");
+			CompoundTag shapeCompound = tag.getCompoundOrEmpty("Shape");
+			String serializerId = shapeCompound.getStringOr("Serializer", "");
 			NBTSerializer<Shape> serializer = ShapeSerializers.get(serializerId);
 			if (serializer != null) {
 				shape = serializer.read(shapeCompound);

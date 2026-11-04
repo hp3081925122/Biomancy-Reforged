@@ -3,22 +3,22 @@
   "input": {
     "0": {
       "count": 6,
-      "id": "biomancy:tough_fibers"
+      "ingredient": "biomancy:tough_fibers"
     },
     "1": {
       "count": 8,
-      "id": "biomancy:elastic_fibers"
+      "ingredient": "biomancy:elastic_fibers"
     },
     "2": {
       "count": 16,
-      "id": "biomancy:bile"
+      "ingredient": "biomancy:bile"
     },
     "3": {
       "count": 16,
-      "id": "biomancy:hormone_secretion"
+      "ingredient": "biomancy:hormone_secretion"
     },
     "4": {
-      "id": "biomancy:living_flesh"
+      "ingredient": "biomancy:living_flesh"
     }
   },
   "output": {

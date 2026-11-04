@@ -6,7 +6,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
@@ -15,14 +15,14 @@ import java.util.Objects;
 public final class BioForgeTab {
 	public static final String JSON_KEY = "bio_forge_tab";
 
-	private static final ResourceLocation DEPRECATED_WEAPONS_TAB = BiomancyMod.rl("weapons");
+	private static final Identifier DEPRECATED_WEAPONS_TAB = BiomancyMod.rl("weapons");
 
-	public static final Codec<BioForgeTab> CODEC = ResourceLocation.CODEC.comapFlatMap(BioForgeTab::byId, tab -> ModBioForgeTabs.REGISTRY.getKey(tab));
+	public static final Codec<BioForgeTab> CODEC = Identifier.CODEC.comapFlatMap(BioForgeTab::byId, tab -> ModBioForgeTabs.REGISTRY.getKey(tab));
 
 	public static final StreamCodec<RegistryFriendlyByteBuf, BioForgeTab> STREAM_CODEC = StreamCodec.of(
-			(buffer, tab) -> buffer.writeResourceLocation(Objects.requireNonNull(ModBioForgeTabs.REGISTRY.getKey(tab))),
+			(buffer, tab) -> buffer.writeIdentifier(Objects.requireNonNull(ModBioForgeTabs.REGISTRY.getKey(tab))),
 			buffer -> {
-				BioForgeTab value = ModBioForgeTabs.REGISTRY.get(buffer.readResourceLocation());
+				BioForgeTab value = ModBioForgeTabs.REGISTRY.getValue(buffer.readIdentifier());
 				return value != null ? value : ModBioForgeTabs.MISC.get();
 			}
 	);
@@ -39,8 +39,8 @@ public final class BioForgeTab {
 		this(0, itemSupplier);
 	}
 
-	private static DataResult<BioForgeTab> byId(ResourceLocation id) {
-		BioForgeTab tab = ModBioForgeTabs.REGISTRY.get(id);
+	private static DataResult<BioForgeTab> byId(Identifier id) {
+		BioForgeTab tab = ModBioForgeTabs.REGISTRY.getValue(id);
 		if (tab != null) return DataResult.success(tab);
 
 		if (id.equals(DEPRECATED_WEAPONS_TAB)) {
@@ -59,7 +59,7 @@ public final class BioForgeTab {
 		return enumIdFrom(ModBioForgeTabs.REGISTRY.getKey(this));
 	}
 
-	public static String enumIdFrom(ResourceLocation key) {
+	public static String enumIdFrom(Identifier key) {
 		return JSON_KEY + "_" + key.getNamespace() + "_" + key.getPath();
 	}
 

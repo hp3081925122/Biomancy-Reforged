@@ -1,19 +1,21 @@
 package com.github.elenterius.biomancy.crafting.recipe;
 
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import com.mojang.serialization.MapCodec;
+import net.minecraft.core.UUIDUtil;
 import com.github.elenterius.biomancy.util.BlockItemUtil;
 import com.github.elenterius.biomancy.block.membrane.BiometricMembraneBlock;
 import com.github.elenterius.biomancy.block.membrane.BiometricMembraneBlockEntity;
 import com.github.elenterius.biomancy.init.ModItems;
 import com.github.elenterius.biomancy.init.ModRecipes;
 import com.github.elenterius.biomancy.item.EssenceItem;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.crafting.CraftingBookCategory;
 import net.minecraft.world.item.crafting.CustomRecipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.Level;
@@ -23,9 +25,10 @@ import java.util.UUID;
 
 public class BiometricMembraneRecipe extends CustomRecipe {
 
-	public BiometricMembraneRecipe(CraftingBookCategory category) {
-		super(category);
-	}
+	public static final BiometricMembraneRecipe INSTANCE = new BiometricMembraneRecipe();
+	public static final MapCodec<BiometricMembraneRecipe> MAP_CODEC = MapCodec.unit(INSTANCE);
+	public static final StreamCodec<RegistryFriendlyByteBuf, BiometricMembraneRecipe> STREAM_CODEC = StreamCodec.unit(INSTANCE);
+	public static final RecipeSerializer<BiometricMembraneRecipe> SERIALIZER = new RecipeSerializer<>(MAP_CODEC, STREAM_CODEC);
 
 	@Override
 	public boolean matches(CraftingInput container, Level level) {
@@ -64,7 +67,7 @@ public class BiometricMembraneRecipe extends CustomRecipe {
 	}
 
 	@Override
-	public ItemStack assemble(CraftingInput container, HolderLookup.Provider registries) {
+	public ItemStack assemble(CraftingInput container) {
 		ItemStack membrane = ItemStack.EMPTY;
 		ItemStack essence = ItemStack.EMPTY;
 		ItemStack inversion = ItemStack.EMPTY;
@@ -93,12 +96,12 @@ public class BiometricMembraneRecipe extends CustomRecipe {
 
 	public ItemStack createItem(ItemStack membrane, ItemStack essenceStack, ItemStack inversionStack) {
 		CompoundTag compoundTag = BlockItemUtil.getBlockEntityData(membrane);
-		CompoundTag tag = compoundTag != null ? compoundTag.getCompound(BiometricMembraneBlockEntity.MEMBRANE_KEY) : new CompoundTag();
+		CompoundTag tag = compoundTag != null ? compoundTag.getCompoundOrEmpty(BiometricMembraneBlockEntity.MEMBRANE_KEY) : new CompoundTag();
 
-		EntityType<?> entityType = EntityType.byString(tag.getString(BiometricMembraneBlockEntity.ENTITY_TYPE_KEY)).orElse(null);
-		UUID entityUUID = tag.hasUUID(BiometricMembraneBlockEntity.ENTITY_UUID_KEY) ? tag.getUUID(BiometricMembraneBlockEntity.ENTITY_UUID_KEY) : null;
-		int[] entityColors = tag.contains(BiometricMembraneBlockEntity.ENTITY_COLORS_KEY, Tag.TAG_INT_ARRAY) ? tag.getIntArray(BiometricMembraneBlockEntity.ENTITY_COLORS_KEY) : BiometricMembraneBlockEntity.DEFAULT_COLORS;
-		boolean isInverted = tag.getBoolean(BiometricMembraneBlockEntity.IS_INVERTED_KEY);
+		EntityType<?> entityType = EntityType.byString(tag.getStringOr(BiometricMembraneBlockEntity.ENTITY_TYPE_KEY, "")).orElse(null);
+		UUID entityUUID = tag.read(BiometricMembraneBlockEntity.ENTITY_UUID_KEY, UUIDUtil.CODEC).isPresent() ? tag.read(BiometricMembraneBlockEntity.ENTITY_UUID_KEY, UUIDUtil.CODEC).orElseThrow() : null;
+		int[] entityColors = tag.getIntArray(BiometricMembraneBlockEntity.ENTITY_COLORS_KEY).isPresent() ? tag.getIntArray(BiometricMembraneBlockEntity.ENTITY_COLORS_KEY).orElseThrow() : BiometricMembraneBlockEntity.DEFAULT_COLORS;
+		boolean isInverted = tag.getBooleanOr(BiometricMembraneBlockEntity.IS_INVERTED_KEY, false);
 
 		if (essenceStack.getItem() instanceof EssenceItem essenceItem) {
 			Optional<EntityType<?>> optional = essenceItem.getEntityType(essenceStack);
@@ -120,13 +123,12 @@ public class BiometricMembraneRecipe extends CustomRecipe {
 		return BiometricMembraneBlock.createItem(entityType, entityUUID, entityColors, isInverted);
 	}
 
-	@Override
 	public boolean canCraftInDimensions(int width, int height) {
 		return width * height >= 4;
 	}
 
 	@Override
-	public RecipeSerializer<?> getSerializer() {
+	public RecipeSerializer<BiometricMembraneRecipe> getSerializer() {
 		return ModRecipes.BIOMETRIC_MEMBRANE_CRAFTING_SERIALIZER.get();
 	}
 

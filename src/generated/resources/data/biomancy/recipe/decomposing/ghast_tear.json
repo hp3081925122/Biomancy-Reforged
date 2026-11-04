@@ -1,7 +1,7 @@
 {
   "type": "biomancy:decomposing",
   "ingredient": {
-    "item": "minecraft:ghast_tear"
+    "ingredient": "minecraft:ghast_tear"
   },
   "nutrientsCost": 1,
   "processingTime": 300,

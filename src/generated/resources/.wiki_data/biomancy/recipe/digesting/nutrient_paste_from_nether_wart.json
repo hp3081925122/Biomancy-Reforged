@@ -1,9 +1,7 @@
 {
   "type": "biomancy:digesting",
   "input": {
-    "0": {
-      "id": "minecraft:nether_wart"
-    }
+    "0": "minecraft:nether_wart"
   },
   "output": {
     "0": {

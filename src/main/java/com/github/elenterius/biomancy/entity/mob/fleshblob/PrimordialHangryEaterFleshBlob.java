@@ -27,7 +27,7 @@ import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
-import net.minecraft.world.entity.animal.AbstractGolem;
+import net.minecraft.world.entity.animal.golem.AbstractGolem;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.player.Player;
@@ -80,13 +80,13 @@ public class PrimordialHangryEaterFleshBlob extends EaterFleshBlob implements En
 		goalSelector.addGoal(7, new RandomLookAroundGoal(this));
 
 		targetSelector.addGoal(1, new HurtByTargetGoal(this));
-		targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, FleshBlob.class, false, IS_VALID_ATTACK_TARGET));
+		targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, FleshBlob.class, false, (target, serverLevel) -> IS_VALID_ATTACK_TARGET.test(target)));
 		targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Player.class, true));
-		targetSelector.addGoal(4, new NearestAttackableTargetGoal<>(this, Mob.class, false, IS_VALID_ATTACK_TARGET));
+		targetSelector.addGoal(4, new NearestAttackableTargetGoal<>(this, Mob.class, false, (target, serverLevel) -> IS_VALID_ATTACK_TARGET.test(target)));
 	}
 
 	@Override
-	public @Nullable SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType reason, @Nullable SpawnGroupData spawnData) {
+	public @Nullable SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, EntitySpawnReason reason, @Nullable SpawnGroupData spawnData) {
 		if (!(spawnData instanceof FleshBlobSpawnData)) {
 			spawnData = new FleshBlobSpawnData.Tumors((byte) 0);
 		}
@@ -118,7 +118,7 @@ public class PrimordialHangryEaterFleshBlob extends EaterFleshBlob implements En
 	}
 
 	@Override
-	protected void pickUpItem(ItemEntity itemEntity) {
+	protected void pickUpItem(ServerLevel level, ItemEntity itemEntity) {
 		ItemStack stack = itemEntity.getItem();
 		if (SPECIAL_ITEMS_TO_HOLD.contains(stack.getItem()) && getItemBySlot(EquipmentSlot.OFFHAND).isEmpty()) {
 			onItemPickup(itemEntity);
@@ -130,7 +130,7 @@ public class PrimordialHangryEaterFleshBlob extends EaterFleshBlob implements En
 			itemEntity.discard();
 		}
 		else {
-			super.pickUpItem(itemEntity);
+			super.pickUpItem(level, itemEntity);
 		}
 	}
 
@@ -140,8 +140,8 @@ public class PrimordialHangryEaterFleshBlob extends EaterFleshBlob implements En
 	}
 
 	@Override
-	public boolean isInvulnerableTo(DamageSource source) {
-		return super.isInvulnerableTo(source) || source.is(ModDamageTypeTags.C_IS_ACID);
+	public boolean isInvulnerableTo(ServerLevel level, DamageSource source) {
+		return super.isInvulnerableTo(level, source) || source.is(ModDamageTypeTags.C_IS_ACID);
 	}
 
 	@Override
@@ -154,7 +154,7 @@ public class PrimordialHangryEaterFleshBlob extends EaterFleshBlob implements En
 
 	@Override
 	public void remove(RemovalReason reason) {
-		if (reason == RemovalReason.KILLED && !level().isClientSide && level() instanceof ServerLevel serverLevel) {
+		if (reason == RemovalReason.KILLED && !level().isClientSide() && level() instanceof ServerLevel serverLevel) {
 			placeMalignantFleshBlocks(serverLevel);
 		}
 		super.remove(reason);

@@ -1,5 +1,8 @@
 package com.github.elenterius.biomancy.inventory;
 
+import net.neoforged.neoforge.transfer.ResourceHandler;
+import net.neoforged.neoforge.transfer.access.ItemAccess;
+import net.neoforged.neoforge.transfer.item.ItemResource;
 import com.github.elenterius.biomancy.api.nutrients.Nutrients;
 import net.minecraft.world.item.BundleItem;
 import net.minecraft.world.item.ItemStack;
@@ -17,14 +20,15 @@ public final class InventoryHandlers {
 		if (stack.getItem() instanceof BundleItem) return false;
 		if (!stack.getItem().canFitInsideContainerItems()) return false;
 
-		IItemHandler itemHandler = stack.getCapability(Capabilities.ItemHandler.ITEM);
+		if (stack.isEmpty()) return true;
+		ResourceHandler<ItemResource> itemHandler = stack.getCapability(Capabilities.Item.ITEM, ItemAccess.forStack(stack));
 		if (itemHandler == null) return true;
 
-		int slots = itemHandler.getSlots();
+		int slots = itemHandler.size();
 		if (slots > 200) return false;
 
 		for (int i = 0; i < slots; i++) {
-			if (!itemHandler.getStackInSlot(i).isEmpty()) return false;
+			if (!itemHandler.getResource(i).isEmpty() && itemHandler.getAmountAsLong(i) > 0) return false;
 		}
 		return true;
 	};

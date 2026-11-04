@@ -1,5 +1,8 @@
 package com.github.elenterius.biomancy.crafting.recipe;
 
+import java.util.Optional;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.crafting.IngredientStack;
 import com.github.elenterius.biomancy.datagen.recipes.builder.RecipeCostUtil;
@@ -9,7 +12,7 @@ import com.github.elenterius.biomancy.util.ItemStackCounter;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.item.Item;
@@ -39,7 +42,7 @@ public final class PotionSerumRecipes {
 
 	private PotionSerumRecipes() {}
 
-	public record Data(List<RecipeHolder<BioBrewingRecipe>> recipes, Map<ResourceLocation, RecipeHolder<BioBrewingRecipe>> recipesById, Set<Holder<Potion>> potions) {}
+	public record Data(List<RecipeHolder<BioBrewingRecipe>> recipes, Map<Identifier, RecipeHolder<BioBrewingRecipe>> recipesById, Set<Holder<Potion>> potions) {}
 
 	public static Data get(PotionBrewing potionBrewing) {
 		return CACHE.computeIfAbsent(potionBrewing, PotionSerumRecipes::compute);
@@ -57,7 +60,7 @@ public final class PotionSerumRecipes {
 		return get(level).potions();
 	}
 
-	public static Optional<RecipeHolder<BioBrewingRecipe>> byId(Level level, @Nullable ResourceLocation recipeId) {
+	public static Optional<RecipeHolder<BioBrewingRecipe>> byId(Level level, @Nullable Identifier recipeId) {
 		return recipeId == null ? Optional.empty() : Optional.ofNullable(get(level).recipesById().get(recipeId));
 	}
 
@@ -125,17 +128,17 @@ public final class PotionSerumRecipes {
 			ItemStackCounter itemCounter = new ItemStackCounter();
 			for (ResolvedRecipe resolvedRecipe : resolvedRecipes) {
 				for (Ingredient ingredient : resolvedRecipe.ingredients) {
-					itemCounter.accountStacks(ingredient.getItems());
+					itemCounter.accountStacks(IngredientStack.getItems(ingredient));
 				}
 			}
 
-			List<Ingredient> ingredients = itemCounter.getItemsSorted(4, false).stream().map(Ingredient::of).toList();
+			List<Ingredient> ingredients = itemCounter.getItemsSorted(4, false).stream().map(stack -> Ingredient.of(stack.getItem())).toList();
 
 			recipes.add(createRecipe(NAME_PREFIX + index++, ingredients, ModItems.UNSTABLE_COMPOUND.get().getDefaultInstance(), resultHolder));
 			potions.add(resultHolder);
 		}
 
-		Map<ResourceLocation, RecipeHolder<BioBrewingRecipe>> recipesById = recipes.stream().collect(Collectors.toUnmodifiableMap(RecipeHolder::id, recipe -> recipe, (a, b) -> b));
+		Map<Identifier, RecipeHolder<BioBrewingRecipe>> recipesById = recipes.stream().collect(Collectors.toUnmodifiableMap(recipe -> recipe.id().identifier(), recipe -> recipe, (a, b) -> b));
 		return new Data(Collections.unmodifiableList(recipes), recipesById, Collections.unmodifiableSet(potions));
 	}
 
@@ -220,7 +223,7 @@ public final class PotionSerumRecipes {
 	private static Set<Potion> getPossiblePotions(Ingredient ingredient) {
 		Set<Potion> possiblePotions = new HashSet<>();
 
-		for (ItemStack stack : ingredient.getItems()) {
+		for (ItemStack stack : IngredientStack.getItems(ingredient)) {
 			Potion potion = getPotion(stack);
 			if (potion != null) possiblePotions.add(potion);
 		}
@@ -229,7 +232,7 @@ public final class PotionSerumRecipes {
 	}
 
 	private static RecipeHolder<BioBrewingRecipe> createRecipe(String name, List<Ingredient> ingredients, ItemStack reactant, Holder<Potion> result) {
-		ResourceLocation id = BiomancyMod.rl(name);
+		Identifier id = BiomancyMod.rl(name);
 
 		List<IngredientStack> ingredientStacks = new ArrayList<>();
 		for (Ingredient ingredient : ingredients) {
@@ -244,9 +247,9 @@ public final class PotionSerumRecipes {
 				craftingTimeTicks,
 				craftingCostNutrients,
 				ingredientStacks,
-				Ingredient.of(reactant)
+				Optional.of(Ingredient.of(reactant.getItem()))
 		);
-		return new RecipeHolder<>(id, recipe);
+		return new RecipeHolder<>(ResourceKey.create(Registries.RECIPE, id), recipe);
 	}
 
 }

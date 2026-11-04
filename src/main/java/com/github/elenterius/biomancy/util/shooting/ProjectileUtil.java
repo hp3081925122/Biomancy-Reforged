@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.util.shooting;
 
+import net.minecraft.world.entity.EntitySpawnReason;
 import com.github.elenterius.biomancy.entity.projectile.BaseProjectile;
 import com.github.elenterius.biomancy.util.function.FloatOperator;
 import com.github.elenterius.biomancy.util.function.IntOperator;
@@ -63,7 +64,7 @@ public class ProjectileUtil {
 			Vec3 targetPos = eyePosition.add(aimDirection.x * distance, aimDirection.y * distance, aimDirection.z * distance); // "player aim"
 			Vec3 shootDirection = targetPos.subtract(spawnPos).normalize(); //aim projectile towards "player aim"
 
-			T projectile = entityType.create(level);
+			T projectile = entityType.create(level, EntitySpawnReason.TRIGGERED);
 			if (projectile == null) return false;
 
 			projectile.setPos(spawnPos);
@@ -113,7 +114,7 @@ public class ProjectileUtil {
 
 			aimRotation.transform(localDirection, shootDirection).normalize();
 
-			T projectile = entityType.create(level);
+			T projectile = entityType.create(level, EntitySpawnReason.TRIGGERED);
 			if (projectile == null) return false;
 
 			projectile.setPos(origin);

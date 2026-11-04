@@ -1,7 +1,7 @@
 {
   "type": "biomancy:decomposing",
   "ingredient": {
-    "item": "minecraft:cocoa_beans"
+    "ingredient": "minecraft:cocoa_beans"
   },
   "nutrientsCost": 1,
   "processingTime": 80,

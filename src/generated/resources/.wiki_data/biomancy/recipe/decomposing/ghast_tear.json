@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "minecraft:ghast_tear"
+      "ingredient": "minecraft:ghast_tear"
     }
   },
   "output": {

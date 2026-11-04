@@ -1,7 +1,7 @@
 {
   "type": "biomancy:decomposing",
   "ingredient": {
-    "item": "minecraft:glow_lichen"
+    "ingredient": "minecraft:glow_lichen"
   },
   "nutrientsCost": 1,
   "processingTime": 64,

@@ -1,5 +1,8 @@
 package com.github.elenterius.biomancy.block.fleshkinchest;
 
+import com.github.elenterius.biomancy.util.GeoAnimUtil;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.core.HolderLookup;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.block.ownable.OwnableContainerBlockEntity;
@@ -29,14 +32,14 @@ import net.minecraft.world.level.block.entity.ContainerOpenersCounter;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import org.jspecify.annotations.Nullable;
-import software.bernie.geckolib.animatable.GeoBlockEntity;
-import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.animation.AnimatableManager;
-import software.bernie.geckolib.animation.AnimationController;
-import software.bernie.geckolib.animation.AnimationState;
-import software.bernie.geckolib.animation.RawAnimation;
-import software.bernie.geckolib.animation.PlayState;
-import software.bernie.geckolib.util.GeckoLibUtil;
+import com.geckolib.animatable.GeoBlockEntity;
+import com.geckolib.animatable.instance.AnimatableInstanceCache;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.animation.AnimationController;
+import com.geckolib.animation.state.AnimationTest;
+import com.geckolib.animation.RawAnimation;
+import com.geckolib.animation.object.PlayState;
+import com.geckolib.util.GeckoLibUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -68,7 +71,7 @@ public class FleshkinChestBlockEntity extends OwnableContainerBlockEntity implem
 		}
 
 		@Override
-		protected boolean isOwnContainer(Player player) {
+		public boolean isOwnContainer(Player player) {
 			if (player.containerMenu instanceof FleshkinChestMenu menu) {
 				return menu.getInventory() == FleshkinChestBlockEntity.this.inventory;
 			}
@@ -86,12 +89,12 @@ public class FleshkinChestBlockEntity extends OwnableContainerBlockEntity implem
 	}
 
 	protected void onInventoryChanged() {
-		if (level != null && !level.isClientSide) setChanged();
+		if (level != null && !level.isClientSide()) setChanged();
 	}
 
 	public void startOpen(Player player) {
 		if (isRemoved() || player.isSpectator()) return;
-		openersCounter.incrementOpeners(player, getLevel(), getBlockPos(), getBlockState());
+		openersCounter.incrementOpeners(player, getLevel(), getBlockPos(), getBlockState(), player.getContainerInteractionRange());
 	}
 
 	public void stopOpen(Player player) {
@@ -134,7 +137,7 @@ public class FleshkinChestBlockEntity extends OwnableContainerBlockEntity implem
 	}
 
 	private void playSound(Level level, BlockPos pos, SoundEvent sound) {
-		level.playSound(null, pos.getX() + 0.5d, pos.getY() + 0.5d, pos.getZ() + 0.5d, sound, SoundSource.BLOCKS, 0.5f, level.random.nextFloat() * 0.1f + 0.9f);
+		level.playSound(null, pos.getX() + 0.5d, pos.getY() + 0.5d, pos.getZ() + 0.5d, sound, SoundSource.BLOCKS, 0.5f, level.getRandom().nextFloat() * 0.1f + 0.9f);
 	}
 
 	public Component getDefaultName() {
@@ -152,15 +155,15 @@ public class FleshkinChestBlockEntity extends OwnableContainerBlockEntity implem
 	}
 
 	@Override
-	protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-		super.saveAdditional(tag, registries);
-		tag.put("Inventory", inventory.serializeNBT(registries));
+	protected void saveAdditional(ValueOutput output) {
+		super.saveAdditional(output);
+		inventory.serialize(output.child("Inventory"));
 	}
 
 	@Override
-	protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-		super.loadAdditional(tag, registries);
-		inventory.deserializeNBT(registries, tag.getCompound("Inventory"));
+	protected void loadAdditional(ValueInput input) {
+		super.loadAdditional(input);
+		inventory.deserialize(input.childOrEmpty("Inventory"));
 	}
 
 	@Override
@@ -172,7 +175,7 @@ public class FleshkinChestBlockEntity extends OwnableContainerBlockEntity implem
 		triggerAnim(animation.controller(), animation.name());
 	}
 
-	private <T extends FleshkinChestBlockEntity> PlayState handleAnimationState(AnimationState<T> state) {
+	private <T extends FleshkinChestBlockEntity> PlayState handleAnimationState(AnimationTest<T> state) {
 
 		if (lidShouldBeOpen) {
 			state.setAnimation(Animations.OPENING);
@@ -181,12 +184,12 @@ public class FleshkinChestBlockEntity extends OwnableContainerBlockEntity implem
 		}
 		else if (lidIsOpen) {
 			state.setAnimation(Animations.CLOSING);
-			if (state.getController().getAnimationState() != AnimationController.State.STOPPED) return PlayState.CONTINUE;
+			if (!GeoAnimUtil.isStopped(state.controller())) return PlayState.CONTINUE;
 			lidIsOpen = false;
 		}
 
 		if (!state.isCurrentAnimation(Animations.BITE.rawAnimation())) {
-			state.getController().setAnimation(Animations.CLOSED);
+			state.controller().setAnimation(Animations.CLOSED);
 		}
 
 		return PlayState.CONTINUE;
@@ -194,7 +197,7 @@ public class FleshkinChestBlockEntity extends OwnableContainerBlockEntity implem
 
 	@Override
 	public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-		AnimationController<FleshkinChestBlockEntity> controller = new AnimationController<>(this, Animations.MAIN_CONTROLLER, 0, this::handleAnimationState);
+		AnimationController<FleshkinChestBlockEntity> controller = new AnimationController<>(Animations.MAIN_CONTROLLER, 0, this::handleAnimationState);
 		Animations.registerTriggerableAnimations(controller);
 		controllers.add(controller);
 	}
@@ -230,4 +233,10 @@ public class FleshkinChestBlockEntity extends OwnableContainerBlockEntity implem
 		}
 	}
 
+	@Override
+	public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+		if (level != null) {
+			dropContainerContents(level, pos);
+		}
+	}
 }

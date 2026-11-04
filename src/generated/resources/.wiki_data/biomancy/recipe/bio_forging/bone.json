@@ -3,7 +3,7 @@
   "input": {
     "0": {
       "count": 12,
-      "id": "biomancy:bone_fragments"
+      "ingredient": "biomancy:bone_fragments"
     }
   },
   "output": {

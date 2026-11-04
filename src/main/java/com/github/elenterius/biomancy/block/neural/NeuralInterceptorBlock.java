@@ -67,16 +67,6 @@ public class NeuralInterceptorBlock extends HorizontalDirectionalBlock {
 	}
 
 	@Override
-	public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
-		if (!state.is(newState.getBlock())) {
-			if (level instanceof ServerLevel serverLevel) {
-				SpatialDBManager.getInstance(serverLevel).removeShape(serverLevel, pos);
-			}
-			super.onRemove(state, level, pos, newState, isMoving);
-		}
-	}
-
-	@Override
 	public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
 		return SHAPE;
 	}
@@ -99,4 +89,9 @@ public class NeuralInterceptorBlock extends HorizontalDirectionalBlock {
 		}
 	}
 
+	@Override
+	protected void affectNeighborsAfterRemoval(BlockState state, ServerLevel level, BlockPos pos, boolean movedByPiston) {
+		SpatialDBManager.getInstance(level).removeShape(level, pos);
+		super.affectNeighborsAfterRemoval(state, level, pos, movedByPiston);
+	}
 }

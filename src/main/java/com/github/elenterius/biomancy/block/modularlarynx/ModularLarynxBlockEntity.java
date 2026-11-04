@@ -1,5 +1,8 @@
 package com.github.elenterius.biomancy.block.modularlarynx;
 
+import net.neoforged.neoforge.items.IItemHandlerModifiable;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.core.HolderLookup;
 import com.github.elenterius.biomancy.init.ModBlockEntities;
 import com.github.elenterius.biomancy.inventory.SingleItemStackHandler;
@@ -8,7 +11,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.Containers;
@@ -80,7 +83,7 @@ public class ModularLarynxBlockEntity extends BlockEntity {
 	}
 
 	public boolean playSound(float volume, float pitch) {
-		if (level == null || level.isClientSide) return false;
+		if (level == null || level.isClientSide()) return false;
 
 		BlockPos pos = getBlockPos();
 		double x = pos.getX() + 0.5d;
@@ -92,23 +95,23 @@ public class ModularLarynxBlockEntity extends BlockEntity {
 	}
 
 	@Override
-	protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-		super.saveAdditional(tag, registries);
-		tag.put(INVENTORY_TAG, inventory.serializeNBT(registries));
-		tag.putString(SOUND_EVENT_TAG, soundEvent.getLocation().toString());
+	protected void saveAdditional(ValueOutput output) {
+		super.saveAdditional(output);
+		inventory.serialize(output.child(INVENTORY_TAG));
+		output.putString(SOUND_EVENT_TAG, soundEvent.location().toString());
 	}
 
 	@Override
-	protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-		super.loadAdditional(tag, registries);
-		inventory.deserializeNBT(registries, tag.getCompound(INVENTORY_TAG));
-		soundEvent = deserializeSoundEvent(tag.getString(SOUND_EVENT_TAG)).orElseGet(() -> ModularLarynxBlock.getMobSoundType(getBlockState()).getSoundFallback());
+	protected void loadAdditional(ValueInput input) {
+		super.loadAdditional(input);
+		inventory.deserialize(input.childOrEmpty(INVENTORY_TAG));
+		soundEvent = deserializeSoundEvent(input.getStringOr(SOUND_EVENT_TAG, "")).orElseGet(() -> ModularLarynxBlock.getMobSoundType(getBlockState()).getSoundFallback());
 	}
 
 	public Optional<SoundEvent> deserializeSoundEvent(String stringKey) {
-		ResourceLocation key = ResourceLocation.tryParse(stringKey);
+		Identifier key = Identifier.tryParse(stringKey);
 		if (key != null) {
-			return Optional.ofNullable(BuiltInRegistries.SOUND_EVENT.get(key));
+			return BuiltInRegistries.SOUND_EVENT.getOptional(key);
 		}
 		return Optional.empty();
 	}
@@ -127,9 +130,15 @@ public class ModularLarynxBlockEntity extends BlockEntity {
 		}
 	}
 
-	public @Nullable IItemHandler getItemHandler(@Nullable Direction side) {
+	public @Nullable IItemHandlerModifiable getItemHandler(@Nullable Direction side) {
 		if (isRemoved()) return null;
 		return inventory;
 	}
 
+	@Override
+	public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+		if (level != null) {
+			dropInventoryContents(level, pos);
+		}
+	}
 }

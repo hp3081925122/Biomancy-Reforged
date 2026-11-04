@@ -1,5 +1,8 @@
 package com.github.elenterius.biomancy.util;
 
+import net.minecraft.commands.arguments.selector.EntitySelector;
+import net.minecraft.commands.arguments.NbtPathArgument;
+import net.minecraft.util.CompilableString;
 import com.github.elenterius.biomancy.styles.ColorStyles;
 import com.github.elenterius.biomancy.tooltip.EmptyLineTooltipComponent;
 import com.github.elenterius.biomancy.tooltip.HrTooltipComponent;
@@ -9,7 +12,7 @@ import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
-import net.minecraft.network.chat.contents.DataSource;
+import net.minecraft.network.chat.contents.data.DataSource;
 import net.minecraft.network.chat.contents.SelectorContents;
 import net.minecraft.world.inventory.tooltip.TooltipComponent;
 import org.jspecify.annotations.Nullable;
@@ -69,8 +72,8 @@ public final class ComponentUtil {
 	}
 
 	@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-	public static MutableComponent nbt(String nbtPathPattern, boolean interpreting, Optional<Component> separator, DataSource dataSource) {
-		return Component.nbt(nbtPathPattern, interpreting, separator, dataSource);
+	public static MutableComponent nbt(CompilableString<NbtPathArgument.NbtPath> nbtPath, boolean interpreting, Optional<Component> separator, DataSource dataSource) {
+		return Component.nbt(nbtPath, interpreting, false, separator, dataSource);
 	}
 
 	public static MutableComponent score(String name, String objective) {
@@ -78,7 +81,7 @@ public final class ComponentUtil {
 	}
 
 	@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-	public static MutableComponent selector(String pattern, Optional<Component> separator) {
+	public static MutableComponent selector(CompilableString<EntitySelector> pattern, Optional<Component> separator) {
 		return MutableComponent.create(new SelectorContents(pattern, separator));
 	}
 

@@ -2,7 +2,7 @@
   "type": "biomancy:bio_forging",
   "input": {
     "0": {
-      "id": "biomancy:elastic_fibers"
+      "ingredient": "biomancy:elastic_fibers"
     }
   },
   "output": {

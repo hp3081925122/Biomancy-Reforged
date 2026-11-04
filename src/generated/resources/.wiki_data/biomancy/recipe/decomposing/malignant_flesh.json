@@ -2,7 +2,7 @@
   "type": "biomancy:decomposing",
   "input": {
     "0": {
-      "id": "biomancy:malignant_flesh"
+      "ingredient": "biomancy:malignant_flesh"
     }
   },
   "output": {

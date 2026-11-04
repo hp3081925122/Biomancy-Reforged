@@ -9,7 +9,6 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.tags.EnchantmentTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.enchantment.Enchantment;
-import net.neoforged.neoforge.common.data.ExistingFileHelper;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
@@ -25,8 +24,8 @@ public class ModEnchantmentTagsProvider extends EnchantmentTagsProvider {
 			ModEnchantments.SELF_FEEDING
 	);
 
-	public ModEnchantmentTagsProvider(PackOutput output, CompletableFuture<HolderLookup.Provider> lookupProvider, @Nullable ExistingFileHelper existingFileHelper) {
-		super(output, lookupProvider, BiomancyMod.MOD_ID, existingFileHelper);
+	public ModEnchantmentTagsProvider(PackOutput output, CompletableFuture<HolderLookup.Provider> lookupProvider) {
+		super(output, lookupProvider, BiomancyMod.MOD_ID);
 	}
 
 	@Override
