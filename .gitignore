@@ -117,7 +117,9 @@ run/
 # Avoid ignoring Gradle wrapper jar file (.jar files are usually ignored)
 !gradle-wrapper.jar
 runs/
-gradle/
+gradle/*
+!gradle/wrapper/
+mctest/
 # 迁移过程文档不推送
 迁移文档.md
 *迁移文档*.md
