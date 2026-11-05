@@ -9,11 +9,10 @@ import net.minecraft.core.Holder;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import com.github.elenterius.biomancy.inventory.ItemHandlerUtil;
 import com.github.elenterius.biomancy.BiomancyMod;
+import com.github.elenterius.biomancy.client.item.InjectorClientHooks;
 import com.github.elenterius.biomancy.api.serum.Serum;
 import com.github.elenterius.biomancy.api.serum.SerumContainer;
 import com.github.elenterius.biomancy.api.serum.SerumInjector;
-import com.github.elenterius.biomancy.client.gui.InjectorScreen;
-import com.github.elenterius.biomancy.client.util.ClientTextUtil;
 import com.github.elenterius.biomancy.component.InjectorContents;
 import com.github.elenterius.biomancy.init.ModDataComponents;
 import com.github.elenterius.biomancy.init.ModEnchantments;
@@ -29,9 +28,6 @@ import com.github.elenterius.biomancy.styles.TextComponentUtil;
 import com.github.elenterius.biomancy.util.CombatUtil;
 import com.github.elenterius.biomancy.util.ComponentUtil;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -86,6 +82,7 @@ public class InjectorItem extends Item implements SerumInjector, ItemTooltipStyl
 	public InjectorItem(Properties properties) {
 		super(properties);
 		SingletonGeoAnimatable.registerSyncedAnimatable(this);
+		org.slf4j.LoggerFactory.getLogger(InjectorItem.class).debug("Injector client hooks are isolated from dedicated-server registration");
 	}
 
 	public static boolean tryInjectLivingEntity(ServerLevel level, BlockPos pos, ItemStack stack) {
@@ -143,12 +140,7 @@ public class InjectorItem extends Item implements SerumInjector, ItemTooltipStyl
 	}
 
 	private void tryToOpenClientScreen(InteractionHand hand) {
-		Screen currScreen = Minecraft.getInstance().screen;
-		if (currScreen == null && Minecraft.getInstance().player != null) {
-			Minecraft.getInstance().setScreen(new InjectorScreen(hand));
-			LocalPlayer localPlayer = Minecraft.getInstance().player;
-			localPlayer.level().playLocalSound(localPlayer.getX(), localPlayer.getY(), localPlayer.getZ(), ModSoundEvents.UI_RADIAL_MENU_OPEN.get(), SoundSource.PLAYERS, 1f, 1f, false);
-		}
+		InjectorClientHooks.tryToOpenScreen(hand);
 	}
 
 	@Override
@@ -363,20 +355,7 @@ public class InjectorItem extends Item implements SerumInjector, ItemTooltipStyl
 	}
 
 	private void onSoundKeyFrame(ItemStack stack, String soundId, double animationTick) {
-		Level level = Minecraft.getInstance().level;
-		if (level == null) return;
-		if (!getInjectionSuccess(stack)) return;
-
-		Entity soundOrigin = getEntityHost(stack, level);
-		if (soundOrigin == null) return;
-
-		LocalPlayer client = Minecraft.getInstance().player;
-		level.playSound(client, soundOrigin.getX(), soundOrigin.getY(0.5f), soundOrigin.getZ(), ModSoundEvents.INJECTOR_INJECT.get(), SoundSource.PLAYERS, 0.8f, 1f / (level.getRandom().nextFloat() * 0.5f + 1f) + 0.2f);
-
-		Entity victim = getEntityVictim(stack, level);
-		if (victim != null) {
-			level.levelEvent(LevelEvent.PARTICLES_DRAGON_BLOCK_BREAK, victim.blockPosition(), 0);
-		}
+		InjectorClientHooks.onSoundKeyFrame(this, stack, soundId, animationTick);
 	}
 
 	private void soundListener(KeyFrameEvent<InjectorItem, SoundKeyframeData> event) {
@@ -410,26 +389,7 @@ public class InjectorItem extends Item implements SerumInjector, ItemTooltipStyl
 
 	@Override
 	public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag isAdvanced) {
-		Level level = context.level();
-		ClientTextUtil.getItemInfoTooltip(stack).forEach(tooltip);
-		tooltip.accept(ComponentUtil.EMPTY_LINE);
-
-		InjectorContents contents = stack.get(ModDataComponents.INJECTOR_CONTENTS);
-		if (contents != null) {
-			Serum serum = getSerum(stack);
-			if (!serum.isEmpty()) {
-				CompoundTag serumData = getSerumData(stack);
-				short amount = contents.amount();
-				tooltip.accept(ComponentUtil.literal(String.format("%dx ", amount)).append(serum.getDisplayName(serumData)).withStyle(ChatFormatting.GRAY));
-				if (ClientTextUtil.showExtraInfo(tooltip)) {
-					serum.appendTooltip(serumData, level, tooltip, isAdvanced);
-				}
-				tooltip.accept(ComponentUtil.EMPTY_LINE);
-			}
-		}
-
-		tooltip.accept(ClientTextUtil.pressButtonTo(ClientTextUtil.getDefaultKey(), TextComponentUtil.getActionText("open_inventory")).withStyle(ChatFormatting.DARK_GRAY));
-		tooltip.accept(ClientTextUtil.pressButtonTo(ClientTextUtil.getShiftKey().append(" + ").append(ClientTextUtil.getRightMouseKey()), TextComponentUtil.getActionText("self_inject")).withStyle(ChatFormatting.DARK_GRAY));
+		InjectorClientHooks.appendHoverText(this, stack, context, display, tooltip, isAdvanced);
 	}
 
 	@Override

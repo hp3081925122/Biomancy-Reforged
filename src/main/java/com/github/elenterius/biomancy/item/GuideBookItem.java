@@ -1,14 +1,13 @@
 package com.github.elenterius.biomancy.item;
 
+import com.github.elenterius.biomancy.client.item.GuideBookClientHooks;
+
 import org.jspecify.annotations.Nullable;
 import net.minecraft.world.entity.EquipmentSlot;
 import com.github.elenterius.biomancy.util.animation.ModDataTickets;
 import com.github.elenterius.biomancy.util.animation.GeoRenderProviders;
 import net.minecraft.world.InteractionResult;
 import com.github.elenterius.geckolibextras.GLibExtras;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.advancements.AdvancementsScreen;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
@@ -55,9 +54,7 @@ public class GuideBookItem extends SimpleItem implements GeoItem {
 	}
 
 	private void tryToOpenClientScreen(Player player) {
-		if (player instanceof LocalPlayer localPlayer) {
-			Minecraft.getInstance().setScreen(new AdvancementsScreen(localPlayer.connection.getAdvancements()));
-		}
+		GuideBookClientHooks.openScreen(player);
 	}
 
 	@Override
@@ -67,25 +64,7 @@ public class GuideBookItem extends SimpleItem implements GeoItem {
 
 	@Override
 	public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-		AnimationController<GuideBookItem> controller = new AnimationController<>("main", state -> {
-
-			Object data = state.getData(DataTickets.ITEM_RENDER_PERSPECTIVE) == ItemDisplayContext.GUI ? Minecraft.getInstance().player : state.getData(GLibExtras.ITEM_HOST_TICKET);
-
-			if (data instanceof LivingEntity livingEntity) {
-				ItemStack stack = state.getData(ModDataTickets.ITEMSTACK);
-				if (stack == livingEntity.getMainHandItem() || stack == livingEntity.getOffhandItem()) {
-					return state.setAndContinue(Animations.OPEN_THEN_IDLE_ANIM);
-				}
-
-				if (state.controller().getCurrentRawAnimation() != null && !state.isCurrentAnimationStage("closed_idle")) {
-					return state.setAndContinue(Animations.CLOSE_THEN_IDLE_ANIM);
-				}
-			}
-
-			return state.setAndContinue(Animations.CLOSED_IDLE_ANIM);
-		});
-
-		controllers.add(controller);
+		GuideBookClientHooks.registerControllers(controllers, Animations.CLOSED_IDLE_ANIM, Animations.OPEN_THEN_IDLE_ANIM, Animations.CLOSE_THEN_IDLE_ANIM);
 	}
 
 	@Override
