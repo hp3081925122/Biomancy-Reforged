@@ -7,8 +7,6 @@ import com.github.elenterius.biomancy.init.ModMenuTypes;
 import com.github.elenterius.biomancy.inventory.BehavioralItemHandler;
 import com.github.elenterius.biomancy.inventory.InventoryHandler;
 import com.github.elenterius.biomancy.network.ModNetworkHandler;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
@@ -93,24 +91,12 @@ public class BioLabMenu extends PlayerContainerMenu {
 		bioLab.getInputInventory().get().setFilters(filters);
 	}
 
-	public void renderFilters(GuiGraphicsExtractor guiGraphics, Minecraft minecraft, int leftPos, int topPos) {
-		for (Slot slot : inputSlots) {
-			if (!slot.getItem().isEmpty()) continue;
-
-			int slotIndex = slot.getSlotIndex();
-
-			ItemStack filter = bioLab.getInputInventory().get().getFilterItemStack(slotIndex);
-			if (filter == null || filter.isEmpty()) continue;
-
-			renderFilter(guiGraphics, minecraft, filter, leftPos + slot.x, topPos + slot.y);
-		}
+	public List<Slot> getInputSlots() {
+		return inputSlots;
 	}
 
-	private void renderFilter(GuiGraphicsExtractor guiGraphics, Minecraft minecraft, ItemStack stack, int x, int y) {
-		guiGraphics.fill(x, y, x + 16, y + 16, 0x30ff0000);
-		guiGraphics.fakeItem(stack, x, y);
-		guiGraphics.fill(x, y, x + 16, y + 16, 0x30ffffff);
-		guiGraphics.itemDecorations(minecraft.font, stack, x, y);
+	public @Nullable ItemStack getFilterItemStack(int slotIndex) {
+		return bioLab != null ? bioLab.getInputInventory().get().getFilterItemStack(slotIndex) : null;
 	}
 
 	@Override

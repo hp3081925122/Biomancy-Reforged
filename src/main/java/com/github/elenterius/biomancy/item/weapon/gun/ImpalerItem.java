@@ -3,7 +3,6 @@ package com.github.elenterius.biomancy.item.weapon.gun;
 import net.minecraft.core.component.DataComponents;
 import com.github.elenterius.biomancy.util.animation.ModDataTickets;
 import com.github.elenterius.biomancy.util.animation.GeoRenderProviders;
-import net.minecraft.client.Minecraft;
 import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
@@ -15,16 +14,10 @@ import com.github.elenterius.biomancy.client.util.ClientTextUtil;
 import com.github.elenterius.biomancy.entity.projectile.ImpalerProjectile;
 import com.github.elenterius.biomancy.init.ModEntityTypes;
 import com.github.elenterius.biomancy.init.ModSoundEvents;
-import com.github.elenterius.biomancy.init.client.ModArmPoses;
 import com.github.elenterius.biomancy.item.ItemTooltipStyleProvider;
 import com.github.elenterius.biomancy.util.ComponentUtil;
 import com.github.elenterius.biomancy.util.animation.TriggerableAnimation;
 import com.github.elenterius.biomancy.util.shooting.*;
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.math.Axis;
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.model.HumanoidModel;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
 import net.minecraft.resources.Identifier;
@@ -191,7 +184,7 @@ public class ImpalerItem extends LivingGunItem<ImpalerProjectile> implements Ite
 
 	@Override
 	public void appendGunStats(ItemStack stack, Consumer<Component> tooltip) {
-		if (Minecraft.getInstance().hasControlDown()) return;
+		if (ClientTextUtil.hasControlDown()) return;
 		super.appendGunStats(stack, tooltip);
 	}
 

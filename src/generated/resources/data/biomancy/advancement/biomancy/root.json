@@ -13,7 +13,7 @@
   },
   "display": {
     "announce_to_chat": false,
-    "background": "biomancy:textures/block/smooth_primal_flesh.png",
+    "background": "biomancy:block/smooth_primal_flesh",
     "description": {
       "translate": "advancements.biomancy.root.description"
     },

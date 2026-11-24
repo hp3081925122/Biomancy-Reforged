@@ -52,7 +52,7 @@ public class BiomancyAdvancementsGenerator implements AdvancementSubProvider {
 	}
 
 	private void saveAdvancements(Consumer<AdvancementHolder> consumer) {
-		AdvancementHolder root = createAdvancement("root").icon(ModItems.FLESH_BITS.get()).background("textures/block/smooth_primal_flesh.png")
+		AdvancementHolder root = createAdvancement("root").icon(ModItems.FLESH_BITS.get()).background("block/smooth_primal_flesh")
 				.title("Whispers in the Meat")
 				.description("You feel a presence in the flesh, faint whispers reach your ears:\n\n  \"Raw Meat is useful...\"\n")
 				.showToast()

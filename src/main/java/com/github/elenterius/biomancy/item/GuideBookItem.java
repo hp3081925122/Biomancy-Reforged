@@ -16,6 +16,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.neoforged.fml.loading.FMLEnvironment;
 import com.geckolib.animatable.client.GeoRenderProvider;
 import com.geckolib.animatable.GeoItem;
 import com.geckolib.constant.DataTickets;
@@ -54,7 +55,9 @@ public class GuideBookItem extends SimpleItem implements GeoItem {
 	}
 
 	private void tryToOpenClientScreen(Player player) {
-		GuideBookClientHooks.openScreen(player);
+		if (FMLEnvironment.getDist().isClient()) {
+			GuideBookClientHooks.openScreen(player);
+		}
 	}
 
 	@Override
@@ -64,6 +67,7 @@ public class GuideBookItem extends SimpleItem implements GeoItem {
 
 	@Override
 	public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
+		if (!FMLEnvironment.getDist().isClient()) return;
 		GuideBookClientHooks.registerControllers(controllers, Animations.CLOSED_IDLE_ANIM, Animations.OPEN_THEN_IDLE_ANIM, Animations.CLOSE_THEN_IDLE_ANIM);
 	}
 

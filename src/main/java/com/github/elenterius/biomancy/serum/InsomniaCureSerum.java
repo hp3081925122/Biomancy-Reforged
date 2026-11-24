@@ -2,7 +2,6 @@ package com.github.elenterius.biomancy.serum;
 
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.styles.TextComponentUtil;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -13,6 +12,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.neoforged.fml.loading.FMLEnvironment;
 import org.jspecify.annotations.Nullable;
 
 public class InsomniaCureSerum extends BasicSerum {
@@ -61,8 +61,29 @@ public class InsomniaCureSerum extends BasicSerum {
 	}
 
 	private static int getTimeSinceRest(Player player) {
-		StatsCounter statsCounter = player.level().isClientSide() ? ((LocalPlayer) player).getStats() : ((ServerPlayer) player).getStats();
+		StatsCounter statsCounter;
+		if (player instanceof ServerPlayer serverPlayer) {
+			statsCounter = serverPlayer.getStats();
+		}
+		else if (player.level().isClientSide() && FMLEnvironment.getDist().isClient()) {
+			statsCounter = ClientStatsAccess.getStats(player);
+		}
+		else {
+			BiomancyMod.LOGGER.debug("Cannot resolve StatsCounter for player {} on dist {}", player.getClass().getName(), FMLEnvironment.getDist());
+			return 1;
+		}
+
+		if (statsCounter == null) return 1;
 		return Mth.clamp(statsCounter.getValue(Stats.CUSTOM.get(Stats.TIME_SINCE_REST)), 1, Integer.MAX_VALUE);
+	}
+
+	// 将 LocalPlayer 强转隔离到静态内部类，避免专用服字节码验证加载客户端玩家类
+	private static final class ClientStatsAccess {
+		private ClientStatsAccess() {}
+
+		private static @Nullable StatsCounter getStats(Player player) {
+			return player instanceof net.minecraft.client.player.LocalPlayer localPlayer ? localPlayer.getStats() : null;
+		}
 	}
 
 }

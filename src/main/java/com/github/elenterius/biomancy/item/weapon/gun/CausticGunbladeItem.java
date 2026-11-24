@@ -5,7 +5,6 @@ import net.minecraft.world.item.ItemInstance;
 import com.github.elenterius.biomancy.init.ModItemAbilities;
 import com.github.elenterius.biomancy.util.animation.ModDataTickets;
 import com.github.elenterius.biomancy.util.animation.GeoRenderProviders;
-import net.minecraft.client.Minecraft;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.item.Item;
@@ -15,7 +14,6 @@ import net.minecraft.core.Holder;
 import com.github.elenterius.biomancy.component.AcidRefluxState;
 import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.api.livingtool.SimpleLivingTool;
-import com.github.elenterius.biomancy.client.gui.ScreenOverlays;
 import com.github.elenterius.biomancy.client.util.ClientTextUtil;
 import com.github.elenterius.biomancy.entity.projectile.AcidSprayProjectile;
 import com.github.elenterius.biomancy.init.*;
@@ -23,7 +21,6 @@ import com.github.elenterius.biomancy.item.CriticalHitListener;
 import com.github.elenterius.biomancy.item.ItemTooltipStyleProvider;
 import com.github.elenterius.biomancy.item.MeleeDamageSourceProviderItem;
 import com.github.elenterius.biomancy.item.weapon.BladeProperties;
-import com.github.elenterius.biomancy.sounds.ClientSoundHandler;
 import com.github.elenterius.biomancy.styles.TextComponentUtil;
 import com.github.elenterius.biomancy.styles.TextStyles;
 import com.github.elenterius.biomancy.util.ComponentUtil;
@@ -32,9 +29,6 @@ import com.github.elenterius.biomancy.util.animation.TriggerableAnimation;
 import com.github.elenterius.biomancy.util.shooting.*;
 import com.github.elenterius.geckolibextras.GLibExtras;
 import net.minecraft.SharedConstants;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -59,8 +53,8 @@ import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.neoforged.fml.loading.FMLEnvironment;
 import com.geckolib.animatable.client.GeoRenderProvider;
-import net.minecraft.client.gui.Font;
 import net.neoforged.neoforge.common.ItemAbilities;
 import org.joml.Vector3f;
 import org.jspecify.annotations.Nullable;
@@ -154,13 +148,15 @@ public class CausticGunbladeItem extends LivingGunItem<AcidSprayProjectile> impl
 	@Override
 	public void onUseTick(Level level, LivingEntity shooter, ItemStack stack, int remainingUseDuration) {
 		if (level.isClientSide()) {
-			if (getGunState(stack) == GunState.SHOOTING_OR_CHARGING) {
-				int useTime = shooter.getTicksUsingItem();
-				long startTime = level.getGameTime() - useTime;
-				ClientSoundHandler.updateSoundLayer(shooter, "use_item", ModSoundEvents.CAUSTIC_GUNBLADE_SHOOT_LOOP.get(), startTime, 1f);
-			}
-			else {
-				ClientSoundHandler.removeSoundLayer(shooter, "use_item", true);
+			if (FMLEnvironment.getDist().isClient()) {
+				if (getGunState(stack) == GunState.SHOOTING_OR_CHARGING) {
+					int useTime = shooter.getTicksUsingItem();
+					long startTime = level.getGameTime() - useTime;
+					ClientSoundAccess.updateShootLoop(shooter, startTime);
+				}
+				else {
+					ClientSoundAccess.removeShootLoop(shooter);
+				}
 			}
 
 			return;
@@ -183,8 +179,21 @@ public class CausticGunbladeItem extends LivingGunItem<AcidSprayProjectile> impl
 
 	@Override
 	public void onStopUsing(ItemStack stack, LivingEntity entity, int count) {
-		if (entity.level().isClientSide()) {
-			ClientSoundHandler.removeSoundLayer(entity, "use_item", true);
+		if (entity.level().isClientSide() && FMLEnvironment.getDist().isClient()) {
+			ClientSoundAccess.removeShootLoop(entity);
+		}
+	}
+
+	// 将客户端音频层控制隔离到静态内部类，避免专用服加载 ClientSoundHandler
+	private static final class ClientSoundAccess {
+		private ClientSoundAccess() {}
+
+		private static void updateShootLoop(LivingEntity shooter, long startTime) {
+			com.github.elenterius.biomancy.sounds.ClientSoundHandler.updateSoundLayer(shooter, "use_item", ModSoundEvents.CAUSTIC_GUNBLADE_SHOOT_LOOP.get(), startTime, 1f);
+		}
+
+		private static void removeShootLoop(LivingEntity entity) {
+			com.github.elenterius.biomancy.sounds.ClientSoundHandler.removeSoundLayer(entity, "use_item", true);
 		}
 	}
 
@@ -306,7 +315,7 @@ public class CausticGunbladeItem extends LivingGunItem<AcidSprayProjectile> impl
 	public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag isAdvanced) {
 		ClientTextUtil.getItemInfoTooltip(stack).forEach(tooltip);
 
-		if (!Minecraft.getInstance().hasControlDown()) {
+		if (!ClientTextUtil.hasControlDown()) {
 			tooltip.accept(ComponentUtil.EMPTY_LINE);
 			appendGunStats(stack, tooltip);
 		}
@@ -370,7 +379,13 @@ public class CausticGunbladeItem extends LivingGunItem<AcidSprayProjectile> impl
 			components.addAll(ClientTextUtil.splitLinesByNewLine(ComponentUtil.translatable(translationKey + ".desc").withStyle(TextStyles.DARK_GRAY)));
 		}
 
-		void render(Font font, GuiGraphicsExtractor guiGraphics, float partialTick, int screenWidth, int screenHeight, ItemStack stack);
+		default int getCharge(ItemStack stack) {
+			return 0;
+		}
+
+		default float getChargePct(ItemStack stack) {
+			return 0f;
+		}
 
 	}
 
@@ -388,10 +403,13 @@ public class CausticGunbladeItem extends LivingGunItem<AcidSprayProjectile> impl
 			}
 
 			@Override
-			public void render(Font font, GuiGraphicsExtractor guiGraphics, float partialTick, int screenWidth, int screenHeight, ItemStack stack) {
-				int acidLevel = getState(stack).acidLevel();
-				float acidLevelPct = acidLevel / (float) MAX_ACID_LEVEL;
-				ScreenOverlays.renderBloodChargeMeter(guiGraphics, font, screenWidth, screenHeight, -90, acidLevel, acidLevelPct);
+			public int getCharge(ItemStack stack) {
+				return getState(stack).acidLevel();
+			}
+
+			@Override
+			public float getChargePct(ItemStack stack) {
+				return getState(stack).acidLevel() / (float) MAX_ACID_LEVEL;
 			}
 
 			@Override

@@ -127,7 +127,9 @@ public final class ScreenOverlays {
 
 			if (stack.getItem() instanceof CausticGunbladeItem) {
 				if (GuiUtil.isFirstPersonView()) {
-							CausticGunbladeItem.Abilities.ACID_REFLUX.render(minecraft.font, guiGraphics, partialTicks, screenWidth, screenHeight, stack);
+					int acidLevel = CausticGunbladeItem.Abilities.ACID_REFLUX.getCharge(stack);
+					float acidLevelPct = CausticGunbladeItem.Abilities.ACID_REFLUX.getChargePct(stack);
+					renderBloodChargeMeter(guiGraphics, minecraft.font, screenWidth, screenHeight, -90, acidLevel, acidLevelPct);
 				}
 			}
 		}

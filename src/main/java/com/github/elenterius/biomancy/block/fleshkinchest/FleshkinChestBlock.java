@@ -28,7 +28,6 @@ import com.github.elenterius.biomancy.util.permission.IRestrictedInteraction;
 import com.github.elenterius.biomancy.util.permission.UserType;
 import net.minecraft.ChatFormatting;
 import net.minecraft.util.Util;
-import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
@@ -70,6 +69,7 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.event.EventHooks;
 import net.neoforged.neoforge.items.ItemHandlerHelper;
 import org.jspecify.annotations.Nullable;
@@ -274,18 +274,21 @@ public class FleshkinChestBlock extends BaseEntityBlock implements BlockTooltipP
 
 		OwnableEntityBlock.appendUserListToTooltip(stack, tooltip);
 
-		if (Minecraft.getInstance().player == null) return;
+		if (!FMLEnvironment.getDist().isClient()) return;
+
+		Player clientPlayer = ClientTooltipAccess.getClientPlayer();
+		if (clientPlayer == null) return;
 
 		CompoundTag tag = BlockItemUtil.getBlockEntityData(stack);
 		if (tag != null) {
 			tooltip.accept(ComponentUtil.EMPTY_LINE);
 
-			if (isAuthorized(Minecraft.getInstance().player.getUUID(), tag)) {
+			if (isAuthorized(clientPlayer.getUUID(), tag)) {
 				CompoundTag inventoryTag = tag.getCompoundOrEmpty("Inventory");
 				if (!inventoryTag.isEmpty() && inventoryTag.contains("Items")) {
 					int size = inventoryTag.getIntOr("Size", FleshkinChestBlockEntity.SLOTS);
 					NonNullList<ItemStack> itemList = NonNullList.withSize(size, ItemStack.EMPTY);
-					ContainerHelper.loadAllItems(TagValueInput.create(ProblemReporter.DISCARDING, Minecraft.getInstance().player.registryAccess(), inventoryTag), itemList);
+					ContainerHelper.loadAllItems(TagValueInput.create(ProblemReporter.DISCARDING, clientPlayer.registryAccess(), inventoryTag), itemList);
 					int count = 0;
 					int totalCount = 0;
 
@@ -336,6 +339,16 @@ public class FleshkinChestBlock extends BaseEntityBlock implements BlockTooltipP
 	public void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
 		if (level.getBlockEntity(pos) instanceof FleshkinChestBlockEntity chest) {
 			chest.recheckOpen();
+		}
+	}
+
+	// 将客户端玩家实例读取隔离到静态内部类，避免专用服构建物品提示时加载 Minecraft 类
+	private static final class ClientTooltipAccess {
+		private ClientTooltipAccess() {}
+
+		private static @Nullable Player getClientPlayer() {
+			net.minecraft.client.Minecraft minecraft = net.minecraft.client.Minecraft.getInstance();
+			return minecraft != null ? minecraft.player : null;
 		}
 	}
 

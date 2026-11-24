@@ -13,6 +13,8 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
 
 public class BioLabScreen extends AbstractContainerScreen<BioLabMenu> implements ScreenTooltipStyleProvider, ScreenNutrientFuelConsumer {
 
@@ -58,8 +60,27 @@ public class BioLabScreen extends AbstractContainerScreen<BioLabMenu> implements
 		drawProgressBar(guiGraphics, menu.getCraftingProgressNormalized());
 		drawFuelBar(guiGraphics, menu.getFuelAmountNormalized());
 
-		menu.renderFilters(guiGraphics, minecraft, leftPos, topPos);
+		renderFilters(guiGraphics, leftPos, topPos);
 		drawLock(guiGraphics, menu.isFilterLocked());
+	}
+
+	// 将过滤器槽位虚影渲染从通用 BioLabMenu 移至客户端界面，避免通用菜单引用客户端渲染类
+	private void renderFilters(GuiGraphicsExtractor guiGraphics, int leftPos, int topPos) {
+		for (Slot slot : menu.getInputSlots()) {
+			if (!slot.getItem().isEmpty()) continue;
+
+			ItemStack filter = menu.getFilterItemStack(slot.getSlotIndex());
+			if (filter == null || filter.isEmpty()) continue;
+
+			renderFilter(guiGraphics, filter, leftPos + slot.x, topPos + slot.y);
+		}
+	}
+
+	private void renderFilter(GuiGraphicsExtractor guiGraphics, ItemStack stack, int x, int y) {
+		guiGraphics.fill(x, y, x + 16, y + 16, 0x30ff0000);
+		guiGraphics.fakeItem(stack, x, y);
+		guiGraphics.fill(x, y, x + 16, y + 16, 0x30ffffff);
+		guiGraphics.itemDecorations(font, stack, x, y);
 	}
 
 	private void drawProgressBar(GuiGraphicsExtractor guiGraphics, float craftingPct) {

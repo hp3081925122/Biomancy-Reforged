@@ -1,31 +1,19 @@
 package com.github.elenterius.biomancy.client.item;
 
-import com.github.elenterius.biomancy.api.serum.Serum;
 import com.github.elenterius.biomancy.client.gui.InjectorScreen;
-import com.github.elenterius.biomancy.client.util.ClientTextUtil;
-import com.github.elenterius.biomancy.component.InjectorContents;
-import com.github.elenterius.biomancy.init.ModDataComponents;
 import com.github.elenterius.biomancy.init.ModSoundEvents;
 import com.github.elenterius.biomancy.item.injector.InjectorItem;
-import com.github.elenterius.biomancy.styles.TextComponentUtil;
-import com.github.elenterius.biomancy.util.ComponentUtil;
-import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.network.chat.Component;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.LevelEvent;
-import java.util.function.Consumer;
 
+// 注射器客户端逻辑钩子，将界面与本地玩家访问隔离到客户端类
 public final class InjectorClientHooks {
 
 	private InjectorClientHooks() {}
@@ -56,26 +44,4 @@ public final class InjectorClientHooks {
 		}
 	}
 
-	public static void appendHoverText(InjectorItem item, ItemStack stack, Item.TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag isAdvanced) {
-		Level level = context.level();
-		ClientTextUtil.getItemInfoTooltip(stack).forEach(tooltip);
-		tooltip.accept(ComponentUtil.EMPTY_LINE);
-
-		InjectorContents contents = stack.get(ModDataComponents.INJECTOR_CONTENTS);
-		if (contents != null) {
-			Serum serum = item.getSerum(stack);
-			if (!serum.isEmpty()) {
-				CompoundTag serumData = item.getSerumData(stack);
-				short amount = contents.amount();
-				tooltip.accept(ComponentUtil.literal(String.format("%dx ", amount)).append(serum.getDisplayName(serumData)).withStyle(ChatFormatting.GRAY));
-				if (ClientTextUtil.showExtraInfo(tooltip)) {
-					serum.appendTooltip(serumData, level, tooltip, isAdvanced);
-				}
-				tooltip.accept(ComponentUtil.EMPTY_LINE);
-			}
-		}
-
-		tooltip.accept(ClientTextUtil.pressButtonTo(ClientTextUtil.getDefaultKey(), TextComponentUtil.getActionText("open_inventory")).withStyle(ChatFormatting.DARK_GRAY));
-		tooltip.accept(ClientTextUtil.pressButtonTo(ClientTextUtil.getShiftKey().append(" + ").append(ClientTextUtil.getRightMouseKey()), TextComponentUtil.getActionText("self_inject")).withStyle(ChatFormatting.DARK_GRAY));
-	}
 }

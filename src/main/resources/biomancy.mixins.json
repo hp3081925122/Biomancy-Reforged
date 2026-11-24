@@ -15,10 +15,10 @@
     "accessor.IntegerPropertyAccessor", "accessor.LivingEntityAccessor",
     "accessor.MobEffectInstanceAccessor", "accessor.MobEntityAccessor", "accessor.SavedDataStorageAccessor", "accessor.ServerLevelAccessor", "accessor.SheepAccessor",
     "accessor.SlimeAccessor", "accessor.StructureTemplateAccessor", "accessor.TadpoleAccessor", "accessor.TextDisplayAccessor",
-    "accessor.TextureSlotAccessor", "accessor.ZombieVillagerMixinAccessor"
+    "accessor.ZombieVillagerMixinAccessor"
   ],
   "client": [
-    "client.AbstractSignEditScreenMixin", "client.AnvilScreenMixin",
+    "accessor.TextureSlotAccessor", "client.AbstractSignEditScreenMixin", "client.AnvilScreenMixin",
     "client.ClientPackListenerMixin", "client.FontMixin", "client.GuiGraphicsMixin",
     "client.GuiMixin", "client.HeartTypeMixin", "client.LiquidBlockRendererMixin"
   ],
