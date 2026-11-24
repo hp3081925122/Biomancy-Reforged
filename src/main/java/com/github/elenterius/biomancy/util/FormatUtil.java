@@ -1,6 +1,5 @@
 package com.github.elenterius.biomancy.util;
 
-import net.minecraft.client.Minecraft;
 import net.neoforged.fml.loading.FMLEnvironment;
 
 import java.text.DecimalFormat;
@@ -71,15 +70,21 @@ public final class FormatUtil {
 	}
 
 	public static Locale getLocale() {
-		return FMLEnvironment.dist.isClient() ? getClientLocale() : getServerLocale();
-	}
-
-	private static Locale getClientLocale() {
-		return Minecraft.getInstance().getLocale();
+		return FMLEnvironment.dist.isClient() ? ClientLocaleHolder.getLocale() : getServerLocale();
 	}
 
 	private static Locale getServerLocale() {
 		return Locale.US;
+	}
+
+	// 将客户端本地化获取隔离到静态内部类，避免专用服引用 Minecraft 类
+	private static final class ClientLocaleHolder {
+		private ClientLocaleHolder() {}
+
+		private static Locale getLocale() {
+			net.minecraft.client.Minecraft minecraft = net.minecraft.client.Minecraft.getInstance();
+			return minecraft != null ? minecraft.getLocale() : Locale.US;
+		}
 	}
 
 	private static void updateDecimalFormat() {

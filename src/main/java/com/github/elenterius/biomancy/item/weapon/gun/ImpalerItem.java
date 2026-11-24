@@ -10,16 +10,10 @@ import com.github.elenterius.biomancy.client.util.ClientTextUtil;
 import com.github.elenterius.biomancy.entity.projectile.ImpalerProjectile;
 import com.github.elenterius.biomancy.init.ModEntityTypes;
 import com.github.elenterius.biomancy.init.ModSoundEvents;
-import com.github.elenterius.biomancy.init.client.ModArmPoses;
 import com.github.elenterius.biomancy.item.ItemTooltipStyleProvider;
 import com.github.elenterius.biomancy.util.ComponentUtil;
 import com.github.elenterius.biomancy.util.animation.TriggerableAnimation;
 import com.github.elenterius.biomancy.util.shooting.*;
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.math.Axis;
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.model.HumanoidModel;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
@@ -187,7 +181,7 @@ public class ImpalerItem extends LivingGunItem<ImpalerProjectile> implements Ite
 
 	@Override
 	public void appendGunStats(ItemStack stack, List<Component> tooltip) {
-		if (Screen.hasControlDown()) return;
+		if (ClientTextUtil.hasControlDown()) return;
 		super.appendGunStats(stack, tooltip);
 	}
 

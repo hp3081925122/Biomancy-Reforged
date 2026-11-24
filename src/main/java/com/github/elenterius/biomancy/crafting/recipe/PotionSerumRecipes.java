@@ -57,6 +57,10 @@ public final class PotionSerumRecipes {
 		return get(level).potions();
 	}
 
+	public static Set<Holder<Potion>> getPotions(PotionBrewing potionBrewing) {
+		return get(potionBrewing).potions();
+	}
+
 	public static Optional<RecipeHolder<BioBrewingRecipe>> byId(Level level, @Nullable ResourceLocation recipeId) {
 		return recipeId == null ? Optional.empty() : Optional.ofNullable(get(level).recipesById().get(recipeId));
 	}

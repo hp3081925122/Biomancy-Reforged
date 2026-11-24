@@ -6,7 +6,6 @@ import com.github.elenterius.biomancy.styles.TextComponentUtil;
 import com.github.elenterius.biomancy.util.ComponentUtil;
 import com.github.elenterius.biomancy.util.permission.UserType;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
@@ -79,7 +78,7 @@ public interface OwnableEntityBlock extends EntityBlock {
 		if (entityData.contains(NBT_KEY_USER_LIST)) {
 			ListTag nbtList = entityData.getList(NBT_KEY_USER_LIST, Tag.TAG_COMPOUND);
 			tooltip.add(ComponentUtil.literal("Users: ").withStyle(ChatFormatting.GRAY));
-			int limit = Screen.hasControlDown() ? Math.min(5, nbtList.size()) : nbtList.size();
+			int limit = ClientTextUtil.hasControlDown() ? Math.min(5, nbtList.size()) : nbtList.size();
 			for (int i = 0; i < limit; i++) {
 				CompoundTag userNbt = nbtList.getCompound(i);
 				String userName = ClientTextUtil.tryToGetPlayerNameOnClientSide(userNbt.getUUID(NBT_KEY_USER));

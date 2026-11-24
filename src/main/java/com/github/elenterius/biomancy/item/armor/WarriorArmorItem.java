@@ -11,7 +11,6 @@ import com.github.elenterius.biomancy.client.util.ClientTextUtil;
 import com.github.elenterius.biomancy.entity.misc.LivingEntityData;
 import com.github.elenterius.biomancy.init.ModDataComponents;
 import com.github.elenterius.biomancy.init.ModSoundEvents;
-import com.github.elenterius.biomancy.init.client.ModKeyBindings;
 import com.github.elenterius.biomancy.item.ItemTooltipStyleProvider;
 import com.github.elenterius.biomancy.item.KeyPressListener;
 import com.github.elenterius.biomancy.item.KnowledgeReader;
@@ -379,7 +378,7 @@ public class WarriorArmorItem extends LivingArmorGeoItem implements KnowledgeRea
 				tooltip.add(ComponentUtil.EMPTY_LINE);
 				tooltip.add(TextComponentUtil.getAbilityText("imposing_roar").withStyle(ChatFormatting.GRAY));
 				tooltip.add(ComponentUtil.space().append(TextComponentUtil.getAbilityText("imposing_roar.desc", IMPOSING_ROAR_COST, IMPOSING_ROAR_RADIUS, IMPOSING_ROAR_DURATION / 20)).withStyle(ChatFormatting.DARK_GRAY));
-				tooltip.add(ClientTextUtil.pressButtonTo(ComponentUtil.keybind(ModKeyBindings.EQUIPPED_ARMOR_ACTION), TextComponentUtil.getActionText("activate")).withStyle(TextStyles.DARK_GRAY));
+				tooltip.add(ClientTextUtil.pressButtonTo(ClientTextUtil.getEquippedArmorActionKey(), TextComponentUtil.getActionText("activate")).withStyle(TextStyles.DARK_GRAY));
 			}
 			case LEGGINGS -> {
 				tooltip.add(ComponentUtil.EMPTY_LINE);

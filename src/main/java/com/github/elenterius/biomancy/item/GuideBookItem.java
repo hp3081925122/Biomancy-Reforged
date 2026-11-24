@@ -1,28 +1,20 @@
 package com.github.elenterius.biomancy.item;
 
+import com.github.elenterius.biomancy.client.item.GuideBookClientHooks;
 import com.github.elenterius.biomancy.client.render.item.guidebook.GuideBookRenderer;
-import com.github.elenterius.geckolibextras.GLibExtras;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.advancements.AdvancementsScreen;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-import software.bernie.geckolib.animatable.client.GeoRenderProvider;
+import net.neoforged.fml.loading.FMLEnvironment;
 import software.bernie.geckolib.animatable.GeoItem;
-import software.bernie.geckolib.constant.DataTickets;
+import software.bernie.geckolib.animatable.client.GeoRenderProvider;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.animation.AnimatableManager;
-import software.bernie.geckolib.animation.AnimationController;
 import software.bernie.geckolib.animation.RawAnimation;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
@@ -54,10 +46,9 @@ public class GuideBookItem extends SimpleItem implements GeoItem {
 		return InteractionResultHolder.sidedSuccess(stack, level.isClientSide);
 	}
 
-	@OnlyIn(Dist.CLIENT)
 	private void tryToOpenClientScreen(Player player) {
-		if (player instanceof LocalPlayer localPlayer) {
-			Minecraft.getInstance().setScreen(new AdvancementsScreen(localPlayer.connection.getAdvancements()));
+		if (FMLEnvironment.dist.isClient()) {
+			GuideBookClientHooks.openScreen(player);
 		}
 	}
 
@@ -75,25 +66,8 @@ public class GuideBookItem extends SimpleItem implements GeoItem {
 
 	@Override
 	public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-		AnimationController<GuideBookItem> controller = new AnimationController<>(this, "main", state -> {
-
-			Object data = state.getData(DataTickets.ITEM_RENDER_PERSPECTIVE) == ItemDisplayContext.GUI ? Minecraft.getInstance().player : state.getData(GLibExtras.ITEM_HOST_TICKET);
-
-			if (data instanceof LivingEntity livingEntity) {
-				ItemStack stack = state.getData(DataTickets.ITEMSTACK);
-				if (stack == livingEntity.getMainHandItem() || stack == livingEntity.getOffhandItem()) {
-					return state.setAndContinue(Animations.OPEN_THEN_IDLE_ANIM);
-				}
-
-				if (state.getController().getCurrentAnimation() != null && !state.isCurrentAnimationStage("closed_idle")) {
-					return state.setAndContinue(Animations.CLOSE_THEN_IDLE_ANIM);
-				}
-			}
-
-			return state.setAndContinue(Animations.CLOSED_IDLE_ANIM);
-		});
-
-		controllers.add(controller);
+		if (!FMLEnvironment.dist.isClient()) return;
+		GuideBookClientHooks.registerControllers(this, controllers, Animations.CLOSED_IDLE_ANIM, Animations.OPEN_THEN_IDLE_ANIM, Animations.CLOSE_THEN_IDLE_ANIM);
 	}
 
 	@Override

@@ -20,7 +20,6 @@ import com.github.elenterius.biomancy.util.permission.IRestrictedInteraction;
 import com.github.elenterius.biomancy.util.permission.UserType;
 import net.minecraft.ChatFormatting;
 import net.minecraft.Util;
-import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
@@ -53,6 +52,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.neoforged.fml.loading.FMLEnvironment;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.material.FluidState;
@@ -276,18 +276,21 @@ public class FleshkinChestBlock extends BaseEntityBlock implements SimpleWaterlo
 
 		OwnableEntityBlock.appendUserListToTooltip(stack, tooltip);
 
-		if (Minecraft.getInstance().player == null) return;
+		if (!FMLEnvironment.dist.isClient()) return;
+
+		Player clientPlayer = ClientTooltipAccess.getClientPlayer();
+		if (clientPlayer == null) return;
 
 		CompoundTag tag = BlockItemUtil.getBlockEntityData(stack);
 		if (tag != null) {
 			tooltip.add(ComponentUtil.EMPTY_LINE);
 
-			if (isAuthorized(Minecraft.getInstance().player.getUUID(), tag)) {
+			if (isAuthorized(clientPlayer.getUUID(), tag)) {
 				CompoundTag inventoryTag = tag.getCompound("Inventory");
 				if (!inventoryTag.isEmpty() && inventoryTag.contains("Items", Tag.TAG_LIST)) {
 					int size = inventoryTag.contains("Size") ? inventoryTag.getInt("Size") : FleshkinChestBlockEntity.SLOTS;
 					NonNullList<ItemStack> itemList = NonNullList.withSize(size, ItemStack.EMPTY);
-					ContainerHelper.loadAllItems(inventoryTag, itemList, Minecraft.getInstance().player.registryAccess());
+					ContainerHelper.loadAllItems(inventoryTag, itemList, clientPlayer.registryAccess());
 					int count = 0;
 					int totalCount = 0;
 
@@ -338,6 +341,16 @@ public class FleshkinChestBlock extends BaseEntityBlock implements SimpleWaterlo
 	public void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
 		if (level.getBlockEntity(pos) instanceof FleshkinChestBlockEntity chest) {
 			chest.recheckOpen();
+		}
+	}
+
+	// 将客户端玩家实例读取隔离到静态内部类，避免专用服构建物品提示时加载 Minecraft 类
+	private static final class ClientTooltipAccess {
+		private ClientTooltipAccess() {}
+
+		private static @Nullable Player getClientPlayer() {
+			net.minecraft.client.Minecraft minecraft = net.minecraft.client.Minecraft.getInstance();
+			return minecraft != null ? minecraft.player : null;
 		}
 	}
 

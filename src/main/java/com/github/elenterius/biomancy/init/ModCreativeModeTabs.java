@@ -5,7 +5,6 @@ import com.github.elenterius.biomancy.api.livingtool.LivingTool;
 import com.github.elenterius.biomancy.api.serum.SerumContainer;
 import com.github.elenterius.biomancy.crafting.recipe.PotionSerumRecipes;
 import com.github.elenterius.biomancy.item.SerumItem;
-import com.github.elenterius.biomancy.util.ClientUtil;
 import com.github.elenterius.biomancy.util.ComponentUtil;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup;
@@ -18,6 +17,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.*;
 import net.minecraft.world.item.alchemy.Potion;
+import net.minecraft.world.item.alchemy.PotionBrewing;
 import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentInstance;
@@ -25,9 +25,11 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.properties.StructureMode;
+import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.server.ServerLifecycleHooks;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Set;
@@ -117,14 +119,45 @@ public final class ModCreativeModeTabs {
 					output.accept(PotionContents.createItemStack(Items.SPLASH_POTION, ModPotions.PRIMORDIAL_INFESTATION));
 					output.accept(PotionContents.createItemStack(Items.LINGERING_POTION, ModPotions.PRIMORDIAL_INFESTATION));
 
-					Level level = ClientUtil.getLevel();
-					if (level != null) {
-						for (Holder<Potion> potion : PotionSerumRecipes.getPotions(level)) {
+					PotionBrewing potionBrewing = resolvePotionBrewing();
+					if (potionBrewing != null) {
+						Set<Holder<Potion>> potions = PotionSerumRecipes.getPotions(potionBrewing);
+						for (Holder<Potion> potion : potions) {
 							output.accept(ModItems.POTION_SERUM.get().getInstanceFrom(potion));
 						}
+						BiomancyMod.LOGGER.debug("Populated {} potion serums for bio_alchemy creative tab on dist {}", potions.size(), FMLEnvironment.dist);
+					}
+					else {
+						BiomancyMod.LOGGER.debug("Skipped potion serums for bio_alchemy creative tab: PotionBrewing unavailable on dist {}", FMLEnvironment.dist);
 					}
 
 				});
+	}
+
+	private static @Nullable PotionBrewing resolvePotionBrewing() {
+		// 仅在客户端环境通过独立静态内部类读取客户端维度，避免专用服加载 ClientLevel
+		if (FMLEnvironment.dist.isClient()) {
+			PotionBrewing clientBrewing = ClientPotionBrewingAccess.getPotionBrewing();
+			if (clientBrewing != null) {
+				return clientBrewing;
+			}
+		}
+
+		MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+		if (server != null) {
+			return server.potionBrewing();
+		}
+
+		return null;
+	}
+
+	private static final class ClientPotionBrewingAccess {
+		private ClientPotionBrewingAccess() {}
+
+		private static @Nullable PotionBrewing getPotionBrewing() {
+			Level level = com.github.elenterius.biomancy.util.ClientUtil.getLevel();
+			return level != null ? level.potionBrewing() : null;
+		}
 	}
 
 	private static CreativeModeTab.Builder devTab(CreativeModeTab.Builder builder) {

@@ -1,5 +1,7 @@
 package com.github.elenterius.biomancy.mixin.client;
 
+import com.github.elenterius.biomancy.client.render.GasCloudDebugRenderer;
+import com.github.elenterius.biomancy.entity.misc.GasCloud;
 import com.github.elenterius.biomancy.util.debug.DebugInfo;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Camera;
@@ -23,9 +25,13 @@ public abstract class EntityRenderDispatcherMixin {
 	@Shadow
 	public Camera camera;
 
-	@Inject(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/entity/EntityRenderDispatcher;renderHitbox(Lcom/mojang/blaze3d/vertex/PoseStack;Lcom/mojang/blaze3d/vertex/VertexConsumer;Lnet/minecraft/world/entity/Entity;FFFF)V"))
+	// 必须在原版 renderHitbox 之后注入，避免调试标签绘制切换 RenderType 提前 flush 原版已获取的 lines BufferBuilder
+	@Inject(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/entity/EntityRenderDispatcher;renderHitbox(Lcom/mojang/blaze3d/vertex/PoseStack;Lcom/mojang/blaze3d/vertex/VertexConsumer;Lnet/minecraft/world/entity/Entity;FFFF)V", shift = At.Shift.AFTER))
 	private void render(Entity entity, double x, double y, double z, float rotationYaw, float partialTicks, PoseStack poseStack, MultiBufferSource multiBuffer, int packedLight, CallbackInfo ci) {
-		if (entity instanceof DebugInfo.EntityContext context) {
+		if (entity instanceof GasCloud gasCloud) {
+			GasCloudDebugRenderer.renderDebugInfo(gasCloud, (EntityRenderDispatcher) (Object) this, poseStack, multiBuffer, packedLight, partialTicks);
+		}
+		else if (entity instanceof DebugInfo.EntityContext context) {
 			context.renderDebugInfo((EntityRenderDispatcher) (Object) this, poseStack, multiBuffer, packedLight, partialTicks);
 		}
 

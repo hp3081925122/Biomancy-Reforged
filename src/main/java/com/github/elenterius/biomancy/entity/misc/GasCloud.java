@@ -6,18 +6,10 @@ import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.init.ModEntityTypes;
 import com.github.elenterius.biomancy.init.ModParticleTypes;
 import com.github.elenterius.biomancy.mixin.accessor.EntityAccessor;
-import com.github.elenterius.biomancy.util.debug.DebugInfo;
 import com.github.elenterius.biomancy.world.DynamicGasVolume;
-import com.mojang.blaze3d.vertex.PoseStack;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Font;
-import net.minecraft.client.renderer.LevelRenderer;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.SimpleParticleType;
@@ -37,7 +29,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import org.joml.Matrix4f;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -46,7 +37,7 @@ import java.util.UUID;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
-public class GasCloud extends Entity implements TraceableEntity, DebugInfo.EntityContext {
+public class GasCloud extends Entity implements TraceableEntity {
 
 	public static final Predicate<Entity> NO_SPECTATOR_BUT_ALIVE_AND_AFFECTED_BY_POTIONS = entity -> entity.isAlive() && !entity.isSpectator() && entity instanceof LivingEntity livingEntity && livingEntity.isAffectedByPotions();
 	public static final float DEFAULT_RADIUS = 3f;
@@ -454,58 +445,8 @@ public class GasCloud extends Entity implements TraceableEntity, DebugInfo.Entit
 		}
 	}
 
-	@Override
-	public void renderDebugInfo(EntityRenderDispatcher renderDispatcher, PoseStack poseStack, MultiBufferSource multiBuffer, int packedLight, float partialTicks) {
-		if (dynamicGasVolume == null || dynamicGasVolume.getPackedPositions().isEmpty()) return;
-
-		double distanceSqr = renderDispatcher.distanceToSqr(this);
-		if (distanceSqr >= 64 * 64) return;
-
-		float radius = getRadius();
-		int desiredVolume = Mth.floor((4f / 3f) * Mth.PI * (radius * radius * radius * 0.8f));
-		int actualVolume = dynamicGasVolume.getPackedPositions().size();
-
-		double xOffset = -Mth.lerp(partialTicks, xOld, getX());
-		double yOffset = -Mth.lerp(partialTicks, yOld, getY());
-		double zOffset = -Mth.lerp(partialTicks, zOld, getZ());
-
-		poseStack.pushPose();
-		AABB aabb = getBoundingBox().move(xOffset, yOffset, zOffset);
-		poseStack.translate(aabb.minX + aabb.getXsize() / 2d, aabb.minY + aabb.getYsize(), aabb.minZ + aabb.getZsize() / 2d);
-		renderLabel(renderDispatcher, poseStack, multiBuffer, packedLight, "%d / %d".formatted(actualVolume, desiredVolume), 0.25f, 0x00FFFF, false);
-		poseStack.popPose();
-
-		for (long packedPos : dynamicGasVolume.getPackedPositions()) {
-			int x = BlockPos.getX(packedPos);
-			int y = BlockPos.getY(packedPos);
-			int z = BlockPos.getZ(packedPos);
-
-			float red = 0.25f;
-			float green = 1f;
-
-			poseStack.pushPose();
-			poseStack.translate(xOffset + x, yOffset + y, zOffset + z);
-			LevelRenderer.renderLineBox(poseStack, multiBuffer.getBuffer(RenderType.lines()), 0.1f, 0.1f, 0.1f, 0.9f, 0.9f, 0.9f, red, green, 0f, 1f);
-			poseStack.popPose();
-		}
-	}
-
-	protected void renderLabel(EntityRenderDispatcher renderDispatcher, PoseStack poseStack, MultiBufferSource multiBuffer, int packedLight, String text, float y, int color, boolean translucentBackground) {
-		poseStack.pushPose();
-
-		poseStack.translate(0f, y, 0f);
-		poseStack.mulPose(renderDispatcher.cameraOrientation());
-		poseStack.scale(-0.025f, -0.025f, 0.025f);
-
-		int backgroundColor = (int) (Minecraft.getInstance().options.getBackgroundOpacity(0.25F) * 255f) << 24;
-		Font font = Minecraft.getInstance().font;
-		float x = -font.width(text) / 2f;
-
-		Matrix4f matrix4f = poseStack.last().pose();
-		font.drawInBatch(text, x, y, 0x20_ffffff, false, matrix4f, multiBuffer, translucentBackground ? Font.DisplayMode.SEE_THROUGH : Font.DisplayMode.NORMAL, backgroundColor, packedLight);
-		font.drawInBatch(text, x, y, 0xFF_000000 | color, false, matrix4f, multiBuffer, Font.DisplayMode.NORMAL, 0, packedLight);
-
-		poseStack.popPose();
+	public @Nullable DynamicGasVolume getDynamicGasVolume() {
+		return dynamicGasVolume;
 	}
 
 	public enum GasInteractionType {

@@ -4,7 +4,6 @@ import com.github.elenterius.biomancy.styles.ColorStyles;
 import com.github.elenterius.biomancy.tooltip.EmptyLineTooltipComponent;
 import com.github.elenterius.biomancy.tooltip.HrTooltipComponent;
 import com.github.elenterius.biomancy.tooltip.TooltipContents;
-import net.minecraft.client.KeyMapping;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -58,10 +57,6 @@ public final class ComponentUtil {
 
 	public static Component horizontalLine(int colorARGB) {
 		return TooltipHacks.wrap(new HrTooltipComponent(colorARGB));
-	}
-
-	public static MutableComponent keybind(KeyMapping keyMapping) {
-		return Component.keybind(keyMapping.getName());
 	}
 
 	public static MutableComponent keybind(String keyName) {

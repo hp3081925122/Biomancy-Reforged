@@ -3,6 +3,7 @@ package com.github.elenterius.biomancy.item.extractor;
 import com.github.elenterius.biomancy.util.EnchantmentUtil;
 import net.minecraft.core.Holder;
 import com.github.elenterius.biomancy.BiomancyMod;
+import com.github.elenterius.biomancy.client.item.ExtractorClientHooks;
 import com.github.elenterius.biomancy.client.render.item.extractor.ExtractorRenderer;
 import com.github.elenterius.biomancy.client.util.ClientTextUtil;
 import com.github.elenterius.biomancy.init.ModEnchantments;
@@ -18,8 +19,8 @@ import com.github.elenterius.biomancy.styles.TextComponentUtil;
 import com.github.elenterius.biomancy.util.CombatUtil;
 import com.github.elenterius.biomancy.util.ComponentUtil;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
+import net.neoforged.fml.loading.FMLEnvironment;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -202,7 +203,7 @@ public class ExtractorItem extends Item implements KeyPressListener, ItemTooltip
 			if (state.isCurrentAnimation(Animations.EXTRACT) && state.getController().isPlayingTriggeredAnimation()) return PlayState.CONTINUE;
 
 			boolean isFirstPerson = state.getData(DataTickets.ITEM_RENDER_PERSPECTIVE).firstPerson();
-			boolean isPlayerLookingAtMob = isFirstPerson && Minecraft.getInstance().crosshairPickEntity instanceof LivingEntity;
+			boolean isPlayerLookingAtMob = isFirstPerson && FMLEnvironment.dist.isClient() && ExtractorClientHooks.isCrosshairOnLivingEntity();
 
 			if (isPlayerLookingAtMob) {
 				state.setAnimation(Animations.TRANSITION_TO_ARMED);

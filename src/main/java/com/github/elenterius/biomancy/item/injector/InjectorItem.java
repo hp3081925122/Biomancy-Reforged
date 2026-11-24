@@ -8,7 +8,7 @@ import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.api.serum.Serum;
 import com.github.elenterius.biomancy.api.serum.SerumContainer;
 import com.github.elenterius.biomancy.api.serum.SerumInjector;
-import com.github.elenterius.biomancy.client.gui.InjectorScreen;
+import com.github.elenterius.biomancy.client.item.InjectorClientHooks;
 import com.github.elenterius.biomancy.client.render.item.injector.InjectorRenderer;
 import com.github.elenterius.biomancy.client.util.ClientTextUtil;
 import com.github.elenterius.biomancy.component.InjectorContents;
@@ -26,9 +26,6 @@ import com.github.elenterius.biomancy.styles.TextComponentUtil;
 import com.github.elenterius.biomancy.util.CombatUtil;
 import com.github.elenterius.biomancy.util.ComponentUtil;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -57,8 +54,7 @@ import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.LevelEvent;
 import net.minecraft.world.phys.AABB;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.fml.loading.FMLEnvironment;
 import software.bernie.geckolib.animatable.client.GeoRenderProvider;
 import org.jspecify.annotations.Nullable;
 import software.bernie.geckolib.animatable.GeoItem;
@@ -141,12 +137,9 @@ public class InjectorItem extends Item implements SerumInjector, ItemTooltipStyl
 		return Optional.ofNullable(stack.getCapability(Capabilities.ItemHandler.ITEM)).map(LargeSingleItemStackHandler.class::cast);
 	}
 
-	@OnlyIn(Dist.CLIENT)
 	private void tryToOpenClientScreen(InteractionHand hand) {
-		Screen currScreen = Minecraft.getInstance().screen;
-		if (currScreen == null && Minecraft.getInstance().player != null) {
-			Minecraft.getInstance().setScreen(new InjectorScreen(hand));
-			Minecraft.getInstance().player.playNotifySound(ModSoundEvents.UI_RADIAL_MENU_OPEN.get(), SoundSource.PLAYERS, 1f, 1f);
+		if (FMLEnvironment.dist.isClient()) {
+			InjectorClientHooks.tryToOpenScreen(hand);
 		}
 	}
 
@@ -333,12 +326,6 @@ public class InjectorItem extends Item implements SerumInjector, ItemTooltipStyl
 		});
 	}
 
-	@Nullable
-	private InjectorRenderer getInjectorRenderer(InjectorItem item) {
-		BlockEntityWithoutLevelRenderer renderer = GeoRenderProvider.of(this).getGeoItemRenderer();
-		return renderer instanceof InjectorRenderer injectorRenderer ? injectorRenderer : null;
-	}
-
 	public void setEntityHost(ItemStack stack, Entity entity) {
 		if (stack.isEmpty()) return;
 		stack.set(ModDataComponents.INJECTOR_HOST, entity.getId());
@@ -379,27 +366,9 @@ public class InjectorItem extends Item implements SerumInjector, ItemTooltipStyl
 		return entityId != null ? level.getEntity(entityId) : null;
 	}
 
-	@OnlyIn(Dist.CLIENT)
-	private void onSoundKeyFrame(ItemStack stack, String soundId, double animationTick) {
-		Level level = Minecraft.getInstance().level;
-		if (level == null) return;
-		if (!getInjectionSuccess(stack)) return;
-
-		Entity soundOrigin = getEntityHost(stack, level);
-		if (soundOrigin == null) return;
-
-		LocalPlayer client = Minecraft.getInstance().player;
-		level.playSound(client, soundOrigin.getX(), soundOrigin.getY(0.5f), soundOrigin.getZ(), ModSoundEvents.INJECTOR_INJECT.get(), SoundSource.PLAYERS, 0.8f, 1f / (level.random.nextFloat() * 0.5f + 1f) + 0.2f);
-
-		Entity victim = getEntityVictim(stack, level);
-		if (victim != null) {
-			level.levelEvent(LevelEvent.PARTICLES_DRAGON_BLOCK_BREAK, victim.blockPosition(), 0);
-		}
-	}
-
 	private void soundListener(SoundKeyframeEvent<InjectorItem> event) {
-		if (GeoRenderProvider.of(this).getGeoItemRenderer() instanceof InjectorRenderer renderer) {
-			onSoundKeyFrame(renderer.getCurrentItemStack(), event.getKeyframeData().getSound(), event.getAnimationTick());
+		if (FMLEnvironment.dist.isClient()) {
+			InjectorClientHooks.onSoundKeyFrame(this, event);
 		}
 	}
 
