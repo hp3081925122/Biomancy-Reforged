@@ -90,8 +90,16 @@ public class ProjectileUtil {
 		return true;
 	}
 
+	// 将局部 +Z 轴精确旋转到目标方向，避免 lookAlong 在正上/正下方向与 up 共线时产生 NaN
+	private static Quaternionfc createDirectionRotation(Vec3 direction) {
+		if (direction.lengthSqr() < 1.0e-8d) {
+			return new Quaternionf();
+		}
+		return new Quaternionf().rotationTo(0f, 0f, 1f, (float) direction.x, (float) direction.y, (float) direction.z);
+	}
+
 	public static <T extends BaseProjectile> boolean shoot(Level level, @Nullable Entity owner, Vec3 origin, Vec3 direction, float velocity, float damage, int knockback, float accuracy, float spreadBias, ProjectileEntityType<T> entityType, int projectileCount, Consumer<T> modify) {
-		Quaternionfc aimRotation = new Quaternionf().lookAlong((float) direction.x, (float) direction.y, (float) direction.z, 0f, 1f, 0f);
+		Quaternionfc aimRotation = createDirectionRotation(direction);
 		return shoot(level, owner, origin, aimRotation, velocity, damage, knockback, accuracy, spreadBias, entityType, projectileCount, modify);
 	}
 
@@ -193,7 +201,7 @@ public class ProjectileUtil {
 		}
 		else {
 			Vec3 direction = target.subtract(origin).normalize();
-			aimRotation = new Quaternionf().lookAlong((float) direction.x, (float) direction.y, (float) direction.z, 0f, 1f, 0f);
+			aimRotation = createDirectionRotation(direction);
 		}
 
 		return shoot(

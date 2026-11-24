@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.block.veins;
 
+import com.github.elenterius.biomancy.BiomancyMod;
 import com.mojang.serialization.MapCodec;
 import com.github.elenterius.biomancy.block.bloom.BloomBlock;
 import com.github.elenterius.biomancy.block.cradle.PrimalEnergyHandler;
@@ -517,6 +518,12 @@ public class FleshVeinsBlock extends MultifaceBlock implements SimpleWaterlogged
 		return food != null && itemStack.is(ItemTags.MEAT) && itemStack.is(ModItemTags.FRESH_RAW_MEATS) ? food.nutrition() : 0;
 	}
 
+	// 高版本中 BlockBehaviour.randomTick 不再默认转发到 tick，显式覆写以恢复脉络随机刻蔓延与巢穴生长机制
+	@Override
+	public void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
+		tick(state, level, pos, random);
+	}
+
 	@Override
 	public void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
 		if (level.random.nextFloat() >= 0.5f) return;
@@ -561,13 +568,17 @@ public class FleshVeinsBlock extends MultifaceBlock implements SimpleWaterlogged
 		float populationPct = directNeighbors / (float) Direction.values().length;
 		float conversionChance = charge / (CHARGE.getMax() + 5f) + populationPct * 0.5f;
 
+		boolean converted = false;
 		if (random.nextFloat() < conversionChance && convert(state, level, pos, directNeighbors, mound, nearBoundingCenterPct, energyHandler)) {
+			converted = true;
 			level.playSound(null, pos, ModSoundEvents.FLESH_BLOCK_STEP.get(), SoundSource.BLOCKS, 0.8f, 0.15f + random.nextFloat() * 0.5f);
 		}
 
+		int spreadCount = 0;
 		if (charge > 4) {
 			int growthAmount = (int) Mth.clamp(getSpreader().spreadAll(state, level, pos, false), 0, CHARGE.getMax());
 			if (growthAmount > 0) {
+				spreadCount = growthAmount;
 				charge -= growthAmount * 2;
 				state = level.getBlockState(pos);
 				level.playSound(null, pos, ModSoundEvents.FLESH_BLOCK_STEP.get(), SoundSource.BLOCKS, 0.6f, 0.15f + random.nextFloat() * 0.5f);
@@ -575,10 +586,16 @@ public class FleshVeinsBlock extends MultifaceBlock implements SimpleWaterlogged
 		}
 		else {
 			if (getSpreader().spreadFromRandomFaceTowardRandomDirection(state, level, pos, random).isPresent()) {
+				spreadCount = 1;
 				charge -= 2;
 				state = level.getBlockState(pos);
 				level.playSound(null, pos, ModSoundEvents.FLESH_BLOCK_STEP.get(), SoundSource.BLOCKS, 0.6f, 0.15f + random.nextFloat() * 0.5f);
 			}
+		}
+
+		if (BiomancyMod.LOGGER.isDebugEnabled() && (converted || spreadCount > 0)) {
+			BiomancyMod.LOGGER.debug("FleshVeins grew at {}: converted={}, spreadCount={}, charge={}, hasMound={}, energy={}",
+					pos, converted, spreadCount, charge, mound != null, energyHandler != null ? energyHandler.getPrimalEnergy() : -1);
 		}
 
 		if (energyHandler != null) {

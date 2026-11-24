@@ -2,6 +2,7 @@ package com.github.elenterius.biomancy.block.cradle;
 
 import net.minecraft.core.HolderLookup;
 import com.github.elenterius.biomancy.BiomancyConfig;
+import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.api.tribute.SacrificeHandler;
 import com.github.elenterius.biomancy.api.tribute.Tribute;
 import com.github.elenterius.biomancy.block.base.SimpleSyncedBlockEntity;
@@ -275,7 +276,9 @@ public class PrimordialCradleBlockEntity extends SimpleSyncedBlockEntity impleme
 
 			if (sacrificeHandler.getAnomalyChance() > 0.8f) {
 				PrimordialEcosystem.tryToReplaceBlock(level, pos.below(), ModBlocks.MALIGNANT_FLESH.get().defaultBlockState());
-				PrimordialEcosystem.spreadMalignantVeinsFromSource(level, pos, PrimordialEcosystem.MAX_CHARGE_SUPPLIER);
+				boolean spread = PrimordialEcosystem.spreadMalignantVeinsFromSource(level, pos, PrimordialEcosystem.MAX_CHARGE_SUPPLIER);
+				BiomancyMod.LOGGER.debug("PrimordialCradle at {} triggered high-anomaly malignant spread: successChance={}, anomalyChance={}, energyMultiplier={}, primalEnergy={}, spreadVeins={}",
+						pos, successChance, sacrificeHandler.getAnomalyChance(), energyMultiplier, primalEnergy, spread);
 				SoundUtil.Server.playBlockSound(level, pos, ModSoundEvents.CRADLE_SPAWN_PRIMORDIAL_MOB);
 			}
 			else {
@@ -289,9 +292,11 @@ public class PrimordialCradleBlockEntity extends SimpleSyncedBlockEntity impleme
 			}
 
 			PrimordialEcosystem.tryToReplaceBlock(level, pos.below(), ModBlocks.MALIGNANT_FLESH.get().defaultBlockState());
-			PrimordialEcosystem.spreadMalignantVeinsFromSource(level, pos, PrimordialEcosystem.MAX_CHARGE_SUPPLIER);
+			boolean spread = PrimordialEcosystem.spreadMalignantVeinsFromSource(level, pos, PrimordialEcosystem.MAX_CHARGE_SUPPLIER);
 
 			addPrimalEnergy(Math.round(3072 * energyMultiplier));
+			BiomancyMod.LOGGER.debug("PrimordialCradle at {} triggered failed-sacrifice malignant spread: successChance={}, energyMultiplier={}, primalEnergy={}, spreadVeins={}",
+					pos, successChance, energyMultiplier, primalEnergy, spread);
 			SoundUtil.Server.playBlockSound(level, pos, ModSoundEvents.FLESH_BLOCK_STEP.get(), 1f, 0.15f + level.random.nextFloat() * 0.5f);
 		}
 
