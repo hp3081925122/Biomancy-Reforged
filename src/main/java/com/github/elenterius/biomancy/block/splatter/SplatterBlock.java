@@ -51,6 +51,12 @@ public abstract class SplatterBlock extends MultifaceBlock {
 		builder.add(AGE.get());
 	}
 
+	// 高版本中 BlockBehaviour.randomTick 不再默认转发到 tick，显式覆写以恢复飞溅方块的随机刻自然衰减
+	@Override
+	public void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
+		tick(state, level, pos, random);
+	}
+
 	@Override
 	public void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
 		if (random.nextInt(8) != 0) {

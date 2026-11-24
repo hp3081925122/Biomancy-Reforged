@@ -1,5 +1,6 @@
 package com.github.elenterius.biomancy.block.membrane;
 
+import com.github.elenterius.biomancy.BiomancyMod;
 import com.github.elenterius.biomancy.util.LevelUtil;
 import com.github.elenterius.biomancy.block.cradle.PrimalEnergyHandler;
 import com.github.elenterius.biomancy.block.veins.FleshVeinsBlock;
@@ -19,6 +20,12 @@ public class SpreadingMembraneBlock extends MembraneBlock {
 
 	public SpreadingMembraneBlock(Properties properties, IgnoreEntityCollisionPredicate predicate) {
 		super(properties.randomTicks(), predicate);
+	}
+
+	// 高版本中 BlockBehaviour.randomTick 不再默认转发到 tick，显式覆写以恢复原始渗透膜在巢穴腔室间的扩散逻辑
+	@Override
+	public void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
+		tick(state, level, pos, random);
 	}
 
 	@Override
@@ -46,10 +53,16 @@ public class SpreadingMembraneBlock extends MembraneBlock {
 				if (energyHandler.drainPrimalEnergy(4) > 0) {
 					if (nextToAnyChamberCount > 1) {
 						level.setBlock(targetPos, defaultBlockState(), UPDATE_CLIENTS);
+						if (BiomancyMod.LOGGER.isDebugEnabled()) {
+							BiomancyMod.LOGGER.debug("SpreadingMembrane expanded membrane from {} to {}, remainingEnergy={}", pos, targetPos, energyHandler.getPrimalEnergy());
+						}
 					}
 					else {
 						level.setBlock(targetPos, ModBlocks.MALIGNANT_FLESH.get().defaultBlockState(), UPDATE_CLIENTS);
-						PrimordialEcosystem.spreadMalignantVeinsFromSource(level, targetPos, PrimordialEcosystem.MAX_CHARGE_SUPPLIER);
+						boolean spread = PrimordialEcosystem.spreadMalignantVeinsFromSource(level, targetPos, PrimordialEcosystem.MAX_CHARGE_SUPPLIER);
+						if (BiomancyMod.LOGGER.isDebugEnabled()) {
+							BiomancyMod.LOGGER.debug("SpreadingMembrane placed malignant flesh from {} to {}, spreadVeins={}, remainingEnergy={}", pos, targetPos, spread, energyHandler.getPrimalEnergy());
+						}
 					}
 				}
 			}

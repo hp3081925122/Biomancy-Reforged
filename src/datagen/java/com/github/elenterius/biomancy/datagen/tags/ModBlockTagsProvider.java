@@ -57,7 +57,11 @@ public class ModBlockTagsProvider extends BlockTagsProvider {
 				.addTag(BlockTags.SNOW)
 				.addTag(BlockTags.LEAVES)
 				.addTag(BlockTags.OVERWORLD_NATURAL_LOGS)
+				// 26.1.2 将原版 #minecraft:dirt 拆分为 dirt/grass_blocks/mud/moss_blocks，需一并纳入以还原草方块、菌丝、灰化土与泥巴等可被血肉侵蚀的范围
 				.addTag(BlockTags.DIRT)
+				.addTag(BlockTags.GRASS_BLOCKS)
+				.addTag(BlockTags.MUD)
+				.addTag(BlockTags.MOSS_BLOCKS)
 				.add(Blocks.DIRT_PATH, Blocks.FARMLAND, Blocks.MOSS_BLOCK, Blocks.MOSS_CARPET, Blocks.VINE)
 				.add(Blocks.PUMPKIN, Blocks.CARVED_PUMPKIN, Blocks.JACK_O_LANTERN, Blocks.MELON, Blocks.ATTACHED_PUMPKIN_STEM, Blocks.ATTACHED_MELON_STEM)
 				.add(Blocks.BROWN_MUSHROOM, Blocks.BROWN_MUSHROOM_BLOCK, Blocks.RED_MUSHROOM, Blocks.RED_MUSHROOM_BLOCK, Blocks.MUSHROOM_STEM)
